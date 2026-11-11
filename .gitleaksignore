@@ -11,3 +11,11 @@
 3065642b8912144d9492a2d54f3ae4af995a4a29:scripts/verify-wxvp.mts:generic-api-key:98
 3065642b8912144d9492a2d54f3ae4af995a4a29:scripts/verify-wxvp.mts:generic-api-key:124
 53a67352d2efca33a312f706522d93b670baa2bc:scripts/verify-transfer-billing.mts:generic-api-key:39
+
+# Same reviewed fixtures in the public-repo snapshot commit (fresh history, 2026-11-11).
+09cce6aaaf54f3c368421e062de0acdcf3d20c44:scripts/verify-transfer-billing.mts:generic-api-key:39
+09cce6aaaf54f3c368421e062de0acdcf3d20c44:scripts/verify-w2.mts:generic-api-key:147
+09cce6aaaf54f3c368421e062de0acdcf3d20c44:scripts/verify-w2.mts:generic-api-key:81
+09cce6aaaf54f3c368421e062de0acdcf3d20c44:scripts/verify-wxvp.mts:generic-api-key:124
+09cce6aaaf54f3c368421e062de0acdcf3d20c44:scripts/verify-wxvp.mts:generic-api-key:35
+09cce6aaaf54f3c368421e062de0acdcf3d20c44:scripts/verify-wxvp.mts:generic-api-key:98

@@ -48,7 +48,7 @@ fs.writeFileSync(
       email: '',
       passwordHash: '',
       phone: '13800138000',
-      displayName: '185****5325',
+      displayName: '138****8000',
       createdAt: new Date().toISOString(),
     },
   ])
@@ -223,7 +223,7 @@ const shape = (over: Partial<User>): User => ({
   id: 'x', username: 'uabcdefg', email: '', passwordHash: '', displayName: '', createdAt: '', ...over,
 });
 
-assert.strictEqual(isDefaultDisplayName(shape({ phone: '13800138000', displayName: '185****5325' })), true);
+assert.strictEqual(isDefaultDisplayName(shape({ phone: '13800138000', displayName: '138****8000' })), true);
 ok('打码手机号 → 默认名');
 
 assert.strictEqual(isDefaultDisplayName(shape({ email: 'zewei@test.local', displayName: 'z****@test.local' })), true);
