@@ -1,0 +1,203 @@
+# SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# 把 next-build-artifact.yml 已构建、已验证的 Next 产物推上生产（dev-board#1648 之后的唯一部署入口）。
+#   verify  ：无 secret、无 SSH。核官方 artifact 摘要与 provenance（源 SHA / 站点 / webpack /
+#             公开配置指纹 / 逐文件 SHA），产出待上传包。
+#   promote ：挂 production-<site> Environment，必须有 required reviewer 批准才开始；
+#             DEPLOY_SSH_KEY 只作用域到这两个 Environment。服务器上不跑任何 Next 构建，
+#             失败自动回滚。见 DEPLOY.md「门控 Next 产物上线」。
+name: Promote verified Next artifact (gated)
+
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: 目标站点
+        required: true
+        type: choice
+        options: [cn, intl]
+      artifact_run_id:
+        description: 成功的 next-build-artifact.yml run ID
+        required: true
+        type: string
+      source_sha:
+        description: 产物 provenance 中的 40 位源提交 SHA
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: promote-next-${{ inputs.site }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify artifact (no secrets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      sums_sha256: ${{ steps.check.outputs.sums_sha256 }}
+    steps:
+      - name: Validate inputs
+        env:
+          SITE: ${{ inputs.site }}
+          RUN_ID: ${{ inputs.artifact_run_id }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          [ "$REF" = refs/heads/master ] || { echo "::error::只能从 master 触发"; exit 1; }
+          [[ "$SITE" =~ ^(cn|intl)$ ]] || { echo "::error::site 非法"; exit 1; }
+          [[ "$RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]] || { echo "::error::artifact_run_id 非法"; exit 1; }
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::source_sha 须为 40 位小写十六进制"; exit 1; }
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+      - name: Guard tests
+        run: |
+          python3 -B scripts/next-ci-artifact.test.py
+          python3 -B scripts/promote-next-artifact.test.py
+          node --test scripts/promote-next-artifact.test.mjs
+      - name: Verify official artifact and provenance
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SITE: ${{ inputs.site }}
+          RUN_ID: ${{ inputs.artifact_run_id }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          python3 -B scripts/promote-next-artifact.py check --site "$SITE" --run-id "$RUN_ID" --source-sha "$SOURCE_SHA" --out "$RUNNER_TEMP/promote"
+          cp scripts/promote-next-artifact.sh "$RUNNER_TEMP/promote/"
+          (cd "$RUNNER_TEMP/promote" && sha256sum next-artifact.tar.gz web-workbench.tar.gz files.sha256 release.env promote-next-artifact.sh > SHA256SUMS)
+          echo "sums_sha256=$(sha256sum "$RUNNER_TEMP/promote/SHA256SUMS" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: promote-${{ inputs.site }}-${{ inputs.source_sha }}
+          retention-days: 1
+          if-no-files-found: error
+          path: ${{ runner.temp }}/promote/
+
+  promote:
+    name: Promote to production (${{ inputs.site }})
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    # 审批门：production-cn / production-intl 须配置 required reviewers，且只允许 master。
+    environment: production-${{ inputs.site }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: promote-${{ inputs.site }}-${{ inputs.source_sha }}
+          path: promote
+      - name: Re-check verified bundle digests and set target
+        env:
+          SUMS_SHA256: ${{ needs.verify.outputs.sums_sha256 }}
+          SITE: ${{ inputs.site }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          [ "$(sha256sum promote/SHA256SUMS | cut -d' ' -f1)" = "$SUMS_SHA256" ]
+          (cd promote && sha256sum -c --strict SHA256SUMS)
+          grep -qx "SHA=$SOURCE_SHA" promote/release.env && grep -qx "SITE=$SITE" promote/release.env
+          # 站点表只此一处（DEPLOY.md §0 / §9.3.1）
+          if [ "$SITE" = cn ]; then
+            ip=8.152.169.44; app=/www/wwwroot/www.aiworkdeck.com/new; pm2=aiworkdeck-website
+            node_bin=/root/.nvm/versions/node/v22.23.2/bin; sqlite_python=; host=www.aiworkdeck.com
+          else
+            ip=8.219.94.204; app=/www/wwwroot/workdeck.ai/app; pm2=workdeck-intl
+            node_bin=; sqlite_python=/usr/bin/python3.11; host=www.workdeck.ai
+          fi
+          printf 'APP=%s\nPM2_NAME=%s\nNODE_BIN=%s\nSQLITE_PYTHON=%s\nHOST=%s\nPORT=3000\n' \
+            "$app" "$pm2" "$node_bin" "$sqlite_python" "$host" >> promote/release.env
+          # release.env 刚追加了目标机字段：重算传输校验清单
+          (cd promote && sha256sum next-artifact.tar.gz web-workbench.tar.gz files.sha256 release.env promote-next-artifact.sh > SHA256SUMS)
+          rel="$app/.promote/$SITE-$SOURCE_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          { echo "IP=$ip"; echo "REL=$rel"; } >> "$GITHUB_ENV"
+      - name: Configure SSH (pinned host keys)
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          [ -n "$DEPLOY_SSH_KEY" ] || { echo "::error::Environment 缺 DEPLOY_SSH_KEY"; exit 1; }
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          cat > ~/.ssh/known_hosts <<'EOF'
+          8.152.169.44 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGb3UVXZt2RBAHmh0odOP2sC17iqYW0jUrt6loT68dNM
+          8.219.94.204 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJoEDtAJzNwbVxRmhEr3MsrIdjzAHFjcfROiHkcX0Hx+
+          EOF
+          chmod 600 ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<'EOF'
+          Host *
+            IdentityFile ~/.ssh/id_ed25519
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking yes
+            UserKnownHostsFile ~/.ssh/known_hosts
+            ConnectTimeout 20
+            ServerAliveInterval 15
+            ServerAliveCountMax 4
+          EOF
+      - name: Upload (resumable, full SHA re-check)
+        run: |
+          set -euo pipefail
+          for i in 1 2 3 4 5 6; do
+            if ssh "root@$IP" "mkdir -p '$REL'" \
+              && rsync -rt --partial --append-verify --timeout=120 --chmod=D700,F600 -e ssh promote/ "root@$IP:$REL/" \
+              && ssh "root@$IP" "cd '$REL' && sha256sum -c --strict --quiet SHA256SUMS"; then
+              echo "uploaded on attempt $i"; exit 0
+            fi
+            echo "upload attempt $i failed; retrying"; sleep $((i * 10))
+          done
+          exit 1
+      - name: Prepare on server (verify + stage deps, no live change)
+        run: bash scripts/promote-remote-phase.sh prepare
+      - name: Activate (swap, restart, local health; auto-rollback)
+        id: activate
+        run: bash scripts/promote-remote-phase.sh activate
+      - name: External health checks
+        env:
+          SITE: ${{ inputs.site }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          if [ "$SITE" = cn ]; then
+            code=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 30 --resolve www.aiworkdeck.com:443:$IP https://www.aiworkdeck.com/)
+            echo "首页 $code"; [ "$code" = 200 ]
+            n=$(curl -s --max-time 30 --resolve www.aiworkdeck.com:443:$IP https://www.aiworkdeck.com/api/registry/skills | node -e \
+              'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const a=JSON.parse(s);console.log(Array.isArray(a)?a.length:0)})')
+            echo "registry 条目数 $n"; [ "$n" -gt 0 ]
+            bash scripts/web-healthcheck.sh www.aiworkdeck.com "$IP" "$SOURCE_SHA"
+          else
+            ssh "root@$IP" 'cd /www/wwwroot/workdeck.ai/app && node -e "const D=require(\"better-sqlite3\"); new D(\":memory:\").exec(\"create table t(a)\"); console.log(\"better-sqlite3 OK\")"'
+            # runner 出口在美国会命中 geo 分流（dev-board#569）：workdeck.ai 接受 200 或到 .us 的 301
+            hdr=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 30 --resolve www.workdeck.ai:443:$IP https://www.workdeck.ai/en)
+            echo "首页 workdeck.ai $hdr"
+            case "$hdr" in "200 "*|"301 https://www.aiworkdeck.us/"*) ;; *) exit 1 ;; esac
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 --resolve www.aiworkdeck.us:443:$IP https://www.aiworkdeck.us/en)
+            echo "首页 aiworkdeck.us $code"; [ "$code" = 200 ]
+            # 桌面端 JDK HttpClient 不跟随重定向：必须 200 而不是 301
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 -X POST -H 'Content-Type: application/json' \
+              -d '{"key":"ci-healthcheck"}' --resolve www.workdeck.ai:443:$IP https://www.workdeck.ai/api/license/verify-key)
+            echo "verify-key $code"; [ "$code" = 200 ]
+            bash scripts/web-healthcheck.sh www.workdeck.ai "$IP" "$SOURCE_SHA"
+            bash scripts/web-healthcheck.sh www.aiworkdeck.us "$IP" "$SOURCE_SHA"
+          fi
+      - name: Roll back after failed activation or health check
+        if: failure() && steps.activate.outcome != 'skipped'
+        run: |
+          # activate 自己失败时服务器已自动回滚，这里幂等；SSH 断线时先等 activate 落状态再回滚。
+          bash scripts/promote-remote-phase.sh wait activate || true
+          bash scripts/promote-remote-phase.sh rollback
+          echo "::error::已回滚到上一版本，本次上线失败"
+          exit 1

@@ -1,0 +1,9617 @@
+/* SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 (Beijing Jingwei Ziyi Technology Co., Ltd.) and AI WorkDeck contributors
+ * SPDX-FileCopyrightText: allotropia software GmbH (portions derived from zetajs examples, MIT)
+ * SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
+ *
+ * 本文件主体是 AI WorkDeck 自研的 office 线程 UNO 原语实现，以 AGPL-3.0-or-later 发布。
+ * 早期骨架（worker 装载、消息分发、少量示例式片段）源自 allotropia/zetajs 的 MIT 示例
+ * （simple-examples + web-office），该部分继续以 MIT 提供。仓库根 LICENSE 是 AGPL-3.0，
+ * 见同目录 UPSTREAM.md 对上游 zeta.js 的溯源说明。
+ *
+ * 技术说明（原头注释保留部分）：
+ * This file is loaded INTO the LibreOffice WASM em-pthread worker via
+ * Module.uno_scripts. Here `Module.zetajs` resolves to the zetajs UNO bridge
+ * (on the MAIN thread it resolves to the thread *port* instead, see index.html).
+ */
+'use strict';
+
+// zetajs environment (global for easier debugging in the worker dev-tools).
+let zetajs, css;
+let context, desktop, xModel, ctrl;
+let anchorSeq = 0; // names hidden bookmarks used as stable location anchors (§0.2)
+let docSeq = 0;    // names the MEMFS temp file for each loaded user document
+let saveSeq = 0;   // names the MEMFS temp file for each export (save) round-trip
+
+function post(cmd, data) {
+  zetajs.mainPort.postMessage(Object.assign({ cmd }, data || {}));
+}
+function log(msg) { post('log', { msg: String(msg) }); }
+function errStr(e) {
+  try { return zetajs.getAnyType(zetajs.catchUnoException(e)) + ' ' + (e && e.message || ''); }
+  catch { return String(e && e.message || e); }
+}
+// Build a UNO PropertyValue the zetajs way (struct ctor takes a values object;
+// unset members default). Used for loadComponentFromURL/storeToURL filter args.
+function mkProp(name, value) { return new css.beans.PropertyValue({ Name: name, Value: value }); }
+
+// Diagnostic (#66): read the resolved UI locale from the config so we can tell
+// whether the injected zh-CN langpack + ooLocale override actually took effect.
+// ooLocale='zh-CN' but English menus => resources/path issue; ooLocale=''/'en-US'
+// => the override .xcd was not applied (need a different mechanism).
+function readConfigLocale() {
+  try {
+    const provider = context.getServiceManager().createInstanceWithContext(
+      'com.sun.star.configuration.ConfigurationProvider', context);
+    const access = provider.createInstanceWithArguments(
+      'com.sun.star.configuration.ConfigurationAccess',
+      [mkProp('nodepath', '/org.openoffice.Setup/L10N')]);
+    const out = {};
+    try { out.ooLocale = access.getByName('ooLocale'); } catch (e) { out.ooLocaleErr = errStr(e); }
+    try { out.sysLocale = access.getByName('ooSetupSystemLocale'); } catch (e) {}
+    return out;
+  } catch (e) { return { err: errStr(e) }; }
+}
+
+// ---- 修订作者署名 ----------------------------------------------------------
+// 修订（redline）的作者名取自 UserProfile 配置（givenname+sn）。AI 发起的编辑
+// 统一署名 AI_AUTHOR，用户本人的操作（IME 输入、快捷键）署用户名——同一引擎里
+// 两种来源的修订在修订面板中可区分（用户需求）。execCommand 按 __agent 标记
+// 在每条命令前切换；setRedlineAuthor 有同值短路，切换才真正写配置。
+const AI_AUTHOR = 'AI WorkDeck';
+let humanAuthor = '';        // load_document 时由宿主传入（当前登录用户名）
+let currentRedlineAuthor = null;
+function setRedlineAuthor(name) {
+  const n = String(name == null ? '' : name);
+  if (currentRedlineAuthor === n) return;
+  const provider = context.getServiceManager().createInstanceWithContext(
+    'com.sun.star.configuration.ConfigurationProvider', context);
+  const access = provider.createInstanceWithArguments(
+    'com.sun.star.configuration.ConfigurationUpdateAccess',
+    [mkProp('nodepath', '/org.openoffice.UserProfile/Data')]);
+  access.replaceByName('givenname', n);
+  access.replaceByName('sn', '');
+  access.commitChanges();
+  currentRedlineAuthor = n;
+}
+
+// LibreOffice import filter names by extension — used only for the stream-load
+// fallback (private:stream has no URL extension to auto-detect a filter from).
+const IMPORT_FILTERS = {
+  docx: 'MS Word 2007 XML', doc: 'MS Word 97',
+  xlsx: 'Calc MS Excel 2007 XML', xls: 'MS Excel 97',
+  pptx: 'Impress MS PowerPoint 2007 XML', ppt: 'MS PowerPoint 97',
+  rtf: 'Rich Text Format', txt: 'Text',
+  odt: 'writer8', ods: 'calc8', odp: 'impress8',
+};
+
+// §0.2 anchors: a bookmark spanning a text range is a STABLE location handle that
+// moves with edits — the model-native replacement for fragile integer offsets.
+const ANCHOR_PREFIX = '__ai_anchor_';
+const anchorTexts = new Map();
+function anchorBookmark(range) {
+  const name = ANCHOR_PREFIX + (++anchorSeq);
+  const bm = xModel.createInstance('com.sun.star.text.Bookmark');
+  bm.setName(name);
+  // 与 insertTextAtCursor 同一条纪律（dev-board#627）：书签必须插进 range 自己所属的
+  // XText。正文 XText 只接受属于自己的区间，range 在表格单元格（或页眉/脚注等别的
+  // story）里时 body.insertTextContent(range,…) 抛 RuntimeException，find_text_locations
+  // 的 anchorId 就成了 null，AI 的 set_selection / replace_at_position 在表格里够不着。
+  range.getText().insertTextContent(range, bm, true); // bAbsorb: bookmark spans the range
+  // 必须回读引擎真正给的名字，不能把「申请的名字」当成「拿到的名字」（dev-board#788）：
+  // 文档里已存在同名书签时 LO 不报错，而是**静默改名**（zh-CN 引擎实测改成
+  // 「__ai_anchor_1 副本 1」），此时 anchorRange('__ai_anchor_1') 解析到的是那个**旧**
+  // 书签——find 报对了位置，紧接着的 set_selection / replace_at_position 却落在别处。
+  // 同名从哪来：锚点书签会跟着 docx 存盘（书签经 export/load 往返存活），而 anchorSeq
+  // 是 worker 级计数器、每开一个 webview 都从 0 重来。下面 dropAiAnchors() 在换文档时
+  // 清掉陈旧锚点是主闸，这里的回读是第二道闸。
+  const real = String(bm.getName() || name);
+  anchorTexts.set(real, range.getString());
+  return real;
+}
+// 摘掉文档里全部 __ai_anchor_* 书签，返回摘掉的个数。锚点是一次会话内的临时定位
+// 句柄（§0.2），不该留在用户的 docx 里——clear_anchors（housekeeping）与换文档
+// 时的清场共用这一份。摘除与插入不同源：removeTextContent 本引擎实测容得下别的
+// story 的书签（单元格锚点用正文 XText 照样摘得掉，table-retype 的锚点组守着）。
+function dropAiAnchors() {
+  anchorTexts.clear();
+  const bms = xModel.getBookmarks();
+  const names = (bms.getElementNames && bms.getElementNames()) || [];
+  const xText = xModel.getText();
+  let n = 0;
+  for (let i = 0; i < names.length; i++) {
+    if (names[i].indexOf(ANCHOR_PREFIX) === 0) {
+      try { xText.removeTextContent(bms.getByName(names[i])); n++; } catch (e) {}
+    }
+  }
+  return n;
+}
+function anchorRange(name) {
+  const bms = xModel.getBookmarks();
+  if (!bms.hasByName(name)) return null;
+  return bms.getByName(name).getAnchor(); // XTextRange
+}
+// Compare in the final-text view immediately before selecting/writing. Unrelated
+// edits may move a bookmark without invalidating its unchanged target text.
+function anchorEditError(name, range) {
+  if (!String(name).startsWith(ANCHOR_PREFIX)) return null;
+  if (!anchorTexts.has(String(name)) || range.getString() !== anchorTexts.get(String(name))) {
+    return '锚点原文已变化或失效，未执行编辑；请重新 doc_find_text 核对上下文后再试';
+  }
+  return null;
+}
+// ---- EvidenceLink 书签原语 helpers（dev-board#103）-----------------------------
+function bmFail(msg) { return { success: false, error: msg, message: msg }; }
+// 当前选区的第一个 range（无选区 → null）。
+function selectionRange() {
+  const sel = ctrl.getSelection();
+  let range = null;
+  try { if (sel && typeof sel.getByIndex === 'function' && sel.getCount() > 0) range = sel.getByIndex(0); } catch (e) {}
+  return range;
+}
+// 从 range 所在段落向前找标题链：OutlineLevel 1..6，每级只取最近的一个，直到
+// 遇到 1 级或文首。返回 {chain:[{level,text}], paragraphIndex}；定位不到（跨
+// story 比较抛异常、表格单元格等）时 chain 为空、paragraphIndex -1。
+function headingChainOf(range) {
+  const chain = [];
+  let seen = 99;
+  try {
+    const body = xModel.getText(); // XTextRangeCompare
+    const paras = [];
+    eachParagraph(function (el) { paras.push(el); return false; });
+    const start = range.getStart();
+    let idx = -1;
+    for (let i = 0; i < paras.length; i++) {
+      if (body.compareRegionStarts(paras[i].getStart(), start) >= 0 && body.compareRegionEnds(paras[i].getEnd(), start) <= 0) { idx = i; break; }
+    }
+    if (idx < 0) return { chain: [], paragraphIndex: -1 };
+    for (let i = idx; i >= 0 && seen > 1; i--) {
+      let lvl = 0;
+      try { lvl = Number(paras[i].getPropertyValue('OutlineLevel')) || 0; } catch (e) {}
+      if (lvl > 0 && lvl < seen) { chain.unshift({ level: lvl, text: (paras[i].getString() || '').trim().slice(0, 200) }); seen = lvl; }
+    }
+    return { chain: chain, paragraphIndex: idx };
+  } catch (e) { return { chain: [], paragraphIndex: -1 }; }
+}
+
+// #104 variable fields: a NAMED bookmark spanning the inserted value marks a
+// "document field" bound to a (scope, varName) variable — the WPS 域 semantics
+// VariablePanel expects, on LibreOffice. The binding is encoded in the bookmark
+// NAME (scope + hex-encoded UTF-8 varName, name-safe chars only) so it survives
+// a docx save/reload — bookmarks round-trip through OOXML; no custom XML part
+// needed. (Word caps bookmark names at 40 chars, so a long CJK varName may get
+// mangled if the file is edited in Word itself; LibreOffice round-trips it.)
+const VAR_FIELD_PREFIX = '__ai_var_';
+let varFieldSeq = 0;
+function hexUtf8(s) {
+  const bytes = unescape(encodeURIComponent(String(s))); // UTF-8 byte string
+  let out = '';
+  for (let i = 0; i < bytes.length; i++) out += ('0' + bytes.charCodeAt(i).toString(16)).slice(-2);
+  return out;
+}
+function unhexUtf8(h) {
+  let bytes = '';
+  for (let i = 0; i + 1 < h.length; i += 2) bytes += String.fromCharCode(parseInt(h.substr(i, 2), 16));
+  try { return decodeURIComponent(escape(bytes)); } catch (e) { return bytes; }
+}
+function newVarFieldName(scope, varName) {
+  const bms = xModel.getBookmarks();
+  let name;
+  do { name = VAR_FIELD_PREFIX + scope + '_' + hexUtf8(varName) + '_' + (++varFieldSeq); }
+  while (bms.hasByName(name)); // seq resets per session; skip names already in the doc
+  return name;
+}
+function parseVarFieldName(name) {
+  if (String(name).indexOf(VAR_FIELD_PREFIX) !== 0) return null;
+  const parts = String(name).slice(VAR_FIELD_PREFIX.length).split('_'); // [scope, hex, seq]
+  if (parts.length !== 3 || !parts[0]) return null;
+  return { scope: parts[0], varName: unhexUtf8(parts[1]) };
+}
+
+// ---- 拟人式原语 helpers（感知/验证回路） ------------------------------------
+// Context around a range: the chars immediately before/after, read via a text
+// cursor spawned FROM THE RANGE'S OWN XText (so matches inside table cells /
+// frames read their local story, not the body text). This is what lets the AI
+// tell five identical "甲方" hits apart — the WPS-era failure mode.
+function contextAround(range, radius) {
+  const n = Math.max(1, Math.min(Number(radius) || 50, 200));
+  const out = { before: '', after: '' };
+  try {
+    const t = range.getText();
+    const b = t.createTextCursorByRange(range.getStart());
+    b.goLeft(n, true);
+    out.before = b.getString();
+    const a = t.createTextCursorByRange(range.getEnd());
+    a.goRight(n, true);
+    out.after = a.getString();
+  } catch (e) { out.ctxErr = errStr(e); }
+  return out;
+}
+// The paragraph text enclosing a range (start point), for match disambiguation
+// and post-edit verification. XParagraphCursor via createTextCursorByRange.
+function paragraphTextOf(range) {
+  try {
+    const t = range.getText();
+    const cur = t.createTextCursorByRange(range.getStart());
+    cur.gotoStartOfParagraph(false);
+    cur.gotoEndOfParagraph(true);
+    return cur.getString();
+  } catch (e) { return null; }
+}
+// Keep the rendered list label separate from text: all text offsets remain UTF-16
+// offsets into the unprefixed paragraph. NumberingIsNumber means a label is shown,
+// including bullets; it does not distinguish numeric lists from bullet lists.
+function paragraphNumberingOf(paragraph) {
+  try {
+    const label = paragraph.getPropertyValue('ListLabelString');
+    const listId = paragraph.getPropertyValue('ListId');
+    const level = paragraph.getPropertyValue('NumberingLevel');
+    const hasLabel = paragraph.getPropertyValue('NumberingIsNumber');
+    if (typeof label === 'string' && typeof listId === 'string' && Number.isInteger(level)
+      && (hasLabel == null || typeof hasLabel === 'boolean')) {
+      return { available: true, label: label, listId: listId, level: level, hasLabel: hasLabel == null ? null : hasLabel };
+    }
+  } catch (e) {}
+  // Unavailable properties must never look like a confirmed unnumbered paragraph.
+  return { available: false, label: null, listId: null, level: null, hasLabel: null };
+}
+// ---- 段落索引缓存（dev-board#108 G3）------------------------------------------
+// 每次 get_document_text / get_paragraph 都从头枚举 900+ 段是 O(n)（150 页实测
+// 2-5s/次，AI 逐页读一遍报告 = 每页付一次全扫）。这里一次枚举把每段的 XTextRange
+// （段落对象本身，引擎里是带标记的活对象，内容变了它跟着变）存进数组，之后按
+// 下标 O(1) 取。失效规则：(1) modified 监听器——任何文档改动都会触发，这是主闸；
+// (2) 索引绑定 xModel 引用，换文档（load_document / 测试探针直接换 xModel）自然
+// 重建；(3) 写原语末尾的 verifySnapshot 再补一刀。段落被删后旧对象会抛异常，
+// withParaIndex 捕到就重建一次再读，仍失败才冒泡。
+const paraIndex = { model: null, ranges: null, total: 0 };
+// 补全只保留一个内存快照；不把临时候选变成存进 docx 的书签。
+let completionSnapshot = null;
+let completionSeq = 0;
+// Semantic requests may outlive local candidate refreshes. They have their own
+// snapshot, but share the same cursor/text checks and document revision fence.
+let writingSnapshot = null;
+// Session-local, monotonic content generation; read-only exports do not advance it.
+let reviewRevision = 0, reviewModel = null;
+let viewChangeInFlight = 0;
+function currentReviewRevision() {
+  if (reviewModel !== xModel) { reviewModel = xModel; reviewRevision++; }
+  return reviewRevision;
+}
+function invalidateParaIndex() {
+  paraIndex.ranges = null; paraIndex.total = 0; paraIndex.model = null;
+  // 导出同步切换修订显示并恢复 modified 标志，会触发只读的缓存失效；
+  // 此窗口不可能插入人工编辑，补全令牌保留，接受时仍完整核对模型/位置/原文。
+  if (!exportInFlight && !viewChangeInFlight) { completionSnapshot = null; reviewRevision++; }
+}
+function buildParaIndex() {
+  const ranges = [];
+  const en = xModel.getText().createEnumeration();
+  while (en.hasMoreElements()) {
+    const el = en.nextElement();
+    if (el.supportsService && el.supportsService('com.sun.star.text.Paragraph')) ranges.push(el);
+  }
+  paraIndex.ranges = ranges; paraIndex.total = ranges.length; paraIndex.model = xModel;
+  return paraIndex;
+}
+function getParaIndex() { return (paraIndex.ranges && paraIndex.model === xModel) ? paraIndex : buildParaIndex(); }
+// fn(index) 只许做读操作——段落对象失效抛异常时会重建索引再调一次 fn。
+function withParaIndex(fn) {
+  try { return fn(getParaIndex()); }
+  catch (e) { invalidateParaIndex(); return fn(getParaIndex()); }
+}
+// 取第 idx（0 基）段，顺手 getString 验活；越界返回 null。写原语先用它拿段落，
+// 再在 withParaIndex 之外改，免得重试把副作用做两遍。
+function paraAt(idx) {
+  return withParaIndex(function (ix) {
+    const el = ix.ranges[idx];
+    if (!el) return null;
+    el.getString();
+    return el;
+  });
+}
+// Enumerate body paragraphs, calling fn(el, index); fn returns true to stop.
+// 走索引缓存：fn 里只做读（见 withParaIndex）。
+function eachParagraph(fn) {
+  withParaIndex(function (ix) {
+    for (let i = 0; i < ix.total; i++) { if (fn(ix.ranges[i], i)) return; }
+  });
+}
+// Select a range THE WAY A HUMAN WOULD: the view cursor jumps there (the view
+// scrolls to it) and the selection is visibly painted. gotoRange(range, false)
+// makes the view cursor span the range — the standard "select the found hit"
+// idiom. Falls back to ctrl.select if the view cursor balks (e.g. range in a
+// story the view cursor can't enter).
+function selectVisibly(range) {
+  try { ctrl.getViewCursor().gotoRange(range, false); return true; }
+  catch (e) { try { ctrl.select(range); return true; } catch (e2) { return false; } }
+}
+function pad2(n) { return (n < 10 ? '0' : '') + n; }
+// ---- 审阅面板（修订/批注）的取址助手 ---------------------------------------
+// redline 枚举没有按索引取的接口，面板的 index 就是枚举顺序（每次操作后宿主
+// 会重新拉清单，处置一条后索引会前移——这是刻意的：面板即时刷新即可）。
+function redlineAt(index) {
+  const want = Number(index);
+  if (!(want >= 0)) return null;
+  try {
+    const en = xModel.getRedlines().createEnumeration();
+    let i = 0;
+    while (en.hasMoreElements()) { const r = en.nextElement(); if (i++ === want) return r; }
+  } catch (e) {}
+  return null;
+}
+function countRedlines() {
+  let n = 0;
+  try { const en = xModel.getRedlines().createEnumeration(); while (en.hasMoreElements()) { en.nextElement(); n++; } } catch (e) {}
+  return n;
+}
+// O(1) "does this document carry any tracked change at all?" — one enumeration
+// handle, no element is fetched (fetching one costs 3-7ms on this engine, see
+// dev-board#587). Unknown counts as "yes": the final-text guard must never be
+// skipped on a document that might hide deletions.
+function hasAnyRedline() {
+  try { return !!xModel.getRedlines().createEnumeration().hasMoreElements(); } catch (e) { return true; }
+}
+// 两个文本区间的起点是否重合——list_revisions 用它判断相邻修订是否首尾相接。
+// 跨 XText（正文 vs 表格单元格）比较时引擎抛 IllegalArgumentException：那本来
+// 也不算相接，吞掉当 false。
+function rangeStartsEqual(a, b, body) {
+  if (!a || !b) return false;
+  if (body) {
+    try { return body.compareRegionStarts(a, b) === 0; } catch (e) { /* Compare foreign ranges in their own story. */ }
+  }
+  try { return a.getText().compareRegionStarts(a, b) === 0; } catch (e) { return false; }
+}
+// ---- 批注↔修订的可比坐标（dev-board#377）-----------------------------------
+// 审阅面板要判「这条批注是不是在解释这条修订」。判定本身放在宿主的纯函数里做
+// （utils/reviewGrouping.js，好写单测），worker 只负责把两边可比的坐标如实回传：
+//   paraKey   正文段落枚举序（走 paraIndex 缓存二分定位，O(log n) 次区间比较）
+//   start/end 区间两端在该段落内的字符偏移
+// **不按批注正文的前缀识别**（「【修訂理由】」是模型自己写的，不固定），只按位置。
+// 表格单元格、页眉页脚里的区间跨 story，body.compareRegionStarts 会抛
+// IllegalArgumentException——那种情况回 null，宿主据此不做关联（宁可不挂，不猜）。
+function paraKeyOf(body, start, cache) {
+  return withParaIndex(function (ix) {
+    if (!ix.total) return -1;
+    // Bind the per-list cache to this index, including withParaIndex's retry
+    // after a stale range. Native boundary proxies are expensive to recreate.
+    if (cache && cache.ranges !== ix.ranges) {
+      cache.ranges = ix.ranges;
+      cache.boundaries = new Map();
+      cache.paragraphTexts = new Map();
+      cache.lastParagraph = null;
+    }
+    function boundary(index, edge) {
+      if (!cache) return edge === 'start' ? ix.ranges[index].getStart() : ix.ranges[index].getEnd();
+      let saved = cache.boundaries.get(index);
+      if (!saved) { saved = {}; cache.boundaries.set(index, saved); }
+      if (!saved[edge]) saved[edge] = edge === 'start' ? ix.ranges[index].getStart() : ix.ranges[index].getEnd();
+      return saved[edge];
+    }
+    // Reuse the last paragraph only for interior positions. Ends and foreign
+    // stories still use the original binary search and boundary checks.
+    if (cache && cache.lastParagraph) {
+      const last = cache.lastParagraph;
+      try {
+        if (body.compareRegionStarts(last.start, start) >= 0
+          && body.compareRegionEnds(last.end, start) < 0) return last.key;
+      } catch (e) { /* A different story must use the normal lookup. */ }
+    }
+    let lo = 0, hi = ix.total - 1;
+    // compareRegionStarts(A, B) === 1 表示 A 在 B 之前（与 headingChainOf 同口径）：
+    // 找「起点不晚于 start」的最后一段。
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (body.compareRegionStarts(boundary(mid, 'start'), start) >= 0) lo = mid; else hi = mid - 1;
+    }
+    const paragraphEnd = boundary(lo, 'end');
+    const key = body.compareRegionEnds(paragraphEnd, start) <= 0 ? lo : -1;
+    if (cache && key >= 0) cache.lastParagraph = { key: key, start: boundary(lo, 'start'), end: paragraphEnd };
+    return key;
+  });
+}
+// A private text cursor, never the live selection. Call only after paraKeyOf
+// has confirmed that the start belongs to the body; foreign stories keep their
+// own cursor. Reset the selection before every use, including after failures.
+function reviewBodyCursorAt(cache, start) {
+  if (!cache.cursor) cache.cursor = cache.body.createTextCursorByRange(start);
+  else cache.cursor.gotoRange(start, false);
+  return cache.cursor;
+}
+function rangeLocator(start, end, cache, spanLength) {
+  try {
+    const body = cache ? (cache.body || (cache.body = xModel.getText())) : xModel.getText();
+    const paraKey = cache && cache.currentStart === start ? cache.currentParaKey : paraKeyOf(body, start, cache);
+    if (!(paraKey >= 0)) return null;
+    const txt = cache ? body : start.getText();
+    const head = cache ? reviewBodyCursorAt(cache, start) : txt.createTextCursorByRange(start);
+    head.gotoStartOfParagraph(true);
+    const off = String(head.getString() || '').length;
+    let len = 0;
+    // 正文流里的宽度。页边显示模式下删除型在流里是零宽（文本被移进 redline
+    // 对象），start === end 是正常结果，不是取失败。
+    if (spanLength != null) len = spanLength;
+    else try { const span = cache ? reviewBodyCursorAt(cache, start) : txt.createTextCursorByRange(start); span.gotoRange(end, true); len = String(span.getString() || '').length; } catch (e) {}
+    return { paraKey: paraKey, start: off, end: off + len };
+  } catch (e) { return null; }
+}
+function applyLocator(it, start, end, cache, spanLength) {
+  const loc = rangeLocator(start, end, cache, spanLength);
+  it.paraKey = loc ? loc.paraKey : -1;
+  if (loc) { it.start = loc.start; it.end = loc.end; }
+}
+// 把视图光标摆到 .uno:Accept/RejectTrackedChange 能命中的位置。摆法**跟着当前
+// 的修订显示模式走**（真机探针逐一试出来的，别凭直觉改）：
+//   - 插入型：文本一直在正文流里，光标必须**跨选**整个区间才命中；
+//   - 删除型 + 页边模式：删除文本被移出正文流，必须**塌陷**到区间起点，跨选
+//     反而落进那段隐藏文本、dispatch 打空；
+//   - 删除型 + 内联模式（默认，dev-board#368）：删除文本就在正文流里带删除线，
+//     和插入型一样必须跨选——内联态下沿用塌陷会「引擎未命中该条」（真机实证：
+//     resolve_revision 返回失败、redline 条数不减）。
+// 摆错不会报错——dispatch 静默不生效，甚至凭空多出一条空插入修订，所以调用
+// 方（resolve_revision / resolve_revisions）用条数与原生修订层变化复核。
+function selectRedlineRange(r, forDispatch) {
+  try {
+    const rs = r.getPropertyValue('RedlineStart'), re = r.getPropertyValue('RedlineEnd');
+    if (!rs || !re) return false;
+    let isDelete = false;
+    try { isDelete = String(r.getPropertyValue('RedlineType')) === 'Delete'; } catch (e) {}
+    const collapse = isDelete && (readShowChanges() === false || (forDispatch && readShowChangesInMargin() === true));
+    const vc = ctrl.getViewCursor();
+    vc.gotoRange(rs, false);
+    if (!collapse) vc.gotoRange(re, true);
+    return true;
+  } catch (e) { return false; }
+}
+// A redline can contain several authors' revision layers. Rejecting a deletion
+// over an earlier insertion restores the text and exposes that insertion, but
+// keeps both the redline's identity and the total count. Compare native layer
+// metadata as well as the count; never dispatch twice to make the count fall.
+function redlineLayerState(r) {
+  try {
+    return JSON.stringify(['RedlineType', 'RedlineAuthor', 'RedlineDateTime', 'RedlineComment', 'RedlineSuccessorData']
+      .map(function (name) { return r.getPropertyValue(name); }));
+  } catch (e) { return null; }
+}
+function redlineWasResolved(r, beforeCount, afterCount, beforeLayer) {
+  if (afterCount < beforeCount) return true;
+  const afterLayer = redlineLayerState(r);
+  return beforeLayer !== null && afterLayer !== null && beforeLayer !== afterLayer;
+}
+// ---- Resolution by native redline id (engines with AwdReviewGeometry) -----
+// In the review gutter deletions leave the body flow: two touching deletions
+// Writer does not group (other author or minute) collapse to one body position,
+// and the cursor path above can resolve the neighbour. .uno:AcceptTrackedChange
+// and .uno:RejectTrackedChange take an SfxUInt32Item named like the command,
+// matched against SwRangeRedline::GetId() (sw/source/uibase/uiview/view2.cxx).
+// Only AwdReviewGeometry exposes that id (revisions[].index -> id);
+// RedlineIdentifier is a pointer-derived string, not the id.
+// The cursor is still placed on the target: outside LibreOfficeKit the slot is
+// disabled unless the cursor is on a redline (uiview/viewstat.cxx) and a
+// disabled slot is dropped silently. The id then picks the redline. An unknown
+// id falls back to the cursor, so only ids read in this command are sent.
+function redlineTop(type, author, date, comment) {
+  const time = date ? Date.UTC(date.Year, date.Month - 1, date.Day, date.Hours, date.Minutes, date.Seconds)
+    + (Number(date.NanoSeconds) || 0) / 1e6 : NaN;
+  return { type: String(type), author: String(author), time: time, comment: String(comment || '') };
+}
+// All redlines in enumeration order. `layer` is exactly redlineLayerState();
+// top/below are the grouping fields of the first two native layers.
+function redlineSnapshot() {
+  const list = [], byId = new Map();
+  const en = xModel.getRedlines().createEnumeration();
+  while (en.hasMoreElements()) {
+    const r = en.nextElement();
+    const v = ['RedlineType', 'RedlineAuthor', 'RedlineDateTime', 'RedlineComment', 'RedlineSuccessorData']
+      .map(function (name) { return r.getPropertyValue(name); });
+    const next = {};
+    (Array.isArray(v[4]) ? v[4] : []).forEach(function (pv) { if (pv && pv.Name) next[pv.Name] = zetajs.fromAny(pv.Value); });
+    const s = { redline: r, identifier: String(r.getPropertyValue('RedlineIdentifier')), layer: JSON.stringify(v),
+      successor: JSON.stringify(v[4]), top: redlineTop(v[0], v[1], v[2], v[3]),
+      below: next.RedlineType == null ? null : redlineTop(next.RedlineType, next.RedlineAuthor, next.RedlineDateTime, next.RedlineComment) };
+    list.push(s);
+    byId.set(s.identifier, byId.has(s.identifier) ? null : s);
+  }
+  return { list: list, byId: byId };
+}
+// SwRedlineData::CanCombineForAcceptReject: same author, type and comment, at
+// most one minute apart (sw/source/core/doc/docredln.cxx).
+function sameRedlineFamily(a, b) {
+  return !!a && !!b && a.type === b.type && a.author === b.author && a.comment === b.comment
+    && Math.abs(a.time - b.time) <= 60000;
+}
+// Besides the target, Writer itself resolves the connected area of touching
+// redlines that combine with it, also one layer down (getConnectedArea), and
+// CompressRedlines() then merges a now-adjacent identical redline into its
+// predecessor (DocumentRedlineManager.cxx). Any other change to a redline that
+// existed before the dispatch means a wrong resolution: returns its identifier.
+function unexplainedRedlineChange(before, after, k, exempt) {
+  const changed = function (s) { const a = after.byId.get(s.identifier); return !a || a.layer !== s.layer; };
+  const target = before.list[k];
+  for (let i = 0; i < before.list.length; i++) {
+    const s = before.list[i];
+    if (i === k || exempt.has(s.identifier) || !changed(s)) continue;
+    let run = true;
+    for (let j = Math.min(i, k) + 1; j < Math.max(i, k); j++) if (!changed(before.list[j])) { run = false; break; }
+    if (run && (sameRedlineFamily(s.top, target.top) || sameRedlineFamily(s.below, target.top))) continue;
+    if (!after.byId.get(s.identifier)) {
+      let j = i - 1;
+      while (j >= 0 && !after.byId.get(before.list[j].identifier)) j--;
+      const into = j >= 0 ? after.byId.get(before.list[j].identifier) : null;
+      if (into && sameRedlineFamily(into.top, s.top) && into.successor === s.successor) continue;
+    }
+    return s.identifier;
+  }
+  return null;
+}
+// Native ids of the target enumeration indices, read in the same synchronous
+// command as `snapshot` (after matchRevisionSnapshot remapped the indices).
+// Each target must still carry an expected RedlineIdentifier; null otherwise.
+function nativeRedlineTargets(snapshot, indices, expected) {
+  const geometry = JSON.parse(ctrl.getPropertyValue('AwdReviewGeometry'));
+  if (!geometry || geometry.version !== 1 || !Array.isArray(geometry.revisions)) return null;
+  const ids = new Map(geometry.revisions.map(function (r) { return [r.index, r.id]; }));
+  const targets = [];
+  for (const raw of indices) {
+    const index = Number(raw), s = snapshot.list[index], id = ids.get(index);
+    if (!s || snapshot.byId.get(s.identifier) !== s || (expected && !expected.has(s.identifier))
+      || !Number.isInteger(id) || id < 0 || id > 0xFFFFFFFF) return null;
+    targets.push({ index: index, identifier: s.identifier, layer: s.layer, id: id });
+  }
+  return new Set(targets.map(function (t) { return t.identifier; })).size === targets.length ? targets : null;
+}
+function expectedRedlineIdentifiers(p) {
+  return p && Array.isArray(p.expectedRevisions) ? new Set(p.expectedRevisions.map(function (r) { return r && r.identifier; })) : null;
+}
+// Dispatch each target once by its native id and judge that target itself:
+// its identifier is gone or its layer changed (one reject of a deletion over an
+// older insertion only pops the top layer). Stops at the first failure and
+// never retries. Returns null on engines without the geometry contract, whose
+// callers keep the cursor path unchanged.
+function resolveRedlinesByNativeId(indices, expected, action) {
+  if (!isWriterDoc() || !supportsReviewGeometry()) return null;
+  let current, targets;
+  try { current = redlineSnapshot(); targets = nativeRedlineTargets(current, indices, expected); }
+  catch (e) { return { error: errStr(e) }; }
+  const missing = indices.findIndex(function (i) { return !current.list[Number(i)]; });
+  if (missing >= 0) return { error: 'no revision at index ' + indices[missing] };
+  if (!targets) return { error: '修订已变化，请刷新后重试' };
+  const command = action === 'accept' ? 'AcceptTrackedChange' : 'RejectTrackedChange';
+  const dispatcher = css.frame.DispatchHelper.create(context);
+  const results = [];
+  let stopped = false;
+  targets.sort(function (a, b) { return b.index - a.index; });
+  for (const t of targets) {
+    if (stopped) { results.push({ index: t.index, success: false }); continue; }
+    const k = current.list.findIndex(function (s) { return s.identifier === t.identifier; });
+    // Resolved together with an earlier target of this command.
+    if (k < 0 || current.list[k].layer !== t.layer) { results.push({ index: t.index, success: true }); continue; }
+    let ok = false;
+    try {
+      if (selectRedlineRange(current.list[k].redline, true)) {
+        dispatcher.executeDispatch(ctrl.getFrame(), '.uno:' + command, '', 0, [mkProp(command, uint32Any(t.id))]);
+        const after = redlineSnapshot(), mine = after.byId.get(t.identifier);
+        const others = new Set(targets.map(function (x) { return x.identifier; }));
+        others.delete(t.identifier);
+        ok = (!mine || mine.layer !== t.layer) && !unexplainedRedlineChange(current, after, k, others);
+        current = after;
+      }
+    } catch (e) { ok = false; }
+    results.push({ index: t.index, success: ok });
+    if (!ok) stopped = true;
+  }
+  return { results: results, remaining: current.list.length };
+}
+function countComments() {
+  let n = 0;
+  try {
+    const en = xModel.getTextFields().createEnumeration();
+    while (en.hasMoreElements()) {
+      const f = en.nextElement();
+      if (f.supportsService && f.supportsService('com.sun.star.text.textfield.Annotation')) n++;
+    }
+  } catch (e) {}
+  return n;
+}
+// ref 接受两种形状：数字 index（枚举顺序，ReviewPanel 既有用法）或字符串 id
+// （批注的 Name，或尚无 Name 时的原生 ParaId——index 在任何一条批注被
+// 处置/删除后就会整体前移，同一会话里两次调用之间不可靠）。
+function commentAt(ref) {
+  if (typeof ref === 'string' && ref !== '') {
+    try {
+      const en = xModel.getTextFields().createEnumeration();
+      let match = null;
+      while (en.hasMoreElements()) {
+        const f = en.nextElement();
+        if (!(f.supportsService && f.supportsService('com.sun.star.text.textfield.Annotation'))) continue;
+        if (commentIdOf(f) === ref) {
+          if (match) return null; // Ambiguous IDs must never target the wrong comment.
+          match = f;
+        }
+      }
+      return match;
+    } catch (e) {}
+    return null;
+  }
+  const want = Number(ref);
+  if (!(want >= 0)) return null;
+  try {
+    const en = xModel.getTextFields().createEnumeration();
+    let i = 0;
+    while (en.hasMoreElements()) {
+      const f = en.nextElement();
+      if (!(f.supportsService && f.supportsService('com.sun.star.text.textfield.Annotation'))) continue;
+      if (i++ === want) return f;
+    }
+  } catch (e) {}
+  return null;
+}
+function commentIdOf(f) {
+  try { const name = String(f.getPropertyValue('Name') || ''); if (name) return name; } catch (e) {}
+  // Writer ParaId is the native PostItId in hex, including freshly inserted
+  // point comments whose Name is still empty. Reading it does not edit the field.
+  try {
+    const id = String(f.getPropertyValue('ParaId') || '');
+    if (/^[0-9a-f]+$/i.test(id)) return 'postit:' + parseInt(id, 16);
+  } catch (e) {}
+  return '';
+}
+// Insert text at the view cursor, honoring '\n' as a PARAGRAPH BREAK.
+// XText.insertString does NOT split paragraphs on '\n' (verified against the
+// real engine: a multi-line insert landed as ONE paragraph), so multi-paragraph
+// inserts must interleave insertControlCharacter(PARAGRAPH_BREAK).
+// 写入必须走**光标自己所属的 XText**（vc.getText()），不是 xModel.getText()。
+// 正文 XText 只接受属于自己的区间：光标在表格单元格（或页眉/脚注等别的 story）
+// 里时，body.insertString(vc,…) 抛 RuntimeException，IME 提交与粘贴就整条静默
+// 失败——「表格里打不进字」的病灶（dev-board#627）。insertInlineStyled 一直是
+// 这么写的，所以带 markdown 标记的插入在单元格里反而是好的。
+function insertTextAtCursor(vc, text) {
+  const xText = vc.getText();
+  const parts = String(text).split('\n');
+  for (let i = 0; i < parts.length; i++) {
+    if (i > 0) xText.insertControlCharacter(vc, css.text.ControlCharacter.PARAGRAPH_BREAK, false);
+    if (parts[i]) xText.insertString(vc, parts[i], false);
+  }
+}
+
+// 用户手打覆盖选区（Word 语义）：选中一段再敲字 = 选区被删、新字落在原位置。
+// 旧实现一律 collapseToEnd 再插，选中的字原样留着、新字跟在后面（用户实测反馈）。
+// 只在 replace=true（IME 覆盖层的手打 / 回车 / Tab）时生效；AI 管线不带这个标记，
+// 「先选中再 insert_at_cursor = 插在后面」的契约不变。
+// 删除走 vc.setString('')：修订开着时记成删除修订（被删的字仍在正文流里，光标
+// collapseToEnd 落到删除段之后再插），关着时真删——与 replace_selection 的非最小
+// 修订分支同一条路。跨表格这类 setString 抛异常的选区退回引擎原生 .uno:Delete。
+// 删 + 插包在同一个撤销组里：一次 Cmd+Z 把选区原样找回来，而不是先撤掉新字、
+// 再撤一次才恢复被删的字。
+function typeOverSelection(vc, replace, title, insert) {
+  let sel = '';
+  if (replace) { try { sel = vc.getString() || ''; } catch (e) { sel = ''; } }
+  if (!sel) return insert();
+  let um = null;
+  try { um = xModel.getUndoManager(); um.enterUndoContext(title || '输入'); } catch (e) { um = null; }
+  try {
+    try { vc.setString(''); } catch (e) { dispatchUno('.uno:Delete'); }
+    vc.collapseToEnd();
+    const out = insert();
+    if (out && typeof out === 'object') out.replacedSelection = sel.length;
+    return out;
+  } finally {
+    if (um) { try { um.leaveUndoContext(); } catch (e) {} }
+  }
+}
+
+// ---- 最小修订颗粒度 (minimal redline granularity) ---------------------------
+// range.setString(newText) under RecordChanges marks the WHOLE range deleted
+// and the WHOLE new text inserted — so a one-char edit in a clause reads as
+// "删整段、加整段". minimalEdits computes a char-level minimal edit script
+// (common prefix/suffix trim + bounded LCS) and applyMinimalRedline applies
+// ONLY the differing runs, so the redline the user reviews is 删"爱"加"恨",
+// not 删"我爱你"加"我恨你".
+// Returns [{start, delLen, insText}] in OLD-string coordinates, ordered
+// RIGHT-TO-LEFT (descending start) so applying them in order never shifts the
+// offsets of the edits still pending.
+//
+// 颗粒度契约（dev-board#365）：按字符（JS code unit）diff，中文不分词——分词/按行
+// 都会把「三十日→六十日」退化成整句。diff 用 Myers O((N+M)·D)，代价只随差异步数 D
+// 增长，段落再长、只改两个字也只产出两条片段（旧实现是 500x500 的 LCS DP，超过
+// 上限就整段一块替换，长条款首尾各改一字会呈现为「整段删除重写」——就是 #365 的病灶）。
+// 差异步数上限：Myers 的回溯快照约 D² 个整数。D 超过它说明整段已面目全非（几千字
+// 的改写），退化成「掐掉公共前后缀后整块替换」——那本来就是重写。
+const MINIMAL_EDITS_MAX_D = 2000;
+// Myers 差异（字符级）：返回 [{start, delLen, insText}]（a 的坐标、降序），相邻的
+// 删/插已并成一条替换型片段；差异步数超过 maxD 时返回 null。
+function myersEdits(a, b, maxD) {
+  const N = a.length, M = b.length;
+  const limit = Math.min(N + M, maxD);
+  const off = limit + 1;
+  const v = new Int32Array(2 * limit + 3);
+  const snaps = []; // 每一步 d 的 v 快照（k 从 -d-1 到 d+1，下标 = k + d + 1），回溯用
+  let D = -1;
+  v[off + 1] = 0;
+  for (let d = 0; d <= limit && D < 0; d++) {
+    for (let k = -d; k <= d; k += 2) {
+      let x;
+      if (k === -d || (k !== d && v[off + k - 1] < v[off + k + 1])) x = v[off + k + 1];
+      else x = v[off + k - 1] + 1;
+      let y = x - k;
+      while (x < N && y < M && a.charCodeAt(x) === b.charCodeAt(y)) { x++; y++; }
+      v[off + k] = x;
+      if (x >= N && y >= M) { D = d; break; }
+    }
+    snaps.push(v.slice(off - d - 1, off + d + 2));
+  }
+  if (D < 0) return null;
+  // 回溯：从终点沿快照往回走，产出降序的单字操作，顺手把相邻操作并成片段。
+  const edits = [];
+  let cur = null;
+  const pushDel = function (at) {
+    if (cur && cur.start === at + 1) { cur.start = at; cur.delLen++; }
+    else { if (cur) edits.push(cur); cur = { start: at, delLen: 1, insText: '' }; }
+  };
+  const pushIns = function (at, ch) {
+    if (cur && cur.start === at) cur.insText = ch + cur.insText;
+    else { if (cur) edits.push(cur); cur = { start: at, delLen: 0, insText: ch }; }
+  };
+  let x = N, y = M;
+  for (let d = D; d > 0; d--) {
+    const vp = snaps[d - 1], po = d; // 快照 d-1 的下标 = k + (d-1) + 1 = k + d
+    const k = x - y;
+    let prevK;
+    if (k === -d || (k !== d && vp[po + k - 1] < vp[po + k + 1])) prevK = k + 1; else prevK = k - 1;
+    const prevX = vp[po + prevK], prevY = prevX - prevK;
+    const down = prevK === k + 1; // down = 插入 b[prevY]；right = 删除 a[prevX]
+    const midX = down ? prevX : prevX + 1;
+    while (x > midX) { x--; y--; } // 对角线：相同字，不产出操作
+    if (down) pushIns(prevX, b.charAt(prevY)); else pushDel(prevX);
+    x = prevX; y = prevY;
+  }
+  if (cur) edits.push(cur);
+  return edits;
+}
+function minimalEdits(oldStr, newStr) {
+  const oLen = oldStr.length, nLen = newStr.length;
+  let p = 0;
+  const maxP = Math.min(oLen, nLen);
+  while (p < maxP && oldStr.charCodeAt(p) === newStr.charCodeAt(p)) p++;
+  let s = 0;
+  while (s < maxP - p && oldStr.charCodeAt(oLen - 1 - s) === newStr.charCodeAt(nLen - 1 - s)) s++;
+  const oMid = oldStr.slice(p, oLen - s), nMid = newStr.slice(p, nLen - s);
+  if (!oMid && !nMid) return [];
+  // 纯插入/纯删除本身就是一条片段；差异步数超上限（面目全非）也退化成整块替换。
+  const edits = (!oMid || !nMid) ? null : myersEdits(oMid, nMid, MINIMAL_EDITS_MAX_D);
+  if (!edits) return [{ start: p, delLen: oMid.length, insText: nMid }];
+  for (let k = 0; k < edits.length; k++) edits[k].start += p;
+  // Cleanup: a SINGLE stray equal char sandwiched between two edits (LCS 在中文
+  // 里常捞到巧合的"的/、"之类) makes choppy, confusing redlines — fold it into
+  // one combined edit. edits is descending; [k+1] is the LEFT neighbor.
+  for (let k = 0; k + 1 < edits.length; ) {
+    const right = edits[k], left = edits[k + 1];
+    const gap = right.start - (left.start + left.delLen);
+    if (gap >= 0 && gap <= 1) {
+      left.insText = left.insText + oldStr.slice(left.start + left.delLen, right.start) + right.insText;
+      left.delLen = left.delLen + gap + right.delLen;
+      edits.splice(k, 1);
+    } else k++;
+  }
+  return edits;
+}
+// —— 最小修订比对（dev-board#1126 需求一）的纯判据 ——
+// 原生 CompareDocuments 即使 Mode=ByChar 也会把「合成服务协议 → 合成采购协议」
+// 这类替换产出成同一起点的一整条 Delete + 一整条 Insert。判据函数只回答一件事：
+// 这对删/插文字有没有"确实没动的公共部分"值得保留——有则返回字符级编辑脚本
+// （refineComparisonRedlines 据此重写），没有（全删全插、面目全非、纯增删）返回
+// null，保持引擎原样。顶层纯函数，单测经 _workerFns.mjs 直接抠出。
+function comparisonRefinePlan(oldText, newText) {
+  const o = String(oldText == null ? '' : oldText), n = String(newText == null ? '' : newText);
+  if (!o || !n || o === n) return null;
+  if (/[\r\n]/.test(o) || /[\r\n]/.test(n)) return null; // 跨段改动不是这里的活
+  const edits = minimalEdits(o, n);
+  if (!edits.length) return null;
+  let deleted = 0;
+  for (let k = 0; k < edits.length; k++) deleted += edits[k].delLen;
+  // 没有保留任何旧字符（含公共前后缀为空的整块重写）：最小粒度就是整删整插本身。
+  if (deleted >= o.length) return null;
+  return edits;
+}
+// find_replace 全部替换的分流判据：原生 replaceAll 一次只能把「掐掉公共前后缀的中段」
+// 整块替换；差异不止一块（甲方→乙方 与 三日→五日 两处）时整块替换会把两处之间没改的
+// 字一起删了重打，必须走逐命中的 applyMinimalRedline 路径。
+function replaceAllIsSingleBlock(findText, replaceText) {
+  return minimalEdits(String(findText == null ? '' : findText), String(replaceText == null ? '' : replaceText)).length <= 1;
+}
+// Apply newText onto range as char-granular tracked edits. Returns true when
+// handled (caller must NOT also setString), false when the caller should fall
+// back to its existing whole-range path. Callers ensure RecordChanges is on.
+function applyMinimalRedline(range, newText) {
+  let oldText;
+  try { oldText = String(range.getString()); } catch (e) { return false; }
+  const txt = String(newText == null ? '' : newText);
+  // Fallbacks: paragraph breaks (getString/goRight 对段界的计数口径不一) and
+  // surrogate pairs (goRight steps by engine chars, not JS code units).
+  if (/[\r\n\uD800-\uDFFF]/.test(oldText) || /[\r\n\uD800-\uDFFF]/.test(txt)) return false;
+  if (oldText === txt) return true; // 无差异：不留任何修订痕迹
+  if (!oldText.length) return false; // pure insert — caller's path is fine
+  const edits = minimalEdits(oldText, txt);
+  if (edits.length === 1 && edits[0].delLen === oldText.length && edits[0].start === 0) return false; // 全量替换，没有更细的
+  let applied = 0;
+  try {
+    const t = range.getText();
+    // Collapsed at range start; edits run right-to-left, so text left of each
+    // remaining edit — including this position — never moves.
+    const startCur = t.createTextCursorByRange(range.getStart());
+    for (let k = 0; k < edits.length; k++) {
+      const e = edits[k];
+      const cur = t.createTextCursorByRange(startCur.getStart());
+      if (e.start > 0 && !cur.goRight(e.start, false)) throw new Error('goRight(' + e.start + ') failed');
+      if (e.delLen > 0) {
+        if (!cur.goRight(e.delLen, true)) throw new Error('goRight select(' + e.delLen + ') failed');
+        cur.setString(e.insText); // 删差异段 + 插新段，一条替换型修订
+      } else if (e.insText) {
+        t.insertString(cur, e.insText, false);
+      }
+      applied++;
+    }
+    return true;
+  } catch (e) {
+    log('applyMinimalRedline: ' + errStr(e) + ' (applied ' + applied + '/' + edits.length + ')');
+    // Nothing applied yet -> safe to let the caller setString the whole range.
+    // Partially applied -> falling back would DOUBLE-EDIT; report handled and
+    // let the caller's paragraphAfterEdit verification loop catch any residue.
+    return applied > 0;
+  }
+}
+
+// ---- 最小修订比对（dev-board#1126 需求一）-----------------------------------
+// 原生 CompareDocuments 的产物里，同一起点的「整段 Delete + 整段 Insert」是替换的
+// 粗粒度形态。refineComparisonRedlines 把这些对子重写成字符级修订：
+//   ① 快照全部修订，按「作者 = 比较作者 + Delete/Insert + 起点重合」配对，用
+//      comparisonRefinePlan 判定值得重写；
+//   ② 从文档末尾往前逐对处理：先 Reject 插入（去掉新文字），再 Reject 删除（恢复
+//      旧文字）——两条同位相连的修订可能被引擎一次连带处理，每次都重新枚举核对；
+//   ③ 在恢复出来的旧文字上开 RecordChanges、以比较作者署名走 applyMinimalRedline，
+//      只留删「服务」插「采购」这样的最小片段；RecordChanges 复原为比较后的关态。
+// 任何一步校验不过（正文没恢复成旧文字、reject 没让条数下降）立即停手，保留原生
+// 产物——修不出最小粒度也绝不能把文档改坏。返回成功重写的对数。
+function comparisonRedlineTextOf(r, isDelete) {
+  try {
+    if (isDelete) {
+      const hiddenText = r.getPropertyValue('RedlineText');
+      if (hiddenText) return String(hiddenText.getString() || '');
+    }
+    const rs = r.getPropertyValue('RedlineStart'), re = r.getPropertyValue('RedlineEnd');
+    if (rs && re) {
+      const rc = rs.getText().createTextCursorByRange(rs);
+      rc.gotoRange(re, true);
+      return String(rc.getString() || '');
+    }
+  } catch (e) {}
+  return '';
+}
+function rejectRedlineBySelection(r) {
+  try {
+    const before = countRedlines();
+    if (!selectRedlineRange(r, true)) return false;
+    css.frame.DispatchHelper.create(context).executeDispatch(ctrl.getFrame(), '.uno:RejectTrackedChange', '', 0, []);
+    return countRedlines() < before;
+  } catch (e) { return false; }
+}
+// 拒掉插入后重新枚举：返回仍留在锚点处的同作者同文字删除修订（两条同位相连时
+// 引擎可能已把它连带拒掉），没有则 null。绝不用悬空的旧 redline 对象再派发。
+function remainingDeleteAtAnchor(author, oldText, anchor) {
+  try {
+    const en = xModel.getRedlines().createEnumeration();
+    const t = anchor.getText();
+    while (en.hasMoreElements()) {
+      const r = en.nextElement();
+      let type = '', a = '';
+      try { type = String(r.getPropertyValue('RedlineType')); } catch (e) {}
+      try { a = String(r.getPropertyValue('RedlineAuthor')); } catch (e) {}
+      if (type !== 'Delete' || a !== author) continue;
+      const rs = r.getPropertyValue('RedlineStart');
+      if (!rs) continue;
+      let near = false;
+      try { near = t.compareRegionStarts(rs, anchor) === 0; } catch (e) { near = false; }
+      if (near && comparisonRedlineTextOf(r, true) === oldText) return r;
+    }
+  } catch (e) {}
+  return null;
+}
+function refineComparisonRedlines(authorName, maxPairs) {
+  const author = String(authorName == null ? '' : authorName);
+  const cap = Math.max(0, Math.min(500, Number(maxPairs) || 200));
+  let refined = 0;
+  for (let round = 0; round < cap; round++) {
+    const dels = [], ins = [];
+    try {
+      const en = xModel.getRedlines().createEnumeration();
+      while (en.hasMoreElements()) {
+        const r = en.nextElement();
+        let type = '', a = '';
+        try { type = String(r.getPropertyValue('RedlineType')); } catch (e) {}
+        try { a = String(r.getPropertyValue('RedlineAuthor')); } catch (e) {}
+        if (a !== author) continue;
+        const rs = r.getPropertyValue('RedlineStart');
+        if (!rs) continue;
+        const text = comparisonRedlineTextOf(r, type === 'Delete');
+        if (!text) continue;
+        if (type === 'Delete') dels.push({ redline: r, start: rs, text: text });
+        else if (type === 'Insert') ins.push({ redline: r, start: rs, text: text });
+      }
+    } catch (e) { break; }
+    // 配对 + 判定；挑文档里起点最靠后的一对先做（重写会移动后方位置）。
+    const pairs = [];
+    for (let i = 0; i < ins.length; i++) {
+      for (let d = 0; d < dels.length; d++) {
+        let same = false;
+        try { same = ins[i].start.getText().compareRegionStarts(ins[i].start, dels[d].start) === 0; } catch (e) { same = false; }
+        if (!same) continue;
+        const plan = comparisonRefinePlan(dels[d].text, ins[i].text);
+        if (plan) pairs.push({ insItem: ins[i], delItem: dels[d] });
+      }
+    }
+    if (!pairs.length) break;
+    let best = pairs[0];
+    for (let k = 1; k < pairs.length; k++) {
+      let later = false;
+      try { later = best.insItem.start.getText().compareRegionStarts(pairs[k].insItem.start, best.insItem.start) > 0; } catch (e) { later = false; }
+      if (later) best = pairs[k];
+    }
+    const oldText = best.delItem.text, newText = best.insItem.text;
+    const anchor = best.delItem.start; // XTextRange 随 reject 自动跟随恢复出来的旧文字
+    if (!rejectRedlineBySelection(best.insItem.redline)) break;
+    const pendingDelete = remainingDeleteAtAnchor(author, oldText, anchor);
+    if (pendingDelete && !rejectRedlineBySelection(pendingDelete)) break;
+    // 校验：正文必须恢复成旧文字，否则不动手。
+    let restored = null;
+    try {
+      const t = anchor.getText();
+      restored = t.createTextCursorByRange(anchor);
+      if (!restored.goRight(oldText.length, true) || String(restored.getString() || '') !== oldText) restored = null;
+    } catch (e) { restored = null; }
+    if (!restored) { log('refineComparisonRedlines: restored text mismatch, keeping native redlines'); break; }
+    try { xModel.setPropertyValue('RecordChanges', true); } catch (e) { break; }
+    let applied = false;
+    try { setRedlineAuthor(author); applied = applyMinimalRedline(restored, newText); } catch (e) { applied = false; }
+    if (!applied) { try { restored.setString(newText); } catch (e) { break; } } // 退化成整块替换修订（与原生形态一致）
+    try { xModel.setPropertyValue('RecordChanges', false); } catch (e) {}
+    refined++;
+  }
+  return refined;
+}
+
+// Fire a Writer UI command (.uno:*) on the current frame — the engine-native
+// path for key-equivalent actions (Backspace/Delete), so revision-mode (redline)
+// semantics are the engine's own. zetajs marshalling: create() takes context as
+// first arg; the args sequence must be a plain Array (PR#107 rules).
+function dispatchUno(url) {
+  css.frame.DispatchHelper.create(context).executeDispatch(ctrl.getFrame(), url, '', 0, []);
+}
+
+// 顶层窗口钉死全屏。画布里只该有正文——不是全屏的 VCL 顶层窗口会画出自己的标题栏
+// （「未命名 1 — ZetaOffice Writer」）和边框，正文缩在那个小窗里，用户以为编辑器坏了。
+// boot 与换文档（retarget）各调一次，这是全屏的唯一出处。
+//
+// 顺带记下 v0.44.1 真机走查 D1 的三条真机事实（2026-09-15，24.2.8-zhcn-r5，无头探针）：
+//   ① 退出全屏是 `.uno:Escape` 干的，键盘一概不碰也会发生：单独派发一条就够。
+//   ② 而且**异步生效**——派发它的那条命令里读回 FullScreen 仍是 true、几何还是
+//      800x576，下一条命令（或一轮 20ms 的 macrotask）才看到 785x691 + 标志位 false。
+//      所以事后补 ensureFullScreen() 救不回来（只找回标志位，尺寸仍是 785x691），
+//      唯一的正解是根本不派发它——见 deselect()。
+//   ③ **DOM 按键按落点分两种**：落在覆盖层 `<input>` 上的引擎不管（真 Esc 连按三次，
+//      几何与选区都一动不动——打字不会双份进文档也是同一个原因）；落在画布上的引擎
+//      收得到（Writer 自己的原生右键弹窗只有那条路关得掉）。Qt 的监听在**冒泡**阶段，
+//      宿主一 stopPropagation 它就收不到了。
+function ensureFullScreen() {
+  try { ctrl.getFrame().getContainerWindow().FullScreen = true; } catch (e) {}
+}
+
+// 宿主发起的「取消选区」（工具栏 / 菜单，非键盘路径）。**不派发 `.uno:Escape`**
+// （v0.44.1 真机走查 D1 真机实证）：那条槽会把全屏帧退出全屏，而且是异步生效的
+// ——同一条命令里读回 FullScreen 还是 true、几何还没变，下一条命令才看到 785x691
+// 的带标题栏窗口，事后补也补不准（`FullScreen = true` 只找回标志位；setPosSize
+// 自己又会退出全屏；`.uno:FullScreen` 是开关语义）。视图光标自己塌陷同样取消选区
+// （探针：hadSelection true → false），几何一动不动，成本一次 UNO 调用。
+//
+// 用户按的那个 Esc 分两路：落在画布上的交给引擎自己的按键处理（关掉 Writer 的原生
+// 右键弹窗独此一路，也不碰全屏），落在覆盖层输入框上的（引擎不管那种）才经这条
+// 命令取消选区。见 zetaOfficeImeOverlay.js 里 Esc 那一段的说明。
+function deselect() {
+  try {
+    ctrl.getViewCursor().collapseToStart();
+    return { success: true, name: 'escape' };
+  } catch (e) { return { success: false, name: 'escape', message: '取消选区失败: ' + errStr(e) }; }
+}
+
+// 缩放上下限。LO 自身允许 20%..600%，越界写进去引擎会自己夹，但夹之前会先按
+// 非法值重排一次版；在 JS 侧先夹住，捏合手势连发时不至于抖。
+const ZOOM_MIN = 20, ZOOM_MAX = 600;
+
+// LO 自己的 chrome（自建工具栏要关掉的那些）。singlemode-* 是选中表格/图片时
+// 自动冒出来的上下文工具栏——逐项关的时候必须连它们一起关，否则一选中表格就
+// 又钻出一条老气的工具栏。真机枚举所得（LayoutManager.getElements）。
+//
+// **真正会冒出来的是 *objectbar 这一族，不是 singlemode-*（v0.44.1 真机走查 D2 真机实证，
+// 2026-09-15，24.2.8-zhcn-r5）**：boot 时 getElements 只有 standardbar / textobjectbar /
+// menubar / statusbar 是可见的，11 条 singlemode-* 早已创建且不可见（所以 hideElement
+// 对它们有效，e2e 一直是绿的）；而光标一进表格单元格，引擎当场创建并显示
+// `private:resource/toolbar/tableobjectbar`——这个名字过去根本不在表里，谁都没藏过它。
+// 「定位」类跳转会拉起同族的 navigationobjectbar（箭头 + 对象类型列表那条）。
+// 下面这一组就是经典 Writer 的上下文工具栏全名，逐个 createElement 过、引擎都认。
+const CHROME_URLS = {
+  menubar: 'private:resource/menubar/menubar',
+  statusbar: 'private:resource/statusbar/statusbar',
+  toolbars: [
+    'private:resource/toolbar/standardbar',
+    'private:resource/toolbar/textobjectbar',
+    'private:resource/toolbar/findbar',
+    'private:resource/toolbar/singlemode-ole',
+    'private:resource/toolbar/singlemode-draw',
+    'private:resource/toolbar/singlemode-form',
+    'private:resource/toolbar/singlemode-text',
+    'private:resource/toolbar/singlemode-frame',
+    'private:resource/toolbar/singlemode-media',
+    'private:resource/toolbar/singlemode-table',
+    'private:resource/toolbar/singlemode-graphic',
+    'private:resource/toolbar/singlemode-drawtext',
+    'private:resource/toolbar/singlemode-annotation',
+    'private:resource/toolbar/singlemode-printpreview',
+    // 经典上下文工具栏（引擎按上下文自己拉起来的那一族）
+    'private:resource/toolbar/tableobjectbar',
+    'private:resource/toolbar/navigationobjectbar',
+    'private:resource/toolbar/graphicobjectbar',
+    'private:resource/toolbar/frameobjectbar',
+    'private:resource/toolbar/oleobjectbar',
+    'private:resource/toolbar/drawingobjectbar',
+    'private:resource/toolbar/drawtextobjectbar',
+    'private:resource/toolbar/bezierobjectbar',
+    'private:resource/toolbar/numobjectbar',
+    'private:resource/toolbar/previewobjectbar',
+    'private:resource/toolbar/fullscreenbar',
+    'private:resource/toolbar/changes',
+  ],
+};
+
+// 「显示」侧也永远不放出来的工具栏（BUG-33 / v0.49.0 真机 C4 观察 8）：fullscreenbar 就是
+// 左上角那条只有一个「全屏」按钮的浮条——顶层窗口被 ensureFullScreen() 钉成全屏，引擎认为
+// 该给用户一个退出全屏的把手；点它等于把画布退回带标题栏的小窗（见 ensureFullScreen 注释）。
+// 原生菜单逃生开关要的是经典菜单栏和两排工具栏，不是这条。它仍留在 CHROME_URLS 里，藏的一侧照旧 create+hide。
+const CHROME_NEVER_SHOWN = ['private:resource/toolbar/fullscreenbar'];
+
+// NATIVE_MENU_BLOCKED（下面 pruneMenuContainer 要用）定义在「Native comment requests」段里：
+// 派发拦截器也读它，而那一段会被单测整段抠出来单独跑（tests/revision-view/native-comment-interceptor.test.mjs）。
+
+// 菜单条目是 PropertyValue 序列：CommandURL / Label / Type（1 = 分隔线）/ ItemDescriptorContainer（子菜单）。
+function menuEntryProp(entry, name) {
+  const props = zetajs.fromAny(entry) || [];
+  for (let i = 0; i < props.length; i++) {
+    if (props[i] && props[i].Name === name) return zetajs.fromAny(props[i].Value);
+  }
+  return null;
+}
+
+// 递归删掉 NATIVE_MENU_BLOCKED 里的条目；删过东西的那一层顺手收拾开头、结尾与连续的分隔线。返回删掉的条数。
+function pruneMenuContainer(container) {
+  let removed = 0, here = 0;
+  for (let i = container.getCount() - 1; i >= 0; i--) {
+    let entry = null;
+    try { entry = container.getByIndex(i); } catch (e) { continue; }
+    const cmd = String(menuEntryProp(entry, 'CommandURL') || '');
+    if (NATIVE_MENU_BLOCKED.indexOf(cmd) >= 0) {
+      try { container.removeByIndex(i); here++; } catch (e) {}
+      continue;
+    }
+    const sub = menuEntryProp(entry, 'ItemDescriptorContainer');
+    if (sub) { try { removed += pruneMenuContainer(sub); } catch (e) {} }
+  }
+  if (here > 0) {
+    const isSep = (i) => { try { return Number(menuEntryProp(container.getByIndex(i), 'Type')) === 1; } catch (e) { return false; } };
+    for (let i = container.getCount() - 1; i >= 0; i--) {
+      const last = i === container.getCount() - 1;
+      if (isSep(i) && (i === 0 || last || isSep(i + 1))) { try { container.removeByIndex(i); } catch (e) {} }
+    }
+  }
+  return removed + here;
+}
+
+// 裁的是本 frame 菜单栏元素自己的一份 settings（XUIElementSettings），不动模块级 UI 配置。
+// 菜单栏元素还没创建、或引擎不接这套接口时静默返回 0——藏不成顶多多几条菜单，不能把 set_chrome 带崩。
+function pruneNativeMenu(lm) {
+  try {
+    const el = lm.getElement(CHROME_URLS.menubar);
+    if (!el) return 0;
+    const settings = el.getSettings(true);
+    if (!settings) return 0;
+    const n = pruneMenuContainer(settings);
+    if (n > 0) el.setSettings(settings);
+    return n;
+  } catch (e) { return 0; }
+}
+
+// Desktop-keyboard parity set for the IME overlay's ui_command action — an
+// ALLOWLIST map (name -> .uno: slot), deliberately NOT a raw dispatch
+// passthrough. Toggles (bold/italic/underline) are the engine's own, so
+// collapsed-cursor and mixed-selection semantics match the desktop app.
+//
+// 自建工具栏（见 docs/superpowers/specs/2026-08-14-editor-chrome-self-built-toolbar.md）
+// 的按钮同样走这张表。**白名单是安全边界，不许改成任意 .uno: 透传**——那等于把
+// 宿主 DOM 变成引擎的任意命令通道。新增按钮就在这里加一行。
+const UI_COMMANDS = {
+  select_all: '.uno:SelectAll',
+  bold: '.uno:Bold', italic: '.uno:Italic', underline: '.uno:Underline',
+  line_start: '.uno:GoToStartOfLine', line_end: '.uno:GoToEndOfLine',
+  // (2nd sweep) the rest of the desktop key surface — all engine-verified:
+  line_break: '.uno:InsertLinebreak',                     // Shift+Enter 软回车
+  word_left: '.uno:GoToPrevWord', word_right: '.uno:GoToNextWord',
+  word_left_sel: '.uno:WordLeftSel', word_right_sel: '.uno:WordRightSel',
+  line_start_sel: '.uno:StartOfLineSel', line_end_sel: '.uno:EndOfLineSel',
+  // escape（取消选区）**不在这张表里**：它不是一条 .uno: 派发，见 ui_command。
+  page_up: '.uno:PageUp', page_down: '.uno:PageDown',
+  // ---- [P1 自建工具栏] 字符格式 ----
+  strikeout: '.uno:Strikeout',
+  superscript: '.uno:SuperScript', subscript: '.uno:SubScript',
+  // 字号增大/减小**不走 .uno:Grow/.uno:Shrink**——本引擎上这两个槽是哑弹，
+  // 派发不报错也不改 CharHeight（真机实证 12→12）。宿主用 get_ui_state 读到
+  // 当前字号再调 format_selection{sizePt} 自己步进，别留成点了没反应的按钮。
+  clear_formatting: '.uno:ResetAttributes',               // 清除直接格式
+  case_upper: '.uno:ChangeCaseToUpper', case_lower: '.uno:ChangeCaseToLower',
+  // ---- [P1 自建工具栏] 段落格式 ----
+  align_left: '.uno:LeftPara', align_center: '.uno:CenterPara',
+  align_right: '.uno:RightPara', align_justify: '.uno:JustifyPara',
+  indent_more: '.uno:IncrementIndent', indent_less: '.uno:DecrementIndent',
+  bullet_list: '.uno:DefaultBullet', number_list: '.uno:DefaultNumbering',
+  // ---- [P1 自建工具栏] 插入 / 视图 ----
+  page_break: '.uno:InsertPagebreak',
+  formatting_marks: '.uno:ControlCodes',                  // 显示/隐藏格式标记
+};
+
+// Shared verification snapshot returned by mutating commands: where the cursor
+// is now + the paragraph as it reads AFTER the edit ("改完看一眼").
+function verifySnapshot() {
+  invalidateParaIndex(); // 写原语刚改过文档，段落索引不可信（modified 监听器之外再补一刀）
+  try {
+    const vc = ctrl.getViewCursor();
+    return { paragraphAfterEdit: paragraphTextOf(vc), selectedText: vc.getString() };
+  } catch (e) { return {}; }
+}
+
+// ---- 格式原语的取值映射 ------------------------------------------------------
+const HIGHLIGHT_COLORS = { // CharHighlight RGB; 'none' clears (-1)
+  yellow: 0xFFFF00, green: 0x00FF00, cyan: 0x00FFFF, magenta: 0xFF00FF,
+  red: 0xFF0000, blue: 0x0000FF, gray: 0xC0C0C0, none: -1,
+};
+function parseColor(v, names) {
+  if (v == null) return null;
+  const s = String(v).trim().toLowerCase();
+  if (names && s in names) return names[s];
+  if (s === 'auto') return -1;
+  const m = s.match(/^#?([0-9a-f]{6})$/);
+  return m ? parseInt(m[1], 16) : null;
+}
+// Set a char property together with its Asian/Complex siblings so CJK runs
+// (the product's main language) pick up the format too.
+function setCharProp(ps, base, value) {
+  ps.setPropertyValue(base, value);
+  for (const sfx of ['Asian', 'Complex']) {
+    try { ps.setPropertyValue(base + sfx, value); } catch (e) { /* not all props have siblings */ }
+  }
+}
+
+// ---- 标准格式（house style）与 markdown 剥离写入 -----------------------------
+// 用户规范：正文中文楷体_GB2312 / 西文 Arial、段前 0 磅段后 18 磅、行距最小值
+// 16 磅、首行缩进 2 字符、全文两端对齐、黑色；主标题 16 磅加粗居中；其余标题与
+// 正文同款但加粗；表格 Grid 实线 1.5 磅、10 号字、单元格段前后 0.2 行、行距最小
+// 值 12 磅、首行加粗且水平垂直居中、其余行垂直居中水平居左（纯数字居右）；紧跟
+// 表格的第一个段落段前 18 磅。写入文档一律剥离 markdown 标记（#、**、|、- 等），
+// 转成真实格式。引擎是 LO 24.2.8（26.2 才有 MD4C 原生 markdown 导入，搬不动），
+// 所以在 worker 内做行级转换；后端 write_docx 走 flexmark（DocxStyleHelper 对齐
+// 同一套规范），两条生成路径规范一致。
+function ptToMm100(pt) { return Math.round(Number(pt) * 2540 / 72); }
+// UNO 枚举值读回归一化：LO 对部分枚举型属性（ParaAdjust 等）getPropertyValue 返回
+// 裸 short 数字，而 css.* 枚举成员是 embind 枚举对象（带 .value）——恒等比较必须
+// 先归一到数字，否则 set 成功也"读回不等"（e2e 组 14 实锤）。
+function unoEnumVal(v) {
+  if (v != null && typeof v === 'object' && typeof v.value === 'number') return v.value;
+  return v;
+}
+function enumEq(a, b) { return unoEnumVal(a) === unoEnumVal(b); }
+// short 型属性（VertOrient/OutlineLevel 等）必须传带类型的 Any：裸 JS number 会被
+// 编组成 long，严格的 UNO setter（>>= sal_Int16）直接拒绝且被 try 吞掉。
+function shortAny(n) { return new zetajs.Any(zetajs.type.short, Number(n)); }
+// SfxUInt32Item dispatch arguments (the native redline id) likewise get an explicit type.
+function uint32Any(n) { return new zetajs.Any(zetajs.type.unsigned_long, Number(n)); }
+// ---- 样式画像（styleProfile v1，dev-board#111）----------------------------
+// HOUSE 的唯一出处是 backend/src/main/resources/style-profiles/house-default.json：
+// scripts/sync-house-profile.mjs 把它包装成 house-default.js（self.HOUSE_DEFAULT_JSON），
+// 经 Module.uno_scripts 先于本文件载入。set_style_profile 把项目画像 merge 到默认之上
+// 后重算 HOUSE（派生常量表）；流式落字 / 建表 / 全文格式化 / 样式定义都只读 HOUSE。
+// 单位：pt 直接换 1/100mm；chars 按所在块字号折（1 字符 = 1 em）；lines 按字号 x 1.2
+// （与后端 Units.LINE_FACTOR 同一口径）。
+function houseDefaultProfile() {
+  try { if (self.HOUSE_DEFAULT_JSON) return JSON.parse(self.HOUSE_DEFAULT_JSON); } catch (e) {}
+  return null;
+}
+function profileClone(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
+function isPlainObj(v) { return v != null && typeof v === 'object' && !Array.isArray(v); }
+// 同后端 StyleProfile.mergeInto：对象递归合并，headings 数组按 level 合并，其余整体替换。
+function profileMergeInto(target, source) {
+  Object.keys(source || {}).forEach(function (key) {
+    const sv = source[key], tv = target[key];
+    if (key === 'headings' && Array.isArray(sv) && Array.isArray(tv)) {
+      const merged = tv.filter(isPlainObj).map(profileClone);
+      sv.forEach(function (o) {
+        if (!isPlainObj(o)) return;
+        const hit = merged.find(function (m) { return Number(m.level) === Number(o.level); });
+        if (hit) profileMergeInto(hit, o); else merged.push(profileClone(o));
+      });
+      merged.sort(function (a, b) { return (Number(a.level) || 0) - (Number(b.level) || 0); });
+      target[key] = merged;
+    } else if (isPlainObj(sv) && isPlainObj(tv)) {
+      profileMergeInto(tv, sv);
+    } else {
+      target[key] = profileClone(sv);
+    }
+  });
+  return target;
+}
+function profLenPt(len, fontPt) {
+  if (!isPlainObj(len) || len.value == null) return null;
+  const v = Number(len.value);
+  if (!isFinite(v)) return null;
+  switch (len.unit || 'pt') {
+    case 'pt': return v;
+    case 'chars': return v * fontPt;
+    case 'lines': return v * fontPt * 1.2;
+    case 'mm': return v * 72 / 25.4;
+    case 'cm': return v * 720 / 25.4;
+    case 'twips': return v / 20;
+    default: return null;
+  }
+}
+function profMm100(len, fontPt, fallbackMm) {
+  const pt = profLenPt(len, fontPt);
+  return pt == null ? fallbackMm : ptToMm100(pt);
+}
+function profSizePt(block, fallback) {
+  const pt = isPlainObj(block) ? profLenPt(block.size, fallback) : null;
+  return pt == null || pt <= 0 ? fallback : pt;
+}
+function profColorInt(hex, fallback) {
+  if (hex == null) return fallback;
+  const m = String(hex).trim().match(/^#?([0-9a-fA-F]{6})$/);
+  return m ? parseInt(m[1], 16) : fallback;
+}
+// 行距描述（不碰 css.*，HOUSE 在引擎起来前就要算好）：{mode:'min'|'fix'|'prop', mm|pct}
+function profLineSpec(ls, fontPt, fallback) {
+  if (!isPlainObj(ls) || ls.value == null) return fallback;
+  const rule = ls.rule || 'auto';
+  if (rule === 'atLeast' || rule === 'exactly') {
+    const pt = profLenPt({ value: ls.value, unit: ls.unit || 'pt' }, fontPt);
+    if (pt == null || pt <= 0) return fallback;
+    return { mode: rule === 'atLeast' ? 'min' : 'fix', mm: ptToMm100(pt) };
+  }
+  const mult = Number(ls.value);
+  if (!isFinite(mult) || mult <= 0) return fallback;
+  return { mode: 'prop', pct: Math.round(ls.unit === 'percent' ? mult : mult * 100) };
+}
+const PROFILE_ALIGN = { left: 'left', right: 'right', center: 'center', justify: 'justify', both: 'justify', distribute: 'justify', start: 'left', end: 'right' };
+function profAlign(v, fallback) { return (v != null && PROFILE_ALIGN[String(v).toLowerCase()]) || fallback; }
+function profParaSpec(blk, fontPt, dflt) {
+  blk = isPlainObj(blk) ? blk : {};
+  return {
+    align: profAlign(blk.alignment, dflt.align),
+    topMm: profMm100(blk.spaceBefore, fontPt, dflt.topMm),
+    bottomMm: profMm100(blk.spaceAfter, fontPt, dflt.bottomMm),
+    ls: profLineSpec(blk.lineSpacing, fontPt, dflt.ls),
+    indentMm: profMm100(blk.firstLineIndent, fontPt, dflt.indentMm),
+    leftMm: profMm100(blk.leftIndent, fontPt, 0),
+  };
+}
+function profBorder(b, fallback) {
+  if (!isPlainObj(b)) return fallback;
+  const pt = profLenPt(b.width, 12);
+  return {
+    mm: pt == null ? fallback.mm : ptToMm100(pt),
+    color: profColorInt(b.color, fallback.color),
+    style: b.style || fallback.style,
+  };
+}
+// 画像 → 写端常量表。任何叶子缺省都有硬兜底（house-default.js 没载入时也能跑，
+// 但那时已不是单源——bootDoc 会记一条日志）。
+function buildHouse(p) {
+  p = isPlainObj(p) ? p : {};
+  const d = isPlainObj(p.defaults) ? p.defaults : {}, b = isPlainObj(p.body) ? p.body : {};
+  const t = isPlainObj(p.table) ? p.table : {}, cell = isPlainObj(t.cell) ? t.cell : {}, hdr = isPlainObj(t.header) ? t.header : {};
+  const dFont = isPlainObj(d.font) ? d.font : {}, bFont = isPlainObj(b.font) ? b.font : {};
+  const bodyPt = profSizePt(b, profSizePt(d, 12));
+  const fontAsian = bFont.eastAsia || dFont.eastAsia || '楷体_GB2312';
+  const fontWestern = bFont.western || dFont.western || 'Arial';
+  const color = profColorInt(b.color != null ? b.color : d.color, 0x000000);
+  const bodySpec = profParaSpec(b, bodyPt, { align: 'justify', topMm: 0, bottomMm: ptToMm100(18), ls: { mode: 'min', mm: ptToMm100(16) }, indentMm: ptToMm100(2 * bodyPt) });
+  const headings = {};
+  (Array.isArray(p.headings) ? p.headings : []).forEach(function (h) {
+    if (!isPlainObj(h) || h.level == null) return;
+    const lvl = Number(h.level);
+    const pt = profSizePt(h, bodyPt);
+    const hf = isPlainObj(h.font) ? h.font : {};
+    headings[lvl] = Object.assign(profParaSpec(h, pt, {
+      align: lvl === 1 ? 'center' : bodySpec.align, topMm: bodySpec.topMm, bottomMm: bodySpec.bottomMm,
+      ls: bodySpec.ls, indentMm: lvl === 1 ? 0 : bodySpec.indentMm,
+    }), {
+      level: lvl, sizePt: pt, bold: h.bold !== false, color: profColorInt(h.color, color),
+      fontAsian: hf.eastAsia || fontAsian, fontWestern: hf.western || fontWestern,
+    });
+  });
+  const tablePt = profSizePt(cell, 10);
+  const cellSpec = profParaSpec(cell, tablePt, { align: 'left', topMm: ptToMm100(2.4), bottomMm: ptToMm100(2.4), ls: { mode: 'min', mm: ptToMm100(12) }, indentMm: 0 });
+  const borders = isPlainObj(t.borders) ? t.borders : {};
+  const outside = profBorder(borders.outside, { mm: 53, color: 0x000000, style: 'single' });
+  const inside = profBorder(borders.insideH || borders.insideV || borders.inside, outside);
+  const byType = isPlainObj(cell.byContentType) ? cell.byContentType : {};
+  const typeAlign = function (k, dflt) { return profAlign(isPlainObj(byType[k]) ? byType[k].alignment : null, dflt); };
+  const toc = isPlainObj(p.toc) ? p.toc : {};
+  const tocTitle = isPlainObj(toc.titleStyle) ? toc.titleStyle : {};
+  return {
+    name: p.name || null,
+    fontWestern: fontWestern, fontAsian: fontAsian, color: color,
+    bodyPt: bodyPt, bodyBold: b.bold === true, bodySpec: bodySpec,
+    titlePt: headings[1] ? headings[1].sizePt : 16,
+    headings: headings,
+    afterTableBeforeMm: profMm100(b.afterTableSpaceBefore, bodyPt, ptToMm100(18)),
+    tablePt: tablePt, cellSpec: cellSpec,
+    tableBorder: { outsideMm: outside.mm, insideMm: inside.mm, color: outside.color, style: outside.style },
+    tableBorderMm: outside.mm,
+    headerRows: hdr.rows != null ? Math.max(0, Number(hdr.rows) || 0) : 1,
+    headerBold: hdr.bold !== false,
+    headerAlign: profAlign(hdr.alignment, 'center'),
+    headerVAlign: hdr.verticalAlign || 'center',
+    headerFill: profColorInt(hdr.fill, null),
+    repeatHeader: hdr.repeatOnEachPage !== false,
+    cellVAlign: cell.verticalAlign || 'center',
+    textAlign: typeAlign('text', cellSpec.align),
+    numberAlign: typeAlign('number', 'right'),
+    tocLevels: toc.levels != null && isFinite(Number(toc.levels)) ? Number(toc.levels) : 3,
+    tocTitle: toc.title != null ? String(toc.title) : '目录',
+    tocTitleSpec: { sizePt: profSizePt(tocTitle, 16), bold: tocTitle.bold !== false, align: profAlign(tocTitle.alignment, 'center') },
+  };
+}
+const HOUSE_DEFAULT_PROFILE = houseDefaultProfile();
+let ACTIVE_PROFILE = profileClone(HOUSE_DEFAULT_PROFILE);
+let HOUSE = buildHouse(ACTIVE_PROFILE);
+// 标题规格：缺该级时退到最近的已定义级别（画像只学到两级时三级以下沿用二级），
+// 一级兜底 16 磅粗居中、其余兜底正文同款加粗。
+function headingSpec(level) {
+  const lvl = Math.max(1, Math.min(Number(level) || 1, 9));
+  if (HOUSE.headings[lvl]) return HOUSE.headings[lvl];
+  for (let l = lvl - 1; l >= 2; l--) if (HOUSE.headings[l]) return HOUSE.headings[l];
+  const bs = HOUSE.bodySpec;
+  return Object.assign({}, bs, lvl === 1
+    ? { level: 1, sizePt: 16, bold: true, align: 'center', indentMm: 0 }
+    : { level: lvl, sizePt: HOUSE.bodyPt, bold: true }, { color: HOUSE.color, fontAsian: HOUSE.fontAsian, fontWestern: HOUSE.fontWestern });
+}
+function adjustEnum(name) {
+  const A = css.style.ParagraphAdjust;
+  return name === 'center' ? A.CENTER : name === 'right' ? A.RIGHT : name === 'left' ? A.LEFT : A.BLOCK;
+}
+function lineSpacingUno(ls) {
+  const M = css.style.LineSpacingMode;
+  if (ls.mode === 'prop') return new css.style.LineSpacing({ Mode: M.PROP, Height: ls.pct });
+  return new css.style.LineSpacing({ Mode: ls.mode === 'fix' ? M.FIX : M.MINIMUM, Height: ls.mm });
+}
+function vertOrientEnum(name) {
+  const V = css.text.VertOrientation;
+  return name === 'top' ? V.TOP : name === 'bottom' ? V.BOTTOM : V.CENTER;
+}
+// 把标准字符属性设到一个 property set（视图光标/文本光标/段落/单元格文本）上。
+// 只动传入 opts 声明的维度；weight 每次都设（run 级粗体开关需要确定性）。
+// 一次 XMultiPropertySet.setPropertyValues 代替 N 次 setPropertyValue：全文格式化
+// 的成本就是 UNO 往返次数（920 段 x 十几个属性 + 30 表 x 60 格），批写把往返数砍到
+// 约 1/10。对象不支持或任一属性被拒就返回 false，调用方退回逐个写的老路径
+//（逐个写本身幂等，重复一遍不会改坏）。
+function setPropsBatch(ps, names, values) {
+  if (!ps || typeof ps.setPropertyValues !== 'function') return false;
+  try { ps.setPropertyValues(names, values); return true; } catch (e) { return false; }
+}
+// opts: sizePt / bold / keepWeight / fontAsian / fontWestern / color（缺省取 HOUSE 正文值）。
+function applyHouseChar(ps, opts) {
+  const o = opts || {};
+  const fw = o.fontWestern || HOUSE.fontWestern, fa = o.fontAsian || HOUSE.fontAsian;
+  const size = o.sizePt || HOUSE.bodyPt;
+  const color = o.color != null ? o.color : HOUSE.color;
+  const names = ['CharFontName', 'CharFontNameAsian', 'CharFontNameComplex',
+    'CharHeight', 'CharHeightAsian', 'CharHeightComplex', 'CharColor'];
+  const values = [fw, fa, fw, size, size, size, color];
+  if (!o.keepWeight) {
+    const w = o.bold ? css.awt.FontWeight.BOLD : css.awt.FontWeight.NORMAL;
+    names.push('CharWeight', 'CharWeightAsian', 'CharWeightComplex');
+    values.push(w, w, w);
+  }
+  if (setPropsBatch(ps, names, values)) return;
+  try { ps.setPropertyValue('CharFontName', fw); } catch (e) {}
+  try { ps.setPropertyValue('CharFontNameAsian', fa); } catch (e) {}
+  try { ps.setPropertyValue('CharFontNameComplex', fw); } catch (e) {}
+  try { setCharProp(ps, 'CharHeight', size); } catch (e) {}
+  if (!o.keepWeight) {
+    try { setCharProp(ps, 'CharWeight', o.bold ? css.awt.FontWeight.BOLD : css.awt.FontWeight.NORMAL); } catch (e) {}
+  }
+  try { ps.setPropertyValue('CharColor', color); } catch (e) {}
+}
+// 段落规格按画像块取：title = 一级标题块；heading = opts.level 级标题块（缺省二级，
+// house-default 里二至六级与正文同款只加粗）；body / list（不缩进）= 正文块；
+// tableCell = 表格单元格块。opts.afterTable：紧跟表格的首段段前取 afterTableSpaceBefore。
+function houseParaSpec(kind, opts) {
+  const o = opts || {};
+  if (kind === 'title') return headingSpec(1);
+  if (kind === 'heading') return headingSpec(o.level != null ? o.level : 2);
+  if (kind === 'tableCell') return HOUSE.cellSpec;
+  if (kind === 'list') return Object.assign({}, HOUSE.bodySpec, { indentMm: 0 });
+  return HOUSE.bodySpec;
+}
+function applyHousePara(ps, kind, opts) {
+  const o = opts || {};
+  const isCell = kind === 'tableCell';
+  const spec = houseParaSpec(kind, o);
+  const top = (!isCell && o.afterTable) ? HOUSE.afterTableBeforeMm : spec.topMm;
+  {
+    const names = ['ParaAdjust', 'ParaTopMargin', 'ParaBottomMargin', 'ParaLineSpacing', 'ParaFirstLineIndent'];
+    const values = [adjustEnum(spec.align), top, spec.bottomMm, lineSpacingUno(spec.ls), spec.indentMm];
+    if (!isCell) { names.push('ParaLeftMargin', 'ParaRightMargin'); values.push(spec.leftMm, 0); }
+    if (setPropsBatch(ps, names, values)) return;
+  }
+  try { ps.setPropertyValue('ParaAdjust', adjustEnum(spec.align)); } catch (e) {}
+  try { ps.setPropertyValue('ParaTopMargin', top); } catch (e) {}
+  try { ps.setPropertyValue('ParaBottomMargin', spec.bottomMm); } catch (e) {}
+  try { ps.setPropertyValue('ParaLineSpacing', lineSpacingUno(spec.ls)); } catch (e) {}
+  try { ps.setPropertyValue('ParaFirstLineIndent', spec.indentMm); } catch (e) {}
+  if (!isCell) {
+    try { ps.setPropertyValue('ParaLeftMargin', spec.leftMm); ps.setPropertyValue('ParaRightMargin', 0); } catch (e) {}
+  }
+}
+// 把画像写进段落样式定义（apply_style_profile 第一步）：Standard / Heading 1..6 /
+// Table Contents / Table Heading。改样式定义比逐段直接格式便宜得多，且新打的字
+// 自然继承；直接格式随后只做最小覆盖。返回改到的样式名。
+function applyProfileToStyles() {
+  const fam = xModel.getStyleFamilies().getByName('ParagraphStyles');
+  const out = [];
+  const setStyle = function (name, fn) {
+    let st;
+    try { if (!fam.hasByName(name)) return; st = fam.getByName(name); } catch (e) { return; }
+    try { fn(st); out.push(name); } catch (e) { log('样式定义写入失败 ' + name + ': ' + errStr(e)); }
+  };
+  setStyle('Standard', function (st) {
+    applyHouseChar(st, { sizePt: HOUSE.bodyPt, bold: HOUSE.bodyBold });
+    applyHousePara(st, 'body');
+  });
+  for (let l = 1; l <= 6; l++) {
+    setStyle('Heading ' + l, function (st) {
+      const hs = headingSpec(l);
+      applyHouseChar(st, { sizePt: hs.sizePt, bold: hs.bold, fontAsian: hs.fontAsian, fontWestern: hs.fontWestern, color: hs.color });
+      applyHousePara(st, 'heading', { level: l });
+    });
+  }
+  setStyle('Table Contents', function (st) {
+    applyHouseChar(st, { sizePt: HOUSE.tablePt, bold: false });
+    applyHousePara(st, 'tableCell');
+  });
+  setStyle('Table Heading', function (st) {
+    applyHouseChar(st, { sizePt: HOUSE.tablePt, bold: HOUSE.headerBold });
+    applyHousePara(st, 'tableCell');
+    try { st.setPropertyValue('ParaAdjust', adjustEnum(HOUSE.headerAlign)); } catch (e) {}
+  });
+  setStyle('Contents Heading', function (st) {
+    const ts = HOUSE.tocTitleSpec;
+    applyHouseChar(st, { sizePt: ts.sizePt, bold: ts.bold });
+    try { st.setPropertyValue('ParaAdjust', adjustEnum(ts.align)); } catch (e) {}
+  });
+  return out;
+}
+// markdown 行内标记 → 带样式 run 列表：**粗体**、*斜体*、`代码`（剥壳）、[文字](url)。
+// 下划线变体（_、__）在法律文本里误伤率高，故意不识别。
+const INLINE_MD_RE = /(\*\*[^*\n]+\*\*|\*[^*\n]+\*|`[^`\n]+`|\[[^\]\n]+\]\([^)\s]+\))/g;
+function parseInlineRuns(s) {
+  const runs = [];
+  const parts = String(s).split(INLINE_MD_RE);
+  for (let i = 0; i < parts.length; i++) {
+    const t = parts[i];
+    if (!t) continue;
+    let m;
+    if ((m = t.match(/^\*\*([^*\n]+)\*\*$/))) runs.push({ text: m[1], bold: true });
+    else if ((m = t.match(/^\*([^*\n]+)\*$/))) runs.push({ text: m[1], italic: true });
+    else if ((m = t.match(/^`([^`\n]+)`$/))) runs.push({ text: m[1] });
+    else if ((m = t.match(/^\[([^\]\n]+)\]\(([^)\s]+)\)$/))) runs.push({ text: m[1], url: m[2] });
+    else runs.push({ text: t });
+  }
+  return runs;
+}
+function stripInlineMd(s) {
+  return parseInlineRuns(s).map(function (r) { return r.text; }).join('');
+}
+// 在视图光标处写入一串带样式 run（打字模型：用临时文本光标 bAbsorb 插入后对
+// 选中区间设属性，确定性优于依赖 automatic char props）。
+function writeStyledRuns(vc, runs, kindOpts) {
+  const xText = vc.getText();
+  const o = kindOpts || {};
+  for (let i = 0; i < runs.length; i++) {
+    const run = runs[i];
+    if (!run.text) continue;
+    const cur = xText.createTextCursorByRange(vc.getEnd());
+    xText.insertString(cur, run.text, true); // bAbsorb: cur 跨住刚插入的文本
+    applyHouseChar(cur, { sizePt: o.sizePt, bold: o.bold || !!run.bold, fontAsian: o.fontAsian, fontWestern: o.fontWestern, color: o.color });
+    try { setCharProp(cur, 'CharPosture', run.italic ? css.awt.FontSlant.ITALIC : css.awt.FontSlant.NONE); } catch (e) {}
+    if (run.url) { try { cur.setPropertyValue('HyperLinkURL', run.url); } catch (e) {} }
+    try { vc.gotoRange(cur.getEnd(), false); } catch (e) {}
+  }
+}
+// 行内模式插入：剥离 markdown 标记（行首 #/>、行内 **/*/`/链接），粗体斜体转成
+// 真格式，但**不动**字体/字号/颜色——往已有文档里插内容要沿用现场格式，不能把
+// house 字体强加进人家的文档。多行按段落分隔符处理。
+function writeInlineRuns(vc, runs) {
+  const xText = vc.getText();
+  for (let i = 0; i < runs.length; i++) {
+    const run = runs[i];
+    if (!run.text) continue;
+    const cur = xText.createTextCursorByRange(vc.getEnd());
+    xText.insertString(cur, run.text, true);
+    if (run.bold) { try { setCharProp(cur, 'CharWeight', css.awt.FontWeight.BOLD); } catch (e) {} }
+    if (run.italic) { try { setCharProp(cur, 'CharPosture', css.awt.FontSlant.ITALIC); } catch (e) {} }
+    if (run.url) { try { cur.setPropertyValue('HyperLinkURL', run.url); } catch (e) {} }
+    try { vc.gotoRange(cur.getEnd(), false); } catch (e) {}
+  }
+}
+function insertInlineStyled(vc, text) {
+  const xText = vc.getText();
+  const lines = String(text).split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    if (i > 0) xText.insertControlCharacter(vc, css.text.ControlCharacter.PARAGRAPH_BREAK, false);
+    const isHeading = /^\s*#{1,6}\s+/.test(lines[i]);
+    const line = lines[i].replace(/^\s*#{1,6}\s+/, '').replace(/^\s*>\s?/, '');
+    if (!line) continue;
+    const runs = parseInlineRuns(line);
+    // 原 # 标题行降级为"整行加粗"（规范：小标题与正文一样但加粗）
+    if (isHeading) for (let k = 0; k < runs.length; k++) runs[k].bold = true;
+    writeInlineRuns(vc, runs);
+  }
+}
+// 文本里是否带 markdown 标记（插入路径按此决定走剥离转换还是原样插入）
+const MD_MARKER_RE = /(\*\*[^*\n]+\*\*|\*[^*\n]+\*|`[^`\n]+`|\[[^\]\n]+\]\([^)\s]+\)|^\s*#{1,6}\s|^\s*>\s)/m;
+
+// 编号规则预设。preset: 'bullet' | 'decimal' | 'chinese' | 'multilevel'。
+// replaceByIndex 收 sequence<PropertyValue>（zetajs 编组：纯 Array of PropertyValue）。
+function makeNumberingRules(preset) {
+  // 常量组带数值兜底：zetajs 常量组个别项缺失时 undefined 进 PropertyValue 会编组失败
+  const NT = css.style.NumberingType || {};
+  const ARABIC = NT.ARABIC != null ? NT.ARABIC : 4;
+  const CHAR_SPECIAL = NT.CHAR_SPECIAL != null ? NT.CHAR_SPECIAL : 6;
+  const NUMBER_LOWER_ZH = NT.NUMBER_LOWER_ZH != null ? NT.NUMBER_LOWER_ZH : 15;
+  const rules = xModel.createInstance('com.sun.star.text.NumberingRules');
+  const count = Math.min(rules.getCount(), 9);
+  for (let lvl = 0; lvl < count; lvl++) {
+    const props = [];
+    if (preset === 'bullet') {
+      props.push(mkProp('NumberingType', CHAR_SPECIAL));
+      props.push(mkProp('BulletChar', '•'));
+    } else if (preset === 'chinese') {
+      props.push(mkProp('NumberingType', NUMBER_LOWER_ZH));
+      props.push(mkProp('Suffix', '、')); // 一、二、
+    } else if (preset === 'multilevel') {
+      props.push(mkProp('NumberingType', ARABIC));
+      props.push(mkProp('Suffix', '.'));
+      if (lvl > 0) props.push(mkProp('ParentNumbering', lvl + 1)); // 1.1 / 1.1.1
+    } else { // decimal
+      props.push(mkProp('NumberingType', ARABIC));
+      props.push(mkProp('Suffix', '.'));
+    }
+    props.push(mkProp('LeftMargin', ptToMm100(18) * (lvl + 1)));
+    props.push(mkProp('FirstLineOffset', -ptToMm100(18)));
+    rules.replaceByIndex(lvl, props);
+  }
+  return rules;
+}
+// 定位光标/选区所在表格（或按 tableIndex 取第 N 张）。不在表格内返回 null。
+function currentTextTable(p) {
+  if (p && p.tableIndex != null) {
+    const ts = xModel.getTextTables();
+    const i = Number(p.tableIndex);
+    if (i >= 0 && i < ts.getCount()) return ts.getByIndex(i);
+    return null;
+  }
+  try {
+    const t = ctrl.getViewCursor().getPropertyValue('TextTable');
+    if (t) return t;
+  } catch (e) {}
+  return null;
+}
+// 视图光标所在单元格名（如 "B1"）；不在表格里返回 ''。
+function viewCursorCellName() {
+  try {
+    const cell = ctrl.getViewCursor().getPropertyValue('Cell');
+    if (cell) return String(cell.getPropertyValue('CellName') || '');
+  } catch (e) {}
+  return '';
+}
+// 单元格名工具（A1..Z9、AA1..）：markdown 表格列数很小，两位字母够用。
+function cellName(col, row) {
+  let name = '';
+  if (col >= 26) { name += String.fromCharCode(65 + Math.floor(col / 26) - 1); col = col % 26; }
+  name += String.fromCharCode(65 + col);
+  return name + (row + 1);
+}
+const NUMERIC_CELL_RE = /^[-+（(]?[\d][\d,.，%．]*[%）)]?$/;
+// 边框线型：画像/工具的 single|double|dashed → BorderLineStyle（常量缺席时用数值兜底）。
+function borderLineStyle(name) {
+  const S = css.table.BorderLineStyle || {};
+  const n = String(name || 'single').toLowerCase();
+  if (n === 'double') return S.DOUBLE != null ? S.DOUBLE : 3;
+  if (n === 'dashed') return S.DASHED != null ? S.DASHED : 2;
+  return S.SOLID != null ? S.SOLID : 0;
+}
+// 给一张表设边框。spec: {outsideMm, insideMm, color, style}（宽度单位 1/100mm；
+// 缺省取 HOUSE.tableBorder：Grid 实线、内外同宽）。
+function applyTableBorders(table, spec) {
+  const o = Object.assign({}, HOUSE.tableBorder, spec || {});
+  if (o.insideMm == null) o.insideMm = o.outsideMm;
+  const mk = function (mm) {
+    return new css.table.BorderLine2({
+      Color: o.color == null ? 0x000000 : o.color,
+      InnerLineWidth: 0, OuterLineWidth: 0, LineDistance: 0,
+      LineStyle: borderLineStyle(o.style),
+      LineWidth: mm,
+    });
+  };
+  const bl = mk(o.outsideMm), il = mk(o.insideMm);
+  const tb = new css.table.TableBorder2({
+    TopLine: bl, BottomLine: bl, LeftLine: bl, RightLine: bl,
+    HorizontalLine: il, VerticalLine: il,
+    IsTopLineValid: true, IsBottomLineValid: true, IsLeftLineValid: true,
+    IsRightLineValid: true, IsHorizontalLineValid: true, IsVerticalLineValid: true,
+    Distance: 0, IsDistanceValid: false,
+  });
+  table.setPropertyValue('TableBorder2', tb);
+}
+// 按标准格式刷一张已存在的表：字号/段距/行距/垂直居中/首行加粗居中/数字居右/边框。
+// keepWeight: 非首行不动原有粗体（apply_house_style 走这里，避免抹掉当事人加粗）。
+function styleTableStandard(table, opts) {
+  const o = opts || {};
+  const headerRows = o.headerRows != null ? o.headerRows : HOUSE.headerRows;
+  try { applyTableBorders(table, null); } catch (e) { log('表格边框设置失败 / borders: ' + errStr(e)); }
+  if (headerRows > 0 && HOUSE.repeatHeader) {
+    try { table.setPropertyValue('RepeatHeadline', true); table.setPropertyValue('HeaderRowCount', headerRows); } catch (e) {}
+  }
+  const names = table.getCellNames();
+  for (let i = 0; i < names.length; i++) {
+    const cell = table.getCellByName(names[i]);
+    const rowIdx = parseInt(String(names[i]).replace(/^[A-Z]+/, ''), 10) - 1;
+    const isHeader = rowIdx < headerRows;
+    try { cell.setPropertyValue('VertOrient', shortAny(vertOrientEnum(isHeader ? HOUSE.headerVAlign : HOUSE.cellVAlign))); } catch (e) {}
+    if (isHeader && HOUSE.headerFill != null) { try { cell.setPropertyValue('BackColor', HOUSE.headerFill); } catch (e) {} }
+    try {
+      const ct = cell.createTextCursor();
+      ct.gotoStart(false);
+      ct.gotoEnd(true);
+      applyHousePara(ct, 'tableCell');
+      applyHouseChar(ct, { sizePt: HOUSE.tablePt, bold: isHeader && HOUSE.headerBold, keepWeight: !isHeader && o.keepWeight });
+      const text = (cell.getString() || '').trim();
+      const adjust = isHeader ? HOUSE.headerAlign : (NUMERIC_CELL_RE.test(text) ? HOUSE.numberAlign : HOUSE.textAlign);
+      ct.setPropertyValue('ParaAdjust', adjustEnum(adjust));
+    } catch (e) {}
+  }
+}
+// 在视图光标处插入一张按标准格式排好的表。rows: string[][]。返回表对象。
+function insertStyledTable(rows, headerRows, plainText) {
+  const nRows = rows.length;
+  let nCols = 1;
+  for (let i = 0; i < nRows; i++) nCols = Math.max(nCols, rows[i].length);
+  const vc = ctrl.getViewCursor();
+  vc.collapseToEnd();
+  const table = xModel.createInstance('com.sun.star.text.TextTable');
+  table.initialize(nRows, nCols);
+  vc.getText().insertTextContent(vc, table, false);
+  for (let r = 0; r < nRows; r++) {
+    for (let c = 0; c < nCols; c++) {
+      const raw = rows[r][c] != null ? String(rows[r][c]) : '';
+      if (plainText) table.getCellByName(cellName(c, r)).setString(raw);
+      else { try { table.getCellByName(cellName(c, r)).setString(stripInlineMd(raw)); } catch (e) {} }
+    }
+  }
+  styleTableStandard(table, { headerRows: headerRows });
+  // 光标移到表后第一个段落。不能用 table.getAnchor().getEnd()——真机实证它落进
+  // A1 单元格，后续段落全写进表格里（e2e 组 15 抓到的 bug）。改为按表名在正文
+  // 枚举里找到该表，跳到它后面的第一个段落（在光标所在空段插表时 Writer 会把
+  // 该空段留在表后，所以段落必然存在）。
+  cursorToParagraphAfterTable(table);
+  return table;
+}
+function cursorToParagraphAfterTable(table) {
+  let name = '';
+  try { name = table.getName(); } catch (e) {}
+  const vc = ctrl.getViewCursor();
+  let found = false, placed = false;
+  try {
+    const en = xModel.getText().createEnumeration();
+    while (en.hasMoreElements()) {
+      const el = en.nextElement();
+      if (found && el.supportsService && el.supportsService('com.sun.star.text.Paragraph')) {
+        vc.gotoRange(el.getStart(), false);
+        placed = true;
+        break;
+      }
+      if (!found && el.supportsService && el.supportsService('com.sun.star.text.TextTable')) {
+        try { if (el.getName() === name) found = true; } catch (e) {}
+      }
+    }
+  } catch (e) {}
+  if (!placed) { try { vc.gotoEnd(false); } catch (e) {} }
+}
+
+// ---- Writer 表格单元格级原语（doc_table_*）helpers ---------------------------
+// insert_table/format_table 是"整张表"粒度；这一组是"改一格/加一行"粒度，
+// 模型据此把既有合同附表改成想要的样子。定位与校验集中在 resolveWriterTable，
+// 失败一律带上"表格张数/行列数"这类可行动信息（模型据此换参数重试）。
+const NOT_TEXT_DOC_MSG = '当前打开的不是 Word 文档：doc_table_* 原语仅对 doc/docx 生效。电子表格的表格请用 sheet_* 原语。';
+function isWriterDoc() {
+  try { return !!(xModel && xModel.supportsService && xModel.supportsService('com.sun.star.text.TextDocument')); }
+  catch (e) { return false; }
+}
+// 定位一张 Writer 表格：tableName / tableIndex（0 开始）显式指定，缺省用光标所在表。
+// 返回 {table, name, index, count} 或 {error}。
+function resolveWriterTable(p) {
+  if (!isWriterDoc()) return { error: NOT_TEXT_DOC_MSG };
+  let tables;
+  try { tables = xModel.getTextTables(); } catch (e) { return { error: '读取文档表格失败: ' + errStr(e) }; }
+  const count = tables.getCount();
+  const wantName = p && p.tableName != null && String(p.tableName).trim() !== '' ? String(p.tableName).trim() : null;
+  let table = null;
+  if (wantName) {
+    if (!tables.hasByName(wantName)) return { error: '表格不存在: ' + wantName + '（文档共 ' + count + ' 张表，可用 doc_table_read 传 tableIndex 逐张确认）' };
+    table = tables.getByName(wantName);
+  } else if (p && p.tableIndex != null && String(p.tableIndex) !== '') {
+    const i = Number(p.tableIndex);
+    if (!(i >= 0) || i >= count) return { error: '表格序号越界: ' + p.tableIndex + '（文档共 ' + count + ' 张表，序号 0 开始）' };
+    table = tables.getByIndex(i);
+  } else {
+    table = currentTextTable(null); // 光标所在表
+    if (!table) {
+      return { error: count
+        ? '光标不在表格内：请传 tableIndex 指定第几张表（0 开始，文档共 ' + count + ' 张表）'
+        : '文档中没有表格' };
+    }
+  }
+  let name = '';
+  try { name = table.getName(); } catch (e) {}
+  let index = -1;
+  for (let i = 0; i < count; i++) {
+    try { if (tables.getByIndex(i).getName() === name) { index = i; break; } } catch (e) {}
+  }
+  return { table: table, name: name, index: index, count: count };
+}
+// 表格行列数。合并/拆分过的表 getColumns 只报"网格列"，不代表每行都有那么多格。
+function tableDims(table) {
+  try { return { rows: table.getRows().getCount(), cols: table.getColumns().getCount() }; }
+  catch (e) { return { error: '读取表格行列数失败: ' + errStr(e) }; }
+}
+// "B2" -> {col:1, row:1, name:'B2'}（列字母不分大小写，行号 1 开始）。非法返回 null。
+function parseCellRef(ref) {
+  const m = /^([A-Za-z]+)(\d+)$/.exec(String(ref == null ? '' : ref).trim());
+  if (!m) return null;
+  const letters = m[1].toUpperCase();
+  let col = 0;
+  for (let i = 0; i < letters.length; i++) col = col * 26 + (letters.charCodeAt(i) - 64);
+  const row = Number(m[2]);
+  if (col < 1 || row < 1) return null;
+  return { col: col - 1, row: row - 1, name: letters + row };
+}
+// 列定位：字母（A/B/AA，不分大小写）或 1 开始的列号。返回 0 开始的下标，非法返回 null。
+function parseColumnRef(v) {
+  const s = String(v == null ? '' : v).trim();
+  if (!s) return null;
+  if (/^\d+$/.test(s)) { const n = Number(s); return n >= 1 ? n - 1 : null; }
+  if (!/^[A-Za-z]+$/.test(s)) return null;
+  const letters = s.toUpperCase();
+  let col = 0;
+  for (let i = 0; i < letters.length; i++) col = col * 26 + (letters.charCodeAt(i) - 64);
+  return col - 1;
+}
+// 统一的失败返回：error 供后端桥（前端 handleEditorCommand 只回传 result.error，
+// 后端据此拼 {"error": ...}，ToolResult.success() 才判得出失败）；message 保持
+// worker 既有约定（e2e 与日志都读它）。两者同文。
+function tableFail(msg) { return { success: false, error: msg, message: msg }; }
+function recordChangesOn() {
+  try { return !!xModel.getPropertyValue('RecordChanges'); } catch (e) { return false; }
+}
+
+// ---- Calc（电子表格 sheet_*）原语 helpers ------------------------------------
+// 引擎含 Calc 模块（probe_modules 实锤），xlsx 经 load_document 正常打开，但
+// doc_* 一族全走 xModel.getText()（Writer 专属），在 Calc 文档上必然失败——
+// sheet_* 是 Calc 文档的对等原语集。文档类型守卫集中在 resolveSheet。
+function isCalcDoc() {
+  try { return !!(xModel && xModel.supportsService && xModel.supportsService('com.sun.star.sheet.SpreadsheetDocument')); }
+  catch (e) { return false; }
+}
+const NOT_SPREADSHEET_MSG = '当前打开的不是电子表格文档：sheet_* 原语仅对 xlsx/xls 生效。Word 文档请用 doc_* 原语；要操作表格文件请先用 doc_open_file 打开它。';
+// 解析 sheet 参数（工作表名或 0 开始的序号；缺省 = 当前活动工作表）。
+// 返回 {sheet} 或 {error}。命中非活动工作表时切为活动（拟人：用户看得见操作在哪张表）。
+function resolveSheet(p) {
+  if (!isCalcDoc()) return { error: NOT_SPREADSHEET_MSG };
+  const sheets = xModel.getSheets();
+  let sheet = null;
+  const want = p && p.sheet != null && String(p.sheet).trim() !== '' ? String(p.sheet).trim() : null;
+  if (want == null) {
+    try { sheet = ctrl.getActiveSheet(); } catch (e) {}
+    if (!sheet) sheet = sheets.getByIndex(0);
+  } else if (/^\d+$/.test(want)) {
+    const i = Number(want);
+    if (i >= sheets.getCount()) return { error: '工作表序号越界: ' + i + '（共 ' + sheets.getCount() + ' 张，0 开始）' };
+    sheet = sheets.getByIndex(i);
+  } else {
+    if (!sheets.hasByName(want)) return { error: '工作表不存在: ' + want };
+    sheet = sheets.getByName(want);
+  }
+  try {
+    const active = ctrl.getActiveSheet();
+    if (!active || active.getName() !== sheet.getName()) ctrl.setActiveSheet(sheet);
+  } catch (e) {}
+  return { sheet: sheet };
+}
+function sheetRange(sheet, rangeStr) {
+  try { return sheet.getCellRangeByName(String(rangeStr)); } catch (e) { return null; }
+}
+function colLetterOf(n) { // 0 -> A, 25 -> Z, 26 -> AA
+  let s = '';
+  n = Number(n);
+  do { s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26) - 1; } while (n >= 0);
+  return s;
+}
+function sheetRangeName(addr) {
+  const a = colLetterOf(addr.StartColumn) + (addr.StartRow + 1);
+  const b = colLetterOf(addr.EndColumn) + (addr.EndRow + 1);
+  return a === b ? a : a + ':' + b;
+}
+// 绝对引用形式的单元格坐标（'$A$1'），命名区域公式拼接用。
+function absCellRef(col, row) { return '$' + colLetterOf(col) + '$' + (row + 1); }
+function usedRangeAddress(sheet) {
+  const cur = sheet.createCursor();
+  cur.gotoStartOfUsedArea(false);
+  cur.gotoEndOfUsedArea(true);
+  return cur.getRangeAddress();
+}
+// 单元格读值归一：空→''，数值→number，公式→数值结果给 number、文本结果给 string。
+// FormulaResultType 是 long 常量组（FormulaResult.VALUE=1），走 unoEnumVal 兜底。
+function readCellOut(cell) {
+  const T = css.table.CellContentType;
+  const t = cell.getType();
+  if (enumEq(t, T.EMPTY)) return '';
+  if (enumEq(t, T.VALUE)) return cell.getValue();
+  if (enumEq(t, T.FORMULA)) {
+    // 出错的公式格 getValue() 返回 0、结果类型也可能标 VALUE——先查错误码，
+    // 否则解析失败的公式在读回里伪装成 0，AI 无从发现（组 17 抽查实证）。
+    try { const err = cell.getError(); if (err) return cell.getString() || ('Err:' + err); } catch (e) {}
+    try {
+      const FR_VALUE = (css.sheet && css.sheet.FormulaResult && css.sheet.FormulaResult.VALUE != null) ? css.sheet.FormulaResult.VALUE : 1;
+      if (unoEnumVal(cell.getPropertyValue('FormulaResultType')) === unoEnumVal(FR_VALUE)) return cell.getValue();
+    } catch (e) {}
+  }
+  return cell.getString();
+}
+// 写入时把"长得像数字"的字符串落成数值（同 NUMERIC_CELL_RE 的 house 口径，但
+// 更严格：前导 0 的编号（如 '001'）保持文本，避免证照号/编号被吞前导零）。
+const SHEET_NUMERIC_RE = /^-?(0|[1-9]\d*)(\.\d+)?$/;
+// 列标解析：'B'→1、'AA'→26；也接受 1 开始的数字串（'2'→1）。返回 0 开始的列号，无效返回 -1。
+function colIndexOf(s) {
+  const t = String(s == null ? '' : s).trim().toUpperCase();
+  if (/^\d+$/.test(t)) { const n = Number(t); return n >= 1 ? n - 1 : -1; }
+  if (!/^[A-Z]{1,3}$/.test(t)) return -1;
+  let n = 0;
+  for (let i = 0; i < t.length; i++) n = n * 26 + (t.charCodeAt(i) - 64);
+  return n - 1;
+}
+let cfStyleSeq = 0; // 条件格式的"命中样式"（CellStyle）命名序号
+// Excel 习惯公式 → setFormula 的 API 文法（真机实证：组 17 抽查）：参数分隔符
+// 必须是分号（逗号 Err:508），跨表引用必须是 Sheet.A1（Sheet!A1 报 #NAME?
+// Err:525）。AI 与用户都按 Excel 习惯写逗号和 '!'，在此归一化——只动双引号
+// 字符串字面量之外的字符（Calc 转义引号是成对 ""，相邻翻转两次天然兼容）。
+// 代价：Excel 数组字面量的逗号列分隔与 Calc 交集操作符 '!' 会被误转，两者在
+// AI 生成的公式里出现率趋近于零，换取最高频的多参数函数全部可用。
+function normalizeFormula(f) {
+  let out = '';
+  let inStr = false;
+  for (let i = 0; i < f.length; i++) {
+    const ch = f.charAt(i);
+    if (ch === '"') { inStr = !inStr; out += ch; continue; }
+    if (!inStr && ch === ',') { out += ';'; continue; }
+    if (!inStr && ch === '!') { out += '.'; continue; }
+    out += ch;
+  }
+  return out;
+}
+
+// sheet_find_replace 的字面量替换与计数（**不是正则**：合同里的「(甲方)」「*备注」
+// 带正则元字符，编成 RegExp 会当成语法而不是文字）。matchCase=false 时按小写位置
+// 扫描原串，保证替换落点与大小写无关、而未命中部分原样保留。
+function replaceAllLiteral(text, find, replace, matchCase) {
+  if (!find) return text;
+  const hay = matchCase ? text : text.toLowerCase();
+  const needle = matchCase ? find : find.toLowerCase();
+  let out = '';
+  let i = 0;
+  for (;;) {
+    const at = hay.indexOf(needle, i);
+    if (at === -1) { out += text.slice(i); return out; }
+    out += text.slice(i, at) + replace;
+    i = at + needle.length;
+  }
+}
+function countLiteral(text, find, matchCase) {
+  if (!find) return 0;
+  const hay = matchCase ? text : text.toLowerCase();
+  const needle = matchCase ? find : find.toLowerCase();
+  let n = 0;
+  let i = 0;
+  for (;;) {
+    const at = hay.indexOf(needle, i);
+    if (at === -1) return n;
+    n++;
+    i = at + needle.length;
+  }
+}
+
+// ---- sheet_write_cells 的「沿用上一行格式」与 sheet_read_range 的格式读回（dev-board#844）----
+// 病灶：往表格末尾追加一行时，新格是引擎默认格式（无边框、默认字体、数字右对齐），
+// 与既有行一眼可分。Excel 手工输入有「扩展数据区域格式」；这里是它的对等物：
+// 写入前该行在写入列跨度内全空、上方两行都有内容且格式模式一致（表头紧贴标题行
+// 那种格式不同的两行不算）→ 把紧邻上方一行对应列的格式逐属性抄过来再写值。
+// **不走剪贴板/PasteSpecial**：那会覆盖用户剪贴板。
+// 属性表：[名字, 类型]。类型决定写回时怎么编组（short 要 shortAny、枚举读回可能是
+// 裸数字要映射回枚举成员、边框是 BorderLine2 结构体要重建）。CellStyle 必须排第一：
+// 先套样式再叠直接格式，否则样式会把刚抄的直接格式的「基准」换掉。
+const SHEET_FMT_PROPS = (function () {
+  const out = [['CellStyle', 'string']];
+  for (const sfx of ['', 'Asian', 'Complex']) {
+    out.push(['CharFontName' + sfx, 'string'], ['CharFontStyleName' + sfx, 'string'],
+      ['CharFontFamily' + sfx, 'short'], ['CharFontCharSet' + sfx, 'short'], ['CharFontPitch' + sfx, 'short'],
+      ['CharHeight' + sfx, 'number'], ['CharWeight' + sfx, 'number'], ['CharPosture' + sfx, 'enum:FontSlant']);
+  }
+  out.push(['CharColor', 'number'], ['CharUnderline', 'short'], ['CharStrikeout', 'short'],
+    ['CellBackColor', 'number'], ['IsCellBackgroundTransparent', 'bool'],
+    ['HoriJustify', 'enum:CellHoriJustify'], ['VertJustify', 'vert'],
+    ['NumberFormat', 'number'], ['IsTextWrapped', 'bool'], ['ShrinkToFit', 'bool'],
+    ['ParaIndent', 'short'], ['RotateAngle', 'number'],
+    ['TopBorder2', 'border'], ['BottomBorder2', 'border'], ['LeftBorder2', 'border'], ['RightBorder2', 'border']);
+  return out;
+})();
+// 枚举成员按数值排好（UNO idl 顺序），读回是裸数字时据此映射回枚举对象。
+const SHEET_ENUM_MEMBERS = {
+  FontSlant: ['NONE', 'OBLIQUE', 'ITALIC', 'DONTKNOW', 'REVERSE_OBLIQUE', 'REVERSE_ITALIC'],
+  CellHoriJustify: ['STANDARD', 'LEFT', 'CENTER', 'RIGHT', 'BLOCK', 'REPEAT'],
+};
+function sheetEnumMember(kind, v) {
+  if (v != null && typeof v === 'object') return v;
+  const name = kind === 'FontSlant' ? 'awt' : 'table';
+  const key = (SHEET_ENUM_MEMBERS[kind] || [])[Number(v)];
+  try { return key ? css[name][kind][key] : v; } catch (e) { return v; }
+}
+// 可比较的归一值（枚举取数值、结构体拼字段串、浮点保留两位）。
+function sheetFmtNorm(type, v) {
+  if (v == null) return v;
+  if (type === 'border') return [v.Color, v.InnerLineWidth, v.OuterLineWidth, v.LineDistance, unoEnumVal(v.LineStyle), v.LineWidth].join('/');
+  if (type === 'number') return Math.round(Number(v) * 100) / 100;
+  if (type.indexOf('enum:') === 0 || type === 'vert' || type === 'short') return unoEnumVal(v);
+  return v;
+}
+function sheetFmtSet(cell, name, type, v) {
+  if (type === 'short') {
+    try { cell.setPropertyValue(name, shortAny(unoEnumVal(v))); return; } catch (e) {}
+    cell.setPropertyValue(name, unoEnumVal(v)); return;
+  }
+  if (type === 'vert') { // VertJustify：声明 long、个别引擎按 short 校验（同 sheet_format_cells）
+    try { cell.setPropertyValue(name, unoEnumVal(v)); return; } catch (e) {}
+    cell.setPropertyValue(name, shortAny(unoEnumVal(v))); return;
+  }
+  if (type.indexOf('enum:') === 0) { cell.setPropertyValue(name, sheetEnumMember(type.slice(5), v)); return; }
+  if (type === 'border') {
+    cell.setPropertyValue(name, new css.table.BorderLine2({
+      Color: v.Color, InnerLineWidth: v.InnerLineWidth, OuterLineWidth: v.OuterLineWidth,
+      LineDistance: v.LineDistance, LineStyle: unoEnumVal(v.LineStyle), LineWidth: v.LineWidth,
+    }));
+    return;
+  }
+  cell.setPropertyValue(name, v);
+}
+// 把 src 单元格的格式抄到 dst：只写不同的属性（每条写入都是一次引擎往返），单条
+// 失败吞掉继续——宁可少抄一项，也不能让整次写入失败。返回实际写了几项。
+function copyCellFormat(src, dst) {
+  let n = 0;
+  for (let i = 0; i < SHEET_FMT_PROPS.length; i++) {
+    const name = SHEET_FMT_PROPS[i][0], type = SHEET_FMT_PROPS[i][1];
+    let sv;
+    try { sv = src.getPropertyValue(name); } catch (e) { continue; }
+    if (sv == null) continue;
+    try { if (sheetFmtNorm(type, dst.getPropertyValue(name)) === sheetFmtNorm(type, sv)) continue; } catch (e) {}
+    try { sheetFmtSet(dst, name, type, sv); n++; } catch (e) { /* 个别属性写不进去：跳过 */ }
+  }
+  return n;
+}
+function sheetCellEmpty(sheet, col, row) {
+  try { return enumEq(sheet.getCellByPosition(col, row).getType(), css.table.CellContentType.EMPTY); }
+  catch (e) { return true; }
+}
+function sheetRowSpanEmpty(sheet, row, c0, c1) {
+  for (let c = c0; c <= c1; c++) if (!sheetCellEmpty(sheet, c, row)) return false;
+  return true;
+}
+// 判定「上方两行是同一种数据行」用的格式签名：字体/字号/粗细/水平对齐/数字格式/
+// 四边有无边框。刻意不含字色与底色——状态列标红、隔行底纹都是数据行里的常态，
+// 算进去会让正常的表判成「不一致」而不沿用。
+function sheetCellSig(cell) {
+  const parts = [];
+  for (const x of [['CharFontName', 'string'], ['CharFontNameAsian', 'string'], ['CharHeight', 'number'],
+    ['CharWeight', 'number'], ['HoriJustify', 'enum:CellHoriJustify'], ['NumberFormat', 'number']]) {
+    try { parts.push(sheetFmtNorm(x[1], cell.getPropertyValue(x[0]))); }
+    catch (e) { parts.push('?'); }
+  }
+  for (const b of ['TopBorder2', 'BottomBorder2', 'LeftBorder2', 'RightBorder2']) {
+    try { const v = cell.getPropertyValue(b); parts.push(v && v.LineWidth > 0 ? 1 : 0); } catch (e) { parts.push('?'); }
+  }
+  return parts.join('|');
+}
+// 目标行 row（写入前在 [c0,c1] 全空）是否应沿用 row-1 的格式：上方两行在跨度内
+// 都有内容，且格式签名至少一半的列一致。对标 Excel 扩展格式「要有既有模式」的
+// 思路——只有表头一行在上（表头下的第一条数据）时不扩，免得把表头格式抄进数据行。
+function shouldInheritRowFormat(sheet, row, c0, c1) {
+  if (row < 2) return false;
+  if (sheetRowSpanEmpty(sheet, row - 1, c0, c1) || sheetRowSpanEmpty(sheet, row - 2, c0, c1)) return false;
+  let same = 0;
+  const total = c1 - c0 + 1;
+  for (let c = c0; c <= c1; c++) {
+    try {
+      if (sheetCellSig(sheet.getCellByPosition(c, row - 1)) === sheetCellSig(sheet.getCellByPosition(c, row - 2))) same++;
+    } catch (e) {}
+  }
+  return same * 2 >= total;
+}
+// 行高：上方行不是自动行高（OptimalHeight=false）时连行高一起抄。
+function copyRowHeight(sheet, fromRow, toRow) {
+  try {
+    const rows = sheet.getRows();
+    const src = rows.getByIndex(fromRow);
+    if (src.getPropertyValue('OptimalHeight')) return;
+    const dst = rows.getByIndex(toRow);
+    dst.setPropertyValue('OptimalHeight', false);
+    dst.setPropertyValue('Height', src.getPropertyValue('Height'));
+  } catch (e) {}
+}
+
+// sheet_read_range(withFormat) 的格式摘要：每格只列与「Default」单元格样式不同的
+// 关键项，键名与 sheet_format_cells 的参数同名（读回来可以原样喂回去）。
+const SHEET_HALIGN_NAMES = ['standard', 'left', 'center', 'right', 'block', 'repeat'];
+const SHEET_VALIGN_NAMES = ['standard', 'top', 'center', 'bottom', 'block'];
+function sheetHex(c) { return '#' + ('000000' + (Number(c) >>> 0).toString(16)).slice(-6).toUpperCase(); }
+function sheetNumFmtString(key) {
+  try { return String(xModel.getNumberFormats().getByKey(key).getPropertyValue('FormatString')); } catch (e) { return null; }
+}
+function sheetRawFormat(ps) {
+  const g = function (n) { try { return ps.getPropertyValue(n); } catch (e) { return undefined; } };
+  const f = {};
+  f.fontName = g('CharFontName');
+  f.fontNameAsian = g('CharFontNameAsian');
+  const h = g('CharHeight'); if (h != null) f.fontSize = Math.round(Number(h) * 10) / 10;
+  const w = g('CharWeight'); if (w != null) f.bold = Number(w) > 100;
+  const it = g('CharPosture'); if (it != null) f.italic = unoEnumVal(it) === 2 || unoEnumVal(it) === 1;
+  const col = g('CharColor'); if (col != null) f.color = Number(col) === -1 ? 'auto' : sheetHex(col);
+  const bg = g('CellBackColor'); const tr = g('IsCellBackgroundTransparent');
+  if (bg != null) f.background = (tr === true || Number(bg) === -1) ? 'none' : sheetHex(bg);
+  const ha = g('HoriJustify'); if (ha != null) f.hAlign = SHEET_HALIGN_NAMES[unoEnumVal(ha)] || String(unoEnumVal(ha));
+  const va = g('VertJustify'); if (va != null) f.vAlign = SHEET_VALIGN_NAMES[unoEnumVal(va)] || String(unoEnumVal(va));
+  const nf = g('NumberFormat'); if (nf != null) f.numberFormat = sheetNumFmtString(nf);
+  const wr = g('IsTextWrapped'); if (wr != null) f.wrap = !!wr;
+  let bs = '';
+  [['t', 'TopBorder2'], ['b', 'BottomBorder2'], ['l', 'LeftBorder2'], ['r', 'RightBorder2']].forEach(function (x) {
+    const v = g(x[1]); if (v && v.LineWidth > 0) bs += x[0];
+  });
+  f.borders = bs === 'tblr' ? 'all' : (bs || 'none');
+  const cs = g('CellStyle'); if (cs != null) f.cellStyle = String(cs);
+  return f;
+}
+function sheetDefaultFormat() {
+  try {
+    const st = xModel.getStyleFamilies().getByName('CellStyles').getByName('Default');
+    const f = sheetRawFormat(st);
+    f.borders = 'none';
+    f.cellStyle = 'Default';
+    return f;
+  } catch (e) { return { borders: 'none', cellStyle: 'Default' }; }
+}
+// 与默认值相同的项一律去掉；numberFormat 'General'/'Standard' 视为默认。
+function sheetFormatDiff(f, def) {
+  const out = {};
+  Object.keys(f).forEach(function (k) {
+    const v = f[k];
+    if (v == null || v === def[k]) return;
+    if (k === 'numberFormat' && /^(General|Standard|常规)$/i.test(String(v))) return;
+    out[k] = v;
+  });
+  // fontName 已报出且与中文字体相同：sheet_format_cells(fontName) 本就三种文字一起设，不再重复列。
+  if (out.fontNameAsian != null && out.fontName != null && out.fontNameAsian === out.fontName) delete out.fontNameAsian;
+  return out;
+}
+
+// ---- Impress（演示文稿 slide_*）原语 helpers --------------------------------
+// 引擎自 r4 起含 Impress 模块（doc-editor.md 待 r4 验收更新口径）；pptx/odp 经
+// load_document 打开后由 Impress 承载，doc_*（xModel.getText()）/sheet_*
+// （xModel.getSheets()）在演示文稿上必然失败——slide_* 是对等原语集。文档类型
+// 守卫集中在 resolvePage/resolveShape（同 resolveSheet/resolveWriterTable 口径）。
+// 设计依据：docs/superpowers/specs/2026-08-07-impress-bridge-design.md §4/§4.3。
+function isImpressDoc() {
+  try { return !!(xModel && xModel.supportsService && xModel.supportsService('com.sun.star.presentation.PresentationDocument')); }
+  catch (e) { return false; }
+}
+const NOT_PRESENTATION_MSG = '当前打开的不是演示文稿：slide_* 原语仅对 pptx/ppt/odp 生效。Word 文档请用 doc_* 原语，表格请用 sheet_* 原语；要操作演示文稿请先用 doc_open_file 打开它。';
+
+// ---- 表格 / 演示文稿的键盘通道（v0.49.0 BUG-05）-----------------------------
+// IME 覆盖层把按键转成 insert_at_cursor / insert_paragraph / move_cursor /
+// delete_* / tab_key / ui_command，这些原语都从 Writer 的视图光标起步；Calc 与
+// Impress 的控制器没有 getViewCursor（真引擎：「ctrl.getViewCursor is not a
+// function」），命令被 execCommand 吞成 success:false——xlsx 里打字没反应。
+// 这两类文档改由引擎自己的按键处理接手：XToolkitRobot 把按键投递给文档组件窗口，
+// VCL 交给该帧的焦点子窗（单元格网格 / 公式栏 / 文本框），编辑态、公式栏同步、
+// 提交与撤销都是引擎原生语义。投递是异步的（进 VCL 事件队列，本条命令返回后才
+// 处理），先后顺序保持。真引擎实测（r5，无头）：
+//   · 回车在 Calc 里提交并下移（用户点过格子之后；唯独紧跟在 UNO select() 之后
+//     只提交不移动，引擎自己的行为，不补「下」——补了用户点格子后就会跳两格），
+//     Impress 文本框里回车就是换段。
+//   · 非编辑态的 Backspace 不弹「删除内容」对话框，Delete 直接清格；而原先的
+//     .uno:SwBackspace 在表格里是哑弹、.uno:Delete 在 Calc 是那个对话框。
+//   · Calc 非编辑态的 Esc 会把顶层帧退出全屏（同 .uno:Escape，见 ensureFullScreen），
+//     编辑态的 Esc 取消输入；worker 分不清两态，所以 Esc 之后排一次全屏复位。
+// Writer 一律不走这里。
+function nativeKeyDoc() { return isCalcDoc() || isImpressDoc(); }
+const NATIVE_ARROWS = { left: 'LEFT', right: 'RIGHT', up: 'UP', down: 'DOWN' };
+const NATIVE_UI_KEYS = { line_start: 'HOME', line_end: 'END', line_start_sel: 'HOME', line_end_sel: 'END', page_up: 'PAGEUP', page_down: 'PAGEDOWN', escape: 'ESCAPE' };
+let keyRobot = null;
+// keys: [{key:'RETURN'|..., shift, ch}]；key 缺省 = 纯字符（KeyCode 0）。
+function postNativeKeys(keys) {
+  if (!keyRobot) keyRobot = css.awt.Toolkit.create(context);
+  const source = ctrl.getFrame().getComponentWindow();
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    const ev = new css.awt.KeyEvent({ Source: source, KeyCode: k.key ? css.awt.Key[k.key] : 0,
+      KeyChar: k.ch || String.fromCharCode(0), Modifiers: k.shift ? css.awt.KeyModifier.SHIFT : 0, KeyFunc: 0 });
+    keyRobot.keyPress(ev);
+    keyRobot.keyRelease(ev);
+  }
+  return { success: true, native: true, keys: keys.length };
+}
+// 全屏标志在引擎处理完投递的 Esc 之后才翻（异步，时点不定），所以 1.5 秒内每
+// 100ms 看一眼，翻了就补回（Calc 实测只翻标志、帧尺寸不变，补标志即复原）。
+function restoreFullScreenSoon() {
+  let left = 15;
+  const tick = function () {
+    try { if (!ctrl.getFrame().getContainerWindow().FullScreen) ensureFullScreen(); } catch (e) {}
+    if (--left > 0) setTimeout(tick, 100);
+  };
+  setTimeout(tick, 100);
+}
+// 当前文档内核类型——get_doc_kind 诊断 action 与 load_document 返回值共用，宿主
+// 据此按 kind 隐藏「审阅」按钮/ReviewPanel（Calc/Impress 都没有修订机制）。
+function docKindOf() {
+  try { if (isWriterDoc()) return 'writer'; } catch (e) {}
+  try { if (isCalcDoc()) return 'calc'; } catch (e) {}
+  try { if (isImpressDoc()) return 'impress'; } catch (e) {}
+  return 'unknown';
+}
+// 统一失败返回：同时写 error（后端桥 handleEditorCommand 只回传 result.error）
+// 与 message（worker 既有约定），两者同文——同 tableFail 口径（doc_table_* 已踩过）。
+function slideFail(msg) { return { success: false, error: msg, message: msg }; }
+
+// 位置/尺寸对外一律磅（pt），UNO 的 Position/Size 值结构体单位是 1/100 mm。
+const PT_PER_HMM = 1 / 35.28;
+function hmmToPt(hmm) { return Math.round(Number(hmm) * PT_PER_HMM * 100) / 100; }
+
+// slideNumber 1 开始。命中后顺手 setCurrentPage（拟人：与 resolveSheet 切活动表
+// 同一口径，操作在哪页要让用户看得见）。返回 {page, index} 或 {error}。
+function resolvePage(p) {
+  if (!isImpressDoc()) return { error: NOT_PRESENTATION_MSG };
+  let pages;
+  try { pages = xModel.getDrawPages(); } catch (e) { return { error: '读取幻灯片列表失败: ' + errStr(e) }; }
+  const count = pages.getCount();
+  const want = p && p.slideNumber != null ? Number(p.slideNumber) : NaN;
+  if (!Number.isFinite(want) || want < 1 || want > count) {
+    return { error: '页码越界: ' + (p && p.slideNumber) + '（共 ' + count + ' 页，1 开始）' };
+  }
+  const index = want - 1;
+  let page;
+  try { page = pages.getByIndex(index); } catch (e) { return { error: '定位幻灯片失败: ' + errStr(e) }; }
+  try {
+    if (ctrl && ctrl.getCurrentPage && ctrl.setCurrentPage) {
+      const cur = ctrl.getCurrentPage();
+      if (!cur || !unoSameDrawPage(cur, page)) ctrl.setCurrentPage(page);
+    }
+  } catch (e) {}
+  return { page: page, index: index };
+}
+// XDrawPage 没有稳定的等值比较；退回按 Number 属性比对（GenericDrawPage.Number 只读）。
+function unoSameDrawPage(a, b) {
+  try { return a.getPropertyValue('Number') === b.getPropertyValue('Number'); } catch (e) { return a === b; }
+}
+// 用 .uno:MovePage* 把"当前页"从 fromIndex 挪到 toIndex（同一份 count 快照下，均
+// 0-based）。调用前必须已 ctrl.setCurrentPage() 到源页。XDrawPages 无直接 move
+// API（GenericDrawPage.Number 只读），只能走已验证可靠的 .uno: 派发——同「删除键
+// 必须走 .uno: 调度」PR#164/166 一条经验；slide_move_page 与 slide_add_page 的
+// 新页落点纠偏共用本函数。
+// 定位 page 当前在 xModel.getDrawPages() 里的下标（0-based），找不到返回 -1、
+// 顺带把当前总页数带出（out.total）。
+function locatePageIndex(page, out) {
+  try {
+    const pages = xModel.getDrawPages();
+    const total = pages.getCount();
+    if (out) out.total = total;
+    for (let i = 0; i < total; i++) {
+      let cand; try { cand = pages.getByIndex(i); } catch (e) { continue; }
+      if (unoSameDrawPage(cand, page)) return i;
+    }
+  } catch (e) {}
+  return -1;
+}
+// 把 page 逐步移动到 toIndex（0-based），每步之间用 Number 属性核对是否真的挪动
+// 了一步再继续——.uno:MovePageUp/Down 偶发不生效，不能假设一次 dispatch 必定
+// 生效一步。不处理"挪进真正最后一页"这个特殊情形（见 movePageTo）。
+function movePageStepwise(page, toIndex, maxSteps) {
+  const cap = maxSteps || 50;
+  let curIndex = -1;
+  for (let steps = 0; steps <= cap; steps++) {
+    const loc = {}; curIndex = locatePageIndex(page, loc);
+    if (curIndex === -1) return -1;
+    if (curIndex === toIndex || steps === cap) return curIndex;
+    try {
+      if (ctrl && ctrl.setCurrentPage) ctrl.setCurrentPage(page);
+      let cur = null;
+      try { cur = ctrl && ctrl.getCurrentPage ? ctrl.getCurrentPage() : null; } catch (e) {}
+      if (!cur || !unoSameDrawPage(cur, page)) return -2;
+      dispatchUno(curIndex < toIndex ? '.uno:MovePageDown' : '.uno:MovePageUp');
+    } catch (e) { return curIndex; }
+  }
+  return curIndex;
+}
+// 把 page 移动到 toIndex（0-based）。真机实测（r4）：无论用 .uno:MovePageDown
+// 连续派发，还是改派发 .uno:MovePageLast，把一页"挪进真正的最后一页"这最后一步
+// 都会卡住不动（e2e 组 22 实锤：4 页文档从 index0 出发，无论哪种方式，都停在
+// index2 到不了 index3）——但反方向没有这个毛病：.uno:MovePageUp 把"当前真正
+// 排在最后的那一页"往前挪一步，观察不到同款卡死。于是目标是真正最后一页时改用
+// 交换法：先把 page 挪到倒数第二（这一段是常规、非边界移动，走 movePageStepwise
+// 已验证可靠），再把此刻排在最后的那一页用 MovePageUp 往前挪一步——等价于把
+// page 换到了最后。返回 page 实际最终落点 index（-1/-2 = 失败，同 movePageStepwise
+// 的错误码）。
+function movePageTo(page, toIndex, maxSteps) {
+  const loc0 = {}; const curIndex = locatePageIndex(page, loc0);
+  if (curIndex === -1) return -1;
+  const total = loc0.total;
+  if (toIndex < 0 || toIndex >= total) return curIndex;
+  if (toIndex !== total - 1) return movePageStepwise(page, toIndex, maxSteps);
+  const nearLast = total - 2;
+  if (nearLast >= 0 && curIndex !== nearLast) {
+    const got = movePageStepwise(page, nearLast, maxSteps);
+    if (got !== nearLast) return got; // 半路已失败，如实返回不再继续
+  } else if (nearLast < 0) {
+    return curIndex; // 只有 1 页，没有"最后一页"这个位移概念
+  }
+  let lastPageObj = null;
+  try { lastPageObj = xModel.getDrawPages().getByIndex(total - 1); } catch (e) { return nearLast; }
+  if (unoSameDrawPage(lastPageObj, page)) return total - 1; // 已经就是最后一页
+  try {
+    if (ctrl && ctrl.setCurrentPage) ctrl.setCurrentPage(lastPageObj);
+    let cur = null;
+    try { cur = ctrl && ctrl.getCurrentPage ? ctrl.getCurrentPage() : null; } catch (e) {}
+    if (!cur || !unoSameDrawPage(cur, lastPageObj)) return nearLast;
+    dispatchUno('.uno:MovePageUp');
+  } catch (e) { return nearLast; }
+  const loc1 = {}; return locatePageIndex(page, loc1);
+}
+// 未命名形状补一个稳定名 __awd_shape_N（页内下标），此后所有原语按名定位，
+// 避免用会因增删漂移的 index。
+function ensureShapeNames(page) {
+  const n = page.getCount();
+  // 真机实测（r4）：标题占位符形状会在页面经历其它结构性操作（加形状/加文本框
+  // 等）后被引擎悄悄重建（对象换了个新的、未命名），若此时它恰好落在某个"之前
+  // 已经把这个数字用掉"的下标上，单纯按当前下标拼名字会撞车——两个不同的形状
+  // 拿到同一个 __awd_shape_N，按名定位（resolveShape）会取到错的那个（e2e 组 22
+  // 实锤：矩形形状的名字后来指向了标题形状）。先收集页面上已占用的名字集合，
+  // 分配新名字时跳过已占用的，保证同一页内任何时刻名字唯一。
+  const used = new Set();
+  for (let i = 0; i < n; i++) {
+    let shape; try { shape = page.getByIndex(i); } catch (e) { continue; }
+    let name = ''; try { name = shape.getName ? shape.getName() : ''; } catch (e) {}
+    if (name) used.add(name);
+  }
+  let counter = 0;
+  for (let i = 0; i < n; i++) {
+    let shape; try { shape = page.getByIndex(i); } catch (e) { continue; }
+    let name = ''; try { name = shape.getName ? shape.getName() : ''; } catch (e) {}
+    if (name) continue;
+    let candidate;
+    do { candidate = '__awd_shape_' + (counter++); } while (used.has(candidate));
+    try { shape.setName(candidate); used.add(candidate); } catch (e) {}
+  }
+}
+// 形状文字：大多数形状（文本框/标题/占位符）实现 drawing.Text；线条/连接符/表格
+// 外壳等不实现，统一 try/catch 归零而非抛错，读取面据此判断"这个形状没有文字"。
+function shapeText(shape) {
+  try { return shape.getText().getString() || ''; } catch (e) { return ''; }
+}
+// 鸭子类型表格判定：真机实测（r4，e2e 组 23）——刚用
+// createInstance('com.sun.star.drawing.TableShape') + page.add() 建出来的表格
+// 形状，经 page.getByIndex() 重新取到的引用上 supportsService('com.sun.star.
+// drawing.TableShape') 报 false，但它的 Model 属性货真价实是一张能读写行列的
+// XTable（slide_add_table 内部用同一属性建表已验证）。service 名判定在这个引擎
+// 构建上对新建表格不可靠，改成直接尝试取 Model 并鸭子类型检查 getRows/
+// getColumns 方法是否存在——不依赖 service 字符串，也不关心它为什么不可靠。
+function isTableShape(shape) {
+  try {
+    const m = shape.getPropertyValue('Model');
+    return !!(m && typeof m.getRows === 'function' && typeof m.getColumns === 'function');
+  } catch (e) { return false; }
+}
+// 形状分类，仅用于 slide_get_overview/slide_get_page 的展示与 slide_replace_text
+// 的表格识别；不影响文字读写路径本身（那条走 getText() 统一处理，与分类无关）。
+function shapeKind(shape) {
+  try {
+    if (shape.supportsService('com.sun.star.presentation.TitleTextShape')) return 'title';
+    if (shape.supportsService('com.sun.star.presentation.OutlineTextShape') ||
+        shape.supportsService('com.sun.star.presentation.SubtitleTextShape') ||
+        shape.supportsService('com.sun.star.presentation.NotesTextShape')) return 'placeholder';
+    if (shape.supportsService('com.sun.star.drawing.TableShape') || isTableShape(shape)) return 'table';
+    if (shape.supportsService('com.sun.star.drawing.GraphicObjectShape')) return 'image';
+    if (shape.supportsService('com.sun.star.drawing.TextShape')) return 'text';
+    if (shape.supportsService('com.sun.star.drawing.RectangleShape')) return 'rectangle';
+    if (shape.supportsService('com.sun.star.drawing.EllipseShape')) return 'ellipse';
+    if (shape.supportsService('com.sun.star.drawing.LineShape')) return 'line';
+    if (shape.supportsService('com.sun.star.drawing.GroupShape')) return 'group';
+  } catch (e) {}
+  return 'other';
+}
+// 按 shapeName（XNamed.Name）或 matchText（子串匹配文字）定位形状。返回
+// {shape, index, name} 或 {error}。调用前应已 ensureShapeNames(page)。
+function resolveShape(page, p) {
+  const n = page.getCount();
+  const wantName = p && p.shapeName != null && String(p.shapeName).trim() !== '' ? String(p.shapeName).trim() : null;
+  const wantText = p && p.matchText != null && String(p.matchText).trim() !== '' ? String(p.matchText).trim() : null;
+  if (wantName) {
+    for (let i = 0; i < n; i++) {
+      let shape; try { shape = page.getByIndex(i); } catch (e) { continue; }
+      let name = ''; try { name = shape.getName(); } catch (e) {}
+      if (name === wantName) return { shape: shape, index: i, name: name };
+    }
+    return { error: '形状不存在: ' + wantName + '（该页共 ' + n + ' 个形状，可用 slide_get_page 查看）' };
+  }
+  if (wantText) {
+    for (let i = 0; i < n; i++) {
+      let shape; try { shape = page.getByIndex(i); } catch (e) { continue; }
+      const text = shapeText(shape);
+      if (text && text.indexOf(wantText) !== -1) {
+        let name = ''; try { name = shape.getName(); } catch (e) {}
+        return { shape: shape, index: i, name: name };
+      }
+    }
+    return { error: '未找到包含文字的形状: ' + wantText };
+  }
+  return { error: '缺少 shapeName 或 matchText 参数' };
+}
+// 备注页正文形状定位。r4 真机验证发现：pptx 经 oox 过滤器导入后，备注页上的
+// 占位符形状（缩略图/备注正文/页码）一律只 supportsService('presentation.Shape')
+// 这个通用服务，具体子类型（NotesTextShape/SlideNumberShape 等）不会出现在
+// supportsService/getSupportedServiceNames 里——原语按 NotesTextShape 判定会
+// 对真实 pptx 100% 落空（swriter/scalc 的 isWriterDoc/isCalcDoc 靠 xModel 顶层
+// 服务判型不受影响，这是 sd 占位符子类型独有的坑）。三级回退定位：
+//  1) 具体服务判定（若未来某个 LO 版本/ODP 原生文档确实实现了它，优先信）；
+//  2) 按名字（"Notes Placeholder" 是 PowerPoint/python-pptx 备注母版模板的默认
+//     英文命名，与文档 UI 语言无关，比 PlaceholderText 的本地化提示文字稳）；
+//  3) 兜底：排除已知非备注占位符（缩略图/页码/日期/页脚/页眉）后，取支持
+//     drawing.Text 的形状里面积最大的那个（备注正文框通常占据版面主体）。
+function findNotesTextShape(notesPage) {
+  if (!notesPage) return null;
+  const n = notesPage.getCount();
+  for (let i = 0; i < n; i++) {
+    let shape; try { shape = notesPage.getByIndex(i); } catch (e) { continue; }
+    try { if (shape.supportsService('com.sun.star.presentation.NotesTextShape')) return shape; } catch (e) {}
+  }
+  const NON_NOTES_NAME = /slide image|slide number|date placeholder|footer placeholder|header placeholder/i;
+  for (let i = 0; i < n; i++) {
+    let shape; try { shape = notesPage.getByIndex(i); } catch (e) { continue; }
+    let name = ''; try { name = shape.getName ? shape.getName() : ''; } catch (e) {}
+    if (/notes/i.test(name) && !NON_NOTES_NAME.test(name)) return shape;
+  }
+  let best = null, bestArea = -1;
+  for (let i = 0; i < n; i++) {
+    let shape; try { shape = notesPage.getByIndex(i); } catch (e) { continue; }
+    let name = ''; try { name = shape.getName ? shape.getName() : ''; } catch (e) {}
+    if (NON_NOTES_NAME.test(name)) continue;
+    let hasText = false; try { hasText = shape.supportsService('com.sun.star.drawing.Text'); } catch (e) {}
+    if (!hasText) continue;
+    let size = null; try { size = shape.getSize(); } catch (e) {}
+    const area = size ? Number(size.Width) * Number(size.Height) : 0;
+    if (area > bestArea) { bestArea = area; best = shape; }
+  }
+  return best;
+}
+// 备注页文字：找到备注正文形状后读回其文字（找不到则视为无备注，不是错误）。
+function notesPageText(notesPage) {
+  const shape = findNotesTextShape(notesPage);
+  return shape ? shapeText(shape) : '';
+}
+// 版式名最佳努力映射（AutoLayout 是 short 常量，未在本次调研中逐值核对 idl，
+// 仅覆盖几个常被引用的值；命中不了就回退成 null，前端/模型仍能用数字 layout
+// 字段）。r4 真机验证时如与实际枚举不符，直接改这张表，不影响原语契约。
+const AUTO_LAYOUT_NAMES = { 0: '标题页', 1: '标题+内容', 19: '仅标题', 20: '空白' };
+function layoutNameOf(layout) {
+  if (layout == null) return null;
+  const n = Number(layout);
+  return Object.prototype.hasOwnProperty.call(AUTO_LAYOUT_NAMES, n) ? AUTO_LAYOUT_NAMES[n] : null;
+}
+
+// ---- Impress Phase 3（格式与表格）helpers -----------------------------------
+// 设计依据：docs/superpowers/specs/2026-08-07-impress-bridge-design.md §4.2（原语 16-20）。
+// 形状文字格式读回：取首字符的字符属性作为整个形状的代表值（同 get_formatting
+// 读光标处格式的口径，不逐字符扫描）——slide_get_page 的 format 字段用它填充，
+// 供 slide_format_text 的调用方核实真实生效值，而不是只信 setter 自己的回声。
+// 无文字的形状返回 null。
+function shapeCharFormat(shape) {
+  let xText; try { xText = shape.getText(); } catch (e) { return null; }
+  let full = ''; try { full = xText.getString() || ''; } catch (e) {}
+  if (!full) return null;
+  let cur;
+  try { cur = xText.createTextCursor(); cur.gotoStart(false); cur.goRight(1, true); }
+  catch (e) { return null; }
+  const out = {};
+  try { out.fontName = cur.getPropertyValue('CharFontName'); } catch (e) {}
+  try { out.fontSize = cur.getPropertyValue('CharHeight'); } catch (e) {}
+  try { out.bold = cur.getPropertyValue('CharWeight') > 100; } catch (e) {}
+  try { out.italic = !enumEq(cur.getPropertyValue('CharPosture'), css.awt.FontSlant.NONE); } catch (e) {}
+  try { out.underline = !enumEq(cur.getPropertyValue('CharUnderline'), css.awt.FontUnderline.NONE); } catch (e) {}
+  try { out.strikethrough = !enumEq(cur.getPropertyValue('CharStrikeout'), css.awt.FontStrikeout.NONE); } catch (e) {}
+  try { const c = cur.getPropertyValue('CharColor'); out.color = c === -1 ? 'auto' : '#' + ('000000' + (c >>> 0).toString(16)).slice(-6); } catch (e) {}
+  try {
+    const a = cur.getPropertyValue('ParaAdjust');
+    const A = css.style.ParagraphAdjust;
+    out.alignment = enumEq(a, A.CENTER) ? 'center' : enumEq(a, A.RIGHT) ? 'right'
+      : (enumEq(a, A.BLOCK) || enumEq(a, A.STRETCH)) ? 'justify' : 'left';
+  } catch (e) {}
+  return out;
+}
+// 定位一张 Impress 表格形状：shapeName 显式指定；缺省要求该页恰好一张表格形状
+// （Impress 没有"光标所在表"的等价概念，不能像 resolveWriterTable 那样回退）。
+// 返回 {table, shapeName} 或 {error}。调用前应已 resolvePage(p) 拿到 page。
+function resolveSlideTable(page, p) {
+  ensureShapeNames(page);
+  const wantName = p && p.shapeName != null && String(p.shapeName).trim() !== '' ? String(p.shapeName).trim() : null;
+  if (wantName) {
+    const rs = resolveShape(page, { shapeName: wantName });
+    if (rs.error) return { error: rs.error };
+    if (shapeKind(rs.shape) !== 'table') return { error: '形状不是表格: ' + rs.name + '（用 slide_get_page 确认哪个形状是表格）' };
+    let table; try { table = rs.shape.getPropertyValue('Model'); } catch (e) { return { error: '读取表格模型失败: ' + errStr(e) }; }
+    if (!table) return { error: '表格模型不可用（引擎未返回 Model）' };
+    return { table: table, shapeName: rs.name };
+  }
+  const n = page.getCount();
+  let found = null, foundName = '', count = 0;
+  for (let i = 0; i < n; i++) {
+    let shape; try { shape = page.getByIndex(i); } catch (e) { continue; }
+    if (shapeKind(shape) === 'table') {
+      count++;
+      if (!found) { found = shape; try { foundName = shape.getName(); } catch (e) {} }
+    }
+  }
+  if (count === 0) return { error: '该页没有表格形状（用 slide_add_table 先建一张，或传 shapeName 指定其它页的表格）' };
+  if (count > 1) return { error: '该页有 ' + count + ' 张表格，请传 shapeName 指定操作哪一张' };
+  let table; try { table = found.getPropertyValue('Model'); } catch (e) { return { error: '读取表格模型失败: ' + errStr(e) }; }
+  if (!table) return { error: '表格模型不可用（引擎未返回 Model）' };
+  return { table: table, shapeName: foundName };
+}
+
+// ---- 全文按画像格式化（apply_house_style / apply_style_profile 共用）--------------
+function styleProfileSummary() {
+  const bs = HOUSE.bodySpec;
+  return {
+    profileName: HOUSE.name,
+    body: {
+      fontAsian: HOUSE.fontAsian, fontWestern: HOUSE.fontWestern, sizePt: HOUSE.bodyPt, alignment: bs.align,
+      firstLineIndentPt: Math.round(bs.indentMm * 72 / 2540 * 10) / 10,
+      spaceBeforePt: Math.round(bs.topMm * 72 / 2540 * 10) / 10,
+      spaceAfterPt: Math.round(bs.bottomMm * 72 / 2540 * 10) / 10,
+    },
+    headingLevels: Object.keys(HOUSE.headings).map(Number),
+    tablePt: HOUSE.tablePt,
+  };
+}
+// 段落分类：首个非空短段（idx 0、<=60 字）为 title；OutlineLevel>0 或 Heading 样式为
+// heading（trueLevels 时取真实级别，否则一律二级 = 改造前"小标题=正文款加粗"）；其余 body。
+function paraKindOf(el, isFirst, trueLevels) {
+  let lvl = 0, style = '';
+  try { lvl = el.getPropertyValue('OutlineLevel') || 0; } catch (e) {}
+  try { style = el.getPropertyValue('ParaStyleName') || ''; } catch (e) {}
+  if (lvl > 0 || /^(Heading|标题)/.test(style)) {
+    let level = lvl;
+    if (!level) { const m = /(\d+)/.exec(style); level = m ? Number(m[1]) : 2; }
+    return { kind: 'heading', level: trueLevels ? level : 2 };
+  }
+  return { kind: 'body', level: null };
+}
+function charOptsFor(k) {
+  if (k.kind === 'body') return { sizePt: HOUSE.bodyPt, bold: HOUSE.bodyBold, keepWeight: true };
+  const hs = k.kind === 'title' ? headingSpec(1) : headingSpec(k.level);
+  return { sizePt: hs.sizePt, bold: hs.bold, fontAsian: hs.fontAsian, fontWestern: hs.fontWestern, color: hs.color };
+}
+async function applyHouseToDocument(p, opts) {
+  const trueLevels = !!(opts && opts.trueLevels);
+  // progress 的 total = 正文段数 + 表数（顶层元素数）；段数走索引缓存，表数一次 getCount。
+  let total = 0;
+  try { total = getParaIndex().total; } catch (e) {}
+  try { total += xModel.getTextTables().getCount(); } catch (e) {}
+  const en = xModel.getText().createEnumeration();
+  const BATCH = 500;
+  let idx = 0, paras = 0, tables = 0, titled = false, prevWasTable = false, cancelled = false;
+  lockModel();
+  try {
+  while (en.hasMoreElements()) {
+    if (idx > 0 && idx % BATCH === 0) {
+      if (await batchBreak(p, idx, total)) { cancelled = true; break; }
+    }
+    const el = en.nextElement();
+    if (el.supportsService && el.supportsService('com.sun.star.text.Paragraph')) {
+      const text = (el.getString() || '').trim();
+      let k = { kind: 'body', level: null };
+      if (!titled && text) {
+        titled = true;
+        if (idx === 0 && text.length <= 60) k = { kind: 'title', level: 1 };
+      }
+      if (k.kind !== 'title') k = paraKindOf(el, idx === 0, trueLevels);
+      applyHousePara(el, k.kind, { afterTable: prevWasTable, level: k.level });
+      applyHouseChar(el, charOptsFor(k));
+      prevWasTable = false;
+      paras++;
+    } else if (el.supportsService && el.supportsService('com.sun.star.text.TextTable')) {
+      try { styleTableStandard(el, { keepWeight: true }); tables++; } catch (e) {}
+      prevWasTable = true;
+    }
+    idx++;
+  }
+  } finally { unlockModel(); }
+  if (idx > BATCH && !cancelled) postProgress(p, idx, total);
+  const r = Object.assign({ success: true, paragraphs: paras, tables: tables, truncated: cancelled }, verifySnapshot());
+  if (cancelled) { r.cancelled = true; r.done = idx; }
+  return r;
+}
+
+// ---- 流式写入状态机：markdown 行级解析 → 标准格式落字 ------------------------
+// stream_insert 攒字节、按完整行消费；stream_flush 收尾（写掉尾行/尾表、复位）。
+// 状态在 worker 内（宿主只透传 token），文档换人/换流由宿主在 open_sync 时
+// stream_flush({discard:true}) 硬复位。
+const STREAM = { active: false, buf: '', table: null, afterTable: false, allowTitle: false, wroteTitle: false, listRules: null, listPreset: null };
+function streamReset(discard) {
+  STREAM.active = false; STREAM.buf = ''; STREAM.table = null; STREAM.afterTable = false;
+  STREAM.allowTitle = false; STREAM.wroteTitle = false; STREAM.listRules = null; STREAM.listPreset = null;
+  if (!discard) { /* 占位：正常收尾无额外动作 */ }
+}
+function streamEnsureActive() {
+  if (STREAM.active) return;
+  streamReset(true);
+  STREAM.active = true;
+  // 文档近乎空白才允许把第一个 # 当主标题；往已有文档续写时所有标题一律小标题样式
+  let len = 0;
+  try { len = (xModel.getText().getString() || '').trim().length; } catch (e) {}
+  STREAM.allowTitle = len < 5;
+}
+function streamTableFlush() {
+  const t = STREAM.table;
+  STREAM.table = null;
+  if (!t || !t.rows.length) return;
+  insertStyledTable(t.rows, t.sawSep ? 1 : 0);
+  STREAM.afterTable = true;
+}
+function streamParagraph(runs, kind, headingLevel) {
+  const vc = ctrl.getViewCursor();
+  vc.collapseToEnd();
+  const xText = vc.getText();
+  // 续写场景的 #（非主标题）落为二级标题规格：主标题只有一个，其余 # 与 ## 同款
+  //（house-default 里二至六级与正文同款加粗，与改造前"小标题=正文款加粗"一致）。
+  const spec = kind === 'title' ? headingSpec(1) : kind === 'heading' ? headingSpec(Math.max(2, Number(headingLevel) || 2)) : null;
+  applyHousePara(vc, kind, { afterTable: STREAM.afterTable, level: spec ? spec.level : null });
+  STREAM.afterTable = false;
+  if (headingLevel != null) { try { vc.setPropertyValue('OutlineLevel', shortAny(headingLevel)); } catch (e) {} }
+  writeStyledRuns(vc, runs, spec
+    ? { sizePt: spec.sizePt, bold: spec.bold, fontAsian: spec.fontAsian, fontWestern: spec.fontWestern, color: spec.color }
+    : { sizePt: HOUSE.bodyPt, bold: HOUSE.bodyBold });
+  xText.insertControlCharacter(vc, css.text.ControlCharacter.PARAGRAPH_BREAK, false);
+  vc.collapseToEnd();
+  return vc;
+}
+function streamListItem(text, ordered, level) {
+  const preset = ordered ? 'decimal' : 'bullet';
+  if (!STREAM.listRules || STREAM.listPreset !== preset) {
+    try { STREAM.listRules = makeNumberingRules(preset); STREAM.listPreset = preset; }
+    catch (e) { STREAM.listRules = null; STREAM.listPreset = null; }
+  }
+  const vc = streamParagraph(parseInlineRuns(text), 'list', null);
+  // 段落分隔符已插入，编号属性要落在"刚写完的那一段"——退回一段再设
+  if (STREAM.listRules) {
+    try {
+      const cur = vc.getText().createTextCursorByRange(vc.getStart());
+      cur.gotoPreviousParagraph(false);
+      cur.setPropertyValue('NumberingRules', STREAM.listRules);
+      cur.setPropertyValue('NumberingLevel', Math.max(0, Math.min(Number(level) || 0, 8)));
+    } catch (e) {}
+  }
+}
+function streamWriteLine(line) {
+  const isTableRow = /^\s*\|.*\|\s*$/.test(line);
+  if (isTableRow) {
+    if (!STREAM.table) STREAM.table = { rows: [], sawSep: false };
+    const cells = line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(function (s) { return s.trim(); });
+    const isSep = cells.length > 0 && cells.every(function (c) { return /^:?-+:?$/.test(c); });
+    if (isSep) STREAM.table.sawSep = true;
+    else STREAM.table.rows.push(cells);
+    return;
+  }
+  if (STREAM.table) streamTableFlush();
+  const trimmed = line.trim();
+  if (!trimmed) { STREAM.listRules = null; STREAM.listPreset = null; return; } // 规范：没有额外空行
+  if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) return; // 水平分隔线丢弃
+  let m;
+  if ((m = trimmed.match(/^(#{1,6})\s+(.*)$/))) {
+    STREAM.listRules = null; STREAM.listPreset = null;
+    const level = m[1].length;
+    const text = m[2].replace(/\s*#+\s*$/, '');
+    if (level === 1 && STREAM.allowTitle && !STREAM.wroteTitle) {
+      STREAM.wroteTitle = true;
+      streamParagraph(parseInlineRuns(text), 'title', null);
+    } else {
+      streamParagraph(parseInlineRuns(text), 'heading', Math.min(level, 9));
+    }
+    return;
+  }
+  const indentM = line.match(/^(\s*)/);
+  const level = Math.min(Math.floor((indentM ? indentM[1].length : 0) / 2), 8);
+  if ((m = trimmed.match(/^[-*+]\s+(.*)$/))) { streamListItem(m[1], false, level); return; }
+  if ((m = trimmed.match(/^\d+[.)]\s+(.*)$/))) { streamListItem(m[1], true, level); return; }
+  STREAM.listRules = null; STREAM.listPreset = null;
+  if ((m = trimmed.match(/^>\s?(.*)$/))) { streamParagraph(parseInlineRuns(m[1]), 'body', null); return; }
+  streamParagraph(parseInlineRuns(trimmed), 'body', null);
+}
+
+// ---- 修订显示三态（Word 式，dev-board#368）---------------------------------
+// all    全部修订：正文内联删除线/下划线   ShowChanges=true  ShowChangesInMargin=false
+// balloons 原生页外审阅区：正文保留插入标记，删除/格式修订与批注在页边展示
+// margin 旧页边方式：仅保留内部最终正文操作和兼容调用，不再出现在工具栏
+// final  最终稿：修订痕迹全隐             ShowChanges=false
+//
+// 三态**只改显示**：RecordChanges（还记不记修订）与 redline 数据本身一律不动，
+// 导出的 docx 里修订一条不少。两个开关分属不同层：
+//   ShowChanges         → 模型属性（跟着文档走）
+//   ShowChangesInMargin → 控制器的视图设置（跟着控制器走，换文档必须重设）
+// 所以 boot 与 load_document 的 retarget 都要 resetRevisionView()。
+//
+// 页边显示 (LO 7.1+, tdf#34355) REQUIRES engine >= 24.2.8-zhcn-r3：原生 LO 把
+// 页边文字画在锚点 frame 左侧，表格里 frame = 单元格，删除文字会叠到左邻格正文
+// 上；r3 焙入了 frmpaint.cxx 补丁（锚整表左缘，desktop/lowa-build/patches）。
+const REVISION_VIEWS = ['all', 'balloons', 'margin', 'final'];
+let balloonModel = null; // Native margin layout; its legacy deletion paint is replaced by page-gutter cards.
+// 默认完整标记：删除在正文内以删除线展示。AI 和写作助手的正文读取/定位
+// 仍走 runAgentCommandInMarginView 的最终文本语义，与用户看到的显示方式分离。
+const DEFAULT_REVISION_VIEW = 'all';
+
+function readShowChanges() {
+  try { return !!xModel.getPropertyValue('ShowChanges'); } catch (e) { return null; }
+}
+function readShowChangesInMargin() {
+  try { return !!ctrl.getViewSettings().getPropertyValue('ShowChangesInMargin'); } catch (e) { return null; }
+}
+// 两个布尔 → 三态名。读不回来（null）时不猜「隐了」，归到看得见的那一侧。
+function revisionModeOf(showChanges, inMargin) {
+  if (showChanges === false) return 'final';
+  if (inMargin === true) return 'margin';
+  return 'all';
+}
+function revisionViewState() {
+  const showChanges = readShowChanges();
+  const inMargin = readShowChangesInMargin();
+  return {
+    mode: balloonModel === xModel && inMargin === true ? 'balloons' : revisionModeOf(showChanges, inMargin),
+    showChanges: showChanges,
+    showChangesInMargin: inMargin,
+    // 属性在本构建上根本不存在时读会抛（→ null），宿主据此把中间项去掉退成两态。
+    marginSupported: inMargin !== null,
+    hideSupported: showChanges !== null,
+  };
+}
+// com.sun.star.document.RedlineDisplayType：0=NONE、1=INSERTED、2=INSERTED_AND_REMOVED。
+const REDLINE_DISPLAY_NONE = 0, REDLINE_DISPLAY_ALL = 2;
+// 显示/隐藏修订痕迹。**不能写 ShowChanges**——真机实证（本引擎 24.2.8-zhcn）
+// 那个属性读得回但写不进去：setPropertyValue('ShowChanges', false) 不抛异常也
+// 纹丝不动，是个静默空写。真正管用的是 RedlineDisplayType，且**必须带类型 Any**
+// （shortAny；裸 number 没验证过）。
+// 另一个坑：写 NONE(0) 之后读回来是 INSERTED(1)——插入的文字本来就必须留在版面
+// 里，引擎会自己归一。所以**不能拿 RedlineDisplayType 的读回值当判据**，一律用
+// ShowChanges 复核（它读回来是诚实的：rdt=2 → true，rdt=1 → false）。
+// 兜底才用 .uno:ShowTrackedChanges：它是**切换**语义，想设成确定状态必须先读再
+// 判；读不回来就不敢派发（那等于蒙着切），宁可如实报失败。
+function applyShowChanges(on) {
+  let err = null;
+  try { xModel.setPropertyValue('RedlineDisplayType', shortAny(on ? REDLINE_DISPLAY_ALL : REDLINE_DISPLAY_NONE)); }
+  catch (e) { err = errStr(e); }
+  if (readShowChanges() === !!on) return null;
+  if (readShowChanges() === null) return err || 'ShowChanges 不可读';
+  try { dispatchUno('.uno:ShowTrackedChanges'); } catch (e) { return errStr(e); }
+  return readShowChanges() === !!on ? null : (err || 'ShowChanges 未生效');
+}
+function applyShowChangesInMargin(on) {
+  const current = readShowChangesInMargin();
+  if (current === !!on || (current === null && !on)) return null;
+  if (current === null) return 'ShowChangesInMargin 不受支持';
+  try { ctrl.getViewSettings().setPropertyValue('ShowChangesInMargin', !!on); }
+  catch (e) { return errStr(e); }
+  return readShowChangesInMargin() === !!on ? null : 'ShowChangesInMargin 未生效';
+}
+// 返回的是**读回来的真实状态**（另带 requested/warnings），不是把入参原样抄回去。
+// Pure display changes must not expire completion/review tokens or trigger autosave.
+function withViewOnlyChange(fn) {
+  const enabled = xModel.isSetModifiedEnabled();
+  if (enabled) xModel.disableSetModified();
+  viewChangeInFlight++;
+  try { return fn(); }
+  finally {
+    if (enabled) xModel.enableSetModified();
+    viewChangeInFlight--;
+  }
+}
+
+// ShowChangesInMargin (margin and balloons views) makes Writer's undo fragile:
+// undoing a rejected long deletion in that view hangs the engine for good, and
+// undoing an edit in a different view than it was recorded in hangs too
+// (both reproduced on r4 and r5, dev-board#587). Revision resolutions from the
+// margin views therefore run in the inline view (runRevisionResolution) and
+// their undo entries are remembered; undo/redo take the same inline detour
+// only while such an entry is on top. Every other entry undoes where it is.
+const inlineUndoEntries = { undo: null, redo: null };
+function topUndoEntry(um, kind) {
+  const titles = kind === 'undo' ? um.getAllUndoActionTitles() : um.getAllRedoActionTitles();
+  return { model: xModel, depth: titles.length, title: titles.length ? String(titles[0]) : '' };
+}
+function sameUndoEntry(a, b) { return !!a && !!b && a.model === b.model && a.depth === b.depth && a.title === b.title; }
+function rememberInlineUndo() {
+  try { inlineUndoEntries.undo = topUndoEntry(xModel.getUndoManager(), 'undo'); inlineUndoEntries.redo = null; } catch (e) {}
+}
+// One undo or redo step through `run` (the UndoManager, or Writer's own command).
+function undoStep(um, kind, run) {
+  const other = kind === 'undo' ? 'redo' : 'undo';
+  const detour = isWriterDoc() && readShowChangesInMargin() === true
+    && sameUndoEntry(inlineUndoEntries[kind], topUndoEntry(um, kind));
+  if (!detour) { run(); return; }
+  const before = revisionViewState().mode;
+  withViewOnlyChange(function () { applyRevisionView('all'); try { xModel.refresh(); } catch (e) {} });
+  try { run(); }
+  finally { withViewOnlyChange(function () { applyRevisionView(before); try { xModel.refresh(); } catch (e) {} }); }
+  inlineUndoEntries[other] = topUndoEntry(um, other);
+  inlineUndoEntries[kind] = null;
+}
+
+// reserveGutter: only a user switch into balloons from another mode. Internal
+// switch-and-restore paths (export, revision resolution) leave the width alone:
+// no revision view writes it, so the restore keeps exactly the gutter the host
+// chose, including a released one (0), without a relayout and page jump.
+function applyRevisionView(mode, reserveGutter) {
+  return withViewOnlyChange(function () {
+    const want = REVISION_VIEWS.indexOf(mode) >= 0 ? mode : DEFAULT_REVISION_VIEW;
+    if (want === 'balloons' && !installReviewCommentInterceptor(ctrl)) {
+      return Object.assign(revisionViewState(), { requested: want, warnings: ['批注输入通道不可用，请重新打开文档后重试。'] });
+    }
+    const warnings = [];
+    // Reserve the native gutter before hiding deletions, so no frame paints the
+    // legacy left-margin text while the overlay is catching up.
+    if (want === 'balloons' && reserveGutter && supportsReviewGeometry()
+      && Number(ctrl.getPropertyValue('AwdReviewSidebarWidth')) !== 280) ctrl.setPropertyValue('AwdReviewSidebarWidth', 280);
+    const e1 = applyShowChangesInMargin(want === 'margin' || want === 'balloons');
+    if (e1) warnings.push('ShowChangesInMargin: ' + e1);
+    const e2 = applyShowChanges(want !== 'final');
+    balloonModel = want === 'balloons' && !e1 && !e2 ? xModel : null;
+    if (e2) warnings.push('ShowChanges: ' + e2);
+    // Hiding a whole deleted paragraph changes paragraph membership. View-only
+    // changes suppress modified events, so cached ranges must be dropped here.
+    invalidateParaIndex();
+    const st = revisionViewState();
+    st.requested = want;
+    if (warnings.length) st.warnings = warnings;
+    return st;
+  });
+}
+// 启动 / 换文档时复位。不只是把页边开关重新打开（视图设置跟着控制器走），更是
+// 把上一份文档可能留下的「最终稿」隐藏态显式打回来——保活池里同一个 worker 会
+// 连着开好几份文档，不复位就是「上一份设了最终稿、下一份打开修订痕迹默默不见」。
+function resetRevisionView() { return applyRevisionView(DEFAULT_REVISION_VIEW); }
+// Writer's final-text view can lose/rename the private bookmarks that its DOCX
+// exporter uses for move ranges, while native RedlineMovedID remains intact.
+// Restore only complete native pairs; never infer movement from matching text.
+function repairMoveRangeBookmarks() {
+  if (!isWriterDoc()) return;
+  const groups = Object.create(null), en = xModel.getRedlines().createEnumeration();
+  while (en.hasMoreElements()) {
+    const redline = en.nextElement();
+    let id;
+    try { id = Number(redline.getPropertyValue('RedlineMovedID')); } catch (e) { return; }
+    if (!(id > 1)) continue;
+    const type = String(redline.getPropertyValue('RedlineType'));
+    if (type !== 'Delete' && type !== 'Insert') continue;
+    const group = groups[id] || (groups[id] = { Delete: [], Insert: [] });
+    let start = redline.getPropertyValue('RedlineStart'), end = redline.getPropertyValue('RedlineEnd');
+    // UNO exposes the redline Point/Mark, which can be reversed after view changes.
+    if (start.getText().compareRegionStarts(start, end) < 0) { const tmp = start; start = end; end = tmp; }
+    group[type].push({ start: start, end: end });
+  }
+  const ids = Object.keys(groups).filter(id => groups[id].Delete.length && groups[id].Insert.length);
+  if (!ids.length) return;
+  const span = function (parts) {
+    let start = parts[0].start, end = parts[0].end;
+    const text = start.getText();
+    // One logical move can be split into several redlines after later edits.
+    // Fold its native endpoints, including any intervening tracked edits.
+    try {
+      for (let i = 1; i < parts.length; i++) {
+        if (text.compareRegionStarts(parts[i].start, start) > 0) start = parts[i].start;
+        if (text.compareRegionEnds(parts[i].end, end) < 0) end = parts[i].end;
+      }
+      const cursor = text.createTextCursorByRange(start);
+      cursor.gotoRange(end, true);
+      return cursor;
+    } catch (e) { throw new Error('Could not preserve tracked movement across text regions'); }
+  };
+  const bookmarks = xModel.getBookmarks(), existing = [];
+  const names = bookmarks.getElementNames();
+  for (let i = 0; i < names.length; i++) {
+    const name = String(names[i]);
+    const type = name.startsWith('__RefMoveFrom__') ? 'Delete' : name.startsWith('__RefMoveTo__') ? 'Insert' : null;
+    if (type) existing.push({ name: name, type: type, bookmark: bookmarks.getByName(name) });
+  }
+  const sameRange = function (a, b) {
+    try { return a.getText().compareRegionStarts(a.getStart(), b.getStart()) === 0
+      && a.getText().compareRegionEnds(a.getEnd(), b.getEnd()) === 0; } catch (e) { return false; }
+  };
+  const plans = [];
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i], from = span(groups[id].Delete), to = span(groups[id].Insert);
+    if (from.isCollapsed() || to.isCollapsed()) throw new Error('Could not preserve empty tracked movement ranges');
+    const oldFrom = existing.filter(b => b.type === 'Delete' && sameRange(b.bookmark.getAnchor(), from));
+    const oldTo = existing.filter(b => b.type === 'Insert' && sameRange(b.bookmark.getAnchor(), to));
+    if (oldFrom.length === 1 && oldTo.length === 1
+      && oldFrom[0].name.slice('__RefMoveFrom__'.length) === oldTo[0].name.slice('__RefMoveTo__'.length)) continue;
+    let suffix = 'awdNativeMove' + id, serial = 0;
+    while (bookmarks.hasByName('__RefMoveFrom__' + suffix) || bookmarks.hasByName('__RefMoveTo__' + suffix))
+      suffix = 'awdNativeMove' + id + '_' + (++serial);
+    plans.push({ from: from, to: to, suffix: suffix, old: oldFrom.concat(oldTo) });
+  }
+  if (!plans.length) return;
+  const created = [], recording = xModel.getPropertyValue('RecordChanges');
+  const undo = xModel.getUndoManager(), ownsUndoLock = !undo.isLocked();
+  if (ownsUndoLock) undo.lock();
+  try {
+    xModel.setPropertyValue('RecordChanges', false);
+    // Create and verify both sides before removing existing private markers.
+    // Failure must abort export rather than silently serialize a broken pair.
+    for (let i = 0; i < plans.length; i++) {
+      const plan = plans[i];
+      for (const side of [{ prefix: '__RefMoveFrom__', range: plan.from }, { prefix: '__RefMoveTo__', range: plan.to }]) {
+        const bookmark = xModel.createInstance('com.sun.star.text.Bookmark'), name = side.prefix + plan.suffix;
+        bookmark.setName(name);
+        side.range.getText().insertTextContent(side.range, bookmark, true);
+        created.push(bookmark);
+        if (String(bookmark.getName()) !== name || !sameRange(bookmark.getAnchor(), side.range))
+          throw new Error('Could not preserve tracked movement ranges');
+      }
+    }
+    for (let i = 0; i < plans.length; i++) for (const old of plans[i].old)
+      old.bookmark.getAnchor().getText().removeTextContent(old.bookmark);
+  } catch (e) {
+    for (let i = created.length - 1; i >= 0; i--) {
+      try { created[i].getAnchor().getText().removeTextContent(created[i]); } catch (ignored) {}
+    }
+    throw e;
+  } finally {
+    xModel.setPropertyValue('RecordChanges', recording);
+    if (ownsUndoLock) undo.unlock();
+  }
+}
+
+// 导出期间**强制切成「全部修订」内联视图**（dev-board#367 的 withMarginOff + #368 三态）。
+// 两种非默认显示态都会把 docx 导坏，而自动保存 / 版本记录 / 版本对比全走这条导出：
+//   页边（margin）——ShowChangesInMargin 开着时删除文本被并出版面，导出器却按并合后的
+//     正文套用修订区间：字符级替换（删「乙」插「丁」）导出成「丁」被删、「乙」消失，
+//     多段文档里更会把别处的插入标成删除（#367 真机探针）。**只关不重排仍错位**
+//     （探针 R2 实证），所以必须 refresh() 强制重排。
+//   最终稿（final）——RedlineDisplayType 处于隐藏态时导出，隐藏的显示态有可能随
+//     settings.xml（w:revisionView）写进 docx，别人在 Word 里打开就看不见修订了。
+// 导完恢复原来的显示态并再重排一次，让后续 get_document_text 等读取仍按用户所选
+// 的语义走。
+function withInlineMarkupForExport(fn) {
+  // **非 Writer 文档直接放行，一个属性都不许碰**：修订是 Writer 独有的机制，
+  // Calc/Impress 的模型上根本没有 ShowChanges。原来这里靠 try/catch 兜住那次
+  // 无谓的 getPropertyValue，代价是每次 Impress 导出都要在模型上问一个不存在的
+  // 属性——真机实证会把引擎搞坏：紧随其后的 pptx 重新打开要么超过 load_document
+  // 的 180s 预算，要么直接抛 emscripten 的「operation does not support unaligned
+  // accesses」，lowa-e2e 组 23 五次五中（换成页边默认同样中，改回本守卫后转绿）。
+  if (!isWriterDoc()) return fn();
+  const before = revisionViewState().mode;
+  if (before === 'all') return fn();
+  applyRevisionView('all');
+  try { xModel.refresh(); } catch (e) {}
+  try { return fn(); }
+  finally {
+    applyRevisionView(before);
+    try { xModel.refresh(); } catch (e) {}
+  }
+}
+// 批注插入不该被记成修订：RecordChanges 开着时 .uno:InsertAnnotation 会额外记一条
+// 空文本的插入修订（说明字段「已添加批注」），导出 docx 后成了包着批注标记的
+// <w:ins>——Word 里就是那条作者 AI WorkDeck、正文为空的幽灵气泡（dev-board#367
+// 第 6 项），审阅面板也会多一张「插入（空）」卡。派发期间关掉修订记录，完了恢复；
+// 批注本身（区间标记、作者、内容）不受影响，真机探针 Q5 实证。
+function withRecordChangesOff(fn) {
+  let was = false;
+  try { was = !!xModel.getPropertyValue('RecordChanges'); } catch (e) {}
+  if (was) { try { xModel.setPropertyValue('RecordChanges', false); } catch (e) { was = false; } }
+  try { return fn(); }
+  finally { if (was) { try { xModel.setPropertyValue('RecordChanges', true); } catch (e) {} } }
+}
+
+// ---- Native comment requests ---------------------------------------------
+// 原生菜单里不该给律师看到的引擎自带项（BUG-33 / v0.49.0 真机 C4 观察 3）：
+// 「退出 ZetaOffice (Ctrl+Q)」会把 webview 里的引擎整个关掉，「打开远程文档」「在浏览器中预览」
+// 在本 WASM 构建里没有可用的落点，且都把引擎品牌露给用户。两道闸：pruneNativeMenu 从本 frame
+// 的菜单栏里删掉条目；installReviewCommentInterceptor 在派发层把它们拦成 null（快捷键同样失效，
+// 菜单没裁掉时也只是灰掉）。
+const NATIVE_MENU_BLOCKED = ['.uno:Quit', '.uno:OpenRemote', '.uno:WebHtml'];
+// Native InsertAnnotation without Text focuses its own editor. The external
+// gutter hides that editor, so open the existing host form BEFORE insertion.
+let reviewCommentInterceptor = null;
+function installReviewCommentInterceptor(controller) {
+  const previous = reviewCommentInterceptor;
+  if (previous && previous.controller === controller) return previous.ready;
+  if (previous) {
+    previous.ready = false;
+    try { previous.frame.releaseDispatchProviderInterceptor(previous.interceptor); } catch (e) {}
+  }
+  const state = { controller: controller, frame: null, interceptor: null, ready: false, slave: null, master: null };
+  reviewCommentInterceptor = state;
+  try {
+    state.frame = controller.getFrame();
+    const query = function (url, target, flags) {
+      // 引擎自带的「退出 / 打开远程文档 / 在浏览器中预览」一律没有派发对象（BUG-33）。
+      if (NATIVE_MENU_BLOCKED.indexOf(url.Complete) >= 0) return null;
+      const native = state.slave ? state.slave.queryDispatch(url, target, flags) : null;
+      // Writer's own Ctrl+Z (canvas focused) follows the worker's undo/redo rule
+      // (see undoStep): the inline detour only for a remembered resolution.
+      if (native && (url.Complete === '.uno:Undo' || url.Complete === '.uno:Redo')) {
+        return zetajs.unoObject([css.frame.XDispatch], {
+          dispatch(command, args) {
+            undoStep(xModel.getUndoManager(), url.Complete === '.uno:Undo' ? 'undo' : 'redo', function () { native.dispatch(command, args); });
+          },
+          addStatusListener(listener, command) { native.addStatusListener(listener, command); },
+          removeStatusListener(listener, command) { native.removeStatusListener(listener, command); },
+        });
+      }
+      // 原生「文件→导出为→直接导出 PDF / 导出为 PDF…」与标准工具栏的 PDF 图标（dev-board#886）：
+      // 本 WASM 构建里这两条命令要的文件选择器 / PDF 选项对话框起不来，派发静默结束
+      // （真机探针：ExportDirectToPDF 回 State=FAILURE、ExportToPDF 回 Result=false，
+      // 不弹任何窗口、不产出文件）——用户点了没有任何结果。改由宿主接手：worker 只
+      // 发一条请求，宿主经 export_pdf 取 PDF 字节，走应用自己的下载链路（另存为）。
+      if (url.Complete === '.uno:ExportDirectToPDF' || url.Complete === '.uno:ExportToPDF') {
+        return zetajs.unoObject([css.frame.XDispatch], {
+          dispatch() { if (controller === ctrl) post('export-pdf-request', { documentSeq: docSeq, source: url.Complete }); },
+          addStatusListener(listener, command) { if (native) native.addStatusListener(listener, command); },
+          removeStatusListener(listener, command) { if (native) native.removeStatusListener(listener, command); },
+        });
+      }
+      if (!native || url.Complete !== '.uno:InsertAnnotation') return native;
+      return zetajs.unoObject([css.frame.XDispatch], {
+        dispatch(command, args) {
+          if (!state.ready || controller !== ctrl) return;
+          const hasText = Array.from(args || []).some(function (p) {
+            const value = zetajs.fromAny(p.Value);
+            return p.Name === 'Text' && value != null && String(value).length > 0;
+          });
+          // The host form exists whenever this Writer view has the external review
+          // surface, in every view mode and with the gutter released (width 0).
+          // Without readable support the previous width test still applies.
+          let external = false;
+          try { external = isWriterDoc() && supportsReviewGeometry(); } catch (e) {}
+          if (!external) { try { external = Number(controller.getPropertyValue('AwdReviewSidebarWidth')) > 0; } catch (e) {} }
+          if (external && !hasText) post('comment-request', { documentSeq: docSeq });
+          else native.dispatch(command, args);
+        },
+        addStatusListener(listener, command) { native.addStatusListener(listener, command); },
+        removeStatusListener(listener, command) { native.removeStatusListener(listener, command); },
+      });
+    };
+    state.interceptor = zetajs.unoObject([css.frame.XDispatchProviderInterceptor, css.frame.XInterceptorInfo], {
+      // Avoid a JS callback for every menu/toolbar command queried by Writer.
+      getInterceptedURLs() { return ['.uno:InsertAnnotation', '.uno:Undo', '.uno:Redo', '.uno:ExportDirectToPDF', '.uno:ExportToPDF'].concat(NATIVE_MENU_BLOCKED); },
+      queryDispatch: query,
+      queryDispatches(requests) {
+        return requests.map(function (r) { return query(r.FeatureURL, r.FrameName, r.SearchFlags); });
+      },
+      getSlaveDispatchProvider() { return state.slave; },
+      setSlaveDispatchProvider(provider) { state.slave = provider; },
+      getMasterDispatchProvider() { return state.master; },
+      setMasterDispatchProvider(provider) { state.master = provider; },
+    });
+    state.frame.registerDispatchProviderInterceptor(state.interceptor);
+    state.ready = true;
+    return true;
+  } catch (e) {
+    try { if (state.frame && state.interceptor) state.frame.releaseDispatchProviderInterceptor(state.interceptor); } catch (ignored) {}
+    log('批注输入通道安装失败 / comment dispatch interception failed: ' + errStr(e));
+    return false;
+  }
+}
+
+// #601: a right-click on a short selection opens the host's HTML menu instead of
+// Writer's popup. Suppress that popup up front. Opening it and closing it with a
+// synthetic Escape left Qt's popup state behind: the next right press moved the
+// caret and dropped the selection. The host shows its menu only when this same
+// predicate held, so exactly one of the two menus opens.
+let hostContextMenu = { enabled: false, maxLength: 0 };
+let contextMenuInterceptor = null;
+
+// 光标（或选区）落在哪一条 redline 上——工具条「接受/拒绝当前」用。与
+// selectionTouchesDeletion 同口径的区间相交：compareRegionStarts(A,B)>0 表示 A 在 B 前，
+// ==0 表示重合。零宽删除（页边态塌到一点）靠端点相等也能命中。
+function revisionIndexAtCursor() {
+  try {
+    const vc = ctrl.getViewCursor();
+    const text = vc.getText(), start = vc.getStart(), end = vc.getEnd();
+    const en = xModel.getRedlines().createEnumeration();
+    let index = 0;
+    while (en.hasMoreElements()) {
+      const r = en.nextElement();
+      try {
+        let rs = r.getPropertyValue('RedlineStart'), re = r.getPropertyValue('RedlineEnd');
+        if (!rs || !re) { index++; continue; }
+        // UNO may return the redline endpoints in reverse order (r5).
+        if (text.compareRegionStarts(rs, re) < 0) { const tmp = rs; rs = re; re = tmp; }
+        // 相交：start 不在 re 之后，且 rs 不在 end 之后（含端点贴合）。
+        if (text.compareRegionStarts(start, re) >= 0 && text.compareRegionStarts(rs, end) >= 0) return index;
+      } catch (ignored) {}
+      index++;
+    }
+  } catch (e) {}
+  return -1;
+}
+function selectionTouchesDeletion(vc) {
+  const text = vc.getText(), start = vc.getStart(), end = vc.getEnd();
+  const e = xModel.getRedlines().createEnumeration();
+  while (e.hasMoreElements()) {
+    const r = e.nextElement();
+    try {
+      if (String(r.getPropertyValue('RedlineType')) !== 'Delete') continue;
+      // compareRegion*(a, b) > 0 means a is before b; ranges in other texts throw.
+      if (text.compareRegionStarts(r.getPropertyValue('RedlineStart'), end) > 0
+        && text.compareRegionStarts(start, r.getPropertyValue('RedlineEnd')) > 0) return true;
+    } catch (ignored) {}
+  }
+  return false;
+}
+function hostHandlesContextMenu() {
+  if (!hostContextMenu.enabled || !contextMenuInterceptor || contextMenuInterceptor.controller !== ctrl || !isWriterDoc()) return false;
+  try {
+    const vc = ctrl.getViewCursor();
+    const length = String(vc.getString() || '').length;
+    if (!length || length > hostContextMenu.maxLength) return false;
+    // Inline markup keeps deleted text in the selection while the host reads the
+    // final text; such a selection keeps Writer's accept/reject menu.
+    return revisionViewState().mode !== 'all' || !selectionTouchesDeletion(vc);
+  } catch (e) { return false; }
+}
+function installContextMenuInterceptor(controller) {
+  const previous = contextMenuInterceptor;
+  if (previous && previous.controller === controller) return;
+  contextMenuInterceptor = null;
+  if (previous) { try { previous.controller.releaseContextMenuInterceptor(previous.interceptor); } catch (e) {} }
+  try {
+    const action = css.ui.ContextMenuInterceptorAction;
+    const interceptor = zetajs.unoObject([css.ui.XContextMenuInterceptor], {
+      notifyContextMenuExecute() { return hostHandlesContextMenu() ? action.CANCELLED : action.IGNORED; },
+    });
+    controller.registerContextMenuInterceptor(interceptor);
+    contextMenuInterceptor = { controller: controller, interceptor: interceptor };
+  } catch (e) { log('右键菜单拦截安装失败 / context menu interception failed: ' + errStr(e)); }
+}
+
+// ---- boot: open a fresh BLANK Writer doc ----------------------------------
+// Production: a brand-new / empty document must show a clean blank page (the
+// host loads real bytes via load_document when the file has content). We do NOT
+// seed scaffolding text here — earlier dev-prototype seed text would otherwise
+// show through whenever a real load was skipped/failed, looking like the editor
+// loaded the wrong content.
+function bootDoc() {
+  context = zetajs.getUnoComponentContext();
+  desktop = css.frame.Desktop.create(context);
+  xModel = desktop.loadComponentFromURL('private:factory/swriter', '_default', 0, []);
+  ctrl = xModel.getCurrentController();
+  installReviewCommentInterceptor(ctrl);
+  installContextMenuInterceptor(ctrl);
+  ensureFullScreen();
+  // RFC v2: revisions default ON — every edit (AI or typed) lands as a tracked
+  // change the lawyer can accept/reject. Set once here (and on retarget) instead
+  // of per-command, so no edit path can slip through untracked.
+  try { xModel.setPropertyValue('RecordChanges', true); } catch {}
+  resetRevisionView();
+
+  installKeyHandler();
+  try { installModifyListener(xModel); } catch (e) { log('XModifyListener 安装失败 / install failed: ' + errStr(e)); }
+  try { installSelectionListener(ctrl); } catch (e) { log('XSelectionChangeListener 安装失败 / install failed: ' + errStr(e)); }
+  if (!HOUSE_DEFAULT_PROFILE) log('house-default.js 未载入（Module.uno_scripts 缺项？）：样式画像退到 worker 内硬兜底值，不再是单源');
+  post('ui_ready');
+  log('空白文档就绪 swriter / blank doc ready');
+  try { const loc = readConfigLocale(); log('UI locale 诊断 / config: ' + JSON.stringify(loc)); } catch (e) { log('UI locale 诊断失败: ' + errStr(e)); }
+}
+
+// ---- probe 1: 中文 IME diagnostics --------------------------------------
+// XKeyHandler reports physical key events. The OPEN QUESTION (#39) is whether
+// IME *composition* (candidate selection -> commit) reaches the canvas at all,
+// or is swallowed by Qt/emscripten. The main thread also logs DOM
+// compositionstart/update/end on the canvas; compare the two streams.
+function installKeyHandler() {
+  const handler = zetajs.unoObject([css.awt.XKeyHandler], {
+    keyPressed(e) { post('key', { phase: 'pressed', code: e.KeyCode, ch: e.KeyChar }); return false; },
+    keyReleased(e) { post('key', { phase: 'released', code: e.KeyCode, ch: e.KeyChar }); return false; }
+  });
+  ctrl.addKeyHandler(handler);  // VERIFY: addKeyHandler (NOT addKeyListener)
+  log('XKeyHandler 已装 / installed — 打中文看 key 日志（IME 合成可能绕过 XKeyHandler，这正是要验证的）');
+}
+
+// ---- autosave: forward document modify events to the editor page ---------
+// 导出期间抑制 modified 上报：storeToURL 会把文档标成已修改，见 export_document。
+let exportInFlight = false;
+
+// XModifyBroadcaster fires `modified` on every document change regardless of
+// origin (canvas typing, IME overlay commit, AI agent command) — the one seam
+// that sees them all. The editor page throttles and relays the signal to the
+// host, which debounce-saves (LibreOfficeEditor.autoSave). isModified() filters
+// out the broadcast a later setModified(false) would emit.
+// 批量命令期间摘下/装回的把手（见 suspendModifyListener）。
+let modifyListener = null;
+function installModifyListener(model) {
+  const listener = zetajs.unoObject([css.util.XModifyListener], {
+    // exportInFlight：storeToURL 自己会把文档标成 modified（见 export_document）。
+    // 不挡掉的话每次自动保存都会引出一次 modified，宿主据此再排一次保存——
+    // 实测形成每 3 秒一轮的「保存→modified→保存」死循环，整份 docx 反复上传，
+    // 且 export 是全文档同步序列化，会周期性冻住 Qt 事件循环。
+    modified() { invalidateParaIndex(); try { if (exportInFlight || viewChangeInFlight) return; if (model.isModified()) post('modified'); } catch (e) { /* ignore */ } },
+    disposing() {},
+  });
+  model.addModifyListener(listener);
+  modifyListener = listener;
+  log('XModifyListener 已装 / installed — 文档修改将上报宿主触发自动保存');
+}
+// 真机实测（150 页夹具）：只要装着 JS 实现的 XModifyListener，引擎每次文档写入
+// （一条 setPropertyValue / 一条 setString）都要回调进 JS 一次，一次约 35ms——
+// 回调本身的成本，与回调体做什么无关（空函数体同样 35ms）；摘掉监听器后同一条
+// 写入 0.1ms。全文格式化 920 段 x 2 次批写 = 1840 次回调 = 60s+ 就是这么来的。
+// 批量命令（lockModel 期间）把监听器摘下，结束装回并补发一次 modified——宿主只
+// 需要「文档改过了」这一个信号，不需要逐条。计数嵌套：batchBreak 会解锁再上锁。
+let modifySuspended = 0;
+function suspendModifyListener() {
+  if (modifySuspended++ > 0 || !modifyListener) return;
+  try { xModel.removeModifyListener(modifyListener); } catch (e) {}
+}
+function resumeModifyListener() {
+  if (modifySuspended <= 0) { modifySuspended = 0; return; }
+  if (--modifySuspended > 0 || !modifyListener) return;
+  try { xModel.addModifyListener(modifyListener); } catch (e) {}
+  invalidateParaIndex();
+  try { if (!exportInFlight && xModel.isModified()) post('modified'); } catch (e) {}
+}
+
+// ---- 自建工具栏：选区变化上报 -------------------------------------------
+// 工具栏的激活态（B 是否高亮、当前字体字号样式对齐）必须跟着光标走，而 LO 不会
+// 主动把「选区变了」推出来。装在 controller 上（XSelectionSupplier），每次触发
+// 就给宿主发一个信号，宿主据此重读 get_ui_state。
+//
+// **这条通道只覆盖「选区」类变化**：真机实测扩选/全选/选中段落每次都触发，但
+// **纯光标移动（塌陷选区左右挪）基本不触发**。所以编辑器页还会在画布 mouseup
+// 和覆盖层转发控制键之后各补一发——两路合起来才盖得住用户的实际操作。
+function installSelectionListener(controller) {
+  const listener = zetajs.unoObject([css.view.XSelectionChangeListener], {
+    selectionChanged() { try { post('sel_changed'); } catch (e) { /* ignore */ } },
+    disposing() {},
+  });
+  controller.addSelectionChangeListener(listener);
+  log('XSelectionChangeListener 已装 / installed — 选区变化将上报宿主刷新工具栏');
+}
+
+// ---- probe 2: selection via UNO (model-native, NO text offset) -----------
+function testSelection() {
+  try {
+    const sel = ctrl.getSelection();   // XSelectionSupplier -> usually an XIndexAccess of text ranges
+    const out = [];
+    if (sel && typeof sel.getCount === 'function') {
+      for (let i = 0; i < sel.getCount(); i++) out.push(sel.getByIndex(i).getString());
+    } else if (sel && typeof sel.getString === 'function') {
+      out.push(sel.getString());
+    }
+    log('选区 / selection [' + out.length + ']: ' + JSON.stringify(out));
+  } catch (e) { log('selection ERROR: ' + errStr(e)); }
+}
+
+// ---- probe 3: tracked change (redline) via model-native search -----------
+// This is the RFC v2 thesis in code: replace text found by XSearchable
+// (createSearchDescriptor + findFirst/findNext) — NOT by plain-text offset —
+// with RecordChanges ON, so every edit lands as a tracked change.
+function testRedline() {
+  try {
+    xModel.setPropertyValue('RecordChanges', true);  // RFC: revisions should default ON
+    log('RecordChanges = ' + xModel.getPropertyValue('RecordChanges'));
+    const sd = xModel.createSearchDescriptor();
+    sd.setSearchString('LibreOffice');
+    let hit = xModel.findFirst(sd), n = 0;
+    while (hit !== null && n < 100) {
+      hit.setString('LibreOffice〔AI 修订 / redline〕');
+      hit = xModel.findNext(hit, sd);
+      n++;
+    }
+    log('redline: 经 findFirst/findNext 替换 ' + n + ' 处 / replaced ' + n
+      + ' match(es). 看 canvas 是否出现修订标记 / check canvas for tracked-change marks.');
+  } catch (e) { log('redline ERROR: ' + errStr(e)); }
+}
+
+// ---- probe 4: performance — generate N pages and time it -----------------
+function testPerf(pages) {
+  try {
+    const t0 = performance.now();
+    const xText = xModel.getText();
+    const cur = xText.createTextCursor();
+    for (let p = 0; p < pages; p++) {
+      for (let l = 0; l < 28; l++) {
+        xText.insertString(cur,
+          '第' + (p + 1) + '页 第' + (l + 1) + '行 合同条款示例 / contract clause sample line.\n', false);
+      }
+      try { cur.setPropertyValue('BreakType', css.style.BreakType.PAGE_AFTER); } catch {}  // VERIFY enum
+    }
+    const ms = Math.round(performance.now() - t0);
+    log('perf/generate: ' + pages + ' 页耗时 ' + ms + ' ms（仅写入；渲染/滚动流畅度需肉眼）');
+  } catch (e) { log('perf ERROR: ' + errStr(e)); }
+}
+
+// ---- probe 5: insert CJK via UNO (NO IME) --------------------------------
+// Separates two questions that "can't type Chinese" conflates:
+//   (a) can LibreOffice WASM store + RENDER Chinese?  (this probe)
+//   (b) can you TYPE Chinese via the system IME?      (Qt5-WASM input path)
+// Qt-for-WebAssembly (Qt5) has little/no IME support upstream, so (b) likely
+// fails. If THIS probe makes 中文 appear on the canvas, then the migration's
+// IME answer is a custom JS-composition -> UNO-insert bridge (we control UNO),
+// not Qt's input. If Chinese shows as boxes/tofu, it's a deeper font problem.
+function testInsertText(text) {
+  try {
+    const t = text || '中文渲染测试 中華人民共和國 ABC 123';
+    let vc = null;
+    try { vc = ctrl.getViewCursor(); } catch {}
+    // 写光标要用光标自己的 XText（dev-board#627）：正文 XText 写不了单元格里的光标。
+    const xText = vc ? vc.getText() : xModel.getText();
+    if (vc) {
+      // NOT setString(): that REPLACES the cursor's range and leaves the inserted
+      // text SELECTED, so the next insert overwrites it (reported bug). Use
+      // insertString(range, str, bAbsorb=false): inserts at the cursor and leaves
+      // the cursor collapsed AFTER the text, so consecutive inserts append and
+      // nothing stays selected. collapseToEnd() first clears any prior selection
+      // (e.g. from a click-drag) so we append rather than overwrite.
+      try { vc.collapseToEnd(); } catch (e) {}
+      xText.insertString(vc, t, false);
+      try { vc.collapseToEnd(); } catch (e) {}
+      log('inserttext: 经 UNO insertString 在光标处插入「' + t + '」(追加、不选中)。');
+    } else {
+      xText.insertString(xText.getEnd(), '\n' + t, false);
+      log('inserttext: 经 UNO XText.insertString 追加「' + t + '」(无 ViewCursor 回退)。');
+    }
+  } catch (e) { log('inserttext ERROR: ' + errStr(e)); }
+}
+
+// ---- 脚注/尾注 helper --------------------------------------------------------
+// com.sun.star.text.Footnote 服务同时承载脚注与尾注——由 IsEndnote 属性区分
+// （常见 LO/OOo 宏写法）；该服务本身实现 XText，footnote.setString() 直接写
+// 注释正文。锚点插在光标处，可选 anchorId 复用既有 anchorRange() 精确定位。
+function insertFootnoteImpl(p, isEndnote) {
+  if (!isWriterDoc()) return tableFail(NOT_TEXT_DOC_MSG);
+  const text = p && p.text != null ? String(p.text) : '';
+  if (!text) return tableFail((isEndnote ? 'insert_endnote' : 'insert_footnote') + ' requires {text}');
+  const anchorId = p && p.anchor ? String(p.anchor) : '';
+  const vc = ctrl.getViewCursor();
+  if (anchorId) {
+    const r = anchorRange(anchorId);
+    if (!r) return tableFail('anchor not found: ' + anchorId);
+    try { vc.gotoRange(r.getEnd(), false); } catch (e) { return tableFail('无法定位锚点: ' + errStr(e)); }
+  } else {
+    vc.collapseToEnd();
+  }
+  let note;
+  try {
+    note = xModel.createInstance('com.sun.star.text.Footnote');
+  } catch (e) { return tableFail('创建' + (isEndnote ? '尾注' : '脚注') + '失败: ' + errStr(e)); }
+  if (isEndnote) {
+    try { note.setPropertyValue('IsEndnote', true); }
+    catch (e) { return tableFail('引擎不支持尾注（IsEndnote 属性设置失败）: ' + errStr(e)); }
+  }
+  try {
+    vc.getText().insertTextContent(vc, note, false);
+    note.setString(text);
+  } catch (e) { return tableFail('插入' + (isEndnote ? '尾注' : '脚注') + '失败: ' + errStr(e)); }
+  try { vc.collapseToEnd(); } catch (e) {}
+  let label = '';
+  try { label = String(note.getLabel() || ''); } catch (e) {}
+  return { success: true, text: text, label: label, endnote: !!isEndnote, anchor: anchorId || null };
+}
+
+// ==========================================================================
+// Editor executor command contract (Epic #43 task ④, worker side).
+// Implements the SAME editor-agnostic actions that the agent command pipeline
+// dispatches, via UNO — so frontend/src/composables/useLibreOfficeBridge.js can
+// drive LibreOffice with the backend's existing commands. Each handler returns a
+// plain result object; the dispatcher posts {cmd:'result', reqId, result} back.
+// [verified] handlers use the Phase 0-proven primitives; [todo] are stubs.
+// ---- 长命令的分批 / 进度 / 取消（dev-board#108 G2）------------------------------
+// office 线程是单事件循环：一条 20s 的 find_replace 会把后面所有命令（自动保存的
+// export、IME 的 ui_command）全排队，宿主也只能干等。批量命令每处理一批就
+// post 一次 progress 并 await 一个宏任务，让排队的命令和宿主的 cancel 有机会
+// 插进来。取消是协作式的：宿主 executeCommand('cancel', {reqId}) 置位，批间检查。
+// 批间别的命令可能切换修订作者（用户 IME 输入署用户名），所以每批开头重新
+// 设回本命令的作者。
+const CANCELLED = Object.create(null);   // reqId -> true（命令结束时无条件删）
+const INFLIGHT = Object.create(null);    // reqId -> true（只对在飞命令置 cancel，已结束的不留痕）
+function yieldMacrotask() { return new Promise(function (r) { setTimeout(r, 0); }); }
+function postProgress(p, done, total) { if (p && p.__reqId) post('progress', { reqId: p.__reqId, done: done, total: total }); }
+// 批量改稿期间锁住控制器与动作锁：否则每一条修订 / 每一个属性写入都让 Writer
+// 重排版+重绘一次，150 命中实测每处 130-200ms 大头在这里，不在 LCS。锁在一批之内，
+// 批间解开让视图刷一次、让排队的 export 能正常序列化。
+// 锁之外更大的头是 XModifyListener 的逐条回调（每条写入 35ms，见
+// suspendModifyListener），一并摘下。
+// 深度计数：batchBreak 取消返回时已经解过一次锁，调用方的 finally 再解一次不能
+// 让 removeActionLock/unlockControllers 下溢（否则 hasControllersLocked 余生恒 true）。
+let modelLockDepth = 0;
+function lockModel() {
+  if (modelLockDepth++ > 0) return;
+  try { xModel.lockControllers(); } catch (e) {}
+  try { xModel.addActionLock(); } catch (e) {}
+  suspendModifyListener();
+}
+function unlockModel() {
+  if (modelLockDepth <= 0) { modelLockDepth = 0; return; }
+  if (--modelLockDepth > 0) return;
+  resumeModifyListener();
+  try { xModel.removeActionLock(); } catch (e) {}
+  try { xModel.unlockControllers(); } catch (e) {}
+}
+// ---- find_replace 的原生快路径 ------------------------------------------------
+// 逐命中 setString 在 150 页上每处 90-130ms（JS 往返 + 监听器回调），150 命中 15-20s；
+// 引擎自己的 XReplaceable.replaceAll 一次调用 150 命中 160ms，且 RecordChanges 开着
+// 时同样按命中各记一条删除+一条插入修订。为了保住 PR#188 的字符级颗粒度
+//（我爱你→我恨你 只删"爱"加"恨"），先把 findText/replaceText 的公共前后缀掐掉，
+// 用正则 (?<=前缀)中段(?=后缀) 只替换差异中段。引擎不接受零宽匹配（纯插入，
+// 如 验收后→验收合格后），这种回退到逐命中路径（分批 + 进度 + 取消）。
+// 差异不止一块（见 replaceAllIsSingleBlock）的调用方在进来之前就已分流到逐命中路径，
+// 这里只会收到「中段就是唯一差异」的替换。返回 {n} 或 null（= 走回退路径）。
+function regexEscape(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function replaceEscape(s) { return String(s).replace(/\\/g, '\\\\').replace(/&/g, '\\&').replace(/\$/g, '\\$'); }
+function nativeTrackedReplaceAll(findText, replaceText, matchCase) {
+  if (!findText || findText === replaceText) return null;
+  if (/[\r\n]/.test(findText) || /[\r\n]/.test(replaceText)) return null;
+  const oLen = findText.length, nLen = replaceText.length, maxP = Math.min(oLen, nLen);
+  let pre = 0;
+  while (pre < maxP && findText.charCodeAt(pre) === replaceText.charCodeAt(pre)) pre++;
+  let suf = 0;
+  while (suf < maxP - pre && findText.charCodeAt(oLen - 1 - suf) === replaceText.charCodeAt(nLen - 1 - suf)) suf++;
+  // 代理对不能从中间掐开
+  const bad = function (str, at) { const c = str.charCodeAt(at); return c >= 0xD800 && c <= 0xDFFF; };
+  if ((pre > 0 && (bad(findText, pre - 1) || bad(replaceText, pre - 1))) ||
+      (suf > 0 && (bad(findText, oLen - suf) || bad(replaceText, nLen - suf)))) { pre = 0; suf = 0; }
+  const oMid = findText.slice(pre, oLen - suf), nMid = replaceText.slice(pre, nLen - suf);
+  if (!oMid) return null; // 纯插入：零宽匹配引擎不认
+  let pattern = regexEscape(oMid);
+  if (pre > 0) pattern = '(?<=' + regexEscape(findText.slice(0, pre)) + ')' + pattern;
+  if (suf > 0) pattern = pattern + '(?=' + regexEscape(findText.slice(oLen - suf)) + ')';
+  try {
+    const rd = xModel.createReplaceDescriptor();
+    rd.setPropertyValue('SearchRegularExpression', true);
+    try { rd.setPropertyValue('SearchCaseSensitive', !!matchCase); } catch (e) {}
+    rd.setSearchString(pattern);
+    rd.setReplaceString(replaceEscape(nMid));
+    const n = xModel.replaceAll(rd);
+    // 拟人：结束时视图停在第一处改动（新中段非空时按新文本找；删除型改动找不到
+    // 就不动视图）
+    if (nMid) {
+      try {
+        const sd = xModel.createSearchDescriptor();
+        sd.setPropertyValue('SearchRegularExpression', true);
+        try { sd.setPropertyValue('SearchCaseSensitive', !!matchCase); } catch (e) {}
+        let look = regexEscape(nMid);
+        if (pre > 0) look = '(?<=' + regexEscape(findText.slice(0, pre)) + ')' + look;
+        if (suf > 0) look = look + '(?=' + regexEscape(findText.slice(oLen - suf)) + ')';
+        sd.setSearchString(look);
+        const first = xModel.findFirst(sd);
+        if (first !== null) selectVisibly(first);
+      } catch (e) {}
+    }
+    return { n: Number(n) || 0 };
+  } catch (e) {
+    log('find_replace 原生 replaceAll 失败，回退逐命中: ' + errStr(e));
+    return null;
+  }
+}
+// 批间让路：返回 true = 已被取消，调用方应停下并返回 {cancelled:true}。
+// 调用方在批内持有 lockModel()；这里先解锁再让路，回来再上锁。
+async function batchBreak(p, done, total) {
+  unlockModel();
+  postProgress(p, done, total);
+  await yieldMacrotask();
+  if (p && p.__reqId && CANCELLED[p.__reqId]) return true;
+  try { setRedlineAuthor(p && p.__agent ? AI_AUTHOR : humanAuthor); } catch (e) {}
+  lockModel();
+  return false;
+}
+
+// 文档首节页面样式（edit_header_footer / set_page_setup 共用取法：把视图光标挪到
+// 文档开头读 PageStyleName——内部名恒为英文如 'Standard'，不受 zh-CN 语言包影响）。
+function currentPageStyle() {
+  let styleName = '';
+  try {
+    const vc = ctrl.getViewCursor();
+    const savedRange = vc.getStart();
+    vc.gotoStart(false);
+    styleName = String(vc.getPropertyValue('PageStyleName') || '');
+    vc.gotoRange(savedRange, false);
+  } catch (e) { return tableFail('无法定位页面样式: ' + errStr(e)); }
+  if (!styleName) return tableFail('无法确定文档的页面样式');
+  try { return { pageStyle: xModel.getStyleFamilies().getByName('PageStyles').getByName(styleName), styleName: styleName }; }
+  catch (e) { return tableFail('读取页面样式失败: ' + errStr(e)); }
+}
+// 只刷指定的几个样式定义（insert_toc 只要 Contents Heading），失败不致命。
+function applyProfileToStylesSafe(names) {
+  try {
+    const fam = xModel.getStyleFamilies().getByName('ParagraphStyles');
+    names.forEach(function (name) {
+      if (!fam.hasByName(name)) return;
+      const st = fam.getByName(name);
+      if (name === 'Contents Heading') {
+        const ts = HOUSE.tocTitleSpec;
+        applyHouseChar(st, { sizePt: ts.sizePt, bold: ts.bold });
+        try { st.setPropertyValue('ParaAdjust', adjustEnum(ts.align)); } catch (e) {}
+      }
+    });
+  } catch (e) {}
+}
+
+// ==========================================================================
+// Writer's live controller view data contains the caret and visible area in
+// twips. Model.getViewData() is a saved snapshot and may lag typing/scrolling.
+// Locate the native editing child by its visible-area size, excluding rulers,
+// scrollbars and the sidebar; retain the short window path between reads.
+let caretWindowCache = null;
+function readNativeCaretRect(frame, live, charHeightPt) {
+  const values = typeof live === 'string' ? live.split(';').map(Number) : [];
+  if (values.length < 9 || values.slice(0, 7).some(function (v) { return !isFinite(v); }) || values[2] <= 0) return null;
+  const component = frame.getComponentWindow();
+  // VCL window rectangles are physical pixels on Retina. Query one inch in
+  // the same native window units instead of assuming a 96-dpi surface.
+  const inch = component.convertPointToPixel({ X: 2540, Y: 2540 }, css.util.MeasureUnit.MM_100TH);
+  if (!inch || !isFinite(inch.X) || inch.X <= 0) return null;
+  const dpi = inch.X, scale = dpi / 1440 * values[2] / 100;
+  const width = (values[5] - values[3]) * scale, height = (values[6] - values[4]) * scale;
+  if (width <= 0 || height <= 0) return null;
+  // The expected size is derived from twips through the live DPI, so its
+  // rounding error against the window's own integer pixel size grows with the
+  // device scale: a fixed +-2 **physical** pixel window stops matching the
+  // editing child on a fractional-DPI display (Windows 125%/150%, Retina).
+  // readNativeCaretRect then returns null and the IME box falls back to the
+  // last click — that is what makes the candidate window and the preview bar
+  // jump around (dev-board#725). Scale the tolerance with the DPI instead
+  // (2px at 96dpi, 3 at 125%/150%, 5 at 2x) and keep it far below the gap to
+  // any other window, so it still cannot match rulers, scrollbars or sidebar.
+  const tol = Math.max(2, Math.ceil(2 * dpi / 96));
+  const matches = function (r) { return Math.abs(r.Width - width) <= tol && Math.abs(r.Height - height) <= tol; };
+  let path = caretWindowCache && caretWindowCache.model === xModel ? caretWindowCache.path : null;
+  try { if (path && !matches(path[path.length - 1].getPosSize())) path = null; } catch (e) { path = null; }
+  if (!path) {
+    const queue = [{ window: component, path: [component] }];
+    for (let count = 0; queue.length && count < 64; count++) {
+      const node = queue.shift(), rect = node.window.getPosSize();
+      if (matches(rect)) { path = node.path; break; }
+      if (node.path.length >= 5) continue;
+      try { const children = node.window.getWindows();
+        for (let i = 0; i < children.length && queue.length < 64; i++) queue.push({ window: children[i], path: node.path.concat([children[i]]) });
+      } catch (e) { /* Leaf windows have no children. */ }
+    }
+    if (!path) return null;
+    caretWindowCache = { model: xModel, path: path };
+  }
+  let x = 0, y = 0;
+  for (let i = 0; i < path.length; i++) { const r = path[i].getPosSize(); x += r.X; y += r.Y; }
+  const container = frame.getContainerWindow().getPosSize();
+  return { x: x + (values[0] - values[3]) * scale, y: y + (values[1] - values[4]) * scale,
+    height: (Number(charHeightPt) || 12) * dpi / 72 * values[2] / 100,
+    frameWidth: container.Width, frameHeight: container.Height,
+    viewport: { x: x, y: y, width: width, height: height } };
+}
+
+function completionUnavailable(reason) {
+  return { success: false, available: false, reason: reason, error: reason, message: reason };
+}
+function completionGuard() {
+  if (!isWriterDoc()) return 'not-writer';
+  // 内联「全部修订」视图下正文里混着被删的旧字，补全/审校的偏移与原文校验都会错位
+  // ——所以这些动作只在最终文本语义下工作，平时由 runAgentCommandInMarginView 临时
+  // 切过去。但**一条修订都没有**时，这个视图与最终文本没有任何区别，那条守卫也正
+  // 因此整段跳过（dev-board#725）；这里要跟着放行，否则起草场景下补全与即时审校会
+  // 一律回 inline-revisions。
+  if (revisionViewState().mode === 'all' && hasAnyRedline()) return 'inline-revisions';
+  return null;
+}
+function captureCompletion(radius) {
+  completionSnapshot = null;
+  const reason = completionGuard();
+  if (reason) return completionUnavailable(reason);
+  try {
+    const vc = ctrl.getViewCursor();
+    const selectedText = String(vc.getString() || '');
+    const n = Math.max(1, Math.min(Number(radius) || 120, 200));
+    const ctx = contextAround(vc, n);
+    if (ctx.ctxErr) return completionUnavailable('unavailable-context');
+    const paragraph = paragraphTextOf(vc);
+    if (paragraph == null) return completionUnavailable('unavailable-context');
+    const result = { success: true, available: !selectedText, before: ctx.before, after: ctx.after,
+      paragraph: paragraph.slice(0, 300), selectedText: selectedText, hasSelection: !!selectedText, token: null };
+    if (selectedText) result.reason = 'selection';
+    const range = vc.getText().createTextCursorByRange(vc.getStart());
+    range.gotoRange(vc.getEnd(), true);
+    const token = 'completion_' + (++completionSeq);
+    completionSnapshot = { token: token, model: xModel, range: range, radius: n,
+      before: ctx.before, after: ctx.after, paragraph: paragraph, selectedText: selectedText };
+    result.token = token;
+    return result;
+  } catch (e) { return completionUnavailable('unavailable-context'); }
+}
+// 校验与落字必须在同一条同步 worker 命令内完成。活 range + 原文双校验防止
+// 同名前缀在别处出现、继续输入、换文档或迟到结果把内容落错位置。
+function checkCompletion(token, snapshot) {
+  const reason = completionGuard();
+  if (reason) return completionUnavailable(reason);
+  const snap = snapshot || completionSnapshot;
+  if (!snap || !token || token !== snap.token || snap.model !== xModel) return completionUnavailable('stale');
+  try {
+    const vc = ctrl.getViewCursor();
+    if (String(vc.getString() || '') !== snap.selectedText || !rangeStartsEqual(vc, snap.range)
+      || !rangeStartsEqual(vc.getEnd(), snap.range.getEnd())) return completionUnavailable('stale');
+    const ctx = contextAround(vc, snap.radius);
+    if (ctx.ctxErr || ctx.before !== snap.before || ctx.after !== snap.after || paragraphTextOf(vc) !== snap.paragraph) {
+      return completionUnavailable('stale');
+    }
+    return { success: true, cursor: vc, snapshot: snap };
+  } catch (e) { return completionUnavailable('stale'); }
+}
+// Body paragraph scope is derived from the live range and final text, not the
+// document title. Plain legal headings count even when no heading style exists.
+function writingSectionOf(range) {
+  try {
+    const locator = rangeLocator(range.getStart(), range.getStart());
+    if (!locator || locator.paraKey < 0) return null;
+    return withParaIndex(function (ix) {
+      const index = locator.paraKey;
+      if (index >= ix.total) return null;
+      let appendix = '', heading = '', appendixSource = null, headingSource = null;
+      for (let i = 0; i <= index; i++) {
+        const paragraph = ix.ranges[i], rawText = String(paragraph.getString() || ''), text = rawText.trim();
+        const marker = text.match(/^(第[一二三四五六七八九十百零〇0-9]+[条节章]|附件[一二三四五六七八九十零〇0-9]+).{0,100}$/);
+        if (marker) {
+          if (marker[1].indexOf('附件') === 0) { appendix = marker[1]; heading = ''; appendixSource = { index: i, text: rawText }; headingSource = null; }
+          else { heading = marker[1]; headingSource = { index: i, text: rawText }; }
+        } else {
+          let level = 0; try { level = Number(paragraph.getPropertyValue('OutlineLevel')) || 0; } catch (e) {}
+          if (level > 0 && level <= 6 && text.length <= 100) { heading = text; headingSource = text ? { index: i, text: rawText } : null; }
+        }
+      }
+      const path = [appendix, heading].filter(Boolean);
+      return { paragraphIndex: index, sectionPath: path, sectionTitle: path.length ? path.join(' / ') : '正文',
+        scopeHeadings: [appendixSource, headingSource].filter(Boolean), scopeKnown: true };
+    });
+  } catch (e) { return null; }
+}
+// Review findings carry coordinates only within a verified immutable paragraph.
+// These temporary ranges are never bookmarks and never enter the saved document.
+function checkReviewRange(p) {
+  const reason = completionGuard();
+  if (reason) return completionUnavailable(reason);
+  if (!p || p.revision !== currentReviewRevision()) return completionUnavailable('stale');
+  const index = p.paragraphIndex, start = p.start, end = p.end;
+  if (!Number.isInteger(index) || index < 0 || !Number.isInteger(start) || !Number.isInteger(end)
+    || start < 0 || end <= start || typeof p.expectedParagraph !== 'string' || p.expectedParagraph.length > 15000
+    || typeof p.quote !== 'string' || !p.quote || end > p.expectedParagraph.length
+    || p.expectedParagraph.slice(start, end) !== p.quote) return completionUnavailable('invalid-range');
+  // UNO cursor movement counts Unicode characters, JS offsets count UTF-16 units.
+  if (/[\uD800-\uDFFF]/.test(p.expectedParagraph.slice(0, end))) return completionUnavailable('unsupported-unicode-range');
+  try {
+    const paragraph = paraAt(index);
+    if (!paragraph || p.revision !== currentReviewRevision() || paragraph.getString() !== p.expectedParagraph) return completionUnavailable('stale');
+    const range = paragraph.getText().createTextCursorByRange(paragraph.getStart());
+    if (start && !range.goRight(start, false)) return completionUnavailable('invalid-range');
+    if (!range.goRight(end - start, true) || range.getString() !== p.quote) return completionUnavailable('stale');
+    return { success: true, range: range, paragraph: paragraph };
+  } catch (e) { return completionUnavailable('stale'); }
+}
+// XUndoManager 把多段文本/表格的内部编辑收成一次人工操作；开组失败就不动文档。
+function completionEdit(title, edit) {
+  const um = xModel.getUndoManager();
+  const undoCount = um.getAllUndoActionTitles().length;
+  um.enterUndoContext(title);
+  completionSnapshot = null;
+  let failed = null, value;
+  lockModel();
+  try { value = edit(); } catch (e) { failed = e; }
+  finally { unlockModel(); um.leaveUndoContext(); }
+  if (failed) {
+    // 本组已有写入时撤回这一整组，避免表格写到半途残留。
+    try { if (um.getAllUndoActionTitles().length > undoCount && um.getCurrentUndoActionTitle() === title) um.undo(); } catch (e) {}
+    throw failed;
+  }
+  return Object.assign({}, captureCompletion(120), { success: true }, value || {});
+}
+
+// Geometry comes from Writer's existing layout. Never reverse-hit-test the
+// document or move its live cursor to position review cards.
+let reviewLayoutCache = null;
+let reviewGeometryController = null, reviewGeometrySupported = false;
+let comparisonModel = null;
+function isReviewWritable() { return comparisonModel !== xModel && !xModel.isReadonly(); }
+function supportsReviewGeometry() {
+  if (reviewGeometryController !== ctrl) {
+    reviewGeometryController = ctrl;
+    try {
+      const info = ctrl.getPropertySetInfo();
+      reviewGeometrySupported = info.hasPropertyByName('AwdReviewGeometry')
+        && info.hasPropertyByName('AwdReviewSidebarWidth');
+    } catch (e) { reviewGeometrySupported = false; }
+  }
+  return reviewGeometrySupported;
+}
+// Metadata costs several UNO round trips per item; typing must never wait for
+// it. Callers pass fresh:false for position-only refreshes: geometry is always
+// live, and metadata is reused by native identity (redline GetId, comment id)
+// until a fresh read. pending = known cards on pages not laid out yet (they keep
+// the gutter); unread = native items the cache has not read (refresh when idle).
+function reviewLayout(p) {
+  if (!isWriterDoc() || !supportsReviewGeometry()) {
+    reviewLayoutCache = null;
+    return { success: true, available: false, items: [], pages: [] };
+  }
+  const mode = revisionViewState().mode;
+  // Only balloons/margin render revision cards; other views need positions only.
+  const revisionCards = mode === 'balloons' || mode === 'margin';
+  const geometry = JSON.parse(ctrl.getPropertyValue('AwdReviewGeometry'));
+  if (geometry.version !== 1 || geometry.unit !== 'twip') return tableFail('Unsupported review geometry');
+  let cache = reviewLayoutCache;
+  const fresh = p && p.fresh;   // true: re-read; false: reuse even after edits; unset: re-read after edits
+  if (!cache || cache.docSeq !== docSeq || cache.mode !== mode || fresh === true
+    || (fresh !== false && cache.revisionAtRead !== currentReviewRevision())) {
+    const revisionAtRead = currentReviewRevision();
+    const comments = EXEC.list_comments({ limit: 500, locate: false });
+    const revisions = revisionCards ? EXEC.list_revisions({ limit: 500, locate: false }) : { success: true, count: 0, revisions: [] };
+    if (!revisions.success || !comments.success) return tableFail('Review list unavailable');
+    // Both enumerations walk the same redline table in the same synchronous call.
+    const nativeIds = new Map(geometry.revisions.map(r => [r.index, r.id]));
+    cache = reviewLayoutCache = { docSeq: docSeq, mode: mode, revisionAtRead: revisionAtRead,
+      revisions: new Map(), comments: new Map(), truncated: revisions.count >= 500 || comments.count >= 500 };
+    revisions.revisions.forEach(r => { if (nativeIds.has(r.index)) cache.revisions.set(nativeIds.get(r.index), r); });
+    comments.comments.forEach(c => cache.comments.set(String(c.id), c));
+  }
+  const live = ctrl.getViewData(), v = String(live).split(';').map(Number);
+  const rect = readNativeCaretRect(ctrl.getFrame(), live, 12);
+  if (!rect) return { success: false, message: 'Document viewport unavailable' };
+  const nativeComments = new Map();
+  geometry.comments.forEach(c => {
+    const id = String(c.name || ('postit:' + c.id));
+    nativeComments.set(id, nativeComments.has(id) ? null : c);
+  });
+  const items = [];
+  let missing = false, pending = 0, unread = 0;
+  function add(kind, data, native, key) {
+    if (!native?.anchor || native.available === false || native.page == null) {
+      // Laid-out-later pages still hold cards: the host keeps their gutter.
+      // Only what this view actually draws as a card counts. In the inline
+      // view no revision draws one (revisionCards is false and the host drops
+      // them), and there `data` is the bare {index} with no type at all, so
+      // `data.type !== 'Insert'` used to be vacuously true: every revision on
+      // a not-yet-laid-out page reserved the 280px gutter, and releasing it
+      // once Writer finished laying out reflowed the whole page sideways
+      // (dev-board#725 — 300 段夹具实测 pending 100 → 44 → 0).
+      missing = true;
+      if (kind === 'comment' || (revisionCards && data && data.type !== 'Insert')) pending++;
+      return;
+    }
+    items.push({ key: key, kind: kind, data: data, x: native.anchor.x, y: native.anchor.y,
+      w: native.anchor.width, h: native.anchor.height, page: native.page, rects: native.rects || [] });
+  }
+  geometry.revisions.forEach(g => {
+    if (!revisionCards) { add('revision', { index: g.index }, g, 'r' + g.index); return; }
+    const meta = cache.revisions.get(g.id);
+    if (!meta) { missing = true; unread++; return; }
+    add('revision', Object.assign({}, meta, { index: g.index }), g, 'r' + g.index);
+  });
+  cache.comments.forEach(c => add('comment', c, nativeComments.get(String(c.id)), 'c' + c.id));
+  nativeComments.forEach((c, id) => { if (c && !cache.comments.has(id)) { missing = true; unread++; } });
+  return { success: true, available: true, items: items, pages: geometry.pages,
+    truncated: cache.truncated || missing, pending: pending, unread: unread,
+    stale: cache.revisionAtRead !== currentReviewRevision(),
+    sidebarWidth: Number(ctrl.getPropertyValue('AwdReviewSidebarWidth')),
+    revision: currentReviewRevision(), documentSeq: docSeq, writable: isReviewWritable(), selfAuthor: typeof humanAuthor !== 'undefined' ? humanAuthor : '', view: { left: v[3], top: v[4], right: v[5], bottom: v[6],
+      caretX: v[0], caretY: v[1], ...rect }, mode: mode };
+}
+
+// ---- 三方合并：比较内核与单元归一（spec 2026-09-14-docx-three-way-merge-design §5.1）----
+// 归一与后端 DocxUnitReader.normalize 同口径：trim + 连续空白折一个 + NFC。两边
+// 必须一字不差，否则 build_merge_draft 的对齐核对会把正常文档判成 stage:'align'。
+function mergeNormalize(s) {
+  const t = String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+  return t.normalize ? t.normalize('NFC') : t;
+}
+// 宿主送来的文档字节可能是 Uint8Array / ArrayBuffer / 普通数组（结构化克隆跨
+// relay 与 worker 两跳后形态不定）；统一成 zeta.js 能喂给 UNO 的 signed 数组。
+function toUnoByteSeq(raw) {
+  let u8 = null;
+  if (raw instanceof ArrayBuffer) u8 = new Uint8Array(raw);
+  else if (raw && raw.buffer instanceof ArrayBuffer) u8 = new Uint8Array(raw.buffer, raw.byteOffset || 0, raw.byteLength != null ? raw.byteLength : raw.length);
+  else if (Array.isArray(raw)) u8 = new Uint8Array(raw);
+  if (!u8 || !u8.length) return null;
+  return Array.from(new Int8Array(u8.buffer, u8.byteOffset, u8.byteLength));
+}
+// LO 自己那套 chrome（菜单栏 / 两排工具栏 / 状态栏 / 标尺 / 右侧栏）一刀切藏掉。
+// 常规编辑器由 EditorToolbar.bootstrap() 调 set_chrome 藏；版本对比与合并比对稿
+// 两个标签页不是 LibreOfficeEditor、没有工具栏组件，谁都不会去藏（dev-board#631
+// 真机走查：合并比对稿上整套原生外壳都露着）。
+// **而且必须由引擎侧自己在派发 .uno:CompareDocuments 之前藏**，宿主事后补一刀
+// 不够：
+//   ① LayoutManager 可见时这条派发会弹 LO 原生的「管理修订」对话框（真机实证，
+//      2026-09-14：同一份夹具，派发前 set_chrome{all:false} 的那轮画布上干干净净，
+//      不藏的那轮对话框压在正文上）。`NoAcceptDialog` 属性本引擎不认——带上它
+//      对话框照弹，所以别再往那条路上走。
+//   ② load_document 会把藏好的 chrome 重新拉出来（真机实证：set_chrome{all:false}
+//      之后 load_document，isVisible 读回 true），而 build_merge_draft 内部连做三次
+//      load_document，宿主在命令之前藏是白藏。比较是这条链里最后一个会重建
+//      chrome 的动作，藏在它前面才立得住。
+function hideNativeChrome() {
+  try {
+    const lm = ctrl.getFrame().getPropertyValue('LayoutManager');
+    if (lm) lm.setVisible(false);
+  } catch (e) { /* 没有 LayoutManager 就没有 chrome 可藏 */ }
+  // 标尺不归 LayoutManager 管（是控制器的 ViewSettings），setVisible(false) 藏不掉它
+  // ——真机实测合并比对稿顶上会剩一条孤零零的标尺。与 set_chrome{rulers:false} 同口径。
+  try {
+    const vs = ctrl.getViewSettings();
+    vs.setPropertyValue('ShowHoriRuler', false);
+    vs.setPropertyValue('ShowVertRuler', false);
+  } catch (e) { /* 非 Writer 或没有这两个属性 */ }
+}
+// 把 bytes 写进 MEMFS 再派发 .uno:CompareDocuments。compare_document（版本对比
+// 标签页）与 build_merge_draft（合并比对稿）共用这一段；**修订署名必须由调用方
+// 在同一条 worker 命令里先设好**——execCommand 每条命令开头都会重置署名
+// （见 setRedlineAuthor 的说明），跨命令设作者必然失效。
+function compareWithBytes(raw, url) {
+  const bytes = toUnoByteSeq(raw);
+  if (!bytes) return { success: false, stage: 'input', message: 'compare bytes empty' };
+  try {
+    const sfa = css.ucb.SimpleFileAccess.create(context);
+    try { if (sfa.exists(url)) sfa.kill(url); } catch (e) {}
+    const stream = css.io.SequenceInputStream.createStreamFromSequence(context, bytes);
+    sfa.writeFile(url, stream);
+    try { stream.closeInput(); } catch (e) {}
+  } catch (e) { return { success: false, stage: 'memfs', message: errStr(e) }; }
+  // 顺序是硬的：先藏 chrome 再派发，否则弹原生「管理修订」对话框（见 hideNativeChrome）。
+  hideNativeChrome();
+  try {
+    css.frame.DispatchHelper.create(context).executeDispatch(
+      ctrl.getFrame(), '.uno:CompareDocuments', '', 0, [mkProp('URL', url)]);
+  } catch (e) { return { success: false, stage: 'dispatch', message: errStr(e) }; }
+  invalidateParaIndex();
+  return { success: true, redlineCount: countRedlines() };
+}
+// 正文顶层段落的当前文字（下标 = get_paragraph / select_paragraph 的下标）。
+function bodyParagraphStrings() {
+  const out = [];
+  eachParagraph(function (el) { out.push(String(el.getString() || '')); });
+  return out;
+}
+// 正文顶层段落的「归一文字 + 格式指纹」快照。三方合并靠它找出另一侧「只改了
+// 格式没改文字」的段——**不能靠 .uno:CompareDocuments**：真机实测（24.2.8-zhcn-r5）
+// 该命令只产出 Insert/Delete 两类修订，整段加粗这种纯格式改动一条都不报。
+// 字符属性必须**从跨整段的文字游标**上读：段落对象自己的 CharWeight 给的是段落
+// 默认值，整段加粗时读回来仍是 100（真机实测），只有游标读得到 150。
+const PARA_FORMAT_PROPS = ['ParaStyleName', 'ParaAdjust', 'ParaFirstLineIndent', 'ParaLeftMargin'];
+const RUN_FORMAT_PROPS = ['CharWeight', 'CharPosture', 'CharUnderline', 'CharHeight', 'CharColor',
+  'CharFontName', 'CharFontNameAsian'];
+function formatToken(v) {
+  const u = unoEnumVal(v);
+  if (u == null) return '';
+  if (typeof u === 'object') { try { return JSON.stringify(u); } catch (e) { return 'obj'; } }
+  return String(u);
+}
+function paragraphScan() {
+  const out = [];
+  eachParagraph(function (el) {
+    const parts = [];
+    for (let i = 0; i < PARA_FORMAT_PROPS.length; i++) {
+      let v;
+      try { v = el.getPropertyValue(PARA_FORMAT_PROPS[i]); } catch (e) { v = '?'; }
+      parts.push(formatToken(v));
+    }
+    let cur = null;
+    try { cur = el.getText().createTextCursorByRange(el); } catch (e) { cur = null; }
+    for (let i = 0; i < RUN_FORMAT_PROPS.length; i++) {
+      let v = '?';
+      if (cur) { try { v = cur.getPropertyValue(RUN_FORMAT_PROPS[i]); } catch (e) { v = '?'; } }
+      parts.push(formatToken(v));
+    }
+    let text = '';
+    try { text = String(el.getString() || ''); } catch (e) {}
+    out.push({ norm: mergeNormalize(text), fmt: parts.join('|') });
+  });
+  return out;
+}
+// 单元键 → 表格坐标。't1.2.3' = 第 1 张表（0 起）第 2 行第 3 列（都 0 起）。
+function parseCellUnitKey(key) {
+  const m = /^t(\d+)\.(\d+)\.(\d+)$/.exec(String(key || ''));
+  if (!m) return null;
+  return { table: Number(m[1]), row: Number(m[2]), col: Number(m[3]), name: colLetterOf(Number(m[3])) + (Number(m[2]) + 1) };
+}
+// 取表格单元的 XTextRange（整格），拿不到回 null。
+function tableCellRange(ref) {
+  try {
+    const tables = xModel.getTextTables();
+    if (!(ref.table >= 0) || ref.table >= tables.getCount()) return null;
+    const cell = tables.getByIndex(ref.table).getCellByName(ref.name);
+    if (!cell) return null;
+    const cur = cell.createTextCursor();
+    cur.gotoStart(false); cur.gotoEnd(true);
+    return cur;
+  } catch (e) { return null; }
+}
+// 把 newText 作为修订写进 range（字符级最小颗粒度，退化时整段替换）。
+function writeTrackedText(range, newText) {
+  const txt = String(newText == null ? '' : newText);
+  try {
+    if (applyMinimalRedline(range, txt)) return true;
+    range.setString(txt);
+    return true;
+  } catch (e) { return false; }
+}
+
+const EXEC = {
+  get_review_layout(p) { return reviewLayout(p); },
+  set_review_balloons(p) {
+    if (!isWriterDoc() || !supportsReviewGeometry()) return { success: true, available: false };
+    if (p.enabled && !installReviewCommentInterceptor(ctrl)) return tableFail('批注输入通道不可用，请重新打开文档后重试。');
+    const width = p.enabled ? Math.max(180, Math.min(360, Math.round(Number(p.width) || 280))) : 0;
+    if (Number(ctrl.getPropertyValue('AwdReviewSidebarWidth')) !== width) {
+      withViewOnlyChange(function () { ctrl.setPropertyValue('AwdReviewSidebarWidth', width); });
+    }
+    return { success: Number(ctrl.getPropertyValue('AwdReviewSidebarWidth')) === width, available: true };
+  },
+
+  get_review_context() {
+    const reason = completionGuard();
+    if (reason) return Object.assign(completionUnavailable(reason), { revision: currentReviewRevision() });
+    try {
+      const vc = ctrl.getViewCursor();
+      const locator = rangeLocator(vc.getStart(), vc.getEnd());
+      if (!locator) return Object.assign(completionUnavailable('body-only'), { revision: currentReviewRevision() });
+      const text = paragraphTextOf(vc);
+      if (text == null) return Object.assign(completionUnavailable('unavailable-context'), { revision: currentReviewRevision() });
+      return { success: true, available: text.length <= 15000, revision: currentReviewRevision(),
+        paragraphIndex: locator.paraKey, text: text.slice(0, 15000), truncated: text.length > 15000,
+        numbering: paragraphNumberingOf(paraAt(locator.paraKey)),
+        offset: locator.start, selectedText: String(vc.getString() || '').slice(0, 15000), hasSelection: !vc.isCollapsed(),
+        cursorRectRaw: EXEC.get_cursor_rect(), scope: 'body-paragraphs' };
+    } catch (e) { return Object.assign(completionUnavailable('unavailable-context'), { revision: currentReviewRevision() }); }
+  },
+  goto_review_range(p) {
+    const checked = checkReviewRange(p);
+    if (!checked.success) return checked;
+    return selectVisibly(checked.range) ? { success: true, revision: currentReviewRevision() } : completionUnavailable('unavailable-context');
+  },
+  apply_review_edit(p) {
+    const checked = checkReviewRange(p);
+    if (!checked.success) return checked;
+    if (typeof p.replacement !== 'string' || p.replacement.length > 15000 || /[\r\n]/.test(p.replacement)) return completionUnavailable('invalid-replacement');
+    const expected = p.expectedParagraph.slice(0, p.start) + p.replacement + p.expectedParagraph.slice(p.end);
+    const um = xModel.getUndoManager();
+    const before = um.getAllUndoActionTitles().length;
+    const title = '采用审校建议';
+    um.enterUndoContext(title);
+    let error = null;
+    lockModel();
+    try {
+      xModel.setPropertyValue('RecordChanges', true);
+      if (!applyMinimalRedline(checked.range, p.replacement)) checked.range.setString(p.replacement);
+      if (checked.paragraph.getString() !== expected) throw new Error('review edit verification failed');
+    } catch (e) { error = e; }
+    finally { unlockModel(); um.leaveUndoContext(); }
+    if (error) {
+      try { if (um.getAllUndoActionTitles().length > before && um.getCurrentUndoActionTitle() === title) um.undo(); } catch (e) {}
+      return completionUnavailable('edit-failed');
+    }
+    invalidateParaIndex();
+    return { success: true, revision: currentReviewRevision() };
+  },
+  get_completion_context(p) { return captureCompletion(p && p.radius); },
+  capture_writing_context(p) {
+    writingSnapshot = null;
+    if (p && p.composing) return completionUnavailable('composing');
+    const reason = completionGuard();
+    if (reason) return completionUnavailable(reason);
+    if (!isReviewWritable()) return completionUnavailable('readonly');
+    const result = captureCompletion(p && p.radius);
+    if (!result.success) return result;
+    if (result.selectedText.length > 2000) return completionUnavailable('selection-too-long');
+    const section = writingSectionOf(completionSnapshot.range);
+    if (!section) return completionUnavailable('unknown-writing-scope');
+    if (result.selectedText) {
+      const endSection = writingSectionOf(completionSnapshot.range.getEnd());
+      if (!endSection || endSection.sectionTitle !== section.sectionTitle) return completionUnavailable('selection-crosses-writing-scope');
+    }
+    writingSnapshot = Object.assign({}, completionSnapshot, { revision: currentReviewRevision() });
+    return Object.assign({}, result, section, { available: true, reason: undefined, revision: writingSnapshot.revision, writable: true });
+  },
+  accept_writing_suggestion(p) {
+    if (p && p.composing) return completionUnavailable('composing');
+    const reason = completionGuard();
+    if (reason) return completionUnavailable(reason);
+    if (!isReviewWritable()) return completionUnavailable('readonly');
+    const snap = writingSnapshot;
+    if (!p || !snap || snap.revision !== currentReviewRevision()
+      || (p.revision != null && p.revision !== snap.revision)) return completionUnavailable('stale');
+    const checked = checkCompletion(p.token, snap);
+    if (!checked.success) return checked;
+    if ((snap.selectedText && p.expectedSelection !== snap.selectedText)
+      || (p.expectedSelection != null && p.expectedSelection !== snap.selectedText)) return completionUnavailable('selection-mismatch');
+    if (typeof p.text !== 'string' || !p.text || p.text.length > 2000
+      || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(p.text)) return completionUnavailable('invalid-suggestion');
+    const text = p.text.replace(/\r\n?/g, '\n');
+    // The text is already a suffix (or the exact selection's replacement).
+    // Never prepend captured context, parse Markdown or locate another range.
+    writingSnapshot = null;
+    const result = completionEdit('采用写作建议', function () {
+      const vc = checked.cursor;
+      let replaced = false;
+      if (snap.selectedText) {
+        let tracked = false; try { tracked = !!xModel.getPropertyValue('RecordChanges'); } catch (e) {}
+        if (tracked) replaced = applyMinimalRedline(vc, text);
+        if (!replaced) vc.setString('');
+      }
+      if (!replaced) {
+        vc.collapseToEnd();
+        insertTextAtCursor(vc, text);
+      }
+      vc.collapseToEnd();
+      return { inserted: text, replaced: snap.selectedText, operation: snap.selectedText ? 'replace-selection' : 'insert-suffix' };
+    });
+    return Object.assign(result, { revision: currentReviewRevision() });
+  },
+  set_host_context_menu(p) {
+    hostContextMenu = { enabled: !!(p && p.enabled), maxLength: Math.max(0, Number(p && p.maxLength) || 0) };
+    return { success: true };
+  },
+  // Same decision the context menu interceptor made for this right-click, then
+  // the final text through the FINAL_TEXT_ACTIONS view (see runAgentCommandInMarginView).
+  get_context_menu_context(p) {
+    if (!hostHandlesContextMenu()) return completionUnavailable('native-menu');
+    return runAgentCommandInMarginView('get_completion_context', function () { return captureCompletion(p && p.radius); });
+  },
+  accept_completion(p) {
+    const checked = checkCompletion(p.token);
+    if (!checked.success) return checked;
+    if (checked.snapshot.selectedText) return completionUnavailable('selection');
+    const prefix = p.prefix, text = p.text;
+    if (typeof prefix !== 'string' || !prefix || typeof text !== 'string'
+      || text.length <= prefix.length || text.indexOf(prefix) !== 0 || /[\r\n]/.test(text)
+      || !checked.snapshot.before.endsWith(prefix)) return completionUnavailable('invalid-completion');
+    const suffix = text.slice(prefix.length);
+    return completionEdit('补全文字', function () {
+      const vc = checked.cursor;
+      vc.getText().insertString(vc, suffix, false);
+      vc.collapseToEnd();
+      return { inserted: suffix, text: text };
+    });
+  },
+  insert_completion_content(p) {
+    const checked = checkCompletion(p.token);
+    if (!checked.success) return checked;
+    const text = p.text == null ? '' : p.text;
+    const rows = p.rows;
+    if (typeof text !== 'string' || (!text && !rows)) return completionUnavailable('invalid-content');
+    if (rows != null && (!Array.isArray(rows) || !rows.length || rows.length > 200
+      || rows.some(function (r) { return !Array.isArray(r) || !r.length || r.length > 20
+        || r.some(function (c) { return typeof c !== 'string'; }); }))) return completionUnavailable('invalid-table');
+    // 表后摆位依赖正文枚举；不允许在表格/脚注/页眉中偷偷插入嵌套表。
+    if (rows) {
+      try { if (paraKeyOf(xModel.getText(), checked.cursor.getStart()) < 0) return completionUnavailable('table-requires-body'); }
+      catch (e) { return completionUnavailable('table-requires-body'); }
+    }
+    return completionEdit('插入补全资料', function () {
+      const vc = checked.cursor;
+      vc.collapseToEnd(); // 右键外查的选区保留原文，资料追加在其后。
+      const story = vc.getText();
+      const lines = text.replace(/\r\n?/g, '\n').split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        if (i) story.insertControlCharacter(vc, css.text.ControlCharacter.PARAGRAPH_BREAK, false);
+        if (lines[i]) story.insertString(vc, lines[i], false);
+      }
+      vc.collapseToEnd();
+      let name = null;
+      if (rows) { const table = insertStyledTable(rows, 1, true); name = table.getName(); }
+      return { inserted: text, table: name };
+    });
+  },
+  // [取消] 宿主对一条在飞的批量命令喊停（reqId 来自 progress 消息）。只置位，
+  // 真正停下来要等那条命令跑到下一个批间检查点。
+  cancel(p) {
+    const id = String(p && p.reqId || '');
+    if (!id) return tableFail('cancel: reqId required');
+    if (!INFLIGHT[id]) return { success: true, reqId: id, stale: true }; // 已结束/不存在：不置位，免得 CANCELLED 泄漏
+    CANCELLED[id] = true;
+    return { success: true, reqId: id };
+  },
+  // [verified] insert at the view cursor (append, not select) — see testInsertText.
+  // 带 markdown 标记的文本走剥离转换（**→真粗体、行首 # 剥掉），字体沿用现场格式；
+  // 纯文本走原路径不动。
+  // replaceSelection:true 是**用户手打**的语义（IME 覆盖层提交时带）：有选区就先删掉
+  // 选区、在原位置落字（Word 行为）。不带时仍是「塌到选区末尾追加」——AI / 插件管线
+  // 先 select 再 insert_at_cursor 表示「插在后面」，那条契约不能被改掉。
+  insert_at_cursor(p) {
+    if (nativeKeyDoc()) {
+      const text = String(p.text || '');
+      // Array.from 按码点切分（split('') 按 UTF-16 code unit，会把 emoji/扩展
+      // B 区汉字这类代理对拆成两个孤立半字，逐个投递引擎会收到非法字符）。
+      // '\n' 不能当普通字符投递——KeyChar 是 \n 的 KeyEvent 被引擎静默吞掉
+      // （success:true 但内容没变），改投 RETURN 键（同 insert_paragraph）；
+      // Calc 里 RETURN 会提交当前格并下移一格，所以插入的多段文本在 Calc 里
+      // 会落进连续多个格子而不是同一格的多行——这是引擎原生行为，不是 bug。
+      const keys = [];
+      Array.from(text).forEach(function (ch) {
+        if (ch === '\n') keys.push({ key: 'RETURN', ch: '\r' });
+        else keys.push({ ch: ch });
+      });
+      return Object.assign(postNativeKeys(keys), { inserted: text });
+    }
+    const vc = ctrl.getViewCursor();
+    const text = String(p.text || '');
+    return typeOverSelection(vc, !!p.replaceSelection, '输入', function () {
+      vc.collapseToEnd();
+      if (MD_MARKER_RE.test(text)) insertInlineStyled(vc, text);
+      else insertTextAtCursor(vc, text);
+      vc.collapseToEnd();
+      return Object.assign({ success: true, inserted: text }, verifySnapshot());
+    });
+  },
+  // [verified] replace selection if any, else insert at cursor. '\n' in the new
+  // text becomes a paragraph break (insertTextAtCursor).
+  replace_selection(p) {
+    const vc = ctrl.getViewCursor();
+    // One paste may contain hundreds of paragraphs. Batch native layout and
+    // JS modify callbacks for the entire replacement, including tracked edits.
+    lockModel();
+    try {
+      // 最小修订颗粒度：选区与新文本只差几个字时，只对差异字符落修订。仅在修订
+      // 模式开启时启用——RecordChanges 关闭意味着调用方要的是硬替换（如测试 reset）。
+      let rcOn = false; try { rcOn = !!xModel.getPropertyValue('RecordChanges'); } catch (e) {}
+      if (rcOn && (vc.getString() || '').length > 0 && applyMinimalRedline(vc, p.text || '')) {
+        vc.collapseToEnd();
+        return Object.assign({ success: true, text: String(p.text || '') }, verifySnapshot());
+      }
+      if ((vc.getString() || '').length > 0) vc.setString(''); // drop the selection (tracked)
+      vc.collapseToEnd();
+      insertTextAtCursor(vc, p.text || '');
+      vc.collapseToEnd();
+      return Object.assign({ success: true, text: String(p.text || '') }, verifySnapshot());
+    } finally { unlockModel(); }
+  },
+  // [verified] model-native search + redline (RFC §0.2: no integer offsets).
+  // 全部替换走引擎原生 replaceAll（见 nativeTrackedReplaceAll：150 命中 0.2s）；
+  // 只替首处 / 纯插入走逐命中路径：先 findAll 收齐命中（都是活的 XTextRange，
+  // 改前面的不影响后面的），只在结束时滚到首处；命中 > 50 时按 30 一批，批间发
+  // progress / 检查 cancel（见 batchBreak）。
+  async find_replace(p) {
+    xModel.setPropertyValue('RecordChanges', true);
+    const all = p.replaceAll !== false;
+    const replaceText = String(p.replaceText || '');
+    if (all) {
+      // 颗粒度门槛（dev-board#365）：findText→replaceText 的差异不止一块时，原生
+      // replaceAll 只能整块替换中段，会把两处改动之间没改的字一起删了重打；
+      // 这种改走下面的逐命中路径，每处 applyMinimalRedline 按字符落修订。
+      const fast = replaceAllIsSingleBlock(p.findText, replaceText)
+        ? nativeTrackedReplaceAll(String(p.findText || ''), replaceText, !!p.matchCase)
+        : null;
+      if (fast) {
+        invalidateParaIndex();
+        return { success: true, replaced: fast.n, total: fast.n, recordChanges: true };
+      }
+    }
+    const sd = xModel.createSearchDescriptor();
+    sd.setSearchString(String(p.findText || ''));
+    // matchCase 是后加的可选项（自建查找替换面板要它）；不传时行为与从前一致。
+    try { sd.setPropertyValue('SearchCaseSensitive', !!p.matchCase); } catch (e) {}
+    const hits = [];
+    if (all) {
+      const found = xModel.findAll(sd);
+      const cnt = found ? found.getCount() : 0;
+      for (let i = 0; i < cnt; i++) hits.push(found.getByIndex(i));
+    } else {
+      const first = xModel.findFirst(sd);
+      if (first !== null) hits.push(first);
+    }
+    const total = hits.length;
+    const BATCH = 30, batched = total > 50;
+    let n = 0, cancelled = false;
+    lockModel();
+    try {
+      for (let i = 0; i < total; i++) {
+        if (batched && i > 0 && i % BATCH === 0) {
+          if (await batchBreak(p, n, total)) { cancelled = true; break; }
+        }
+        const hit = hits[i];
+        if (!applyMinimalRedline(hit, replaceText)) hit.setString(replaceText);
+        n++;
+      }
+    } finally { unlockModel(); }
+    if (batched && !cancelled) postProgress(p, n, total); // 取消时批间那帧已报过同一个 done
+    if (hits[0]) selectVisibly(hits[0]); // 拟人：结束时视图停在第一处改动
+    invalidateParaIndex();
+    const r = { success: true, replaced: n, total: total, recordChanges: true };
+    if (cancelled) { r.cancelled = true; r.done = n; }
+    return r;
+  },
+  // [verified] current selection text (anchor, not integer offset).
+  get_selection() {
+    const sel = ctrl.getSelection();
+    let text = '';
+    try {
+      if (sel && typeof sel.getByIndex === 'function' && sel.getCount() > 0) text = sel.getByIndex(0).getString();
+      else if (sel && typeof sel.getString === 'function') text = sel.getString();
+    } catch (e) {}
+    return { success: true, text: text, hasSelection: text.length > 0 };
+  },
+  // [verified] locate matches via XSearchable; return count + texts (anchors held
+  // worker-side in the real impl — NOT integer offsets exposed to the model).
+  // [verified] locate matches and return STABLE ANCHORS (bookmark ids), not
+  // integer offsets (§0.2). Downstream set_selection/replace_at_position take
+  // these anchorIds. Collect ranges first, then bookmark, so anchoring doesn't
+  // perturb the findNext iteration.
+  find_text_locations(p) {
+    const sd = xModel.createSearchDescriptor();
+    sd.setSearchString(String(p.keyword || ''));
+    try { sd.setPropertyValue('SearchCaseSensitive', !!p.matchCase); } catch (e) {}
+    // 上限 50（原 200）：每个匹配要插一个书签 + 6 次光标遍历，全在 office 线程上
+    // 同步执行，200 个匹配足以把 Qt 事件循环冻住好几秒（修订期假死的贡献因素）。
+    // 消歧一个目标用不到 50 个候选；批量替换走 find_replace。
+    const ranges = [];
+    let hit = xModel.findFirst(sd);
+    while (hit !== null && ranges.length < 50) { ranges.push(hit); hit = xModel.findNext(hit, sd); }
+    const truncated = hit !== null;
+    // Each match carries DISAMBIGUATION CONTEXT (chars before/after + enclosing
+    // paragraph), so the AI can tell identical hits apart BEFORE editing — the
+    // WPS-era "replaced the wrong one" class of bug dies here.
+    const matches = ranges.map(function (r, i) {
+      let anchorId = null;
+      try { anchorId = anchorBookmark(r); } catch (e) {}
+      const ctx = contextAround(r, 40);
+      const paragraph = paragraphTextOf(r) || '';
+      return {
+        matchIndex: i, anchorId: anchorId, text: r.getString(),
+        contextBefore: ctx.before, contextAfter: ctx.after,
+        paragraph: paragraph.slice(0, 160),
+        paragraphLength: paragraph.length, paragraphTruncated: paragraph.length > 160,
+      };
+    });
+    const res = { success: true, count: matches.length, matches: matches };
+    if (truncated) { res.truncated = true; res.note = '匹配超过 50 个，仅返回前 50——请用更长的关键词缩小范围，或用 find_replace 批量处理'; }
+    return res;
+  },
+  // [verified-extend] replace the Nth (0-based) match under RecordChanges.
+  replace_nth_match(p) {
+    xModel.setPropertyValue('RecordChanges', true);
+    const sd = xModel.createSearchDescriptor();
+    sd.setSearchString(String(p.findText || ''));
+    const idx = Number(p.matchIndex) || 0;
+    let hit = xModel.findFirst(sd), i = 0;
+    while (hit !== null) {
+      if (i === idx) {
+        selectVisibly(hit); // 拟人：先滚到目标位置再动手
+        if (!applyMinimalRedline(hit, String(p.replaceText || ''))) hit.setString(String(p.replaceText || ''));
+        return { success: true, replacedIndex: idx };
+      }
+      hit = xModel.findNext(hit, sd); i++;
+    }
+    return { success: false, message: 'match index out of range: ' + idx + ' (found ' + i + ')' };
+  },
+  // [verified-extend] delete the Nth match (replace with empty) under RecordChanges.
+  delete_match(p) {
+    xModel.setPropertyValue('RecordChanges', true);
+    const sd = xModel.createSearchDescriptor();
+    sd.setSearchString(String(p.findText || ''));
+    const idx = Number(p.matchIndex) || 0;
+    let hit = xModel.findFirst(sd), i = 0;
+    while (hit !== null) {
+      if (i === idx) {
+        selectVisibly(hit); // 拟人：先滚到目标位置再删
+        hit.setString('');
+        return { success: true, deletedIndex: idx };
+      }
+      hit = xModel.findNext(hit, sd); i++;
+    }
+    return { success: false, message: 'match index out of range: ' + idx };
+  },
+  // [verified-extend] delete all/first occurrences under RecordChanges.
+  delete_text(p) {
+    xModel.setPropertyValue('RecordChanges', true);
+    const sd = xModel.createSearchDescriptor();
+    sd.setSearchString(String(p.text || ''));
+    const all = p.deleteAll !== false;
+    let hit = xModel.findFirst(sd), n = 0;
+    while (hit !== null) {
+      selectVisibly(hit); // 拟人：视图滚到正在删除的位置
+      hit.setString('');
+      n++;
+      if (!all) break;
+      hit = xModel.findNext(hit, sd);
+    }
+    return { success: true, deleted: n };
+  },
+  // [verified-extend] read the Nth (0-based) paragraph's text.
+  get_paragraph(p) {
+    const idx = Number(p.index) || 0;
+    const el = paraAt(idx);
+    if (!el) return { success: false, message: 'paragraph index out of range: ' + idx + ' (count ' + getParaIndex().total + ')' };
+    return { success: true, index: idx, text: el.getString(), numbering: paragraphNumberingOf(el) };
+  },
+  // [verified-extend] modify the Nth paragraph's text under RecordChanges.
+  modify_paragraph(p) {
+    xModel.setPropertyValue('RecordChanges', true);
+    const idx = Number(p.index) || 0;
+    const el = paraAt(idx);
+    if (!el) return { success: false, message: 'paragraph index out of range: ' + idx };
+    selectVisibly(el); // 拟人：先跳到目标段落
+    // One paragraph may contain dozens of minimal edits. Batch their layout and
+    // modified notifications just like find_replace; otherwise each fragment
+    // reflows all earlier tracked changes, making successive paragraphs stall.
+    lockModel();
+    try {
+      if (!applyMinimalRedline(el, String(p.newText || ''))) el.setString(String(p.newText || ''));
+    } finally { unlockModel(); }
+    const after = el.getString().slice(0, 200);
+    invalidateParaIndex();
+    return { success: true, index: idx, paragraphAfterEdit: after };
+  },
+  // [verified-extend] outline = paragraphs carrying a heading style / outline level.
+  get_outline() {
+    const en = xModel.getText().createEnumeration();
+    const outline = []; let i = 0;
+    while (en.hasMoreElements()) {
+      const el = en.nextElement();
+      if (el.supportsService && el.supportsService('com.sun.star.text.Paragraph')) {
+        let lvl = 0, style = '';
+        try { style = el.getPropertyValue('ParaStyleName') || ''; } catch (e) {}
+        try { lvl = el.getPropertyValue('OutlineLevel') || 0; } catch (e) {}
+        if (lvl > 0 || /^(Heading|标题)/.test(style)) outline.push({ paragraphIndex: i, level: lvl || 1, style: style, text: el.getString() });
+        i++;
+      }
+    }
+    return { success: true, count: outline.length, outline: outline };
+  },
+  // [感知] contract clause map — group paragraphs into legal clauses by their
+  // NUMBERING TEXT (第X条 / 第X章 / 一、), NOT by Word heading styles: contracts
+  // rarely use heading styles, which is why get_outline sees nothing there and
+  // the model degraded to counting paragraphs/lines as "clauses".
+  get_clauses() {
+    const RE_TIAO  = /^\s*第[一二三四五六七八九十百千零〇0-9１-９]+\s*条/;       // 第X条 — the clause proper
+    const RE_ZHANG = /^\s*第[一二三四五六七八九十百千零〇0-9１-９]+\s*[章节编]/;  // 第X章/节/编 — section above clauses
+    const RE_ENUM  = /^\s*[一二三四五六七八九十]{1,3}\s*、/;                      // 一、 二、 — top-level enum many contracts use
+    const marks = []; let total = 0;
+    eachParagraph(function (el, i) {
+      total = i + 1;
+      const t = el.getString() || '';
+      let type = null;
+      if (RE_TIAO.test(t)) type = 'tiao';
+      else if (RE_ZHANG.test(t)) type = 'zhang';
+      else if (RE_ENUM.test(t)) type = 'enum';
+      if (type) marks.push({ index: i, type: type, text: t });
+      return false;
+    });
+    // Granularity: 第X条 wins when present (一、 then is usually a sub-item);
+    // otherwise fall back to the 一、 enum as the clause level. 章/节 always kept.
+    const hasTiao = marks.some(function (m) { return m.type === 'tiao'; });
+    const boundaries = marks.filter(function (m) {
+      return m.type === 'zhang' || m.type === (hasTiao ? 'tiao' : 'enum');
+    });
+    const clauses = [];
+    for (let k = 0; k < boundaries.length && clauses.length < 300; k++) {
+      const b = boundaries[k];
+      const end = (k + 1 < boundaries.length) ? boundaries[k + 1].index - 1 : total - 1;
+      const line = b.text.trim();
+      const re = b.type === 'tiao' ? RE_TIAO : (b.type === 'zhang' ? RE_ZHANG : RE_ENUM);
+      const m = line.match(re);
+      clauses.push({
+        no: (m ? m[0] : line.slice(0, 8)).trim(),
+        type: b.type,
+        title: line.slice(0, 60),
+        startParagraph: b.index,
+        endParagraph: end,
+        paragraphCount: end - b.index + 1,
+      });
+    }
+    const firstBoundary = boundaries.length ? boundaries[0].index : total;
+    return {
+      success: true, totalParagraphs: total, clauseCount: clauses.length,
+      totalClauseCount: boundaries.length, truncated: boundaries.length > clauses.length,
+      ...(boundaries.length > clauses.length ? {
+        nextStartParagraph: boundaries[clauses.length].index,
+        note: '条款目录超过 300 条，仅返回前 300 条；totalClauseCount 是完整目录数量。请从 nextStartParagraph 用 get_document_text 继续读取正文。',
+      } : {}),
+      granularity: hasTiao ? '第X条' : (boundaries.length ? '一、二、…' : 'none'),
+      // 0..preambleParagraphs-1 = 首部（合同名称/当事人信息），不属于任何条款
+      preambleParagraphs: firstBoundary,
+      clauses: clauses,
+    };
+  },
+  // [verified-extend] move the view cursor to doc start/end (line/para/bookmark nav = TODO anchor).
+  goto(p) {
+    const vc = ctrl.getViewCursor();
+    const type = String(p.type || '');
+    if (type === 'start') vc.gotoStart(false);
+    else if (type === 'end') vc.gotoEnd(false);
+    else return { success: false, message: 'goto type not supported yet: ' + type + ' (anchor-based nav TODO, §0.2)' };
+    return { success: true, type: type };
+  },
+  // [verified] §0.2 anchor-based selection. Takes {anchor} (a bookmark id from
+  // find_text_locations), NOT integer offsets — those are rejected on purpose.
+  set_selection(p) {
+    if (!p.anchor) return { success: false, message: 'set_selection requires {anchor}; integer offsets unsupported (§0.2)' };
+    const range = anchorRange(String(p.anchor));
+    if (!range) return { success: false, message: 'anchor not found: ' + p.anchor };
+    const anchorError = anchorEditError(p.anchor, range);
+    if (anchorError) return { success: false, error: anchorError, message: anchorError };
+    // 拟人：光标跳过去、视图滚过去、选区亮出来 — 用户看得见 AI 在操作哪里。
+    if (!selectVisibly(range)) return { success: false, message: 'could not select anchor: ' + p.anchor };
+    const ctx = contextAround(range, 40);
+    return { success: true, anchor: p.anchor, text: range.getString(), contextBefore: ctx.before, contextAfter: ctx.after };
+  },
+  // [verified] §0.2 anchor-based replace, under RecordChanges (redline).
+  replace_at_position(p) {
+    if (!p.anchor) return { success: false, message: 'replace_at_position requires {anchor}; integer offsets unsupported (§0.2)' };
+    xModel.setPropertyValue('RecordChanges', true);
+    const range = anchorRange(String(p.anchor));
+    if (!range) return { success: false, message: 'anchor not found: ' + p.anchor };
+    const anchorError = anchorEditError(p.anchor, range);
+    if (anchorError) return { success: false, error: anchorError, message: anchorError };
+    if (!selectVisibly(range)) return { success: false, message: 'could not select anchor: ' + p.anchor };
+    if (!applyMinimalRedline(range, String(p.newText || ''))) range.setString(String(p.newText || ''));
+    // Keep the excerpt budget, but expose whether verification needs a full paragraph read.
+    const paragraph = paragraphTextOf(range) || '';
+    return Object.assign({ success: true, anchor: p.anchor, newText: String(p.newText || '') },
+      { paragraphAfterEdit: paragraph.slice(0, 200), paragraphAfterEditLength: paragraph.length,
+        paragraphAfterEditTruncated: paragraph.length > 200 });
+  },
+  // [verified-extend] insert a paragraph break at the view cursor (Enter key in
+  // the IME overlay routes here — the overlay's single-line <input> can't make a
+  // newline itself). Append, leave cursor collapsed after the break.
+  // replaceSelection:true（覆盖层的回车）= Word 语义：选区先被删掉再分段。
+  insert_paragraph(p) {
+    if (nativeKeyDoc()) return postNativeKeys([{ key: 'RETURN', ch: '\r' }]);
+    const vc = ctrl.getViewCursor();
+    return typeOverSelection(vc, !!(p && p.replaceSelection), '输入', function () {
+      vc.collapseToEnd();
+      const xText = vc.getText();   // 同 insertTextAtCursor：单元格里必须用光标自己的 XText
+      xText.insertControlCharacter(vc, css.text.ControlCharacter.PARAGRAPH_BREAK, false);
+      vc.collapseToEnd();
+      return { success: true };
+    });
+  },
+  // [spike] move the view cursor (arrow keys in the IME overlay route here — the
+  // overlay's single-line <input> would otherwise navigate the empty input, not
+  // the document). left/right are text-flow steps (XTextCursor.goLeft/goRight),
+  // up/down are visual lines (XViewCursor.goUp/goDown). extend=true (Shift+arrow)
+  // grows the selection. No content change, so no RecordChanges.
+  move_cursor(p) {
+    const dir = String(p.dir || '');
+    const ex = !!p.extend;
+    if (nativeKeyDoc()) {
+      if (!NATIVE_ARROWS[dir]) return { success: false, message: 'move_cursor: unsupported dir: ' + dir };
+      return Object.assign(postNativeKeys([{ key: NATIVE_ARROWS[dir], shift: ex }]), { dir: dir, extend: ex });
+    }
+    const vc = ctrl.getViewCursor();
+    switch (dir) {
+      case 'left': vc.goLeft(1, ex); break;
+      case 'right': vc.goRight(1, ex); break;
+      case 'up': vc.goUp(1, ex); break;
+      case 'down': vc.goDown(1, ex); break;
+      default: return { success: false, message: 'move_cursor: unsupported dir: ' + dir };
+    }
+    return { success: true, dir: dir, extend: ex };
+  },
+  // Backspace / Delete (IME overlay control keys) — routed through Writer's OWN
+  // key dispatch (.uno:SwBackspace / .uno:Delete), NOT hand-rolled goLeft+
+  // setString. WHY: RecordChanges is ON since boot, and setString('') on
+  // pre-existing (non-own-insert) text only MARKS it as a delete redline — the
+  // view cursor never advances past the marked char, so every further Backspace
+  // re-selected the SAME char and deletion jammed after one press (headless-
+  // verified). The engine dispatch owns revision semantics: mark + step past for
+  // original text, hard-delete for own unaccepted inserts, selection-aware.
+  delete_backward() {
+    if (nativeKeyDoc()) return postNativeKeys([{ key: 'BACKSPACE', ch: '\b' }]);
+    dispatchUno('.uno:SwBackspace');
+    return { success: true };
+  },
+  delete_forward() {
+    if (nativeKeyDoc()) return postNativeKeys([{ key: 'DELETE', ch: String.fromCharCode(127) }]);
+    dispatchUno('.uno:Delete');
+    return { success: true };
+  },
+  // Tab / Shift+Tab（IME 覆盖层转发的唯一 Tab 动作）。Word/Writer 语义：光标在
+  // 表格里 = 跳到下一格/上一格，正文里才插制表符。判定必须在 worker 做——宿主
+  // 拿不到光标属于哪个 story（dev-board#627 的次生问题：#627 之前覆盖层无条件
+  // 插制表符，在单元格里因 RuntimeException 静默失败＝看着像没反应；改用
+  // vc.getText() 之后它会真插进去，修订态下还多一条修订）。
+  tab_key(p) {
+    const shift = !!(p && p.shift);
+    if (nativeKeyDoc()) return Object.assign(postNativeKeys([{ key: 'TAB', ch: '\t', shift: shift }]), { shift: shift });
+    const vc = ctrl.getViewCursor();
+    let cell = null;
+    try { cell = vc.getPropertyValue('Cell'); } catch (e) {}
+    if (!cell) {
+      // tab_key 只有覆盖层（用户手打）会发，按 Word 语义覆盖选区。
+      return typeOverSelection(vc, true, '输入', function () {
+        vc.collapseToEnd();
+        insertTextAtCursor(vc, '\t');
+        vc.collapseToEnd();
+        return Object.assign({ success: true, inTable: false, inserted: '\t' }, verifySnapshot());
+      });
+    }
+    dispatchUno(shift ? '.uno:JumpToPrevCell' : '.uno:JumpToNextCell');
+    return { success: true, inTable: true, shift: shift, cell: viewCursorCellName() };
+  },
+  // Overlay shortcut keys (Cmd/Ctrl+A/B/I/U, Home/End) — see UI_COMMANDS.
+  ui_command(p) {
+    const name = String(p.name || '');
+    if (NATIVE_UI_KEYS[name] && nativeKeyDoc()) {
+      const r = postNativeKeys([{ key: NATIVE_UI_KEYS[name], shift: /_sel$/.test(name) }]);
+      if (name === 'escape' && isCalcDoc()) restoreFullScreenSoon();
+      return Object.assign(r, { name: name });
+    }
+    if (name === 'escape') return deselect();
+    const url = UI_COMMANDS[name];
+    if (!url) return { success: false, message: 'ui_command not allowed: ' + (p.name || '') };
+    dispatchUno(url);
+    return { success: true, name: name };
+  },
+  // 自建查找栏的「上一个/下一个」。**不用 find_text_locations**——那条路每个匹配
+  // 插一个书签当锚点，书签会跟着文档存进 docx，用户只是搜个词不该在文件里留下
+  // 一堆书签。这里全程用 findFirst/findNext 枚举，只动视图光标。
+  //
+  // 上一个：UNO 没有 findPrevious，所以按文档序收齐全部匹配（上限 500，再多的
+  // 文档里逐个跳也没意义），再按当前光标位置挑前一个/后一个，到头绕回。
+  find_navigate(p) {
+    const kw = String((p && p.keyword) || '');
+    if (!kw) return tableFail('find_navigate requires {keyword}');
+    const dir = String((p && p.direction) || 'next').toLowerCase();
+    const sd = xModel.createSearchDescriptor();
+    sd.setSearchString(kw);
+    try { sd.setPropertyValue('SearchCaseSensitive', !!(p && p.matchCase)); } catch (e) {}
+    const all = [];
+    let hit = null;
+    try { hit = xModel.findFirst(sd); } catch (e) { return tableFail('查找失败: ' + errStr(e)); }
+    while (hit !== null && all.length < 500) {
+      all.push(hit);
+      try { hit = xModel.findNext(hit, sd); } catch (e) { hit = null; }
+    }
+    if (!all.length) return { success: true, found: false, total: 0 };
+    // 光标当前落在第几个匹配之后（compareRegionStarts(A,B)：A 在 B 前返回 1，
+    // 相等返回 0）。跨 XText（表格单元格 vs 正文）会抛，跳过即可——那种匹配
+    // 只是定位不到"当前在第几个"，不影响能跳过去。
+    //
+    // 起点相同要分两种情形，混为一谈会差一个：
+    //   - 光标**塌陷**停在某处匹配的起点（如刚 goto 文首，而文首正好是匹配）：
+    //     这一处还**没被访问过**，next 就应该落在它身上；
+    //   - 光标**带选区**且起点相同：说明它就是刚被选中的当前这一处，next 要跳下一个。
+    const vc = ctrl.getViewCursor();
+    let collapsed = true;
+    try { collapsed = (vc.getString() || '').length === 0; } catch (e) {}
+    let curIdx = -1;
+    for (let i = 0; i < all.length; i++) {
+      try {
+        const c = all[i].getText().compareRegionStarts(all[i], vc);
+        if (c > 0) curIdx = i;                       // 严格在光标前 = 已越过
+        else if (c === 0 && !collapsed) curIdx = i;  // 起点相同且选中着 = 当前这一处
+      } catch (e) {}
+    }
+    const n = all.length;
+    const target = dir === 'prev'
+      ? (curIdx <= 0 ? n - 1 : curIdx - 1)
+      : (curIdx < 0 ? 0 : (curIdx + 1) % n);
+    if (!selectVisibly(all[target])) return tableFail('无法选中该匹配');
+    return { success: true, found: true, index: target + 1, total: n, truncated: n >= 500 };
+  },
+  // 视图缩放（触控板捏合 / Cmd+加减号 / 工具栏缩放控件）。
+  // {value} 给绝对百分比，{delta} 给相对增量；不传就只读回当前值。
+  // ZoomType 必须先切 BY_VALUE——停在「适合页宽」这类自动模式时，引擎会按窗口
+  // 重算 ZoomValue，写进去的数当场被覆盖。两个属性都是 sal_Int16，裸 number 会
+  // 编组成 long 被严格 setter 拒绝（且常被 try 吞掉），必须走 shortAny。
+  set_zoom(p) {
+    let vs = null;
+    try { vs = ctrl.getViewSettings(); } catch (e) { return { success: false, message: 'no view settings: ' + errStr(e) }; }
+    let cur = 100;
+    try { cur = Number(vs.getPropertyValue('ZoomValue')) || 100; } catch (e) {}
+    const hasValue = p && p.value != null;
+    const hasDelta = p && p.delta != null;
+    if (!hasValue && !hasDelta) return { success: true, zoom: cur };
+    let next = hasValue ? Number(p.value) : cur + Number(p.delta);
+    if (!isFinite(next)) return { success: false, message: 'set_zoom: value/delta 不是数字' };
+    next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, Math.round(next)));
+    try { vs.setPropertyValue('ZoomType', shortAny(css.view.DocumentZoomType.BY_VALUE)); } catch (e) {}
+    try { vs.setPropertyValue('ZoomValue', shortAny(next)); }
+    catch (e) { return { success: false, message: 'set_zoom 失败: ' + errStr(e) }; }
+    let applied = next;
+    try { applied = Number(vs.getPropertyValue('ZoomValue')) || next; } catch (e) {}
+    return { success: true, zoom: applied };
+  },
+  // ---- [主题] 纸外工作区配色（dev-board#273）------------------------------
+  // 宿主深浅主题切换时把 LO 的 AppBackground（纸张周围的工作区底色）跟着切；
+  // DocColor（纸张本身）刻意不动——文档以打印观感为准，深色下纸仍是纸白。
+  // 配置项运行时可写（与 setRedlineAuthor 同一机制）；色值与 --awd-canvas 令牌同源
+  // （light #E4E0D4 / dark #141210，见 design/tokens/awd-palette.json 的
+  // roles.light.canvas / roles.dark.canvas，editor.html 头部那份令牌表同值），
+  // 两边不一致会在 iframe 底与画布之间露出一圈异色缝。本文件跑在 worker 里没有
+  // DOM，读不到 CSS 自定义属性，所以只能是数字字面量——改配色时跟着色源一起改。
+  set_app_theme(p) {
+    const mode = p && p.mode === 'dark' ? 'dark' : 'light';
+    const color = mode === 'dark' ? 0x141210 : 0xE4E0D4;
+    try {
+      const provider = context.getServiceManager().createInstanceWithContext(
+        'com.sun.star.configuration.ConfigurationProvider', context);
+      let schemeName = 'LibreOffice';
+      try {
+        const cur = provider.createInstanceWithArguments(
+          'com.sun.star.configuration.ConfigurationAccess',
+          [mkProp('nodepath', '/org.openoffice.Office.UI/ColorScheme')]);
+        const n = cur.getByName('CurrentColorScheme');
+        if (n) schemeName = String(n);
+      } catch (e) { /* 读不到就用默认方案名 */ }
+      const root = provider.createInstanceWithArguments(
+        'com.sun.star.configuration.ConfigurationUpdateAccess',
+        [mkProp('nodepath', '/org.openoffice.Office.UI/ColorScheme/ColorSchemes')]);
+      const scheme = root.getByName(schemeName);
+      scheme.getByName('AppBackground').replaceByName('Color', color);
+      root.commitChanges();
+      return { success: true, mode, scheme: schemeName };
+    } catch (e) { return { success: false, message: 'set_app_theme 失败: ' + errStr(e) }; }
+  },
+  // ---- [P1 自建工具栏] 状态回读 / 样式清单 / chrome 开关 -------------------
+  // 工具栏的激活态（B 是否高亮、当前字体字号样式对齐、能不能撤销）一次拿全。
+  // 高频调用（选区事件 + 400ms 聚焦轮询），实测整套读一遍约 6ms——每个字段各自
+  // try/catch，缺一个不影响其余，绝不因为某个属性在当前上下文不存在就整体失败。
+  get_ui_state() {
+    const out = { success: true, documentSeq: docSeq };
+    let vc = null;
+    try { vc = ctrl.getViewCursor(); } catch (e) { return { success: false, message: errStr(e) }; }
+    const ch = {};
+    try { ch.bold = vc.getPropertyValue('CharWeight') > 100; } catch (e) {}
+    try { ch.italic = !enumEq(vc.getPropertyValue('CharPosture'), css.awt.FontSlant.NONE); } catch (e) {}
+    try { ch.underline = !enumEq(vc.getPropertyValue('CharUnderline'), css.awt.FontUnderline.NONE); } catch (e) {}
+    try { ch.strikeout = !enumEq(vc.getPropertyValue('CharStrikeout'), css.awt.FontStrikeout.NONE); } catch (e) {}
+    try {
+      const esc = Number(vc.getPropertyValue('CharEscapement')) || 0;
+      ch.superscript = esc > 0; ch.subscript = esc < 0;
+    } catch (e) {}
+    try { ch.font = vc.getPropertyValue('CharFontName'); } catch (e) {}
+    try { ch.fontAsian = vc.getPropertyValue('CharFontNameAsian'); } catch (e) {}
+    try { ch.sizePt = vc.getPropertyValue('CharHeight'); } catch (e) {}
+    try { const c = vc.getPropertyValue('CharColor'); ch.color = c === -1 ? 'auto' : '#' + ('000000' + (c >>> 0).toString(16)).slice(-6); } catch (e) {}
+    try { const h = vc.getPropertyValue('CharHighlight'); ch.highlight = h === -1 ? 'none' : '#' + ('000000' + (h >>> 0).toString(16)).slice(-6); } catch (e) {}
+    out.character = ch;
+    const pa = {};
+    try { pa.styleName = vc.getPropertyValue('ParaStyleName'); } catch (e) {}
+    try {
+      const a = vc.getPropertyValue('ParaAdjust');
+      const A = css.style.ParagraphAdjust;
+      pa.alignment = enumEq(a, A.CENTER) ? 'center' : enumEq(a, A.RIGHT) ? 'right'
+        : (enumEq(a, A.BLOCK) || enumEq(a, A.STRETCH)) ? 'justify' : 'left';
+    } catch (e) {}
+    try { pa.outlineLevel = vc.getPropertyValue('OutlineLevel') || 0; } catch (e) {}
+    // 列表种类：工具栏要分别高亮「项目符号」和「编号」两个按钮。NumberingIsNumber
+    // 只说明在不在列表里，具体是符号还是数字要看规则第 0 级的 NumberingType。
+    try {
+      pa.inList = !!vc.getPropertyValue('NumberingIsNumber');
+      if (pa.inList) {
+        pa.listKind = 'list';   // 读不出细分时的保守取值
+        const rules = vc.getPropertyValue('NumberingRules');
+        if (rules && rules.getCount && rules.getCount() > 0) {
+          const lvl = rules.getByIndex(0);
+          let nt = null;
+          for (let i = 0; i < (lvl.length || 0); i++) if (lvl[i].Name === 'NumberingType') nt = Number(lvl[i].Value);
+          const NT = css.style.NumberingType;
+          if (nt != null) pa.listKind = (nt === NT.CHAR_SPECIAL || nt === NT.BITMAP) ? 'bullet' : 'number';
+        }
+      } else pa.listKind = 'none';
+    } catch (e) {}
+    out.paragraph = pa;
+    const view = {};
+    try { view.zoom = ctrl.getViewSettings().getPropertyValue('ZoomValue'); } catch (e) {}
+    // 格式标记 / 标尺的真实读回（set_view_options 写的就是这两个 ViewSettings 属性），
+    // 工具栏按引擎状态高亮，不再本地记一份猜测（旧实现用 .uno:ControlCodes 切换语义）。
+    try { view.formattingMarks = !!ctrl.getViewSettings().getPropertyValue('ShowNonprintingCharacters'); } catch (e) {}
+    for (const [key, property] of Object.entries({ paragraphMarks: 'ShowParaBreaks', lineBreaks: 'ShowBreaks', spaces: 'ShowSpaces', tabs: 'ShowTabstops' })) {
+      try { view[key] = !!ctrl.getViewSettings().getPropertyValue(property); } catch (e) {}
+    }
+    try { view.ruler = !!ctrl.getViewSettings().getPropertyValue('ShowHoriRuler'); } catch (e) {}
+    try { view.recordChanges = !!xModel.getPropertyValue('RecordChanges'); } catch (e) {}
+    // 修订显示三态（dev-board#368）。工具栏的当前态读的就是这里——真实读回引擎，
+    // 不给宿主留本地猜测的余地。Calc/Impress 没有修订机制，字段整个不给。
+    if (isWriterDoc()) {
+      try {
+        const rv = revisionViewState();
+        view.revisionView = rv.mode;
+        view.showChanges = rv.showChanges;
+        view.showChangesInMargin = rv.showChangesInMargin;
+        view.revisionMarginSupported = rv.marginSupported;
+        view.revisionBalloonsSupported = rv.hideSupported && supportsReviewGeometry() && installReviewCommentInterceptor(ctrl);
+      } catch (e) {}
+    }
+    out.view = view;
+    const sel = {};
+    try { sel.collapsed = (vc.getString() || '').length === 0; } catch (e) {}
+    // 光标所在单元格（如 "B2"）。工具栏的表格组要靠它算出当前行/列，才能做
+    // 「在上方插入行」「删除本列」这类相对操作——table_* 原语收的是 1 起的
+    // 行号与列字母/列号，没有「当前位置」的概念。
+    try {
+      const cell = vc.getPropertyValue('Cell');
+      sel.inTable = !!cell;
+      if (cell) { try { sel.cellName = String(cell.getPropertyValue('CellName') || ''); } catch (e) {} }
+    } catch (e) { sel.inTable = false; }
+    out.selection = sel;
+    // 撤销/重做可用性。UndoManager 不是属性（getPropertyValue 抛
+    // UnknownPropertyException，真机验过），要走 XUndoManagerSupplier 的方法。
+    // 实在拿不到就不给字段——宿主据此让两个按钮常亮，宁可多点一下也别灰掉能用的功能。
+    try {
+      const um = xModel.getUndoManager();
+      const u = {};
+      try { u.canUndo = !!um.isUndoPossible(); } catch (e) {}
+      try { u.canRedo = !!um.isRedoPossible(); } catch (e) {}
+      if (u.canUndo != null || u.canRedo != null) out.undo = u;
+    } catch (e) { out.undoErr = errStr(e); }
+    return out;
+  },
+  // 段落样式清单（样式下拉）。getElementNames() 给的是**英文程序名**
+  // （Standard / Heading 1），中文界面要显示的是 DisplayName——两者都带回，
+  // set_style 认的仍是程序名。
+  list_styles(p) {
+    if (!isWriterDoc()) return tableFail(NOT_TEXT_DOC_MSG);
+    const kind = String((p && p.kind) || 'paragraph').toLowerCase();
+    const familyName = kind === 'character' ? 'CharacterStyles' : 'ParagraphStyles';
+    try {
+      const fam = xModel.getStyleFamilies().getByName(familyName);
+      const names = fam.getElementNames();
+      const out = [];
+      for (let i = 0; i < (names.length || 0); i++) {
+        const it = { name: String(names[i]) };
+        try {
+          const st = fam.getByName(names[i]);
+          try { it.display = String(st.getPropertyValue('DisplayName') || it.name); } catch (e) { it.display = it.name; }
+          try { it.inUse = !!st.isInUse(); } catch (e) {}
+        } catch (e) { it.display = it.name; }
+        out.push(it);
+      }
+      return { success: true, kind: kind, count: out.length, styles: out };
+    } catch (e) { return tableFail('读取样式库失败: ' + errStr(e)); }
+  },
+  // LO 自己的 chrome 开关（自建工具栏上线后默认全关，设置里留逃生开关）。
+  // {all:false} 走 LayoutManager.setVisible(false) 一刀切——这样上下文工具栏
+  // （选中表格/图片时自动冒出来的 singlemode-*）也不会再钻出来；逐项开关用
+  // {menubar/toolbars/statusbar/rulers}。
+  // **hideElement() 的返回值恒为 false，不代表失败**（真机实证），一律用
+  // isElementVisible() 复核后如实回报。
+  set_chrome(p) {
+    const req = p || {};
+    const out = { success: true, applied: {} };
+    let lm = null;
+    try { lm = ctrl.getFrame().getPropertyValue('LayoutManager'); }
+    catch (e) { return { success: false, message: 'LayoutManager 不可达: ' + errStr(e) }; }
+    if (!lm) return { success: false, message: 'LayoutManager 为空' };
+    const visible = (url) => { try { return !!lm.isElementVisible(url); } catch (e) { return null; } };
+    // 显示这一侧要**复核 + 重试**：藏过全套（含 11 条 singlemode-* 上下文工具栏）
+    // 之后，单纯 showElement 有时恢复不出来（真机实证）。逃生开关是「体验不能
+    // 退步」的兜底保证，不能靠一次调用碰运气——先补 createElement 重建元素，
+    // 再把整个 LayoutManager 打开，每一步都用 isElementVisible 复核。
+    // 藏这一侧必须**先 createElement 再 hideElement**（真机实证 v0.44.1 真机走查 D2）：
+    // 对一条还没被创建的元素调 hideElement 不留痕——光标第一次进表格时引擎照样
+    // 把 tableobjectbar 创建成可见的（探针：预先 hideElement 之后 isElementVisible
+    // 仍然回 true）。先把它创建出来再藏，引擎就记住了「这条是藏着的」，之后进出
+    // 表格都不再冒出来。13 条一起 create+hide 实测 115ms，只在开关时跑一次。
+    const setOne = (url, on) => {
+      if (!on) {
+        try { lm.createElement(url); } catch (e) {}
+        try { lm.hideElement(url); } catch (e) {}
+        return visible(url);
+      }
+      try { lm.showElement(url); } catch (e) {}
+      if (visible(url) === true) return true;
+      try { lm.createElement(url); lm.showElement(url); } catch (e) {}
+      if (visible(url) === true) return true;
+      try { lm.setVisible(true); lm.showElement(url); } catch (e) {}
+      return visible(url);
+    };
+    // 不带任何字段 = 只读查询：回报当前各处可见性。宿主用它复核「藏了之后
+    // 真的没再冒出来」（上下文工具栏是选中表格/图片时由引擎自己拉起来的）。
+    const anyField = ['all', 'menubar', 'statusbar', 'toolbars', 'rulers'].some((k) => req[k] != null);
+    if (!anyField) {
+      const cur = { toolbars: {} };
+      try { cur.all = !!lm.isVisible(); } catch (e) {}
+      try { cur.menubar = !!lm.isElementVisible(CHROME_URLS.menubar); } catch (e) {}
+      try { cur.statusbar = !!lm.isElementVisible(CHROME_URLS.statusbar); } catch (e) {}
+      for (let i = 0; i < CHROME_URLS.toolbars.length; i++) {
+        const u = CHROME_URLS.toolbars[i];
+        try { cur.toolbars[u.slice(u.lastIndexOf('/') + 1)] = !!lm.isElementVisible(u); } catch (e) {}
+      }
+      try {
+        const vs = ctrl.getViewSettings();
+        cur.rulers = { ShowHoriRuler: !!vs.getPropertyValue('ShowHoriRuler'), ShowVertRuler: !!vs.getPropertyValue('ShowVertRuler') };
+      } catch (e) {}
+      return { success: true, visible: cur };
+    }
+    if (req.all != null) {
+      try { lm.setVisible(!!req.all); } catch (e) { out.allErr = errStr(e); }
+      try { out.applied.all = !!lm.isVisible(); } catch (e) {}
+    }
+    if (req.menubar != null) out.applied.menubar = setOne(CHROME_URLS.menubar, !!req.menubar);
+    // 放出菜单栏时把引擎自带的「退出 / 打开远程文档 / 在浏览器中预览」裁掉（BUG-33）。
+    // load_document 之后菜单栏会被重建，宿主的 reapplyChrome 会再走到这里裁一次。
+    if (req.menubar) out.applied.menuPruned = pruneNativeMenu(lm);
+    if (req.statusbar != null) out.applied.statusbar = setOne(CHROME_URLS.statusbar, !!req.statusbar);
+    if (req.toolbars != null) {
+      const states = {};
+      for (let i = 0; i < CHROME_URLS.toolbars.length; i++) {
+        const u = CHROME_URLS.toolbars[i];
+        // fullscreenbar 永不放出来（「全屏」浮条，见 CHROME_NEVER_SHOWN）。
+        states[u.slice(u.lastIndexOf('/') + 1)] = setOne(u, !!req.toolbars && CHROME_NEVER_SHOWN.indexOf(u) < 0);
+      }
+      out.applied.toolbars = states;
+    }
+    if (req.rulers != null) {
+      const vs = ctrl.getViewSettings();
+      const r = {};
+      for (const k of ['ShowHoriRuler', 'ShowVertRuler']) {
+        try { vs.setPropertyValue(k, !!req.rulers); } catch (e) {}
+        try { r[k] = !!vs.getPropertyValue(k); } catch (e) {}
+      }
+      out.applied.rulers = r;
+    }
+    return out;
+  },
+  // 纯视图开关（自建工具栏「¶ 格式标记」「标尺」，默认都开、开关落在用户偏好里）。
+  // 直写 ViewSettings 而不是派发 .uno:ControlCodes / .uno:Ruler：后两者是切换语义，
+  // 宿主想设成确定状态就得先读再判，而 load_document 换文档后视图设置会回到引擎
+  // 默认值，宿主要能无条件「设成 X」。不改一个字节的内容。
+  // {formattingMarks?, paragraphMarks?, lineBreaks?, spaces?, tabs?, ruler?, textBoundaries?}；都不带 = 只读回。
+  // ruler 同时管横竖两条（ShowRulers 是总闸）；textBoundaries 是辅助线，不是文档边框。
+  set_view_options(p) {
+    const req = p || {};
+    let vs = null;
+    try { vs = ctrl.getViewSettings(); } catch (e) { return { success: false, message: 'no view settings: ' + errStr(e) }; }
+    const marks = { paragraphMarks: 'ShowParaBreaks', lineBreaks: 'ShowBreaks', spaces: 'ShowSpaces', tabs: 'ShowTabstops' };
+    for (const [key, property] of Object.entries(marks)) {
+      if (req[key] == null) continue;
+      try { vs.setPropertyValue(property, !!req[key]); }
+      catch (e) { return { success: false, message: property + ': ' + errStr(e) }; }
+    }
+    if (req.formattingMarks != null) {
+      try { vs.setPropertyValue('ShowNonprintingCharacters', !!req.formattingMarks); } catch (e) {}
+    }
+    if (req.textBoundaries != null) {
+      try { vs.setPropertyValue('ShowTextBoundaries', !!req.textBoundaries); } catch (e) {}
+    }
+    if (req.ruler != null) {
+      for (const k of ['ShowRulers', 'ShowHoriRuler', 'ShowVertRuler']) {
+        try { vs.setPropertyValue(k, !!req.ruler); } catch (e) {}
+      }
+    }
+    const out = { success: true };
+    for (const [key, property] of Object.entries(marks)) {
+      try { out[key] = !!vs.getPropertyValue(property); } catch (e) {}
+      if (req[key] != null && out[key] !== !!req[key]) return { success: false, message: property + ': value not applied' };
+    }
+    try { out.formattingMarks = !!vs.getPropertyValue('ShowNonprintingCharacters'); } catch (e) {}
+    if (req.formattingMarks != null && out.formattingMarks !== !!req.formattingMarks) return { success: false, message: 'ShowNonprintingCharacters: value not applied' };
+    try { out.textBoundaries = !!vs.getPropertyValue('ShowTextBoundaries'); } catch (e) {}
+    try { out.ruler = !!vs.getPropertyValue('ShowHoriRuler'); } catch (e) {}
+    try { out.verticalRuler = !!vs.getPropertyValue('ShowVertRuler'); } catch (e) {}
+    return out;
+  },
+  // 修订开关（工具栏的「修订」按钮）。RecordChanges 是文档属性，直接写比派发
+  // .uno:TrackChanges 可靠——后者是切换语义，宿主想设成确定状态就得先读再判。
+  set_track_changes(p) {
+    if (!isWriterDoc()) return tableFail(NOT_TEXT_DOC_MSG);
+    if (p && p.on != null) {
+      try { xModel.setPropertyValue('RecordChanges', !!p.on); }
+      catch (e) { return tableFail('设置修订开关失败: ' + errStr(e)); }
+    }
+    let on = null;
+    try { on = !!xModel.getPropertyValue('RecordChanges'); } catch (e) {}
+    return { success: true, recordChanges: on };
+  },
+  // 修订显示三态（Word 的「所有标记 / 简洁标记 / 无标记」，dev-board#368）。
+  // **只切显示**：不改一个字节的内容、不动 RecordChanges、不处置任何 redline。
+  // 不带 mode = 只读回当前真实状态（宿主据此高亮，不许本地猜）。
+  set_revision_view(p) {
+    if (!isWriterDoc()) {
+      return tableFail('当前打开的不是 Word 文档：修订显示方式仅对 doc/docx 生效（表格与演示文稿没有修订机制）。');
+    }
+    if (p && p.mode != null && String(p.mode) !== '') {
+      const mode = String(p.mode);
+      if (REVISION_VIEWS.indexOf(mode) < 0) {
+        return tableFail('未知的修订显示方式: ' + mode + '（可选 ' + REVISION_VIEWS.join(' / ') + '）');
+      }
+      // A yielded AI batch still owns its temporary final-text view. Apply the
+      // user's selection after it restores, not halfway through its edits.
+      if (agentViewPending) {
+        const model = xModel;
+        const apply = function () {
+          return model === xModel ? EXEC.set_revision_view(p) : tableFail('文档已切换，请重新选择显示方式');
+        };
+        return agentViewPending.then(apply, apply);
+      }
+      if (mode === 'balloons' && !supportsReviewGeometry()) return tableFail('当前编辑器引擎不支持批注框修订，请更新编辑器后使用。');
+      if (mode === 'balloons' && !installReviewCommentInterceptor(ctrl)) return tableFail('批注输入通道不可用，请重新打开文档后重试。');
+      const applied = applyRevisionView(mode, mode === 'balloons' && revisionViewState().mode !== 'balloons');
+      applied.success = true;
+      return applied;
+    }
+    const cur = revisionViewState();
+    cur.success = true;
+    return cur;
+  },
+  // [spike] Phase B: raw measurements for mapping the view cursor to canvas
+  // pixels. We DELIBERATELY return primitives (not a final px rect) so the
+  // mm->px formula can be calibrated on the JS side without restarting LOWA.
+  //   - pos: XTextViewCursor.getPosition() -> awt.Point in 1/100 mm. The ORIGIN
+  //     (page top-left vs visible-area top-left) is the open question under
+  //     WASM; probe it empirically (short doc = no scroll hides the difference).
+  //   - charHeightPt: CharHeight (points) at the cursor -> caret height.
+  //   - zoom: ZoomValue (%) from the view settings.
+  //   - winPx: the Qt component window rect (px) — the canvas surface bounds.
+  // Each field is independently try/caught so a missing API degrades, not throws.
+  get_cursor_rect() {
+    // The IME/caret timer can outlive a Writer document during a tab switch.
+    if (!isWriterDoc()) return completionUnavailable('not-writer');
+    const out = { success: true };
+    let vc = null;
+    try { vc = ctrl.getViewCursor(); } catch (e) { out.vcErr = errStr(e); }
+    if (vc) {
+      try { const pt = vc.getPosition(); out.pos = { X: pt.X, Y: pt.Y }; } catch (e) { out.posErr = errStr(e); }
+      try { out.charHeightPt = vc.getPropertyValue('CharHeight'); } catch (e) { out.charHeightErr = errStr(e); }
+      try { out.collapsed = (vc.getString() || '').length === 0; } catch (e) {}
+    }
+    try { out.zoom = ctrl.getViewSettings().getPropertyValue('ZoomValue'); } catch (e) { out.zoomErr = errStr(e); }
+    try {
+      const r = ctrl.getFrame().getComponentWindow().getPosSize();
+      out.winPx = { X: r.X, Y: r.Y, W: r.Width, H: r.Height };
+    } catch (e) { out.winErr = errStr(e); }
+    // Saved model view data remains for older consumers. It is not a live
+    // scroll/caret source; nativeCaret below reads the current controller.
+    try {
+      const vd = xModel.getViewData && xModel.getViewData();
+      if (vd && typeof vd.getByIndex === 'function' && vd.getCount() > 0) {
+        const seq = vd.getByIndex(0);
+        const view = {};
+        if (seq && seq.length) for (let i = 0; i < seq.length; i++) {
+          const pv = seq[i];
+          if (pv && pv.Name != null) {
+            const value = typeof pv.Value === 'bigint' ? Number(pv.Value) : pv.Value;
+            if (['number', 'string', 'boolean'].indexOf(typeof value) >= 0) view[pv.Name] = value;
+          }
+        }
+        out.viewData = view;
+      }
+    } catch (e) { out.viewDataErr = errStr(e); }
+    try { out.nativeCaret = readNativeCaretRect(ctrl.getFrame(), ctrl.getViewData(), out.charHeightPt); }
+    catch (e) { /* Older engines retain the click-calibrated fallback. */ }
+    return out;
+  },
+  // [spike] probe 4b: LOAD performance of a 50-page docx (#56 余项). The existing
+  // testPerf times GENERATION; this times the docx IMPORT path: generate N pages,
+  // store to a .docx in MEMFS, then loadComponentFromURL it (replacing the visible
+  // doc) and time the load. Reports gen/save/load ms + page count. loadMs covers
+  // model load + initial layout trigger; Qt repaint/scroll smoothness still needs
+  // eyes on a real device. Heavy — may stress a headless sandbox (reboot if it
+  // hangs); the authoritative numbers come from a real machine.
+  perf_load(p) {
+    const pages = Number(p.pages) || 50;
+    const r = { success: true, pages: pages };
+    try {
+      const xText = xModel.getText();
+      const cur = xText.createTextCursor();
+      cur.gotoEnd(false);
+      const tGen = performance.now();
+      for (let pg = 0; pg < pages; pg++) {
+        for (let l = 0; l < 28; l++) {
+          xText.insertString(cur, '第' + (pg + 1) + '页 第' + (l + 1) + '行 合同条款示例 / contract clause sample line.', false);
+          xText.insertControlCharacter(cur, css.text.ControlCharacter.PARAGRAPH_BREAK, false);
+        }
+        try { cur.setPropertyValue('BreakType', css.style.BreakType.PAGE_AFTER); } catch (e) {}
+      }
+      r.genMs = Math.round(performance.now() - tGen);
+
+      const url = 'file:///tmp/perf_' + pages + '.docx';
+      const tSave = performance.now();
+      xModel.storeToURL(url, [mkProp('FilterName', 'MS Word 2007 XML')]);
+      r.saveMs = Math.round(performance.now() - tSave);
+
+      const tLoad = performance.now();
+      const loaded = desktop.loadComponentFromURL(url, '_default', 0, []);
+      r.loadMs = Math.round(performance.now() - tLoad);
+
+      // The loaded docx now owns the frame; retarget the worker's model/controller
+      // so subsequent commands act on what's actually displayed.
+      xModel = loaded;
+      ctrl = loaded.getCurrentController();
+      installReviewCommentInterceptor(ctrl);
+      installContextMenuInterceptor(ctrl);
+      try { const vc = ctrl.getViewCursor(); vc.gotoEnd(false); r.pageCount = vc.getPage(); }
+      catch (e) { r.pageErr = errStr(e); }
+    } catch (e) { r.success = false; r.message = errStr(e); }
+    return r;
+  },
+  // [verified-extend] LOAD the user's REAL document (Track D). Replaces the blank
+  // boot doc with the bytes the host fetched (authed) from the backend. SAME
+  // store→load→retarget mechanism perf_load proved, but the bytes are the user's
+  // file. After loading we retarget the worker's model/controller so every
+  // subsequent command (AI redline, IME insert, cursor nav) acts on the real
+  // document. Two independent load strategies (MEMFS file, then private:stream)
+  // so a single UNO-API quirk on a device can't blank the user's content.
+  load_document(p) {
+    // 宿主随文档带来当前登录用户名：用户本人编辑的修订署名（AI 的署 AI WorkDeck）
+    if (p && p.authorName != null) humanAuthor = String(p.authorName);
+    const name = String(p && p.name || 'document.docx');
+    const m = name.match(/\.([A-Za-z0-9]+)$/);
+    const ext = (m ? m[1] : 'docx').toLowerCase();
+
+    // Normalize the transported bytes. The host sends a Uint8Array; structured
+    // clone across the relay/worker hops may surface it as Uint8Array /
+    // ArrayBuffer / Array — accept all.
+    const raw = p && p.bytes;
+    let u8 = null;
+    if (raw instanceof ArrayBuffer) u8 = new Uint8Array(raw);
+    else if (raw && raw.buffer instanceof ArrayBuffer) u8 = new Uint8Array(raw.buffer, raw.byteOffset || 0, raw.byteLength != null ? raw.byteLength : raw.length);
+    else if (Array.isArray(raw)) u8 = new Uint8Array(raw);
+    // Empty body = a brand-new / unsaved document (the backend streams 200 + 0
+    // bytes for it). That is NOT an error: keep the blank boot doc as-is. The
+    // host also guards this, but defend here too.
+    if (!u8 || u8.length === 0) return { success: true, empty: true, name: name, kind: docKindOf() };
+    // zeta.js marshals JS→UNO sequences ONLY from plain Arrays (translateToEmbind
+    // gates on Array.isArray), and sequence<byte> elements are SIGNED — so go
+    // through an Int8Array view, then Array.from. Passing the typed array itself
+    // reaches embind unconverted: 'Cannot pass "80,75,…" as …'. (Int8Array is
+    // the shape of RESULTS only, and only in some zetajs builds.)
+    const bytes = Array.from(new Int8Array(u8.buffer, u8.byteOffset, u8.byteLength));
+
+    // Retarget the worker's model/controller onto a freshly-loaded component.
+    const retarget = (loaded) => {
+      const previous = xModel;
+      xModel = loaded;
+      ctrl = loaded.getCurrentController();
+      installReviewCommentInterceptor(ctrl);
+      installContextMenuInterceptor(ctrl);
+      ensureFullScreen();
+      try { installKeyHandler(); } catch (e) {}
+      // The listener is per-model — the freshly-loaded component needs its own.
+      try { installModifyListener(xModel); } catch (e) { log('XModifyListener 安装失败 / install failed: ' + errStr(e)); }
+      // 选区监听是 per-controller 的，换文档同样要重装（漏了工具栏就再也不刷新）
+      try { installSelectionListener(ctrl); } catch (e) { log('XSelectionChangeListener 安装失败 / install failed: ' + errStr(e)); }
+      // RecordChanges/ShowChangesInMargin 是 Writer 专属（Calc/Impress 没有该属性）——
+      // 此前对非 Writer 文档也无条件调用，靠 try/catch 兜住但会白抛异常 + 打噪声日志
+      // （Impress 场景尤其误导：看起来像"修订功能坏了"）。改成前置类型判定。
+      if (isWriterDoc()) {
+        // 陈旧锚点清场（dev-board#788）：__ai_anchor_* 是一次会话内的临时定位句柄，
+        // 却会跟着 docx 存盘，而 anchorSeq 每开一个 webview 都从 0 重来——不清掉，
+        // 新会话的第一枚锚点就与上一次留下的同名，LO 静默给新书签改名，
+        // anchorRange() 于是解析到上一次那处，find 对了、set_selection 落别处。
+        // 换文档后上一份文档的 anchorId 本来就全部失效，没人能合法引用它们。
+        try { dropAiAnchors(); } catch (e) {}
+        // Revisions default ON for the real document too (same as bootDoc).
+        try { xModel.setPropertyValue('RecordChanges', true); } catch (e) {}
+        resetRevisionView();
+      }
+      // _default keeps modified components alive. Close only after successful
+      // replacement: 33 retained models exhausted LOWA's 1 GiB heap (#1121).
+      if (previous && previous !== loaded) {
+        try { previous.setModified(false); previous.close(true); }
+        catch (e) { log('load_document: previous model close failed: ' + errStr(e)); }
+      }
+    };
+
+    const errs = [];
+
+    // Strategy 1: write bytes into MEMFS, load the file by URL (extension drives
+    // filter auto-detection — same as perf_load's proven storeToURL/load path).
+    try {
+      const url = 'file:///tmp/ai_doc_' + (++docSeq) + '.' + ext;
+      const sfa = css.ucb.SimpleFileAccess.create(context);
+      try { if (sfa.exists(url)) sfa.kill(url); } catch (e) {}
+      // zetajs named service constructors take the component context as the
+      // implicit FIRST argument (zeta.js: `const context = arguments[0]`).
+      // Omitting it made zetajs treat the byte sequence AS the context —
+      // "context.getServiceManager is not a function" — so load_document never
+      // succeeded on any engine until the host-side repro caught it.
+      const stream = css.io.SequenceInputStream.createStreamFromSequence(context, bytes);
+      sfa.writeFile(url, stream);
+      try { stream.closeInput(); } catch (e) {}
+      const loaded = desktop.loadComponentFromURL(url, '_default', 0, []);
+      if (loaded) {
+        retarget(loaded);
+        log('load_document: 已加载真实文档「' + name + '」/ loaded (' + u8.length + ' bytes, via file)');
+        return { success: true, name: name, bytes: u8.length, via: 'file', kind: docKindOf() };
+      }
+      errs.push('file: loadComponentFromURL returned null');
+    } catch (e) { errs.push('file: ' + errStr(e)); }
+
+    // Strategy 2: load directly from an in-memory stream (no MEMFS write). Needs
+    // an explicit import filter since there is no URL extension to detect from.
+    try {
+      const filter = IMPORT_FILTERS[ext];
+      const stream2 = css.io.SequenceInputStream.createStreamFromSequence(context, bytes);
+      const args = [mkProp('InputStream', stream2)];
+      if (filter) args.push(mkProp('FilterName', filter));
+      const loaded = desktop.loadComponentFromURL('private:stream', '_default', 0, args);
+      if (loaded) {
+        retarget(loaded);
+        log('load_document: 已加载真实文档「' + name + '」/ loaded (' + u8.length + ' bytes, via stream)');
+        return { success: true, name: name, bytes: u8.length, via: 'stream', kind: docKindOf() };
+      }
+      errs.push('stream: loadComponentFromURL returned null');
+    } catch (e) { errs.push('stream: ' + errStr(e)); }
+
+    // 两条路径都被引擎拒收 = 文件损坏 / 非法 XML / 格式不受支持（dev-board#1018）。
+    // 真机实证（24.2.8-zhcn-r5，lowa-e2e load-rejected.mjs）：不传 InteractionHandler 时
+    // 这类文件 **不弹模态框、不挂住**，loadComponentFromURL 在约 0.1s 内返回 null；
+    // 挂一个记录型 InteractionHandler 也一次都不被调用。带稳定码回去，宿主据此直接落
+    // 「文档无法打开」终态，不做无意义的重启重装。
+    return { success: false, code: 'DOC_REJECTED', message: 'load_document failed: ' + errs.join(' | ') };
+  },
+  // [Track E] export the current document as bytes (host-initiated save — the
+  // mirror image of load_document): storeToURL into MEMFS, read the bytes back,
+  // hand them to the host, which persists them via the backend upload endpoint.
+  // The filter names in IMPORT_FILTERS are the registry FilterNames, valid for
+  // BOTH directions for these formats (e.g. 'MS Word 2007 XML' imports AND
+  // exports .docx).
+  export_document(p) {
+    const name = String(p && p.name || 'document.docx');
+    const m = name.match(/\.([A-Za-z0-9]+)$/);
+    const ext = (m ? m[1] : 'docx').toLowerCase();
+    // Word 2007 导出会将 compatibilityMode 15 降为 12；现代过滤器保留旧文档的较低模式。
+    const filter = ext === 'docx' ? 'Office Open XML Text' : IMPORT_FILTERS[ext];
+
+    // Stream the store STRAIGHT INTO JS via a UNO XOutputStream implemented
+    // here. Do NOT storeToURL a MEMFS file and read it back with Module.FS:
+    // this office thread is an em-pthread whose JS-level FS is NOT the main
+    // thread's file system (FS state lives on the main runtime; pthreads only
+    // proxy at the syscall layer), so FS.readFile threw ENOENT on the device
+    // (v0.3.1 real-machine report: save failed "No such file or directory").
+    const chunks = [];
+    let total = 0;
+    const sink = zetajs.unoObject([css.io.XOutputStream], {
+      writeBytes(seq) { // sequence<byte> -> Int8Array view
+        const u8 = new Uint8Array(seq.buffer ? seq.buffer.slice(seq.byteOffset, seq.byteOffset + seq.byteLength) : seq);
+        chunks.push(u8); total += u8.length;
+      },
+      flush() {},
+      closeOutput() {},
+    });
+    const props = [mkProp('OutputStream', sink), mkProp('Overwrite', true)];
+    if (filter) props.push(mkProp('FilterName', filter));
+    // private:stream = "write to the OutputStream in the media descriptor" —
+    // the standard LO idiom for exporting to memory (no filesystem involved).
+    // storeToURL 会把文档标成 modified（实测：导出完 isModified() 恒为 true）。
+    // 不复原的话宿主收到 modified 又排一次自动保存，形成保存死循环，所以这里
+    // 既要在导出期间闭掉上报，也要把标志恢复成导出前的值。
+    // 导出是同步的、跑在这条 office 线程上，期间不可能有用户编辑挤进来，
+    // 复原不会吃掉真实修改；宿主侧的 dirty 是另一套独立记账，也不受影响。
+    const wasModified = (() => { try { return !!xModel.isModified(); } catch (e) { return false; } })();
+    exportInFlight = true;
+    try {
+      withInlineMarkupForExport(function () { if (ext === 'docx') repairMoveRangeBookmarks(); xModel.storeToURL('private:stream', props); });
+    } finally {
+      try { if (!!xModel.isModified() !== wasModified) xModel.setModified(wasModified); } catch (e) { /* 只读文档等场景可能拒绝，忽略 */ }
+      exportInFlight = false;
+    }
+    saveSeq++;
+    if (total === 0) return { success: false, message: 'export_document: store produced 0 bytes' };
+    const u8 = new Uint8Array(total);
+    let off = 0;
+    for (const c of chunks) { u8.set(c, off); off += c.length; }
+    log('export_document: 已导出「' + name + '」/ exported (' + u8.length + ' bytes, filter=' + (filter || 'auto') + ')');
+    return { success: true, name: name, size: u8.length, bytes: u8 };
+  },
+  // 导出当前文档为 PDF 字节（dev-board#886，宿主发起：原生「导出为 PDF」入口经
+  // export-pdf-request 转到这里）。同 export_document 的 private:stream 写法——不落
+  // MEMFS（pthread 读不回），也同样复原 modified 标志、导出期间闭掉 modified 上报，
+  // 否则一次导出就触发一轮自动保存。版面按用户当前看到的显示方式导出，与原生一致。
+  export_pdf() {
+    const filter = { writer: 'writer_pdf_Export', calc: 'calc_pdf_Export', impress: 'impress_pdf_Export' }[docKindOf()];
+    if (!filter) return { success: false, error: '当前文档类型不支持导出 PDF', message: '当前文档类型不支持导出 PDF' };
+    const chunks = [];
+    let total = 0;
+    const sink = zetajs.unoObject([css.io.XOutputStream], {
+      writeBytes(seq) {
+        const u8 = new Uint8Array(seq.buffer ? seq.buffer.slice(seq.byteOffset, seq.byteOffset + seq.byteLength) : seq);
+        chunks.push(u8); total += u8.length;
+      },
+      flush() {},
+      closeOutput() {},
+    });
+    const wasModified = (() => { try { return !!xModel.isModified(); } catch (e) { return false; } })();
+    exportInFlight = true;
+    try {
+      xModel.storeToURL('private:stream', [mkProp('OutputStream', sink), mkProp('Overwrite', true), mkProp('FilterName', filter)]);
+    } catch (e) {
+      return { success: false, error: 'PDF 导出失败：' + errStr(e), message: 'PDF 导出失败：' + errStr(e) };
+    } finally {
+      try { if (!!xModel.isModified() !== wasModified) xModel.setModified(wasModified); } catch (e) { /* ignore */ }
+      exportInFlight = false;
+    }
+    if (total === 0) return { success: false, error: 'PDF 导出结果为空', message: 'PDF 导出结果为空' };
+    const u8 = new Uint8Array(total);
+    let off = 0;
+    for (const c of chunks) { u8.set(c, off); off += c.length; }
+    log('export_pdf: 已导出 PDF / exported (' + u8.length + ' bytes, filter=' + filter + ')');
+    return { success: true, size: u8.length, bytes: u8 };
+  },
+  // [diagnostic #66] report the resolved UI locale (ooLocale) so the host/verify
+  // panel can confirm whether the injected zh-CN langpack took effect.
+  get_ui_lang() { return Object.assign({ success: true }, readConfigLocale()); },
+  // [diagnostic] which application modules the engine build actually contains —
+  // private:factory/<module> returns null when that module was compiled out.
+  // Ground truth for "can this engine open pptx/xlsx at all".
+  probe_modules() {
+    const out = {};
+    for (const m of ['swriter', 'scalc', 'simpress', 'sdraw']) {
+      try {
+        const c = desktop.loadComponentFromURL('private:factory/' + m, '_blank', 0, [mkProp('Hidden', true)]);
+        out[m] = !!c;
+        try { if (c) c.close(false); } catch (e) { try { c.dispose(); } catch (e2) {} }
+      } catch (e) { out[m] = 'error: ' + errStr(e); }
+    }
+    return Object.assign({ success: true }, out);
+  },
+  // [diagnostic] the font families the engine actually registered (device font
+  // list). Ground truth for the CJK font-injection/alias chain — a family
+  // missing here can only ever render via an alias to one that is present.
+  list_fonts() {
+    try {
+      const toolkit = css.awt.Toolkit.create(context);
+      const dev = toolkit.createScreenCompatibleDevice(0, 0);
+      const fds = dev.getFontDescriptors();
+      const names = {};
+      for (let i = 0; i < fds.length; i++) { names[fds[i].Name] = true; }
+      const families = Object.keys(names).sort();
+      return { success: true, count: families.length, families: families };
+    } catch (e) { return { success: false, message: errStr(e) }; }
+  },
+  // ==================== 拟人式原语（感知 / 定位 / 格式 / 撤销） ====================
+  // [感知] read the document as numbered paragraphs — the AI's "eyes". Windowed
+  // (startParagraph + maxParagraphs, plus a char budget) so a 200-page contract
+  // can be read in passes without blowing the tool-result size.
+  // 走段落索引缓存：O(窗口) 而非 O(全文)，total 直接取索引长度。
+  get_document_text(p) {
+    const start = Math.max(0, Number(p && p.startParagraph) || 0);
+    const maxParas = Math.max(1, Math.min(Number(p && p.maxParagraphs) || 200, 500));
+    const charBudget = 15000;
+    return withParaIndex(function (ix) {
+      const total = ix.total;
+      const paragraphs = [];
+      let chars = 0;
+      for (let i = start; i < total && paragraphs.length < maxParas && chars < charBudget; i++) {
+        const el = ix.ranges[i];
+        const item = { index: i, text: el.getString(), numbering: paragraphNumberingOf(el) };
+        try {
+          const lvl = el.getPropertyValue('OutlineLevel') || 0;
+          if (lvl > 0) { item.headingLevel = lvl; item.style = el.getPropertyValue('ParaStyleName') || ''; }
+        } catch (e) {}
+        chars += item.text.length;
+        paragraphs.push(item);
+      }
+      const r = { success: true, revision: currentReviewRevision(), scope: 'body-paragraphs', totalParagraphs: total, startParagraph: start, returned: paragraphs.length, paragraphs: paragraphs };
+      if (start + paragraphs.length < total) { r.truncated = true; r.nextStartParagraph = start + paragraphs.length; }
+      return r;
+    });
+  },
+  // [感知] what's around the cursor right now — selection, chars before/after,
+  // and the enclosing paragraph ("看一眼手边").
+  get_cursor_context(p) {
+    const vc = ctrl.getViewCursor();
+    const ctx = contextAround(vc, Number(p && p.radius) || 80);
+    return {
+      success: true, selectedText: vc.getString(), hasSelection: (vc.getString() || '').length > 0,
+      before: ctx.before, after: ctx.after, paragraph: (paragraphTextOf(vc) || '').slice(0, 300),
+    };
+  },
+  // [定位] select the Nth (0-based) body paragraph, visibly (view scrolls to it).
+  select_paragraph(p) {
+    const idx = Number(p.index) || 0;
+    const found = paraAt(idx);
+    if (!found) return { success: false, message: 'paragraph index out of range: ' + idx };
+    if (!selectVisibly(found)) return { success: false, message: 'could not select paragraph ' + idx };
+    return { success: true, index: idx, text: found.getString() };
+  },
+  // [定位] drop the cursor at the start/end edge of the current selection — the
+  // human move for "insert BEFORE/AFTER this" (compose with insert_at_cursor).
+  collapse_selection(p) {
+    const vc = ctrl.getViewCursor();
+    const to = String(p && p.to || 'end');
+    if (to === 'start') vc.collapseToStart(); else vc.collapseToEnd();
+    return { success: true, to: to };
+  },
+  // [编辑] delete exactly what is selected (tracked). The anthropomorphic delete:
+  // select first (user sees what's about to go), then cut.
+  delete_selection() {
+    const vc = ctrl.getViewCursor();
+    const had = (vc.getString() || '');
+    if (had.length === 0) return { success: false, message: 'nothing selected — select_paragraph / set_selection first' };
+    vc.setString('');
+    return Object.assign({ success: true, deletedText: had.slice(0, 200), deletedChars: had.length }, verifySnapshot());
+  },
+  // [格式] character formatting on the CURRENT selection (select first, then
+  // format — same order a human works in). Any subset of the params applies;
+  // booleans false/'none' explicitly clear. CJK-safe via Asian/Complex siblings.
+  // atCursor:true（自建工具栏传）= Word 语义：没有选区时把格式设在光标处，之后在这里
+  // 敲的字沿用新格式。真引擎实证（24.2.8-zhcn-r5）：塌陷视图光标上 setPropertyValue
+  // 会在光标处留一个空提示（empty hint），紧接着的 insertString（IME 提交走的就是它）
+  // 把它撑开，新字即是新字号/字体；`get_ui_state` 读回的也是新值，工具栏显示跟得上。
+  // AI 管线不传 atCursor，没选区照旧明确报错——否则模型会以为「格式已设」而文档上
+  // 什么都看不见。
+  format_selection(p) {
+    const vc = ctrl.getViewCursor();
+    const collapsed = (vc.getString() || '').length === 0;
+    if (collapsed && !p.atCursor) return { success: false, message: 'nothing selected — select first, then format' };
+    const applied = {};
+    if (p.bold != null) { setCharProp(vc, 'CharWeight', p.bold ? css.awt.FontWeight.BOLD : css.awt.FontWeight.NORMAL); applied.bold = !!p.bold; }
+    if (p.italic != null) { setCharProp(vc, 'CharPosture', p.italic ? css.awt.FontSlant.ITALIC : css.awt.FontSlant.NONE); applied.italic = !!p.italic; }
+    if (p.underline != null) { vc.setPropertyValue('CharUnderline', p.underline ? css.awt.FontUnderline.SINGLE : css.awt.FontUnderline.NONE); applied.underline = !!p.underline; }
+    if (p.strikeout != null) { vc.setPropertyValue('CharStrikeout', p.strikeout ? css.awt.FontStrikeout.SINGLE : css.awt.FontStrikeout.NONE); applied.strikeout = !!p.strikeout; }
+    if (p.highlight != null) {
+      const c = parseColor(p.highlight, HIGHLIGHT_COLORS);
+      if (c == null) return { success: false, message: 'bad highlight color: ' + p.highlight + ' (use yellow/green/cyan/magenta/red/blue/gray/none or #RRGGBB)' };
+      vc.setPropertyValue('CharHighlight', c); applied.highlight = String(p.highlight);
+    }
+    if (p.color != null) {
+      const c = parseColor(p.color, { auto: -1 });
+      if (c == null) return { success: false, message: 'bad color: ' + p.color + ' (use #RRGGBB or auto)' };
+      vc.setPropertyValue('CharColor', c); applied.color = String(p.color);
+    }
+    if (p.fontSize != null) { setCharProp(vc, 'CharHeight', Number(p.fontSize)); applied.fontSize = Number(p.fontSize); }
+    if (p.fontName != null) { setCharProp(vc, 'CharFontName', String(p.fontName)); applied.fontName = String(p.fontName); }
+    // 中文字体单独设（fontName 已把西文/中文/复杂文种三项一起设成同一字体；中西文分设时后设中文）
+    if (p.fontNameAsian != null) { vc.setPropertyValue('CharFontNameAsian', String(p.fontNameAsian)); applied.fontNameAsian = String(p.fontNameAsian); }
+    if (Object.keys(applied).length === 0) return { success: false, message: 'no format params given' };
+    return { success: true, applied: applied, selectedText: vc.getString().slice(0, 100), atCursor: collapsed };
+  },
+  // [格式] paragraph-level formatting on the selection's paragraph(s): alignment,
+  // paragraph style, line spacing, space before/after, indents. headingLevel 1-9
+  // maps to the programmatic style name ('Heading N', valid regardless of UI
+  // language); 0 = back to body ('Standard').
+  set_paragraph_format(p) {
+    const vc = ctrl.getViewCursor();
+    const applied = {};
+    let alignment = null;
+    if (p.alignment != null) {
+      const m = { left: css.style.ParagraphAdjust.LEFT, right: css.style.ParagraphAdjust.RIGHT, center: css.style.ParagraphAdjust.CENTER, justify: css.style.ParagraphAdjust.BLOCK };
+      alignment = m[String(p.alignment).toLowerCase()];
+      if (alignment == null) return { success: false, message: 'bad alignment: ' + p.alignment + ' (left/right/center/justify)' };
+    }
+    let styleName = p.styleName != null ? String(p.styleName) : null;
+    if (p.headingLevel != null) {
+      const lvl = Number(p.headingLevel);
+      styleName = lvl >= 1 && lvl <= 9 ? 'Heading ' + lvl : 'Standard';
+    }
+    if (styleName != null) { vc.setPropertyValue('ParaStyleName', styleName); applied.styleName = styleName; }
+    // 切换段落样式会重置对齐；用户同次明确给出的格式必须在样式之后应用。
+    if (alignment != null) { vc.setPropertyValue('ParaAdjust', alignment); applied.alignment = String(p.alignment); }
+    // 行距：single / 1.5 / double（固定倍数），proportional（百分比），
+    // atLeast（最小值，磅），exactly（固定值，磅）
+    if (p.lineSpacingMode != null) {
+      const mode = String(p.lineSpacingMode);
+      const v = Number(p.lineSpacingValue) || 0;
+      const M = css.style.LineSpacingMode;
+      let ls = null;
+      if (mode === 'single') ls = { Mode: M.PROP, Height: 100 };
+      else if (mode === '1.5' || mode === 'oneHalf') ls = { Mode: M.PROP, Height: 150 };
+      else if (mode === 'double') ls = { Mode: M.PROP, Height: 200 };
+      else if (mode === 'proportional') { if (v <= 0) return { success: false, message: 'proportional 行距需要 lineSpacingValue（百分比，如 120）' }; ls = { Mode: M.PROP, Height: Math.round(v) }; }
+      else if (mode === 'atLeast') { if (v <= 0) return { success: false, message: 'atLeast 行距需要 lineSpacingValue（磅）' }; ls = { Mode: M.MINIMUM, Height: ptToMm100(v) }; }
+      else if (mode === 'exactly') { if (v <= 0) return { success: false, message: 'exactly 行距需要 lineSpacingValue（磅）' }; ls = { Mode: M.FIX, Height: ptToMm100(v) }; }
+      else return { success: false, message: 'bad lineSpacingMode: ' + mode + ' (single/1.5/double/proportional/atLeast/exactly)' };
+      vc.setPropertyValue('ParaLineSpacing', new css.style.LineSpacing(ls));
+      applied.lineSpacing = mode + (v > 0 ? ':' + v : '');
+    }
+    if (p.spaceBeforePt != null) { vc.setPropertyValue('ParaTopMargin', ptToMm100(p.spaceBeforePt)); applied.spaceBeforePt = Number(p.spaceBeforePt); }
+    if (p.spaceAfterPt != null) { vc.setPropertyValue('ParaBottomMargin', ptToMm100(p.spaceAfterPt)); applied.spaceAfterPt = Number(p.spaceAfterPt); }
+    // 首行缩进按"字符"数折算：以光标处字号为一个字符宽（CJK 方块字口径）
+    if (p.firstLineIndentChars != null) {
+      let chPt = HOUSE.bodyPt;
+      try { const h = vc.getPropertyValue('CharHeight'); if (h > 0) chPt = h; } catch (e) {}
+      vc.setPropertyValue('ParaFirstLineIndent', ptToMm100(Number(p.firstLineIndentChars) * chPt));
+      applied.firstLineIndentChars = Number(p.firstLineIndentChars);
+    } else if (p.firstLineIndentPt != null) {
+      vc.setPropertyValue('ParaFirstLineIndent', ptToMm100(p.firstLineIndentPt));
+      applied.firstLineIndentPt = Number(p.firstLineIndentPt);
+    }
+    if (p.leftIndentPt != null) { vc.setPropertyValue('ParaLeftMargin', ptToMm100(p.leftIndentPt)); applied.leftIndentPt = Number(p.leftIndentPt); }
+    if (p.rightIndentPt != null) { vc.setPropertyValue('ParaRightMargin', ptToMm100(p.rightIndentPt)); applied.rightIndentPt = Number(p.rightIndentPt); }
+    if (Object.keys(applied).length === 0) return { success: false, message: 'no paragraph format params given' };
+    return Object.assign({ success: true, applied: applied }, verifySnapshot());
+  },
+  // [格式] 给选区所在段落设置编号/项目符号。preset: bullet（•）/ decimal（1. 2.）/
+  // chinese（一、二、）/ multilevel（1. → 1.1 → 1.1.1）/ none（去掉编号）。
+  set_numbering(p) {
+    const preset = String(p.preset || 'decimal');
+    if (preset === 'none') {
+      dispatchUno('.uno:RemoveBullets');
+      // UNO 派发可能不抛错却没有生效；去列表必须用真实状态判定，不能只回显 preset。
+      const isNumbered = ctrl.getViewCursor().getPropertyValue('NumberingIsNumber');
+      if (isNumbered !== false) return tableFail('项目符号或编号尚未清除，请重新选中目标段落后重试，并用 doc_get_formatting 核验');
+      return Object.assign({ success: true, preset: 'none', isNumbered: false }, verifySnapshot());
+    }
+    const lvl = Math.max(1, Math.min(Number(p.level) || 1, 9)) - 1;
+    let rules = null;
+    try { rules = makeNumberingRules(preset); } catch (e) {
+      // NumberingRules 编组兜底：bullet/decimal 退回引擎默认列表命令
+      if (preset === 'bullet') { dispatchUno('.uno:DefaultBullet'); return Object.assign({ success: true, preset: preset, via: 'uno-default' }, verifySnapshot()); }
+      if (preset === 'decimal') { dispatchUno('.uno:DefaultNumbering'); return Object.assign({ success: true, preset: preset, via: 'uno-default' }, verifySnapshot()); }
+      return { success: false, message: 'set_numbering failed: ' + errStr(e) };
+    }
+    const vc = ctrl.getViewCursor();
+    vc.setPropertyValue('NumberingRules', rules);
+    vc.setPropertyValue('NumberingLevel', lvl);
+    return Object.assign({ success: true, preset: preset, level: lvl + 1 }, verifySnapshot());
+  },
+  // [格式] 表格格式：边框/字号/首行加粗居中/单元格垂直对齐/数字居右/列宽/行高。
+  // 不传 tableIndex 时作用于光标所在表格。applyStandard=true 一键套标准表格式
+  //（Grid 1.5 磅、10 号、段前后 0.2 行、首行加粗居中、垂直居中、数字居右）。
+  format_table(p) {
+    const table = currentTextTable(p);
+    if (!table) return { success: false, message: '光标不在表格内，且未指定有效 tableIndex（0 开始）' };
+    const applied = {};
+    if (p.applyStandard) {
+      styleTableStandard(table, { headerRows: p.firstRowBold === false ? 0 : 1 });
+      applied.standard = true;
+    }
+    // 边框：borderWidthPt 内外同宽；outsideBorderWidthPt / insideBorderWidthPt 分设；
+    // borderColor / borderStyle(single|double|dashed) 单独给时宽度沿用画像值。
+    if (p.borderWidthPt != null || p.outsideBorderWidthPt != null || p.insideBorderWidthPt != null || p.borderColor != null || p.borderStyle != null) {
+      const color = p.borderColor != null ? parseColor(p.borderColor, { black: 0 }) : HOUSE.tableBorder.color;
+      if (color == null) return { success: false, message: 'bad borderColor: ' + p.borderColor + ' (use #RRGGBB)' };
+      const style = p.borderStyle != null ? String(p.borderStyle).toLowerCase() : HOUSE.tableBorder.style;
+      if (['single', 'double', 'dashed'].indexOf(style) < 0) return { success: false, message: 'bad borderStyle: ' + p.borderStyle + ' (single/double/dashed)' };
+      const outsideMm = p.outsideBorderWidthPt != null ? ptToMm100(p.outsideBorderWidthPt) : p.borderWidthPt != null ? ptToMm100(p.borderWidthPt) : HOUSE.tableBorder.outsideMm;
+      const insideMm = p.insideBorderWidthPt != null ? ptToMm100(p.insideBorderWidthPt) : p.borderWidthPt != null ? ptToMm100(p.borderWidthPt) : outsideMm;
+      try { applyTableBorders(table, { outsideMm: outsideMm, insideMm: insideMm, color: color, style: style }); }
+      catch (e) { return { success: false, message: '边框设置失败: ' + errStr(e) }; }
+      if (p.borderWidthPt != null) applied.borderWidthPt = Number(p.borderWidthPt);
+      if (p.outsideBorderWidthPt != null) applied.outsideBorderWidthPt = Number(p.outsideBorderWidthPt);
+      if (p.insideBorderWidthPt != null) applied.insideBorderWidthPt = Number(p.insideBorderWidthPt);
+      if (p.borderColor != null) applied.borderColor = String(p.borderColor);
+      if (p.borderStyle != null) applied.borderStyle = style;
+    }
+    const names = table.getCellNames();
+    // 表头底纹（首行；'none' 清除）与跨页重复表头
+    if (p.headerFill != null) {
+      const fill = String(p.headerFill).toLowerCase() === 'none' ? -1 : parseColor(p.headerFill, {});
+      if (fill == null) return { success: false, message: 'bad headerFill: ' + p.headerFill + ' (use #RRGGBB or none)' };
+      for (let i = 0; i < names.length; i++) {
+        if (parseInt(String(names[i]).replace(/^[A-Z]+/, ''), 10) !== 1) continue;
+        try { table.getCellByName(names[i]).setPropertyValue('BackColor', fill); } catch (e) {}
+      }
+      applied.headerFill = String(p.headerFill);
+    }
+    if (p.repeatHeader != null) {
+      try {
+        table.setPropertyValue('RepeatHeadline', !!p.repeatHeader);
+        if (p.repeatHeader) table.setPropertyValue('HeaderRowCount', 1);
+        applied.repeatHeader = !!p.repeatHeader;
+      } catch (e) { return { success: false, message: '重复表头设置失败: ' + errStr(e) }; }
+    }
+    if (p.fontSizePt != null || p.cellVerticalAlign != null || p.firstRowBold != null) {
+      const vmap = { top: css.text.VertOrientation.TOP, center: css.text.VertOrientation.CENTER, bottom: css.text.VertOrientation.BOTTOM };
+      for (let i = 0; i < names.length; i++) {
+        const cell = table.getCellByName(names[i]);
+        const rowIdx = parseInt(String(names[i]).replace(/^[A-Z]+/, ''), 10) - 1;
+        if (p.cellVerticalAlign != null) {
+          const v = vmap[String(p.cellVerticalAlign).toLowerCase()];
+          if (v == null) return { success: false, message: 'bad cellVerticalAlign: ' + p.cellVerticalAlign + ' (top/center/bottom)' };
+          try { cell.setPropertyValue('VertOrient', shortAny(v)); } catch (e) {}
+        }
+        try {
+          const ct = cell.createTextCursor();
+          ct.gotoStart(false); ct.gotoEnd(true);
+          if (p.fontSizePt != null) setCharProp(ct, 'CharHeight', Number(p.fontSizePt));
+          if (p.firstRowBold != null && rowIdx === 0) setCharProp(ct, 'CharWeight', p.firstRowBold ? css.awt.FontWeight.BOLD : css.awt.FontWeight.NORMAL);
+        } catch (e) {}
+      }
+      if (p.fontSizePt != null) applied.fontSizePt = Number(p.fontSizePt);
+      if (p.cellVerticalAlign != null) applied.cellVerticalAlign = String(p.cellVerticalAlign);
+      if (p.firstRowBold != null) applied.firstRowBold = !!p.firstRowBold;
+    }
+    // 列宽：百分比数组（如 [20,50,30]）或厘米数组（按比例折算，表宽不变），个数必须等于列数
+    const widthsRaw = p.columnWidthsPercent != null ? p.columnWidthsPercent : p.columnWidthsCm;
+    if (widthsRaw != null) {
+      try {
+        const pct = Array.isArray(widthsRaw) ? widthsRaw.map(Number) : String(widthsRaw).split(/[,，\s]+/).filter(Boolean).map(Number);
+        if (pct.some(function (v) { return !(v > 0); })) return { success: false, message: '列宽必须是正数: ' + JSON.stringify(widthsRaw) };
+        const seps = table.getPropertyValue('TableColumnSeparators');
+        const nCols = (seps ? seps.length : 0) + 1;
+        if (pct.length !== nCols) return { success: false, message: '列宽个数(' + pct.length + ')与表格列数(' + nCols + ')不符' };
+        const relSum = table.getPropertyValue('TableColumnRelativeSum');
+        // 不 new css.text.TableColumnSeparator（zetajs 报 unregistered UNO type，e2e 组 29 实锤）：
+        // 改写读回的分隔符数组再原样设回，个数不变只动 Position。
+        let acc = 0;
+        const total = pct.reduce(function (a, b) { return a + b; }, 0);
+        for (let i = 0; i < pct.length - 1; i++) {
+          acc += pct[i];
+          seps[i].Position = Math.round(relSum * acc / total);
+          seps[i].IsVisible = true;
+        }
+        table.setPropertyValue('TableColumnSeparators', seps);
+        if (p.columnWidthsPercent != null) applied.columnWidthsPercent = pct; else applied.columnWidthsCm = pct;
+      } catch (e) {
+        // 本引擎（zh-CN r4）的 WASM 桥没注册 TableColumnSeparator 结构，读回再设回也抛
+        // "unregistered UNO type"（e2e 组 29 实锤）——说人话拒绝，别让模型反复撞。
+        const msg = errStr(e);
+        return { success: false, message: /unregistered UNO type/.test(msg)
+          ? '当前编辑器引擎不支持按列设宽（TableColumnSeparator 未在 WASM 桥注册），请改用 Word 打开后手工调整列宽'
+          : '列宽设置失败: ' + msg };
+      }
+    }
+    // 行高（磅）。rowHeightRule: 'min'（最小值，默认）| 'exact'（固定值）
+    if (p.rowHeightPt != null) {
+      try {
+        const rows = table.getRows();
+        const h = ptToMm100(p.rowHeightPt);
+        const exact = String(p.rowHeightRule || 'min') === 'exact';
+        for (let i = 0; i < rows.getCount(); i++) {
+          const row = rows.getByIndex(i);
+          row.setPropertyValue('IsAutoHeight', !exact);
+          row.setPropertyValue('Height', h);
+        }
+        applied.rowHeightPt = Number(p.rowHeightPt);
+      } catch (e) { return { success: false, message: '行高设置失败: ' + errStr(e) }; }
+    }
+    if (Object.keys(applied).length === 0) return { success: false, message: 'no table format params given' };
+    let tname = ''; try { tname = table.getName(); } catch (e) {}
+    return { success: true, table: tname, applied: applied };
+  },
+  // [插入] 在光标处插入一张按标准格式排好的表。rows: string[][]（第一行默认表头）。
+  insert_table(p) {
+    const rows = p.rows;
+    if (!Array.isArray(rows) || !rows.length || !Array.isArray(rows[0])) {
+      return { success: false, message: 'insert_table requires {rows: string[][]}' };
+    }
+    if (rows.length > 200 || rows[0].length > 20) return { success: false, message: '表格过大（上限 200 行 × 20 列）' };
+    const headerRows = p.headerRow === false ? 0 : 1;
+    let table;
+    try { table = insertStyledTable(rows, headerRows); }
+    catch (e) { return { success: false, message: 'insert_table failed: ' + errStr(e) }; }
+    let tname = ''; try { tname = table.getName(); } catch (e) {}
+    return Object.assign({ success: true, table: tname, rows: rows.length, cols: rows[0].length }, verifySnapshot());
+  },
+  // [表格·感知] 读一张表为二维数组——"改一格"的前置：模型得先看见表长什么样。
+  // 定位：tableName / tableIndex（0 开始），缺省用光标所在表。
+  table_read(p) {
+    const r = resolveWriterTable(p);
+    if (r.error) return tableFail(r.error);
+    const dims = tableDims(r.table);
+    if (dims.error) return tableFail(dims.error);
+    const maxRows = Math.min(dims.rows, Math.max(1, Number(p.maxRows) || 200));
+    const maxCols = Math.min(dims.cols, Math.max(1, Number(p.maxCols) || 30));
+    const cells = [];
+    let missing = 0;
+    for (let rw = 0; rw < maxRows; rw++) {
+      const line = [];
+      for (let c = 0; c < maxCols; c++) {
+        let v = null;
+        try { const cell = r.table.getCellByName(cellName(c, rw)); if (cell) v = String(cell.getString()); } catch (e) {}
+        if (v === null) missing++;
+        line.push(v === null ? '' : v);
+      }
+      cells.push(line);
+    }
+    const out = {
+      success: true, table: r.name, tableIndex: r.index, tables: r.count,
+      rows: dims.rows, cols: dims.cols, cells: cells,
+      truncated: maxRows < dims.rows || maxCols < dims.cols,
+    };
+    // 合并/拆分过的单元格不叫 A1 这种名字，按网格取会取空——明说，否则模型会
+    // 以为那些格真是空的，然后 table_set_cell 打在不存在的名字上。
+    if (missing) out.note = '有 ' + missing + ' 个网格位置按 A1 式单元格名取不到（表格存在合并或拆分单元格），这些位置以空串返回；对它们做单元格级修改会失败。';
+    return out;
+  },
+  // [表格·改] 改一格文本。修订模式下走字符级最小修订（同 replace_selection 的口径），
+  // 只有差异字符落修订，而不是整格删了重打。
+  table_set_cell(p) {
+    const r = resolveWriterTable(p);
+    if (r.error) return tableFail(r.error);
+    const ref = parseCellRef(p.cell);
+    if (!ref) return tableFail('单元格定位非法: ' + p.cell + '（应形如 B2：列字母 + 行号，行号 1 开始）');
+    const dims = tableDims(r.table);
+    let cell = null;
+    try { cell = r.table.getCellByName(ref.name); } catch (e) {}
+    if (!cell) {
+      return tableFail('单元格不存在: ' + ref.name + '（表格「' + r.name + '」共 '
+        + (dims.rows || '?') + ' 行 × ' + (dims.cols || '?') + ' 列；合并或拆分过的格子不叫这种名字，先用 doc_table_read 看清）');
+    }
+    const text = String(p.text == null ? '' : p.text);
+    let oldText = '';
+    try { oldText = String(cell.getString()); } catch (e) {}
+    const rcOn = recordChangesOn();
+    let via = 'setString';
+    try {
+      if (rcOn && oldText.length) {
+        const cur = cell.createTextCursor();
+        cur.gotoStart(false);
+        cur.gotoEnd(true);
+        if (applyMinimalRedline(cur, text)) via = 'minimalRedline';
+        else cell.setString(text);
+      } else {
+        cell.setString(text);
+      }
+    } catch (e) { return tableFail('写入单元格失败: ' + errStr(e)); }
+    // 拟人：把视图光标停在刚改的格里，用户看得见改在哪，后续原语也能省掉 tableIndex。
+    try { ctrl.getViewCursor().gotoRange(cell.getStart(), false); } catch (e) {}
+    return {
+      success: true, table: r.name, tableIndex: r.index, cell: ref.name,
+      oldText: oldText, text: text, via: via, recordChanges: rcOn,
+    };
+  },
+  // [表格·改] 插入行。position = 1 开始的行号，新行插在该行之前；缺省追加到表尾。
+  table_add_row(p) {
+    const r = resolveWriterTable(p);
+    if (r.error) return tableFail(r.error);
+    const dims = tableDims(r.table);
+    if (dims.error) return tableFail(dims.error);
+    const count = Math.max(1, Math.min(Number(p.count) || 1, 100));
+    let at = dims.rows;
+    if (p.position != null && String(p.position) !== '') {
+      const n = Number(p.position);
+      if (!(n >= 1) || n > dims.rows + 1 || Math.floor(n) !== n) {
+        return tableFail('行号越界: ' + p.position + '（表格共 ' + dims.rows + ' 行；position 取 1..' + (dims.rows + 1) + '，新行插在该行之前，缺省追加到表尾）');
+      }
+      at = n - 1;
+    }
+    try { r.table.getRows().insertByIndex(at, count); }
+    catch (e) { return tableFail('插入行失败: ' + errStr(e)); }
+    const after = tableDims(r.table);
+    if (after.error || after.rows !== dims.rows + count) {
+      return tableFail('插入行未生效（行数 ' + dims.rows + ' → ' + (after.rows == null ? '?' : after.rows) + '）');
+    }
+    return {
+      success: true, table: r.name, tableIndex: r.index,
+      insertedAt: at + 1, count: count, rows: after.rows, cols: after.cols,
+    };
+  },
+  // [表格·改] 删除行。position = 1 开始的行号，count 连删几行。
+  // 修订口径（真机实测 LO 24.2）：XTableRows.removeByIndex 走 API 路线**直接删除，
+  // 不留删除修订**（RecordChanges 开着也一样，redlineDelta=0）——安全网是 doc_undo
+  // 与文档检查点，不是修订面板。生效判定仍按"行数变化 OR 修订条数变化"双口径，
+  // 以防将来引擎改成落修订；落成修订时 trackedAsRevision=true。
+  table_delete_row(p) {
+    const r = resolveWriterTable(p);
+    if (r.error) return tableFail(r.error);
+    const dims = tableDims(r.table);
+    if (dims.error) return tableFail(dims.error);
+    if (p.position == null || String(p.position) === '') return tableFail('缺少 position（要删的行号，1 开始）');
+    const n = Number(p.position);
+    if (!(n >= 1) || n > dims.rows || Math.floor(n) !== n) {
+      return tableFail('行号越界: ' + p.position + '（表格共 ' + dims.rows + ' 行，行号 1 开始）');
+    }
+    const count = Math.max(1, Number(p.count) || 1);
+    if (n - 1 + count > dims.rows) {
+      return tableFail('要删的行数超出表格范围（从第 ' + n + ' 行起删 ' + count + ' 行，表格只有 ' + dims.rows + ' 行）');
+    }
+    if (count >= dims.rows) return tableFail('不能删掉表格的全部行——表格至少要留一行；要整张表删掉请改用其它方式');
+    const rlBefore = countRedlines();
+    try { r.table.getRows().removeByIndex(n - 1, count); }
+    catch (e) { return tableFail('删除行失败: ' + errStr(e)); }
+    const after = tableDims(r.table);
+    const removed = after.error ? 0 : dims.rows - after.rows;
+    const rlDelta = countRedlines() - rlBefore;
+    if (removed !== count && rlDelta <= 0) {
+      return tableFail('删除行未生效（行数仍为 ' + (after.rows == null ? '?' : after.rows) + '，也没有产生删除修订）');
+    }
+    return {
+      success: true, table: r.name, tableIndex: r.index,
+      deletedAt: n, count: count, removedRows: removed,
+      rows: after.rows, cols: after.cols,
+      recordChanges: recordChangesOn(), redlineDelta: rlDelta,
+      trackedAsRevision: removed !== count && rlDelta > 0,
+    };
+  },
+  // [表格·改] 插入列。position = 列字母（A/B/AA）或 1 开始的列号，新列插在该列之前；
+  // 缺省追加到最右。
+  table_add_col(p) {
+    const r = resolveWriterTable(p);
+    if (r.error) return tableFail(r.error);
+    const dims = tableDims(r.table);
+    if (dims.error) return tableFail(dims.error);
+    const count = Math.max(1, Math.min(Number(p.count) || 1, 20));
+    let at = dims.cols;
+    if (p.position != null && String(p.position) !== '') {
+      const c = parseColumnRef(p.position);
+      if (c == null || c > dims.cols) {
+        return tableFail('列定位非法或越界: ' + p.position + '（表格共 ' + dims.cols + ' 列；position 用列字母如 B 或 1 开始的列号，新列插在该列之前，缺省追加到最右）');
+      }
+      at = c;
+    }
+    try { r.table.getColumns().insertByIndex(at, count); }
+    catch (e) { return tableFail('插入列失败: ' + errStr(e)); }
+    const after = tableDims(r.table);
+    if (after.error || after.cols !== dims.cols + count) {
+      return tableFail('插入列未生效（列数 ' + dims.cols + ' → ' + (after.cols == null ? '?' : after.cols) + '）；合并过单元格的表格按列插入常被引擎拒绝');
+    }
+    return {
+      success: true, table: r.name, tableIndex: r.index,
+      insertedAt: colLetterOf(at), count: count, rows: after.rows, cols: after.cols,
+    };
+  },
+  // [表格·改] 删除列。position = 列字母或 1 开始的列号，count 连删几列。
+  // 与删除行同样的修订口径（API 路线直接删除，不留修订痕迹）。
+  table_delete_col(p) {
+    const r = resolveWriterTable(p);
+    if (r.error) return tableFail(r.error);
+    const dims = tableDims(r.table);
+    if (dims.error) return tableFail(dims.error);
+    if (p.position == null || String(p.position) === '') return tableFail('缺少 position（要删的列，列字母如 B 或 1 开始的列号）');
+    const c = parseColumnRef(p.position);
+    if (c == null || c >= dims.cols) {
+      return tableFail('列定位非法或越界: ' + p.position + '（表格共 ' + dims.cols + ' 列，列字母 A 起 / 列号 1 起）');
+    }
+    const count = Math.max(1, Number(p.count) || 1);
+    if (c + count > dims.cols) {
+      return tableFail('要删的列数超出表格范围（从第 ' + colLetterOf(c) + ' 列起删 ' + count + ' 列，表格只有 ' + dims.cols + ' 列）');
+    }
+    if (count >= dims.cols) return tableFail('不能删掉表格的全部列——表格至少要留一列');
+    const rlBefore = countRedlines();
+    try { r.table.getColumns().removeByIndex(c, count); }
+    catch (e) { return tableFail('删除列失败: ' + errStr(e)); }
+    const after = tableDims(r.table);
+    const removed = after.error ? 0 : dims.cols - after.cols;
+    const rlDelta = countRedlines() - rlBefore;
+    if (removed !== count && rlDelta <= 0) {
+      return tableFail('删除列未生效（列数仍为 ' + (after.cols == null ? '?' : after.cols) + '，也没有产生删除修订）；合并过单元格的表格按列删除常被引擎拒绝');
+    }
+    return {
+      success: true, table: r.name, tableIndex: r.index,
+      deletedAt: colLetterOf(c), count: count, removedCols: removed,
+      rows: after.rows, cols: after.cols,
+      recordChanges: recordChangesOn(), redlineDelta: rlDelta,
+      trackedAsRevision: removed !== count && rlDelta > 0,
+    };
+  },
+  // [感知] 读取光标/选区处的字符+段落+表格格式——"先看清现状再动手"的眼睛。
+  get_formatting() {
+    const vc = ctrl.getViewCursor();
+    const out = { success: true };
+    const ch = {};
+    try { ch.fontWestern = vc.getPropertyValue('CharFontName'); } catch (e) {}
+    try { ch.fontAsian = vc.getPropertyValue('CharFontNameAsian'); } catch (e) {}
+    try { ch.sizePt = vc.getPropertyValue('CharHeight'); } catch (e) {}
+    try { ch.bold = vc.getPropertyValue('CharWeight') > 100; } catch (e) {}
+    try { ch.italic = !enumEq(vc.getPropertyValue('CharPosture'), css.awt.FontSlant.NONE); } catch (e) {}
+    try { ch.underline = !enumEq(vc.getPropertyValue('CharUnderline'), css.awt.FontUnderline.NONE); } catch (e) {}
+    try { ch.strikeout = !enumEq(vc.getPropertyValue('CharStrikeout'), css.awt.FontStrikeout.NONE); } catch (e) {}
+    try { const c = vc.getPropertyValue('CharColor'); ch.color = c === -1 ? 'auto' : '#' + ('000000' + (c >>> 0).toString(16)).slice(-6); } catch (e) {}
+    try { const h = vc.getPropertyValue('CharHighlight'); ch.highlight = h === -1 ? 'none' : '#' + ('000000' + (h >>> 0).toString(16)).slice(-6); } catch (e) {}
+    out.character = ch;
+    const pa = {};
+    try { pa.styleName = vc.getPropertyValue('ParaStyleName'); } catch (e) {}
+    try {
+      const a = vc.getPropertyValue('ParaAdjust');
+      const A = css.style.ParagraphAdjust;
+      pa.alignment = enumEq(a, A.CENTER) ? 'center' : enumEq(a, A.RIGHT) ? 'right'
+        : (enumEq(a, A.BLOCK) || enumEq(a, A.STRETCH)) ? 'justify' : 'left';
+    } catch (e) {}
+    try {
+      const ls = vc.getPropertyValue('ParaLineSpacing');
+      if (ls) {
+        const M = css.style.LineSpacingMode;
+        if (enumEq(ls.Mode, M.PROP)) pa.lineSpacing = { mode: 'proportional', percent: ls.Height };
+        else if (enumEq(ls.Mode, M.MINIMUM)) pa.lineSpacing = { mode: 'atLeast', valuePt: Math.round(ls.Height * 72 / 2540 * 10) / 10 };
+        else if (enumEq(ls.Mode, M.FIX)) pa.lineSpacing = { mode: 'exactly', valuePt: Math.round(ls.Height * 72 / 2540 * 10) / 10 };
+        else pa.lineSpacing = { mode: 'leading', valuePt: Math.round(ls.Height * 72 / 2540 * 10) / 10 };
+      }
+    } catch (e) {}
+    try { pa.spaceBeforePt = Math.round(vc.getPropertyValue('ParaTopMargin') * 72 / 2540 * 10) / 10; } catch (e) {}
+    try { pa.spaceAfterPt = Math.round(vc.getPropertyValue('ParaBottomMargin') * 72 / 2540 * 10) / 10; } catch (e) {}
+    try { pa.firstLineIndentPt = Math.round(vc.getPropertyValue('ParaFirstLineIndent') * 72 / 2540 * 10) / 10; } catch (e) {}
+    try { pa.leftIndentPt = Math.round(vc.getPropertyValue('ParaLeftMargin') * 72 / 2540 * 10) / 10; } catch (e) {}
+    try { pa.rightIndentPt = Math.round(vc.getPropertyValue('ParaRightMargin') * 72 / 2540 * 10) / 10; } catch (e) {}
+    try { pa.outlineLevel = vc.getPropertyValue('OutlineLevel') || 0; } catch (e) {}
+    try { pa.isNumbered = !!vc.getPropertyValue('NumberingIsNumber'); } catch (e) {}
+    out.paragraph = pa;
+    try {
+      const table = currentTextTable(null);
+      if (table) {
+        const t = { name: table.getName() };
+        try { t.rows = table.getRows().getCount(); } catch (e) {}
+        try { t.cols = table.getColumns().getCount(); } catch (e) {}
+        try { const cell = vc.getPropertyValue('Cell'); if (cell) t.cell = cell.getPropertyValue('CellName'); } catch (e) {}
+        out.table = t;
+      }
+    } catch (e) {}
+    try { out.selectedText = (vc.getString() || '').slice(0, 80); } catch (e) {}
+    return out;
+  },
+  // [格式] 全文应用标准格式（用户规范见 HOUSE 注释）：字体/字号/颜色/两端对齐/
+  // 段距/行距/首行缩进；首段短文本视为主标题（16 磅粗居中）；标题段（OutlineLevel
+  // 或 Heading 样式）整段加粗；表格套标准表格式；表格后首段段前 18 磅。
+  // 正文段落不动既有加粗/斜体（当事人名称等手工强调不能被抹掉）。
+  // 150 页实测 >30s：按 500 个顶层元素一批，批间 await 一个宏任务（自动保存的
+  // export / 宿主的 cancel 有机会插进来），不再有 5000 元素硬顶；truncated 永远
+  // 返回（只有被取消时才为 true）。
+  async apply_house_style(p) {
+    return applyHouseToDocument(p, { trueLevels: false });
+  },
+  // [样式画像] 换用项目画像：{profile} 校验 schemaVersion 后 merge 到 house-default 之上，
+  // 重算 HOUSE；此后流式落字 / 建表 / 全文格式化都按它。{profile:null} 或 {reset:true}
+  // 回到默认。只改 worker 状态，不碰文档——要落到文档走 apply_style_profile。
+  set_style_profile(p) {
+    let prof = p && p.profile;
+    if (prof == null || (p && p.reset)) {
+      ACTIVE_PROFILE = profileClone(HOUSE_DEFAULT_PROFILE);
+      HOUSE = buildHouse(ACTIVE_PROFILE);
+      return Object.assign({ success: true, reset: true }, styleProfileSummary());
+    }
+    if (typeof prof === 'string') { try { prof = JSON.parse(prof); } catch (e) { return tableFail('profile 不是合法 JSON: ' + (e && e.message)); } }
+    if (!isPlainObj(prof)) return tableFail('profile must be a JSON object');
+    if (prof.schemaVersion != null && Number(prof.schemaVersion) !== 1) {
+      return tableFail('unsupported schemaVersion: ' + prof.schemaVersion + ' (expected 1)');
+    }
+    const merged = profileMergeInto(profileClone(HOUSE_DEFAULT_PROFILE) || {}, prof);
+    ACTIVE_PROFILE = merged;
+    HOUSE = buildHouse(merged);
+    return Object.assign({ success: true, reset: false }, styleProfileSummary());
+  },
+  // [样式画像] 把当前画像落到文档。scope: document（样式定义 + 全文最小直接格式）/
+  // selection（样式定义 + 选区内段落）/ styles-only（只改样式定义）。分批 500 +
+  // progress + 协作式取消，truncated 只在被取消时为 true。
+  async apply_style_profile(p) {
+    if (!isWriterDoc()) return tableFail(NOT_TEXT_DOC_MSG);
+    const scope = String((p && p.scope) || 'document').toLowerCase();
+    if (scope !== 'document' && scope !== 'selection' && scope !== 'styles-only') {
+      return tableFail("scope must be 'document' | 'selection' | 'styles-only'");
+    }
+    let styles = [];
+    lockModel();
+    try { styles = applyProfileToStyles(); } finally { unlockModel(); }
+    if (scope === 'styles-only') {
+      return Object.assign({ success: true, scope: scope, styles: styles, paragraphs: 0, tables: 0, truncated: false }, styleProfileSummary());
+    }
+    if (scope === 'selection') {
+      const vc = ctrl.getViewCursor();
+      let paras = 0;
+      lockModel();
+      try {
+        const cur = vc.getText().createTextCursorByRange(vc);
+        const en = cur.createEnumeration();
+        while (en.hasMoreElements()) {
+          const el = en.nextElement();
+          if (!(el.supportsService && el.supportsService('com.sun.star.text.Paragraph'))) continue;
+          const k = paraKindOf(el, false, true);
+          applyHousePara(el, k.kind, { level: k.level });
+          applyHouseChar(el, charOptsFor(k));
+          paras++;
+        }
+      } finally { unlockModel(); }
+      return Object.assign({ success: true, scope: scope, styles: styles, paragraphs: paras, tables: 0, truncated: false }, verifySnapshot());
+    }
+    const r = await applyHouseToDocument(p, { trueLevels: true });
+    r.scope = scope;
+    r.styles = styles;
+    return r;
+  },
+  // [流式] markdown 剥离 + 标准格式落字（doc_start_stream 管线的落字端）。
+  // 攒到完整行才消费；尾部残行等 stream_flush。HOUSE 是 Writer 排版语义
+  // （首行缩进 2 字符/段后 18 磅），在幻灯片/表格上无意义——遇到非 Writer 文档
+  // 直接报错，让模型改走 slide_*/sheet_*，不悄悄把 markdown 正文糊进错误的文档模型。
+  stream_insert(p) {
+    if (!isWriterDoc()) return tableFail('doc_start_stream 仅支持 Word 文档：当前文档不是 Writer 文档。电子表格请用 sheet_* 原语，演示文稿请用 slide_* 原语逐处编辑。');
+    if (p.complete) {
+      // 回答「插入当前文档」在一次 worker 命令里完成，不能与 Agent 的半张表串流。
+      if (STREAM.active) return tableFail('文档正在流式写入，请等待写入完成后再插入回答');
+      if (!String(p.text || '').trim()) return { success: true, idle: true };
+      try {
+        // 完整回复是一个独立段落块。先隔开已有文字，不能把其所在段落一起套回复格式。
+        const vc = ctrl.getViewCursor();
+        vc.collapseToEnd();
+        const text = vc.getText();
+        const before = text.createTextCursorByRange(vc.getStart());
+        before.gotoStartOfParagraph(true);
+        const after = text.createTextCursorByRange(vc.getStart());
+        after.gotoEndOfParagraph(true);
+        const hasBefore = (before.getString() || '').length > 0;
+        const hasAfter = (after.getString() || '').length > 0;
+        if (hasBefore) {
+          text.insertControlCharacter(vc, css.text.ControlCharacter.PARAGRAPH_BREAK, false);
+          vc.collapseToEnd();
+        }
+        if (hasAfter) {
+          text.insertControlCharacter(vc, css.text.ControlCharacter.PARAGRAPH_BREAK, false);
+          vc.collapseToEnd();
+          const insertion = text.createTextCursorByRange(vc.getStart());
+          insertion.gotoPreviousParagraph(false);
+          insertion.gotoStartOfParagraph(false);
+          vc.gotoRange(insertion, false);
+        }
+        EXEC.stream_insert({ text: p.text });
+        return EXEC.stream_flush({});
+      } finally { streamReset(false); }
+    }
+    streamEnsureActive();
+    STREAM.buf += String(p.text || '');
+    const nl = STREAM.buf.lastIndexOf('\n');
+    if (nl === -1) return { success: true, buffered: STREAM.buf.length };
+    const lines = STREAM.buf.slice(0, nl).split('\n');
+    STREAM.buf = STREAM.buf.slice(nl + 1);
+    for (let i = 0; i < lines.length; i++) streamWriteLine(lines[i]);
+    return { success: true, lines: lines.length, buffered: STREAM.buf.length };
+  },
+  // [流式] 收尾：写掉尾行/尾表并复位。{discard:true} = 只复位不落字（换文档前硬清）。
+  stream_flush(p) {
+    if (p && p.discard) { streamReset(true); return { success: true, discarded: true }; }
+    if (!STREAM.active) return { success: true, idle: true };
+    try {
+      const tail = STREAM.buf;
+      STREAM.buf = '';
+      if (tail.trim() || STREAM.table) streamWriteLine(tail);
+      if (STREAM.table) streamTableFlush();
+      return Object.assign({ success: true }, verifySnapshot());
+    } finally { streamReset(false); }
+  },
+  // [插入] 在指定标题段落下方插入内容（后端 doc_insert_under_heading 一直派发此
+  // action，此前 worker 未实现、白名单未收录，静默失败——本次补齐）。内容走
+  // 行内 markdown 剥离（保留粗体/斜体语义），字体字号沿用插入点现场格式。
+  insert_under_heading(p) {
+    const headingText = String(p.headingText || '').trim();
+    if (!headingText) return { success: false, message: 'insert_under_heading requires {headingText}' };
+    let target = null;
+    eachParagraph(function (el) {
+      const t = (el.getString() || '').trim();
+      if (t && (t === headingText || t.indexOf(headingText) !== -1)) { target = el; return true; }
+      return false;
+    });
+    if (!target) return { success: false, message: '未找到标题: ' + headingText };
+    if (!selectVisibly(target)) return { success: false, message: '无法定位标题段落' };
+    const vc = ctrl.getViewCursor();
+    vc.collapseToEnd();
+    const xText = vc.getText();
+    xText.insertControlCharacter(vc, css.text.ControlCharacter.PARAGRAPH_BREAK, false);
+    // 新段落不继承标题的大纲级别/样式
+    try { vc.setPropertyValue('ParaStyleName', 'Standard'); } catch (e) {}
+    try { vc.setPropertyValue('OutlineLevel', 0); } catch (e) {}
+    insertInlineStyled(vc, String(p.content || ''));
+    return Object.assign({ success: true, heading: headingText }, verifySnapshot());
+  },
+  // [撤销] the human safety net — back out the last step(s) when a verify shows
+  // the edit landed wrong. Steps clamp at 20.
+  undo(p) {
+    const um = xModel.getUndoManager();
+    const want = Math.max(1, Math.min(Number(p && p.steps) || 1, 20));
+    let done = 0;
+    for (; done < want; done++) {
+      try { undoStep(um, 'undo', function () { um.undo(); }); } catch (e) { break; } // empty stack ends the loop
+    }
+    invalidateParaIndex();
+    return Object.assign({ success: done > 0, undone: done }, done > 0 ? verifySnapshot() : { message: 'nothing to undo' });
+  },
+  redo(p) {
+    const um = xModel.getUndoManager();
+    const want = Math.max(1, Math.min(Number(p && p.steps) || 1, 20));
+    let done = 0;
+    for (; done < want; done++) {
+      try { undoStep(um, 'redo', function () { um.redo(); }); } catch (e) { break; }
+    }
+    invalidateParaIndex();
+    return Object.assign({ success: done > 0, redone: done }, done > 0 ? verifySnapshot() : { message: 'nothing to redo' });
+  },
+  // ---- #104 文档变量域原语（VariablePanel via the getEditor adapter) ------------
+  // list every variable field in the document: {fields: [{id, scope, varName, text}]}
+  var_list() {
+    const bms = xModel.getBookmarks();
+    const names = (bms.getElementNames && bms.getElementNames()) || [];
+    const fields = [];
+    for (let i = 0; i < names.length; i++) {
+      const meta = parseVarFieldName(names[i]);
+      if (!meta) continue;
+      let text = '';
+      try { text = bms.getByName(names[i]).getAnchor().getString(); } catch (e) {}
+      fields.push({ id: names[i], scope: meta.scope, varName: meta.varName, text: text });
+    }
+    return { success: true, count: fields.length, fields: fields };
+  },
+  // insert {text} at the view cursor, marked as a field of (scope, name).
+  var_insert(p) {
+    const name = String(p.name || '').trim();
+    if (!name) return { success: false, message: 'var_insert requires {name}' };
+    const scope = String(p.scope || 'D');
+    // a paragraph break inside the span would split the bookmark, so field
+    // values are inline-only: newlines flatten to spaces
+    const value = String(p.text == null ? '' : p.text).replace(/[\r\n]+/g, ' ');
+    const vc = ctrl.getViewCursor();
+    vc.collapseToEnd();
+    const xText = vc.getText(); // the story the cursor is in (body / table cell / frame)
+    const cur = xText.createTextCursorByRange(vc.getEnd());
+    xText.insertString(cur, value, true); // bAbsorb: cur now spans the inserted value
+    const id = newVarFieldName(scope, name);
+    const bm = xModel.createInstance('com.sun.star.text.Bookmark');
+    bm.setName(id);
+    xText.insertTextContent(cur, bm, true);
+    try { vc.gotoRange(cur.getEnd(), false); } catch (e) {}
+    return Object.assign({ success: true, id: id, scope: scope, varName: name, text: value }, verifySnapshot());
+  },
+  // replace the text span of field {id} with {text}, keeping the marker alive.
+  var_update(p) {
+    const id = String(p.id || '');
+    const bms = xModel.getBookmarks();
+    if (!id || !bms.hasByName(id)) return { success: false, message: 'variable field not found: ' + id };
+    if (!parseVarFieldName(id)) return { success: false, message: 'not a variable field: ' + id };
+    const value = String(p.text == null ? '' : p.text).replace(/[\r\n]+/g, ' ');
+    const bm = bms.getByName(id);
+    const anchor = bm.getAnchor();
+    const xText = anchor.getText();
+    const cur = xText.createTextCursorByRange(anchor);
+    xText.removeTextContent(bm); // setString over the span would swallow the marker; re-add below
+    cur.setString(value);
+    const bm2 = xModel.createInstance('com.sun.star.text.Bookmark');
+    bm2.setName(id);
+    xText.insertTextContent(cur, bm2, true);
+    return { success: true, id: id, text: value, paragraphAfterEdit: (paragraphTextOf(cur) || '').slice(0, 200) };
+  },
+  // ---- #79 债务清偿：WPS 实例绑定能力的 LibreOffice 等价原语 ----------------
+  // 选区↔文件超链接关联（拖拽关联）、网核证据标记（书签+超链接）、图片插入。
+  // read the hyperlink URL on the current selection (empty string if none) —
+  // the host uses it to REUSE an existing linkKey instead of stacking a new one.
+  get_selection_hyperlink() {
+    const sel = ctrl.getSelection();
+    let range = null;
+    try {
+      if (sel && typeof sel.getByIndex === 'function' && sel.getCount() > 0) range = sel.getByIndex(0);
+    } catch (e) {}
+    if (!range) return { success: true, url: '', hasSelection: false };
+    let url = '';
+    try {
+      const xText = range.getText();
+      const cur = xText.createTextCursorByRange(range);
+      const v = cur.getPropertyValue('HyperLinkURL');
+      if (typeof v === 'string') url = v;
+    } catch (e) {} // mixed/none over the span → treat as no link
+    return { success: true, url: url, hasSelection: (range.getString() || '').length > 0, text: range.getString() };
+  },
+  // set a hyperlink on the current (visible) selection — the WPS-era
+  // setHyperlinkAtRange, minus integer offsets: the selection IS the range.
+  set_selection_hyperlink(p) {
+    const url = String(p.url || '');
+    if (!url) return { success: false, message: 'set_selection_hyperlink requires {url}' };
+    // 与 set_hyperlink_at_anchor 同款 scheme 校验：http/https 与内部协议 checkba://（EvidenceLink
+    // 包装形态 https://checkba-internal.local/open?u=checkba://... 走 https 分支）。JAR 插件经
+    // PluginHostImpl.DOC_ACTIONS 能直接调到这里，file:/javascript: 不能进导出的 docx。
+    if (!/^(https?:\/\/|checkba:\/\/)/i.test(url)) {
+      const msg = 'url 仅支持 http/https/checkba: ' + url;
+      return { success: false, error: msg, message: msg };
+    }
+    const sel = ctrl.getSelection();
+    let range = null;
+    try {
+      if (sel && typeof sel.getByIndex === 'function' && sel.getCount() > 0) range = sel.getByIndex(0);
+    } catch (e) {}
+    const text = range ? (range.getString() || '') : '';
+    if (!range || !text.length) return { success: false, message: 'no selection to hyperlink' };
+    const xText = range.getText();
+    const cur = xText.createTextCursorByRange(range);
+    cur.setPropertyValue('HyperLinkURL', url);
+    return { success: true, text: text, url: url };
+  },
+  // [Word 二期] AI 工具面的超链接原语——与 set_selection_hyperlink（host-initiated，
+  // 靠"当前选区"）不同，这里直接吃 anchor 参数，一次 worker 往返完成"找到锚点→
+  // 选中→设置"，走的是 replace_at_position（doc_replace_at_anchor 的下发目标）
+  // 同一先例：AI 工具面每次调用都是独立请求，两次请求之间"当前选区"不可靠，
+  // 必须靠锚点自己定位，不能依赖调用前谁选中了什么。
+  set_hyperlink_at_anchor(p) {
+    if (!isWriterDoc()) return tableFail(NOT_TEXT_DOC_MSG);
+    const url = String((p && p.url) || '');
+    if (!url) return tableFail('set_hyperlink_at_anchor requires {url}');
+    if (!/^https?:\/\//i.test(url)) return tableFail('url 仅支持 http/https: ' + url);
+    const anchorId = p && p.anchor ? String(p.anchor) : '';
+    if (!anchorId) return tableFail('set_hyperlink_at_anchor requires {anchor}');
+    const range = anchorRange(anchorId);
+    if (!range) return tableFail('anchor not found: ' + anchorId);
+    if (!selectVisibly(range)) return tableFail('could not select anchor: ' + anchorId);
+    const text = range.getString() || '';
+    try {
+      const xText = range.getText();
+      const cur = xText.createTextCursorByRange(range);
+      cur.setPropertyValue('HyperLinkURL', url);
+    } catch (e) { return tableFail('设置超链接失败: ' + errStr(e)); }
+    return { success: true, anchor: anchorId, text: text, url: url };
+  },
+  // insert {text} at the view cursor wrapped in a named bookmark, optionally
+  // hyperlinked — the WPS-era insertEvidenceLink/insertTextWithBookmark (网核
+  // 证据标记). Same insert shape as var_insert (bookmark spans the inserted run).
+  insert_link_with_bookmark(p) {
+    const text = String(p.text || '');
+    if (!text) return { success: false, message: 'insert_link_with_bookmark requires {text}' };
+    const requested = String(p.bookmarkName || 'MARK_' + Date.now()).replace(/[^A-Za-z0-9_]/g, '_');
+    const url = String(p.url || '');
+    // scheme 校验（P1 复核 F3）：插件宿主把这条原语开放给签名插件，裸透传会让
+    // file:/// javascript: smb:// 之类写进用户文档。放行 http(s) 与 checkba://（正则与
+    // set_selection_hyperlink 同款，#562）
+    //（证据链接的包装形态 https://checkba-internal.local/... 本身就是 https）。
+    if (url && !/^(https?:\/\/|checkba:\/\/)/i.test(url)) {
+      return { success: false, error: 'url 仅支持 http/https/checkba: ' + url, message: 'url 仅支持 http/https/checkba: ' + url };
+    }
+    const vc = ctrl.getViewCursor();
+    vc.collapseToEnd();
+    const xText = vc.getText();
+    const cur = xText.createTextCursorByRange(vc.getEnd());
+    xText.insertString(cur, text, true); // bAbsorb: cur spans the inserted text
+    if (url) cur.setPropertyValue('HyperLinkURL', url);
+    const bms = xModel.getBookmarks();
+    let name = requested, n = 0;
+    while (bms.hasByName(name)) name = requested + '_' + (++n);
+    const bm = xModel.createInstance('com.sun.star.text.Bookmark');
+    bm.setName(name);
+    xText.insertTextContent(cur, bm, true);
+    try { vc.gotoRange(cur.getEnd(), false); } catch (e) {}
+    return Object.assign({ success: true, bookmarkName: name, text: text, url: url }, verifySnapshot());
+  },
+  // ---- EvidenceLink 锚点原语（dev-board#103）：书签名 = linkKey ----------------
+  // 尽调报告里「每条事实必有底稿」：底稿与正文的关联落在命名书签上，书签随
+  // 文字走、经 docx 往返存活。与 insert_link_with_bookmark 不同，这里给的是
+  // **当前选区**套书签，且重名精确拒绝（linkKey 必须一一对应，不许加 _n 后缀）。
+  // 失败返回同时写 error 与 message（宿主只回传 result.error 的已知地雷）。
+  bookmark_selection(p) {
+    if (!isWriterDoc()) return bmFail(NOT_TEXT_DOC_MSG);
+    const name = String((p && p.name) || '');
+    if (!/^[A-Za-z0-9_]{1,64}$/.test(name)) return bmFail('bookmark name must match [A-Za-z0-9_]{1,64}: ' + name);
+    const range = selectionRange();
+    // 形状/图片选区不是 XTextRange（没有 getString），不能落到外层 dispatcher 只带 message
+    if (!range || typeof range.getString !== 'function') return bmFail('no text selection to bookmark');
+    const text = range.getString() || '';
+    if (!text.length) return bmFail('no selection to bookmark');
+    const bms = xModel.getBookmarks();
+    if (bms.hasByName(name)) return bmFail('bookmark exists: ' + name);
+    try {
+      const bm = xModel.createInstance('com.sun.star.text.Bookmark');
+      bm.setName(name);
+      range.getText().insertTextContent(range, bm, true); // bAbsorb: 书签覆盖整个选区
+    } catch (e) { return bmFail('bookmark_selection failed: ' + errStr(e)); }
+    return { success: true, name: name, text: text };
+  },
+  // 书签所在位置的上下文：文字 + 标题链（OutlineLevel>0 的段落，与 get_outline
+  // 同判据）+ 段落索引（0 基）。不存在 → exists:false（不是失败）。表格单元格内
+  // 的书签跨 story 比较会抛，sectionPath 为空、paragraphIndex -1（P0 接受）。
+  get_bookmark_context(p) {
+    const name = String((p && p.name) || '');
+    const range = anchorRange(name);
+    if (!range) return { success: true, exists: false, text: '', sectionPath: '', sectionTitle: '', paragraphIndex: -1 };
+    const h = headingChainOf(range);
+    return {
+      success: true, exists: true, text: range.getString() || '',
+      sectionPath: h.chain.map(function (c) { return c.text; }).join('/'),
+      sectionTitle: h.chain.length ? h.chain[h.chain.length - 1].text : '',
+      paragraphIndex: h.paragraphIndex,
+    };
+  },
+  // 批量核对：单次最多 200 个（宿主分批、批间让路 autosave）。真机实测（lowa-e2e
+  // 组 27）：书签覆盖的文字被整段删除后 LO 连书签一起删掉，exists:false；宿主以
+  // 「!exists || text===''」判 orphan（text 为空是防御口径，正常路径不会出现）。
+  check_link_anchors(p) {
+    const names = Array.isArray(p && p.names) ? p.names.slice(0, 200) : [];
+    let bms = null;
+    try { bms = xModel.getBookmarks(); } catch (e) { return bmFail('check_link_anchors failed: ' + errStr(e)); }
+    const items = [];
+    for (let i = 0; i < names.length; i++) {
+      const n = String(names[i]);
+      let exists = false, text = '';
+      try { if (bms.hasByName(n)) { exists = true; text = bms.getByName(n).getAnchor().getString() || ''; } } catch (e) {}
+      items.push({ name: n, exists: exists, text: text });
+    }
+    const total = Array.isArray(p && p.names) ? p.names.length : 0;
+    return { success: true, items: items, truncated: total > 200 };
+  },
+  // 旧式关联（超链接 filelink?k=<key>）收编为同名书签；已有同名书签的跳过。
+  // 同一 run 被格式变化拆成多个 portion 时只有第一个被套上（后面 hasByName 命中
+  // skipped）——书签覆盖不全但锚点有效。
+  adopt_legacy_links() {
+    if (!isWriterDoc()) return bmFail(NOT_TEXT_DOC_MSG);
+    const adopted = []; let skipped = 0, skippedInvalid = 0;
+    const invalidSeen = {};
+    // 生产链接形态：https://checkba-internal.local/open?u= + encodeURIComponent(
+    // 'checkba://filelink?k=<key>&projectId=<pid>')，即 ...%3Fk%3Dlk_x%26projectId%3D42。
+    // 先把整条 URL 解码（最多两层）再匹配，key 取到 & / # 为止；key 含
+    // [A-Za-z0-9_] 以外字符（后端兜底 lk_<UUID> 带 -）不能静默改写成别的名字
+    // ——那会永远对不上 link_key 且二次运行被 hasByName 误判 skipped——计入
+    // skippedInvalid 跳过。
+    function legacyKeyOf(url) {
+      let s = String(url || '');
+      for (let i = 0; i < 2 && /%[0-9A-Fa-f]{2}/.test(s); i++) {
+        try { s = decodeURIComponent(s); } catch (e) { break; }
+      }
+      const m = /filelink\?k=([^&#\s]+)/.exec(s);
+      if (!m) return null;
+      return { key: m[1], valid: /^[A-Za-z0-9_]{1,64}$/.test(m[1]) };
+    }
+    try {
+      const bms = xModel.getBookmarks();
+      const xText = xModel.getText();
+      // 先收集再插书签：枚举过程中改段落内容会让 portion 枚举失效。
+      // TextPortion 本身不能直接喂 insertTextContent（真机抛 IllegalArgumentException），
+      // 要用 createTextCursorByRange 在正文上造一个覆盖该 portion 的区间游标。
+      const targets = [];
+      const en = xText.createEnumeration();
+      while (en.hasMoreElements()) {
+        const para = en.nextElement();
+        if (!para.supportsService || !para.supportsService('com.sun.star.text.Paragraph')) continue;
+        const pen = para.createEnumeration();
+        while (pen.hasMoreElements()) {
+          const portion = pen.nextElement();
+          let url = '';
+          try { url = String(portion.getPropertyValue('HyperLinkURL') || ''); } catch (e) { continue; }
+          const k = legacyKeyOf(url);
+          if (!k) continue;
+          // 同一 run 常被书签/格式边界拆成多个 portion：非法 key 按去重后的 key 计数
+          if (!k.valid) { if (!invalidSeen[k.key]) { invalidSeen[k.key] = true; skippedInvalid++; } continue; }
+          targets.push({ key: k.key, start: portion.getStart(), end: portion.getEnd() });
+        }
+      }
+      // 逐目标隔离：一个坏 run 不能把已成功的 adopted 整体报成失败
+      for (let i = 0; i < targets.length; i++) {
+        const t = targets[i];
+        try {
+          if (bms.hasByName(t.key)) { skipped++; continue; }
+          const cur = xText.createTextCursorByRange(t.start);
+          cur.gotoRange(t.end, true);
+          if (!(cur.getString() || '').length) { skipped++; continue; }
+          const bm = xModel.createInstance('com.sun.star.text.Bookmark');
+          bm.setName(t.key);
+          xText.insertTextContent(cur, bm, true);
+          adopted.push(t.key);
+        } catch (e) { skipped++; }
+      }
+    } catch (e) { return bmFail('adopt_legacy_links failed: ' + errStr(e)); }
+    return { success: true, adopted: adopted, skipped: skipped, skippedInvalid: skippedInvalid };
+  },
+  // 跳到书签：anchorRange + selectVisibly（不借 set_selection，它只认 __ai_anchor_*）。
+  goto_bookmark(p) {
+    const name = String((p && p.name) || '');
+    const range = anchorRange(name);
+    if (!range) return bmFail('bookmark not found: ' + name);
+    if (!selectVisibly(range)) return bmFail('could not select bookmark: ' + name);
+    return { success: true, name: name };
+  },
+  // Read-only activation lookup: never select the target or add bookmarks.
+  get_hyperlink_at_cursor() {
+    if (!isWriterDoc()) return { success: true, url: '' };
+    const vc = ctrl.getViewCursor();
+    const hasSelection = !!(vc.getString() || '').length;
+    let url = '', field = null;
+    function readAt(range) {
+      try { const v = range.getPropertyValue('HyperLinkURL'); if (typeof v === 'string' && v) url = v; } catch (e) {}
+      try { field = range.getPropertyValue('TextField') || field; } catch (e) {}
+    }
+    readAt(vc);
+    if (!url && !field) {
+      try {
+        const cur = vc.getText().createTextCursorByRange(vc.getStart());
+        if (cur.goRight(1, true)) readAt(cur);
+      } catch (e) {}
+    }
+    // Writer selects a whole REF field on a positioning click. Permit exactly
+    // that field anchor, while rejecting ordinary/multi-run selected text.
+    if (hasSelection) {
+      try {
+        if (!field) return { success: true, url: '' };
+        const anchor = field.getAnchor(), text = vc.getText();
+        if (text.compareRegionStarts(vc, anchor) !== 0 || text.compareRegionEnds(vc, anchor) !== 0)
+          return { success: true, url: '' };
+      } catch (e) { return { success: true, url: '' }; }
+    }
+    let name = '', source = 2;
+    if (url.charAt(0) === '#') {
+      try { name = decodeURIComponent(url.slice(1)); } catch (e) { name = url.slice(1); }
+    } else if (!url && field) {
+      try {
+        if (field.supportsService('com.sun.star.text.textfield.GetReference')) {
+          name = String(field.getPropertyValue('SourceName') || '');
+          source = Number(field.getPropertyValue('ReferenceFieldSource'));
+          if (name) url = '#' + encodeURIComponent(name);
+        }
+      } catch (e) {}
+    }
+    let target = null;
+    if (name) {
+      let range = null;
+      try {
+        if (source === 2) range = anchorRange(name);
+        else if (source === 0) {
+          const refs = xModel.getReferenceMarks();
+          if (refs.hasByName(name)) range = refs.getByName(name).getAnchor();
+        }
+      } catch (e) {}
+      let text = '';
+      if (range) {
+        try {
+          text = range.getString() || '';
+          // Point bookmarks (headings are common) have no selected text.
+          if (!text) {
+            const cur = range.getText().createTextCursorByRange(range.getStart());
+            cur.gotoStartOfParagraph(false); cur.gotoEndOfParagraph(true);
+            text = cur.getString() || '';
+          }
+        } catch (e) {}
+      }
+      target = { name: name, exists: !!range, text: text.slice(0, 3000), truncated: text.length > 3000 };
+    }
+    return { success: true, url: url, target: target };
+  },
+  // insert an image (data URL / raw base64) at the view cursor — the WPS-era
+  // insertImage. Bytes go JS→UNO through SequenceInputStream (same signed-Array
+  // marshalling as load_document), GraphicProvider decodes, TextGraphicObject
+  // anchors AS_CHARACTER at the cursor. Oversized images are scaled to page width.
+  insert_image(p) {
+    const dataUrl = String(p.dataUrl || p.base64 || '');
+    const m = dataUrl.match(/^data:[^,]*;base64,(.*)$/s);
+    const b64 = m ? m[1] : dataUrl;
+    if (!b64) return { success: false, message: 'insert_image requires {dataUrl|base64}' };
+    let bin;
+    try { bin = atob(b64.replace(/\s+/g, '')); } catch (e) { return { success: false, message: 'invalid base64: ' + errStr(e) }; }
+    if (!bin.length) return { success: false, message: 'empty image data' };
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    // signed plain Array — the ONLY shape zeta.js marshals into sequence<byte>
+    const bytes = Array.from(new Int8Array(u8.buffer, u8.byteOffset, u8.byteLength));
+    const stream = css.io.SequenceInputStream.createStreamFromSequence(context, bytes);
+    const gp = css.graphic.GraphicProvider.create(context);
+    const graphic = gp.queryGraphic([mkProp('InputStream', stream)]);
+    if (!graphic) return { success: false, message: 'GraphicProvider could not decode the image' };
+    const img = xModel.createInstance('com.sun.star.text.TextGraphicObject');
+    img.setPropertyValue('Graphic', graphic);
+    img.setPropertyValue('AnchorType', css.text.TextContentAnchorType.AS_CHARACTER);
+    // natural size (1/100 mm), fall back to pixels @96dpi; cap to ~15cm text width
+    let w = 0, h = 0;
+    try { const sz = graphic.getPropertyValue('Size100thMM'); w = sz.Width || 0; h = sz.Height || 0; } catch (e) {}
+    if (!w || !h) {
+      try { const px = graphic.getPropertyValue('SizePixel'); w = Math.round((px.Width || 0) * 2540 / 96); h = Math.round((px.Height || 0) * 2540 / 96); } catch (e) {}
+    }
+    if (w > 0 && h > 0) {
+      const MAX_W = 15000;
+      if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W; }
+      img.setPropertyValue('Width', w);
+      img.setPropertyValue('Height', h);
+    }
+    const vc = ctrl.getViewCursor();
+    vc.collapseToEnd();
+    vc.getText().insertTextContent(vc, img, false);
+    try { vc.collapseToEnd(); } catch (e) {}
+    return { success: true, bytes: u8.length, width: w, height: h };
+  },
+  // [批注] add a Word comment (annotation) on the text at an anchorId — the
+  // channel for explanatory notes: 解释/说明类文字不进正文，挂批注。Engine-
+  // native path (same precedent as the PR#164 delete keys): select the anchor
+  // range, then dispatch .uno:InsertAnnotation with Text/Author args. The
+  // API alternative (createInstance Annotation + insertTextContent bAbsorb)
+  // was probe-tested on this build: it throws a spurious RuntimeException from
+  // the post-attach view code AND exports only a point commentReference; the
+  // dispatch is clean and exports a true RANGE comment (commentRangeStart/End
+  // spanning the target text), which is what Word shows attached to the run.
+  // Date is stamped by the engine; author comes from the dispatch arg.
+  add_comment(p) {
+    const anchorId = String(p.anchor || '');
+    const comment = String(p.comment || '');
+    if (!anchorId) return { success: false, message: 'add_comment requires {anchor} (anchorId from find_text_locations)' };
+    if (!comment) return { success: false, message: 'add_comment requires {comment}' };
+    const range = anchorRange(anchorId);
+    if (!range) return { success: false, message: 'anchor not found: ' + anchorId };
+    const targetText = String(range.getString() || '');
+    if (!targetText) return tableFail('批注目标文本已为空，请重新定位后重试');
+    const annotations = function () {
+      const fields = [], en = xModel.getTextFields().createEnumeration();
+      while (en.hasMoreElements()) {
+        const f = en.nextElement();
+        if (f.supportsService && f.supportsService('com.sun.star.text.textfield.Annotation')) fields.push(f);
+      }
+      return fields;
+    };
+    const before = new Set(annotations().map(commentIdOf));
+    const view = ctrl.getViewSettings();
+    const showAnnotations = !!view.getPropertyValue('ShowAnnotations');
+    // dev-board#1105: a focused native annotation shell can consume the next
+    // InsertAnnotation and discard its text/selection. Set the actual view
+    // property: dispatching the toggle through that same shell is unreliable.
+    try {
+      withViewOnlyChange(function () { view.setPropertyValue('ShowAnnotations', false); });
+      if (!selectVisibly(range)) return { success: false, message: 'could not select anchor: ' + anchorId };
+      withRecordChangesOff(function () {
+        css.frame.DispatchHelper.create(context).executeDispatch(
+          ctrl.getFrame(), '.uno:InsertAnnotation', '', 0,
+          [mkProp('Text', comment), mkProp('Author', AI_AUTHOR)]);
+      });
+    } finally {
+      // InsertAnnotation enables annotations itself. Close its editor before
+      // restoring the user's setting, including an originally hidden sidebar.
+      withViewOnlyChange(function () {
+        view.setPropertyValue('ShowAnnotations', false);
+        view.setPropertyValue('ShowAnnotations', showAnnotations);
+      });
+    }
+    const added = annotations().filter(function (f) { return !before.has(commentIdOf(f)); });
+    if (added.length !== 1) return tableFail('批注写入未通过核验，请检查审阅列表后重试');
+    const field = added[0], actualRange = field.getAnchor(), text = range.getText();
+    const content = String(field.getPropertyValue('Content') || '');
+    const author = String(field.getPropertyValue('Author') || '');
+    const annotatedText = String(actualRange.getString() || '');
+    // The field adds a zero-width annotation marker at its end, so native end
+    // positions differ from the bookmark. Match the native start and full text.
+    if (content !== comment || author !== AI_AUTHOR
+      || text.compareRegionStarts(actualRange, range) !== 0 || annotatedText !== targetText) {
+      return tableFail('批注内容或附着范围未通过核验，请检查审阅列表后重试');
+    }
+    return {
+      success: true, anchor: anchorId, author: author, comment: content,
+      annotatedText: annotatedText.slice(0, 120),
+      paragraph: (paragraphTextOf(actualRange) || '').slice(0, 200),
+    };
+  },
+  // 用户在工具栏上给**当前选区**加批注。与 add_comment 的差别有两处，所以不能
+  // 复用：① 没有 anchorId（用户是选中文字直接点按钮，不走 find_text_locations）；
+  // ② 署名必须是用户本人，不是 AI WorkDeck。派发路线仍是已验证的
+  // `.uno:InsertAnnotation`——API 路线（addAnnotation）会抛虚假异常且只批注锚点。
+  add_comment_at_selection(p) {
+    if (!isWriterDoc()) return tableFail(NOT_TEXT_DOC_MSG);
+    const comment = String((p && p.comment) || '');
+    if (!comment) return tableFail('add_comment_at_selection requires {comment}');
+    const vc = ctrl.getViewCursor();
+    const annotatedText = String(vc.getString() || '');
+    if (!annotatedText.length) return tableFail('请先选中要批注的文字');
+    const author = humanAuthor || '';
+    const before = countComments();
+    withRecordChangesOff(function () {
+      css.frame.DispatchHelper.create(context).executeDispatch(
+        ctrl.getFrame(), '.uno:InsertAnnotation', '', 0,
+        [mkProp('Text', comment), mkProp('Author', author)]);
+    });
+    // 派发不报错也可能没命中——用批注条数变化确认，别对用户谎报成功
+    const after = countComments();
+    if (after <= before) return tableFail('批注未被插入（引擎未命中）');
+    return {
+      success: true, author: author, comment: comment,
+      annotatedText: annotatedText.slice(0, 120), count: after,
+    };
+  },
+  // ---- [Word 二期] 结构面：脚注/尾注、页眉页脚、分页/分节符、样式 -----------
+  // 文档能力矩阵（4.2 节）桌面端待办：批注/修订/超链接/图片是"包一层 AI 工具面
+  // 就够"，这一组是真正的新 worker 实现。
+  insert_footnote(p) { return insertFootnoteImpl(p, false); },
+  insert_endnote(p) { return insertFootnoteImpl(p, true); },
+  // 首节页眉/页脚文本 + 对齐。只处理文档的第一个（也是最常见情形下唯一的）页面
+  // 样式——按节差异化页眉页脚不在本次范围内（法律文件极少见，与 office_addin
+  // 侧 edit_header_footer"只处理首节"同一简化）。UNO 没有直接的"当前生效页面
+  // 样式"查询点：把视图光标挪到文档开头读 PageStyleName 是宏录制的标准取法
+  // （内部名恒为英文如 'Standard'，UI 显示才随 zh-CN 语言包本地化，因此不受
+  // 语言包影响）。
+  edit_header_footer(p) {
+    if (!isWriterDoc()) return tableFail(NOT_TEXT_DOC_MSG);
+    const target = String((p && p.target) || 'header').toLowerCase();
+    if (target !== 'header' && target !== 'footer') return tableFail("target must be 'header' or 'footer'");
+    // pageNumberPattern：「第 {PAGE} 页 共 {NUMPAGES} 页」→ 文本 + PageNumber/PageCount 域交替，
+    // 接在 text 之后（text 可省略）。
+    const pattern = p && p.pageNumberPattern != null ? String(p.pageNumberPattern) : null;
+    const text = p && p.text != null ? String(p.text) : (pattern != null ? '' : null);
+    if (text == null) return tableFail('edit_header_footer requires {text} or {pageNumberPattern}');
+    if (p && p.fontSize != null && !(Number(p.fontSize) > 0)) return tableFail('bad fontSize: ' + p.fontSize);
+    const ALIGN_MAP = { left: css.style.ParagraphAdjust.LEFT, right: css.style.ParagraphAdjust.RIGHT, center: css.style.ParagraphAdjust.CENTER, justify: css.style.ParagraphAdjust.BLOCK };
+    let alignValue = null;
+    if (p && p.align != null) {
+      alignValue = ALIGN_MAP[String(p.align).toLowerCase()];
+      // 先校验参数、后落笔——避免"对齐值非法"时页眉页脚文本已经写了一半
+      if (alignValue == null) return tableFail('bad align: ' + p.align + ' (left/right/center/justify)');
+    }
+    const ps = currentPageStyle();
+    if (ps.error) return ps;
+    const pageStyle = ps.pageStyle, styleName = ps.styleName;
+    const isOnProp = target === 'header' ? 'HeaderIsOn' : 'FooterIsOn';
+    const textProp = target === 'header' ? 'HeaderText' : 'FooterText';
+    let fields = 0;
+    try {
+      pageStyle.setPropertyValue(isOnProp, true);
+      const xt = pageStyle.getPropertyValue(textProp);
+      xt.setString(text);
+      if (pattern != null) {
+        const cur = xt.createTextCursor();
+        cur.gotoEnd(false);
+        const re = /\{(PAGE|NUMPAGES)\}/g;
+        let last = 0, m;
+        const ARABIC = (css.style.NumberingType && css.style.NumberingType.ARABIC != null) ? css.style.NumberingType.ARABIC : 4;
+        while ((m = re.exec(pattern))) {
+          if (m.index > last) { xt.insertString(cur, pattern.slice(last, m.index), false); cur.gotoEnd(false); }
+          const f = xModel.createInstance(m[1] === 'PAGE' ? 'com.sun.star.text.TextField.PageNumber' : 'com.sun.star.text.TextField.PageCount');
+          try { f.setPropertyValue('NumberingType', shortAny(ARABIC)); } catch (e) {}
+          if (m[1] === 'PAGE') { try { f.setPropertyValue('SubType', css.text.PageNumberType.CURRENT); } catch (e) {} }
+          xt.insertTextContent(cur, f, false);
+          cur.gotoEnd(false);
+          fields++;
+          last = m.index + m[0].length;
+        }
+        if (last < pattern.length) xt.insertString(cur, pattern.slice(last), false);
+        try { xModel.getTextFields().refresh(); } catch (e) {}
+      }
+      if (p && (p.fontName != null || p.fontSize != null || p.fontNameAsian != null)) {
+        const all = xt.createTextCursor();
+        all.gotoStart(false); all.gotoEnd(true);
+        if (p.fontName != null) { try { setCharProp(all, 'CharFontName', String(p.fontName)); } catch (e) {} }
+        if (p.fontNameAsian != null) { try { all.setPropertyValue('CharFontNameAsian', String(p.fontNameAsian)); } catch (e) {} }
+        if (p.fontSize != null) { try { setCharProp(all, 'CharHeight', Number(p.fontSize)); } catch (e) {} }
+      }
+      if (alignValue != null) {
+        const en = xt.createEnumeration();
+        while (en.hasMoreElements()) {
+          const para = en.nextElement();
+          if (para.supportsService && para.supportsService('com.sun.star.text.Paragraph')) {
+            try { para.setPropertyValue('ParaAdjust', alignValue); } catch (e) {}
+          }
+        }
+      }
+    } catch (e) { return tableFail('设置' + (target === 'header' ? '页眉' : '页脚') + '失败: ' + errStr(e)); }
+    const out = { success: true, target: target, pageStyle: styleName, text: text };
+    if (pattern != null) { out.pageNumberPattern = pattern; out.fields = fields; }
+    return out;
+  },
+  // [页面] 纸张与页边距（单位 mm）：{width, height, orientation: portrait|landscape,
+  // margins: {top, bottom, left, right}}。作用于文档首节页面样式（取法同 edit_header_footer）。
+  // 横向要求宽 > 高：给了 orientation 时按它校正宽高；只给宽高时原样写入。
+  set_page_setup(p) {
+    if (!isWriterDoc()) return tableFail(NOT_TEXT_DOC_MSG);
+    const ps = currentPageStyle();
+    if (ps.error) return ps;
+    const pageStyle = ps.pageStyle;
+    const mm = function (v) { const n = Number(v); return isFinite(n) && n > 0 ? Math.round(n * 100) : null; };
+    const applied = {};
+    let w = p && p.width != null ? mm(p.width) : null;
+    let h = p && p.height != null ? mm(p.height) : null;
+    if ((p && p.width != null && w == null) || (p && p.height != null && h == null)) return tableFail('width/height 必须是正数（mm）');
+    try {
+      if (p && p.orientation != null) {
+        const o = String(p.orientation).toLowerCase();
+        if (o !== 'portrait' && o !== 'landscape') return tableFail("orientation must be 'portrait' or 'landscape'");
+        const land = o === 'landscape';
+        let W = w != null ? w : pageStyle.getPropertyValue('Width');
+        let H = h != null ? h : pageStyle.getPropertyValue('Height');
+        if (land ? W < H : W > H) { const t = W; W = H; H = t; }
+        pageStyle.setPropertyValue('IsLandscape', land);
+        pageStyle.setPropertyValue('Width', W);
+        pageStyle.setPropertyValue('Height', H);
+        applied.orientation = o;
+        if (w != null) applied.width = Number(p.width);
+        if (h != null) applied.height = Number(p.height);
+      } else {
+        if (w != null) { pageStyle.setPropertyValue('Width', w); applied.width = Number(p.width); }
+        if (h != null) { pageStyle.setPropertyValue('Height', h); applied.height = Number(p.height); }
+      }
+      const margins = p && isPlainObj(p.margins) ? p.margins : null;
+      if (margins) {
+        const MP = { top: 'TopMargin', bottom: 'BottomMargin', left: 'LeftMargin', right: 'RightMargin' };
+        const got = {};
+        for (const k of Object.keys(MP)) {
+          if (margins[k] == null) continue;
+          const v = Number(margins[k]);
+          if (!isFinite(v) || v < 0) return tableFail('bad margin ' + k + ': ' + margins[k]);
+          pageStyle.setPropertyValue(MP[k], Math.round(v * 100));
+          got[k] = v;
+        }
+        if (Object.keys(got).length) applied.margins = got;
+      }
+    } catch (e) { return tableFail('页面设置失败: ' + errStr(e)); }
+    if (Object.keys(applied).length === 0) return tableFail('no page setup params given');
+    const rd = function (prop) { try { return Math.round(pageStyle.getPropertyValue(prop)) / 100; } catch (e) { return null; } };
+    return {
+      success: true, pageStyle: ps.styleName, applied: applied,
+      page: { width: rd('Width'), height: rd('Height'), landscape: !!pageStyle.getPropertyValue('IsLandscape'),
+        margins: { top: rd('TopMargin'), bottom: rd('BottomMargin'), left: rd('LeftMargin'), right: rd('RightMargin') } },
+    };
+  },
+  // [目录] 在光标处（position:'start' 时在文首）插入从大纲级别生成的目录
+  // （com.sun.star.text.ContentIndex + update()）。levels 缺省取画像 toc.levels，
+  // title 缺省取画像 toc.title；目录标题段走 Contents Heading 样式（按画像 titleStyle）。
+  insert_toc(p) {
+    if (!isWriterDoc()) return tableFail(NOT_TEXT_DOC_MSG);
+    const levels = Math.max(1, Math.min(Number(p && p.levels) || HOUSE.tocLevels, 10));
+    const title = p && p.title != null ? String(p.title) : HOUSE.tocTitle;
+    const vc = ctrl.getViewCursor();
+    if (p && String(p.position || '').toLowerCase() === 'start') vc.gotoStart(false); else vc.collapseToEnd();
+    let index;
+    try {
+      applyProfileToStylesSafe(['Contents Heading']);
+      const xText = vc.getText();
+      index = xModel.createInstance('com.sun.star.text.ContentIndex');
+      index.setPropertyValue('CreateFromOutline', true);
+      index.setPropertyValue('Level', shortAny(levels));
+      index.setPropertyValue('Title', title);
+      xText.insertTextContent(vc, index, false);
+      index.update();
+    } catch (e) { return tableFail('insert_toc failed: ' + errStr(e)); }
+    let tocText = '';
+    try { tocText = index.getAnchor().getString() || ''; } catch (e) {}
+    const lines = tocText.split(/\r?\n/).filter(function (s) { return s.trim(); });
+    invalidateParaIndex();
+    return { success: true, levels: levels, title: title, entries: Math.max(0, lines.length - 1), text: tocText.slice(0, 400) };
+  },
+  // 分页符/分节符（Word 语义的"下一页"分节符）。页内插入而非追加：先在光标处
+  // 打一个段落断（把光标后的内容推到新段），再给这个新段打上 BreakType（纯分页）
+  // 或 PageDescName（分节——沿用当前页面样式起一个新的"页面样式序列"，这是
+  // UNO/ODF 与 Word 分节机制互通的标准写法，export 到 docx 落成真正的 <w:sectPr>）。
+  insert_break(p) {
+    if (!isWriterDoc()) return tableFail(NOT_TEXT_DOC_MSG);
+    const breakType = String((p && p.breakType) || 'page').toLowerCase();
+    if (breakType !== 'page' && breakType !== 'sectionnext') return tableFail("breakType must be 'page' or 'sectionNext'");
+    const vc = ctrl.getViewCursor();
+    const xText = vc.getText();
+    vc.collapseToEnd(); // 塌陷选区，避免连带删掉已选中的文本
+    let styleName = '';
+    if (breakType === 'sectionnext') {
+      try { styleName = String(vc.getPropertyValue('PageStyleName') || ''); } catch (e) {}
+      if (!styleName) return tableFail('无法确定当前页面样式，无法插入分节符');
+    }
+    try {
+      xText.insertControlCharacter(vc, css.text.ControlCharacter.PARAGRAPH_BREAK, false);
+      if (breakType === 'page') vc.setPropertyValue('BreakType', css.style.BreakType.PAGE_BEFORE);
+      else vc.setPropertyValue('PageDescName', styleName);
+    } catch (e) { return tableFail('插入' + (breakType === 'page' ? '分页符' : '分节符') + '失败: ' + errStr(e)); }
+    return { success: true, breakType: breakType === 'page' ? 'page' : 'sectionNext' };
+  },
+  // 应用既有样式（段落样式 ParaStyleName / 字符样式 CharStyleName）。与
+  // doc_format_selection / doc_set_paragraph_format 同一约定：不接 anchor 参数，
+  // 作用于"当前选区/光标"——AI 侧先 doc_select_anchor / doc_select_paragraph
+  // 选中目标，再调用本原语，与那两个格式化原语的调用序列完全一致，不必再引入
+  // 第二套"直接传 anchor"的调用方式徒增分叉。
+  set_style(p) {
+    if (!isWriterDoc()) return tableFail(NOT_TEXT_DOC_MSG);
+    const kind = String((p && p.kind) || 'paragraph').toLowerCase();
+    if (kind !== 'paragraph' && kind !== 'character') return tableFail("kind must be 'paragraph' or 'character'");
+    const styleName = p && p.styleName ? String(p.styleName) : '';
+    if (!styleName) return tableFail('set_style requires {styleName}');
+    const familyName = kind === 'paragraph' ? 'ParagraphStyles' : 'CharacterStyles';
+    let family;
+    try { family = xModel.getStyleFamilies().getByName(familyName); }
+    catch (e) { return tableFail('读取样式库失败: ' + errStr(e)); }
+    if (!family.hasByName(styleName)) {
+      const names = (family.getElementNames && family.getElementNames()) || [];
+      return tableFail('样式不存在: ' + styleName + '（可用样式：' + names.slice(0, 20).join('、')
+        + (names.length > 20 ? ' 等共 ' + names.length + ' 个' : '') + '）');
+    }
+    const vc = ctrl.getViewCursor();
+    if (kind === 'character' && (vc.getString() || '').length === 0) {
+      return tableFail('未选中文本：字符样式需要先选中要套样式的文字（doc_select_anchor / doc_select_paragraph）');
+    }
+    const propName = kind === 'paragraph' ? 'ParaStyleName' : 'CharStyleName';
+    try { vc.setPropertyValue(propName, styleName); }
+    catch (e) { return tableFail('应用样式失败: ' + errStr(e)); }
+    return { success: true, kind: kind, styleName: styleName, text: (vc.getString() || '').slice(0, 200) };
+  },
+  // ---- [审阅面板] 修订与批注的清单 / 定位 / 逐条处置 --------------------
+  // 页边显示解决了「删除文本压正文」，但同一表格行多格删除仍会在页边同高互叠，
+  // 且页边小字读不到作者/时间。审阅面板（宿主右栏）用下面这组原语驱动：列出、
+  // 点击定位、逐条接受/拒绝——修订的权威视图从页边挪进面板。
+  list_revisions(p) {
+    // Hover reads only the hit revision, fenced to the geometry it used. Reading
+    // every redline's metadata here can block first paint for several seconds.
+    const index = p && p.index;
+    if (index != null && (!Number.isInteger(index) || index < 0)) return tableFail('Invalid revision index');
+    if (p && ((p.documentSeq != null && p.documentSeq !== docSeq)
+      || (p.revision != null && p.revision !== currentReviewRevision()))) return tableFail('修订已变化，请刷新后重试');
+    const limit = Math.max(1, Math.min(500, Number(p && p.limit) || 200));
+    // locate:false skips the paragraph text and locator: they rebuild the whole
+    // paragraph index after every edit, and review balloons render neither.
+    const locate = !(p && p.locate === false);
+    const out = [], tableCells = Object.create(null);
+    // This synchronous list owns its caches: nothing survives edits or reloads.
+    const locatorCache = {};
+    let prevEnd = null;   // 上一条的 RedlineEnd，用来判「首尾相接」（见 contiguous）
+    try {
+      const redlines = xModel.getRedlines();
+      const en = index == null ? redlines.createEnumeration() : null;
+      let position = 0;
+      while (index != null ? !out.length && index < redlines.getCount() : en.hasMoreElements() && out.length < limit) {
+        const r = index != null ? redlines.getByIndex(index) : en.nextElement();
+        const currentIndex = index != null ? index : position++;
+        const it = { index: currentIndex };
+        try { it.identifier = String(r.getPropertyValue('RedlineIdentifier')); } catch (e) {}
+        // RedlineType 如实回传引擎原串（Insert / Delete / Format / ParagraphFormat /
+        // TextTable …）。改造前面板只分「Delete 与其余」，格式类修订被当成插入显示
+        // （dev-board#377）；面板的类型映射认不出的一律原样展示，不再硬塞进「插入」。
+        try { it.type = String(r.getPropertyValue('RedlineType')); } catch (e) {}
+        try { const id = Number(r.getPropertyValue('RedlineMovedID')); it.movedId = id > 1 ? id : 0; } catch (e) { it.movedId = 0; }
+        try { it.author = r.getPropertyValue('RedlineAuthor'); } catch (e) {}
+        try { it.comment = r.getPropertyValue('RedlineComment'); } catch (e) {}
+        // 格式类修订正文是空的，引擎给的说明（「属性已更改」之类）是唯一能读的信息
+        try { it.description = String(r.getPropertyValue('RedlineDescription') || ''); } catch (e) {}
+        try {
+          const d = r.getPropertyValue('RedlineDateTime');
+          if (d) { it.date = d.Year + '-' + pad2(d.Month) + '-' + pad2(d.Day) + ' ' + pad2(d.Hours) + ':' + pad2(d.Minutes); it.timestamp = it.date + ':' + pad2(d.Seconds) + '.' + (d.NanoSeconds || 0); }
+        } catch (e) {}
+        // SwXRedline.getString() creates a cursor in its hidden content section.
+        // Inline redlines have no such section: probing it throws inside native
+        // code and repeated probes destabilize this engine. RedlineText safely
+        // returns null when the text must be read from RedlineStart/End instead.
+        try { const hiddenText = r.getPropertyValue('RedlineText'); if (hiddenText) it.text = String(hiddenText.getString() || ''); } catch (e) {}
+        let curEnd = null;
+        try {
+          const rs = r.getPropertyValue('RedlineStart'), re = r.getPropertyValue('RedlineEnd');
+          if (rs && re) {
+            curEnd = re;
+            // 与上一条首尾相接？审阅面板据此把「连按 Backspace 产生的一串单字
+            // 删除」并成一条卡片（用户反馈：一个字一条记录很不科学）。页边模式下
+            // 删除文本被移出正文流，一串连续删除的区间会塌到同一个正文位置，正好
+            // 命中这个判据；同段落里相隔很远的两处删除则不会被误并。
+            if (locate) {
+              locatorCache.currentStart = rs;
+              locatorCache.currentParaKey = -1;
+              try {
+                const body = locatorCache.body || (locatorCache.body = xModel.getText());
+                locatorCache.currentParaKey = paraKeyOf(body, rs, locatorCache);
+              } catch (e) { /* Cells and headers have no body paragraph key. */ }
+            }
+            it.contiguous = rangeStartsEqual(prevEnd, rs, locate ? locatorCache.body : null);
+            let spanLength = null;
+            if (!it.text) {
+              const rc = locate && locatorCache.currentParaKey >= 0
+                ? reviewBodyCursorAt(locatorCache, rs) : rs.getText().createTextCursorByRange(rs);
+              rc.gotoRange(re, true);
+              it.text = String(rc.getString() || '');
+              spanLength = it.text.length; // Only the body span, never hidden deletion text.
+            }
+            if (locate) {
+              applyLocator(it, rs, re, locatorCache, spanLength);
+              try {
+                if (it.paraKey >= 0) {
+                  const paragraphTexts = locatorCache.paragraphTexts;
+                  if (!paragraphTexts.has(it.paraKey)) paragraphTexts.set(it.paraKey,
+                    withParaIndex(function (ix) { return String(ix.ranges[it.paraKey].getString() || '').slice(0, 120); }));
+                  it.paragraph = paragraphTexts.get(it.paraKey);
+                } else {
+                  // Cells, headers and other stories have no body paragraph key.
+                  const pc = rs.getText().createTextCursorByRange(rs);
+                  pc.gotoStartOfParagraph(false); pc.gotoEndOfParagraph(true);
+                  it.paragraph = String(pc.getString() || '').slice(0, 120);
+                }
+              } catch (e) {}
+            }
+            // 表格内的修订：面板要标出来（页边互叠的正是这一类）
+            try {
+              const cell = rs.getPropertyValue('Cell'), table = rs.getPropertyValue('TextTable');
+              it.inTable = !!cell;
+              if (cell && table) {
+                it.tableName = table.getName(); it.cellName = String(cell.getPropertyValue('CellName') || '');
+                it.wholeCell = !!it.text && it.text === String(cell.getString() || '');
+                it.tableCells = tableCells[it.tableName] || (tableCells[it.tableName] = table.getCellNames().filter(function (name) { return !!table.getCellByName(name).getString(); }));
+              }
+            } catch (e) { it.inTable = false; }
+          }
+        } catch (e) {}
+        prevEnd = curEnd;
+        it.text = String(it.text || '');
+        out.push(it);
+      }
+    } catch (e) { return tableFail(errStr(e)); }
+    // Only infer an imported table operation when every nonempty cell is covered in
+    // full, with exactly the same author/type/engine timestamp. Partial cell edits
+    // and unrelated same-minute changes stay separate.
+    const candidates = {};
+    out.forEach(function (r) {
+      if (!r.wholeCell || !r.timestamp || !r.tableName || r.type !== 'Insert') return;
+      const key = JSON.stringify([r.tableName, r.type, r.author, r.timestamp]);
+      (candidates[key] || (candidates[key] = [])).push(r);
+    });
+    Object.keys(candidates).forEach(function (key) {
+      const rows = candidates[key], cells = rows[0].tableCells || [];
+      if (out.some(function (r) { return r.tableName === rows[0].tableName && r.type === 'Delete'; }) || rows.length < 2 || rows.length !== cells.length || !cells.every(function (name) { return rows.some(function (r) { return r.cellName === name; }); })) return;
+      rows.forEach(function (r) { r.operationId = key; r.operationKind = 'table-insert'; });
+    });
+    out.forEach(function (r) { delete r.tableCells; });
+    return { success: true, count: out.length, revisions: out, revision: currentReviewRevision(), documentSeq: docSeq };
+  },
+  goto_revision(p) {
+    if (p && p.documentSeq != null && p.documentSeq !== docSeq) return tableFail('修订已变化，请刷新后重试');
+    if (p && p.identifier != null) {
+      if (p.documentSeq !== docSeq || !p.identifier) return tableFail('修订已变化，请刷新后重试');
+      const matches = [], en = xModel.getRedlines().createEnumeration();
+      for (let index = 0; index < 500 && en.hasMoreElements(); index++) {
+        const r = en.nextElement();
+        if (String(r.getPropertyValue('RedlineIdentifier')) === p.identifier) matches.push(index);
+      }
+      if (matches.length !== 1) return tableFail('修订已变化，请刷新后重试');
+      p.index = matches[0];
+    } else if (p && p.revision != null && p.revision !== currentReviewRevision()) return tableFail('文档已变化，请刷新修订后重试');
+    const r = redlineAt(p && p.index);
+    if (!r) return { success: false, message: 'no revision at index ' + (p && p.index) };
+    return selectRedlineRange(r)
+      ? { success: true, index: Number(p.index), selected: String(ctrl.getViewCursor().getString() || '') }
+      : { success: false, message: 'could not select revision range' };
+  },
+  // 工具条「接受/拒绝当前」：按视图光标命中的那条 redline 走既有 resolve_revision。
+  // 不新开 UNO 白名单——AcceptTrackedChange 仍须正确选区，统一走 selectRedlineRange。
+  resolve_revision_at_cursor(p) {
+    const action = String((p && p.action) || 'accept').toLowerCase();
+    if (action !== 'accept' && action !== 'reject') return tableFail("action must be accept|reject");
+    const index = revisionIndexAtCursor();
+    if (index < 0) return tableFail('光标处没有修订');
+    return EXEC.resolve_revision(Object.assign({}, p || {}, { index: index, action: action }));
+  },
+  // 逐条处置。**光标摆放是硬要求**（真机探针实证）：视图光标必须跨过 redline
+  // 区间——插入型这样才选中正文里的新增文本；删除型按显示模式分支（页边模式下
+  // 正文流里是零宽，退化成定位到起点；内联模式下删除文字就在流里，同样要跨选），
+  // 见 selectRedlineRange。摆错位置（collapse 到起点再右移、或用 selectVisibly
+  // 传区间游标）会让 dispatch 打空，甚至凭空多出一条空插入修订。
+  // 带 AwdReviewGeometry 的引擎先走 resolveRedlinesByNativeId（按原生 id 派发）；
+  // 下面的光标路径只服务没有该契约的旧引擎（r4），原样保留。
+  resolve_revision(p) {
+    const action = String((p && p.action) || 'accept').toLowerCase();
+    if (action !== 'accept' && action !== 'reject') return tableFail("action must be accept|reject");
+    const byId = resolveRedlinesByNativeId([p && p.index], expectedRedlineIdentifiers(p), action);
+    if (byId && byId.error) return tableFail(byId.error);
+    if (byId) {
+      return byId.results[0].success
+        ? { success: true, index: Number(p.index), action: action, remaining: byId.remaining, via: 'native-id' }
+        : Object.assign(tableFail('修订未被处置（引擎未命中该条）'), { remaining: byId.remaining, via: 'native-id' });
+    }
+    const r = redlineAt(p && p.index);
+    if (!r) return tableFail('no revision at index ' + (p && p.index));
+    if (!selectRedlineRange(r, true)) return tableFail('could not select revision range');
+    const before = countRedlines(), beforeLayer = redlineLayerState(r);
+    css.frame.DispatchHelper.create(context).executeDispatch(
+      ctrl.getFrame(), action === 'accept' ? '.uno:AcceptTrackedChange' : '.uno:RejectTrackedChange', '', 0, []);
+    const after = countRedlines();
+    // Stacked revisions may change their top layer without changing the count.
+    return redlineWasResolved(r, before, after, beforeLayer)
+      ? { success: true, index: Number(p.index), action: action, remaining: after }
+      : Object.assign(tableFail('修订未被处置（引擎未命中该条）'), { remaining: after });
+  },
+  // [审阅面板批量处置] ReviewPanel.resolveGroup 把一张卡片（首尾相接合并出的 K 条
+  // redline）一次性打包发过来，代替旧路径对每个 index 单独调 resolve_revision。
+  // resolve_revision 内部的 redlineAt(index) 每次都从头整棵重新枚举
+  // xModel.getRedlines()，K 条 = K 次 O(N) 重扫（O(K·N)）；这里一次性把枚举物化成
+  // 数组（O(N) 一次），K 个目标 index 直接按下标取引用，总开销降到 O(N+K)。
+  // indices 必须按降序处理（与 resolve_revision 的既有约定一致：处置一条后，
+  // 比它大的 index 在引擎里前移，比它小的不受影响）。
+  // 稳妥起见留一条退路：捕获的对象引用如果在跨多次 dispatch 复用时失效（真机未
+  // 验证过这一点——引擎对 redline 对象的生命周期没有文档化保证），selectRedlineRange
+  // 会因异常/取不到区间而返回 false，这时退回 redlineAt 按位重新枚举一次，只让
+  // 那一条退化成旧路径的开销，不拖累整批、也不会把错误的修订当成功处置掉。
+  resolve_revisions(p) {
+    if (p && p.revision != null && p.revision !== currentReviewRevision()) return tableFail('文档已变化，请刷新修订后重试');
+    const action = String((p && p.action) || 'accept').toLowerCase();
+    if (action !== 'accept' && action !== 'reject') return tableFail("action must be accept|reject");
+    const indices = Array.isArray(p && p.indices) ? p.indices : [];
+    if (!indices.length) return tableFail('resolve_revisions requires a non-empty indices array');
+    const byId = resolveRedlinesByNativeId(indices, expectedRedlineIdentifiers(p), action);
+    if (byId && byId.error) return tableFail(byId.error);
+    if (byId) {
+      return { success: true, action: action, resolved: byId.results.filter(function (x) { return x.success; }).length,
+        remaining: byId.remaining, results: byId.results, via: 'native-id' };
+    }
+    const all = [];
+    try {
+      const en = xModel.getRedlines().createEnumeration();
+      while (en.hasMoreElements()) all.push(en.nextElement());
+    } catch (e) { return tableFail(errStr(e)); }
+    const sorted = indices.slice().sort(function (a, b) { return b - a; });
+    const results = [];
+    const dispatcher = css.frame.DispatchHelper.create(context);
+    for (let i = 0; i < sorted.length; i++) {
+      const index = sorted[i];
+      let r = (index >= 0 && index < all.length) ? all[index] : null;
+      let ok = !!r && selectRedlineRange(r, true);
+      if (!ok) { r = redlineAt(index); ok = !!r && selectRedlineRange(r, true); } // 退回单条重扫兜底
+      if (!ok) { results.push({ index: index, success: false }); continue; }
+      const before = countRedlines(), beforeLayer = redlineLayerState(r);
+      dispatcher.executeDispatch(ctrl.getFrame(),
+        action === 'accept' ? '.uno:AcceptTrackedChange' : '.uno:RejectTrackedChange', '', 0, []);
+      const after = countRedlines();
+      results.push({ index: index, success: redlineWasResolved(r, before, after, beforeLayer) });
+    }
+    const resolved = results.filter(function (x) { return x.success; }).length;
+    return { success: true, action: action, resolved: resolved, remaining: countRedlines(), results: results };
+  },
+  resolve_all_revisions(p) {
+    const action = String((p && p.action) || 'accept').toLowerCase();
+    if (action !== 'accept' && action !== 'reject') return tableFail("action must be accept|reject");
+    const before = countRedlines();
+    suspendModifyListener(); // 引擎内部逐条处理修订，每条都会回调监听器（见 suspendModifyListener）
+    try {
+      css.frame.DispatchHelper.create(context).executeDispatch(
+        ctrl.getFrame(), action === 'accept' ? '.uno:AcceptAllTrackedChanges' : '.uno:RejectAllTrackedChanges', '', 0, []);
+      // A REF cache can still contain the former mixed revision text after its
+      // target resolves. Refresh only after all changes have been resolved.
+      if (before > 0 && countRedlines() === 0) xModel.getTextFields().refresh();
+    } finally { resumeModifyListener(); }
+    const after = countRedlines(); // 前后各数一次（原先结束时数了两遍 O(N)）
+    return { success: true, action: action, resolved: before - after, remaining: after };
+  },
+  list_comments(p) {
+    const limit = Math.max(1, Math.min(500, Number(p && p.limit) || 200));
+    const locate = !(p && p.locate === false);   // see list_revisions
+    const out = [];
+    try {
+      const en = xModel.getTextFields().createEnumeration();
+      while (en.hasMoreElements() && out.length < limit) {
+        const f = en.nextElement();
+        if (!(f.supportsService && f.supportsService('com.sun.star.text.textfield.Annotation'))) continue;
+        const it = { index: out.length };
+        try { it.id = commentIdOf(f); } catch (e) {}
+        try { it.author = f.getPropertyValue('Author'); } catch (e) {}
+        try { it.content = String(f.getPropertyValue('Content') || ''); } catch (e) {}
+        try {
+          const d = f.getPropertyValue('DateTimeValue');
+          if (d) { it.date = d.Year + '-' + pad2(d.Month) + '-' + pad2(d.Day) + ' ' + pad2(d.Hours) + ':' + pad2(d.Minutes); it.timestamp = it.date + ':' + pad2(d.Seconds) + '.' + (d.NanoSeconds || 0); }
+        } catch (e) {}
+        try { it.resolved = !!f.getPropertyValue('Resolved'); } catch (e) { it.resolved = false; }
+        try {
+          const a = f.getAnchor();
+          it.anchorText = String(a.getString() || '');
+          if (locate) {
+            it.paragraph = (paragraphTextOf(a) || '').slice(0, 120);
+            applyLocator(it, a.getStart(), a.getEnd());   // 与 list_revisions 同一坐标系
+          }
+        } catch (e) {}
+        out.push(it);
+      }
+    } catch (e) { return tableFail(errStr(e)); }
+    return { success: true, count: out.length, comments: out, revision: currentReviewRevision(), documentSeq: docSeq };
+  },
+  goto_comment(p) {
+    let f, index = Number(p && p.index);
+    if (p && p.documentSeq != null) {
+      if (p.documentSeq !== docSeq || typeof p.id !== 'string' || !p.id) return tableFail('批注已变化，请刷新后重试');
+      const matches = [], en = xModel.getTextFields().createEnumeration();
+      for (let n = 0; n < 500 && en.hasMoreElements();) {
+        const field = en.nextElement();
+        if (!(field.supportsService && field.supportsService('com.sun.star.text.textfield.Annotation'))) continue;
+        if (commentIdOf(field) === p.id) matches.push({ field: field, index: n });
+        n++;
+      }
+      if (matches.length !== 1) return tableFail('批注已变化，请刷新后重试');
+      f = matches[0].field; index = matches[0].index;
+    } else if (p && p.revision != null && p.revision !== currentReviewRevision()) return tableFail('批注已变化，请刷新后重试');
+    else f = commentAt(p && (p.id || p.index));
+    if (!f) return { success: false, message: 'no comment at index ' + (p && p.index) };
+    try { return selectVisibly(f.getAnchor()) ? { success: true, index: index, id: commentIdOf(f) } : { success: false, message: 'could not select anchor' }; }
+    catch (e) { return { success: false, message: errStr(e) }; }
+  },
+  update_comment(p) {
+    if (!isReviewWritable()) return tableFail('文档为只读状态');
+    if (!matchCommentSnapshot(p)) return tableFail('批注已变化，请刷新后重试');
+    const f = commentAt(p && (p.id || p.index));
+    if (!f || typeof p.content !== 'string' || !p.content.trim()) return tableFail('批注内容不能为空');
+    if (p.expectedContent != null && f.getPropertyValue('Content') !== p.expectedContent) return tableFail('批注已变化，请刷新后重试');
+    f.setPropertyValue('Content', p.content);
+    return { success: f.getPropertyValue('Content') === p.content, id: commentIdOf(f) };
+  },
+  // AI 工具面（doc_resolve_comment）与 ReviewPanel（{index}）共用本原语：ref 优先
+  // 取 id（commentAt 按 Name 定位，跨调用稳定），没有 id 才退回 index。
+  set_comment_resolved(p) {
+    if (!isReviewWritable()) return tableFail('文档为只读状态');
+    if (!matchCommentSnapshot(p)) return tableFail('批注已变化，请刷新后重试');
+    const ref = p && (p.id != null && p.id !== '' ? p.id : p.index);
+    const f = commentAt(ref);
+    if (!f) return tableFail('no comment at ' + ref);
+    try {
+      f.setPropertyValue('Resolved', !!(p && p.resolved));
+      return { success: true, id: commentIdOf(f), resolved: !!f.getPropertyValue('Resolved') };
+    } catch (e) { return tableFail(errStr(e)); }
+  },
+  // Annotation removal must not itself become a tracked deletion: otherwise the
+  // field remains in the document and the comment count never decreases.
+  delete_comment(p) {
+    if (!isReviewWritable()) return tableFail('文档为只读状态');
+    if (!matchCommentSnapshot(p)) return tableFail('批注已变化，请刷新后重试');
+    const ref = p && (p.id != null && p.id !== '' ? p.id : p.index);
+    const f = commentAt(ref);
+    if (!f) return tableFail('no comment at ' + ref);
+    const before = countComments();
+    try {
+      withRecordChangesOff(function () { f.getAnchor().getText().removeTextContent(f); });
+    } catch (e) { return tableFail(errStr(e)); }
+    const after = countComments();
+    return after < before ? { success: true, remaining: after }
+      : Object.assign(tableFail('批注未被删除'), { remaining: after });
+  },
+  // [批注回复] 是否有真正的原生线程回复（LO 的 ParentId/ParentName 一类属性）
+  // 在这个引擎版本上待查证——vendored zeta.js 未见相关 typedef，无法在不接
+  // 真机的情况下确认属性名。保守做法：复用已验证可靠的 .uno:InsertAnnotation
+  // 路径（与 add_comment 同一先例），在父批注同一锚点区间上追加一条新批注，
+  // 内容前缀"回复 {父批注作者}："保证语义可读；随后 best-effort 尝试挂
+  // ParentId/ParentName 两个候选属性名，成功与否都不影响主流程（失败静默吞掉，
+  // 因为这只是锦上添花的原生线程标记，不是功能是否可用的判据）。
+  reply_comment(p) {
+    // 审阅面板里用户亲手回复（asUser，BUG-37）：只读文档不许写，署名按登录用户。
+    if (p && p.asUser && !isReviewWritable()) return tableFail('文档为只读状态');
+    const ref = p && (p.id != null && p.id !== '' ? p.id : p.index);
+    const parent = commentAt(ref);
+    if (!parent) return tableFail('未找到要回复的批注: ' + ref);
+    const text = String((p && p.text) || '');
+    if (!text) return tableFail('reply_comment requires {text}');
+    let parentAuthor = '';
+    const parentId = commentIdOf(parent);
+    try { parentAuthor = String(parent.getPropertyValue('Author') || ''); } catch (e) {}
+    let anchor;
+    try { anchor = parent.getAnchor(); } catch (e) { return tableFail('无法定位批注锚点: ' + errStr(e)); }
+    if (!selectVisibly(anchor)) return tableFail('无法选中批注锚点');
+    const before = {};
+    try {
+      const en = xModel.getTextFields().createEnumeration();
+      while (en.hasMoreElements()) {
+        const f = en.nextElement();
+        if (f.supportsService && f.supportsService('com.sun.star.text.textfield.Annotation')) before[commentIdOf(f)] = true;
+      }
+    } catch (e) {}
+    const replyContent = (parentAuthor ? ('回复 ' + parentAuthor + '：') : '') + text;
+    const author = replyCommentAuthor(p, humanAuthor, AI_AUTHOR);
+    withRecordChangesOff(function () {
+      css.frame.DispatchHelper.create(context).executeDispatch(
+        ctrl.getFrame(), '.uno:InsertAnnotation', '', 0,
+        [mkProp('Text', replyContent), mkProp('Author', author)]);
+    });
+    let newField = null, newName = '';
+    try {
+      const en2 = xModel.getTextFields().createEnumeration();
+      while (en2.hasMoreElements()) {
+        const f = en2.nextElement();
+        if (!(f.supportsService && f.supportsService('com.sun.star.text.textfield.Annotation'))) continue;
+        const nm = commentIdOf(f);
+        if (nm && !before[nm]) { newField = f; newName = nm; }
+      }
+    } catch (e) {}
+    if (!newField) return tableFail('回复未生效（引擎未产生新批注）');
+    try { newField.setPropertyValue('ParentId', parentId); } catch (e) {}
+    try { const name = parent.getPropertyValue('Name'); if (name) newField.setPropertyValue('ParentName', name); } catch (e) {}
+    return { success: true, id: newName, parentId: parentId, author: author, text: text };
+  },
+  // [diagnostic] 修订记录清单（类型/作者/文本片段）。后端 doc_debug_revisions
+  // 一直派发 debug_revisions，worker 此前未实现（一律返回 not implemented）；
+  // 补上后同时作为修订署名（AI WorkDeck / 用户名）的验证探针。
+  debug_revisions() {
+    const out = [];
+    try {
+      const en = xModel.getRedlines().createEnumeration();
+      while (en.hasMoreElements() && out.length < 200) {
+        const r = en.nextElement();
+        const item = {};
+        try { item.type = r.getPropertyValue('RedlineType'); } catch (e) {}
+        try { item.author = r.getPropertyValue('RedlineAuthor'); } catch (e) {}
+        try { item.comment = r.getPropertyValue('RedlineComment'); } catch (e) {}
+        try { const hiddenText = r.getPropertyValue('RedlineText'); if (hiddenText) item.text = String(hiddenText.getString() || '').slice(0, 80); } catch (e) {}
+        // Inline content has no hidden section; read its document range directly,
+        // just as list_revisions does, without an invalid native getString probe.
+        if (item.text == null) {
+          try {
+            const rs = r.getPropertyValue('RedlineStart'), re = r.getPropertyValue('RedlineEnd');
+            if (rs && re) {
+              const rcur = rs.getText().createTextCursorByRange(rs);
+              rcur.gotoRange(re, true);
+              item.text = String(rcur.getString() || '').slice(0, 80);
+            }
+          } catch (e) {}
+        }
+        out.push(item);
+      }
+    } catch (e) { return { success: false, message: errStr(e) }; }
+    return { success: true, count: out.length, redlines: out };
+  },
+  // [第 2 期 版本对比] 当前文档（新版）与 baseBytes（旧版）比较，产出修订标记。
+  // 探针（lowa-e2e 组 13）已实证方向：产出「旧到新」的删/插修订，正文停在新版。
+  // 比较产生的修订署名统一为「版本对比」，与人工/AI 修订区分开。
+  // 比较完成后把文档切只读（.uno:EditDoc 关编辑模式）——这是展示用文档，
+  // 宿主（VersionCompareTab）没有任何保存路径，只读是第二道保险。
+  compare_document(p) {
+    if (!toUnoByteSeq(p && p.baseBytes)) return { success: false, stage: 'input', message: 'baseBytes empty' };
+    try { setRedlineAuthor('版本对比'); } catch (e) {}
+    const r = compareWithBytes(p && p.baseBytes, 'file:///tmp/awd_base_cmp.docx');
+    if (!r.success) return r;
+    try {
+      css.frame.DispatchHelper.create(context).executeDispatch(
+        ctrl.getFrame(), '.uno:EditDoc', '', 0, []);
+    } catch (e) {}
+    comparisonModel = xModel; // The comparison tab is a read-only review surface.
+    return { success: true, redlineCount: r.redlineCount };
+  },
+  // Standalone comparison copies: compare both final projections in temporary
+  // models. Source files are never written by this action.
+  // Unlike compare_document, the result remains editable and can be exported.
+  build_comparison_document(p) {
+    if (!toUnoByteSeq(p && p.baseBytes) || !toUnoByteSeq(p && p.revisedBytes))
+      return { success: false, stage: 'input', message: 'baseBytes and revisedBytes are required' };
+    let stage = 'configuration', access = null, saved = null;
+    const previousAuthor = humanAuthor;
+    try {
+      const provider = context.getServiceManager().createInstanceWithContext(
+        'com.sun.star.configuration.ConfigurationProvider', context);
+      access = provider.createInstanceWithArguments('com.sun.star.configuration.ConfigurationUpdateAccess',
+        [mkProp('nodepath', '/org.openoffice.Office.Writer/Comparison')]);
+      saved = { Mode: access.getByName('Mode'), UseRSID: access.getByName('UseRSID'),
+        IgnorePieces: access.getByName('IgnorePieces') };
+      // SwCompareMode::ByChar = 2. Do not erase isolated matching characters
+      // or let unrelated documents' RSIDs determine Chinese granularity.
+      access.replaceByName('Mode', shortAny(2));
+      access.replaceByName('UseRSID', false);
+      access.replaceByName('IgnorePieces', false);
+      access.commitChanges();
+      stage = 'load-revised';
+      if (p.__reqId) post('progress', { reqId: p.__reqId, stage: 'loading' });
+      const loaded = EXEC.load_document({ bytes: p.revisedBytes, name: 'revised.docx', authorName: previousAuthor });
+      if (!loaded.success) throw new Error(loaded.message || stage);
+      if (docKindOf() !== 'writer') throw new Error('comparison requires Writer documents');
+      stage = 'normalize-revised';
+      if (p.__reqId) post('progress', { reqId: p.__reqId, stage: 'normalizing' });
+      if (countRedlines() > 0) {
+        const resolved = EXEC.resolve_all_revisions({ action: 'accept' });
+        if (!resolved.success || resolved.remaining !== 0) throw new Error('could not accept existing revisions');
+      }
+      xModel.setPropertyValue('RecordChanges', false);
+      stage = 'compare';
+      if (p.__reqId) post('progress', { reqId: p.__reqId, stage: 'comparing' });
+      setRedlineAuthor(String(p.authorName || '版本对比'));
+      // Native SwDoc::CompareDoc reads the source with ShowInsert, i.e. its
+      // final projection. Do not load/export the baseline in a visible model:
+      // that adds two full-document layout passes for large documents.
+      const compared = compareWithBytes(p.baseBytes, 'file:///tmp/awd_standalone_base.docx');
+      if (!compared.success) return { success: false, stage: stage, message: compared.message };
+      // dev-board#1126 需求一：把同起点的整删整插对重写成字符级最小修订。
+      // best-effort：失败只是保留原生形态，绝不让整次比较报错。
+      let refined = 0;
+      if (p.refineMinimal !== false) {
+        stage = 'refine-minimal';
+        if (p.__reqId) post('progress', { reqId: p.__reqId, stage: 'refining' });
+        try { refined = refineComparisonRedlines(String(p.authorName || '版本对比')); }
+        catch (e) { log('refineComparisonRedlines failed: ' + errStr(e)); refined = 0; }
+      }
+      // Native CompareDocuments turns recording off after producing redlines.
+      // Subsequent user edits follow the editor's normal explicit toggle.
+      return { success: true, redlineCount: compared.redlineCount, refined: refined };
+    } catch (e) { return { success: false, stage: stage, message: errStr(e) }; }
+    finally {
+      humanAuthor = previousAuthor;
+      try { setRedlineAuthor(previousAuthor); } catch (e) {}
+      if (access && saved) {
+        access.replaceByName('Mode', saved.Mode == null ? saved.Mode : shortAny(saved.Mode));
+        access.replaceByName('UseRSID', saved.UseRSID);
+        access.replaceByName('IgnorePieces', saved.IgnorePieces);
+        access.commitChanges();
+      }
+    }
+  },
+  // ==================== 三方合并（合并比对稿）====================
+  // spec docs/superpowers/specs/2026-09-14-docx-three-way-merge-design.md §5.1。
+  // 「整条链必须在一条 worker 命令里跑完」是硬约束：execCommand 每条命令开头都会
+  // 把修订署名重置回 humanAuthor / AI WorkDeck（见 setRedlineAuthor 的说明），
+  // 跨命令切作者必然失效——spike 第一轮两侧修订全签成「本地用户」就是这么来的。
+  //
+  // 链路：① 载入另一侧 → 以对方署名与共同的上一版比较 → 只为收集「只改了格式」
+  // 的段；② 载入主线侧 → 以主线署名与共同的上一版比较（主线侧的改动成为带作者的
+  // 字符级修订，含表格/批注/格式）；③ 用后端给的 mainChunks 建「基线段序 → 当前
+  // 段序」映射并逐段核对归一文字，对不上就整份退回（stage:'align'）；④ 以对方
+  // 署名按 otherChunks 里 conflict=false 的块**从后往前**重放；⑤ 恢复 humanAuthor。
+  // 同一段两边都改了的块不重放——正文里只留主线侧那一版，另一侧的文字交给面板
+  // 的三选一（merge_take_other）。
+  // 结果留在实例里可编辑：**不派发 .uno:EditDoc**（真机实测该命令在 r5 上根本
+  // 不生效，版本对比标签页的只读靠的是「没有保存路径」）。
+  build_merge_draft(p) {
+    const t0 = Date.now();
+    const elapsedMs = {};
+    const restoreAuthor = function () { try { setRedlineAuthor(humanAuthor); } catch (e) {} };
+    const fail = function (stage, message) {
+      restoreAuthor();
+      elapsedMs.total = Date.now() - t0;
+      return { success: false, stage: stage, message: String(message || ''), elapsedMs: elapsedMs };
+    };
+    const plan = (p && p.plan) || {};
+    const mainChunks = Array.isArray(plan.mainChunks) ? plan.mainChunks : [];
+    const otherChunks = Array.isArray(plan.otherChunks) ? plan.otherChunks : [];
+    const baseUnits = Array.isArray(p && p.baseUnits) ? p.baseUnits : [];
+    const mainAuthor = String((p && p.mainAuthor) || '');
+    const otherAuthor = String((p && p.otherAuthor) || '');
+    const name = String((p && p.name) || 'merge.docx');
+    if (!baseUnits.length) return fail('align', 'baseUnits 为空，无法核对对齐');
+
+    // 基线单元序列的两张索引：单元下标 ↔ 正文段落序（表格单元不占段落序）。
+    const paraOrdOfUnit = [];
+    const unitOfParaOrd = [];
+    const baseParaNorm = [];
+    for (let i = 0; i < baseUnits.length; i++) {
+      const key = String((baseUnits[i] && baseUnits[i].key) || '');
+      if (key.charAt(0) === 'p') {
+        const ord = unitOfParaOrd.length;
+        paraOrdOfUnit[i] = ord;
+        unitOfParaOrd.push(i);
+        baseParaNorm.push(String((baseUnits[i] && baseUnits[i].norm) || ''));
+      } else paraOrdOfUnit[i] = -1;
+    }
+    const unitsIn = function (c) {
+      const out = [];
+      for (let i = Number(c.baseStart); i < Number(c.baseEnd) && i < baseUnits.length; i++) {
+        out.push({ index: i, key: String((baseUnits[i] && baseUnits[i].key) || ''), paraOrd: paraOrdOfUnit[i] });
+      }
+      return out;
+    };
+    const paraOrdsIn = function (c) {
+      return unitsIn(c).filter(function (u) { return u.paraOrd >= 0; }).map(function (u) { return u.paraOrd; });
+    };
+
+    // ① 另一侧「只改了格式、没改文字」的段：文字重放带不过来，只能列出来让律师
+    // 手动套（面板第 3 块）。spec §5.1 原设想用 .uno:CompareDocuments 的格式类修订
+    // 来收集，真机实测那条路走不通（见 paragraphScan 的说明），改成载入另一侧与
+    // 共同的上一版各扫一遍段落格式指纹，按 otherChunks 对齐段序后逐段比。
+    let t = Date.now();
+    let ld = EXEC.load_document({ bytes: p && p.otherBytes, name: name });
+    if (!ld || ld.success !== true || ld.empty) return fail('load-other', (ld && ld.message) || '另一侧的稿是空的');
+    const otherScan = paragraphScan();
+    elapsedMs.loadOther = Date.now() - t;
+    t = Date.now();
+    ld = EXEC.load_document({ bytes: p && p.baseBytes, name: name });
+    if (!ld || ld.success !== true || ld.empty) return fail('load-base', (ld && ld.message) || '共同的上一版是空的');
+    const baseScan = paragraphScan();
+    elapsedMs.loadBase = Date.now() - t;
+    t = Date.now();
+    // 基线段序 → 另一侧段序（另一侧删掉的段在它那边不存在，插入的段让后面的段往后挪）。
+    const otherTouched = Object.create(null);
+    const otherShifts = [];
+    otherChunks.slice().sort(function (a, b) { return Number(a.baseStart) - Number(b.baseStart); })
+      .forEach(function (c) {
+        const ords = paraOrdsIn(c);
+        ords.forEach(function (o) { otherTouched[o] = true; });
+        const type = String(c.type || 'MODIFY');
+        const texts = Array.isArray(c.texts) ? c.texts : [];
+        if (type === 'INSERT') {
+          let anchor = unitOfParaOrd.length;
+          for (let i2 = Number(c.baseStart); i2 < baseUnits.length; i2++) {
+            if (paraOrdOfUnit[i2] >= 0) { anchor = paraOrdOfUnit[i2]; break; }
+          }
+          if (texts.length) otherShifts.push({ from: anchor, delta: texts.length });
+        } else if (type === 'DELETE') {
+          if (ords.length) otherShifts.push({ from: ords[ords.length - 1] + 1, delta: -ords.length });
+        } else if (ords.length && texts.length !== ords.length) {
+          otherShifts.push({ from: ords[ords.length - 1] + 1, delta: texts.length - ords.length });
+        }
+      });
+    const otherParaIndexOf = function (ord) {
+      let d = 0;
+      for (let i2 = 0; i2 < otherShifts.length; i2++) { if (ord >= otherShifts[i2].from) d += otherShifts[i2].delta; }
+      return ord + d;
+    };
+    const formatOnlyOrds = [];
+    for (let ord = 0; ord < baseScan.length; ord++) {
+      if (otherTouched[ord]) continue;                       // 文字已重放，格式不必再单列
+      const oi = otherParaIndexOf(ord);
+      const o = otherScan[oi];
+      if (!o || o.norm !== baseScan[ord].norm) continue;     // 对不上就不猜
+      if (o.fmt !== baseScan[ord].fmt) formatOnlyOrds.push(ord);
+    }
+    elapsedMs.compareOther = Date.now() - t;
+
+    // ② 主线侧 vs 共同的上一版：主线的改动成为带作者的字符级修订。
+    t = Date.now();
+    ld = EXEC.load_document({ bytes: p && p.mainBytes, name: name });
+    if (!ld || ld.success !== true || ld.empty) return fail('load-main', (ld && ld.message) || '主稿那一版是空的');
+    elapsedMs.loadMain = Date.now() - t;
+    t = Date.now();
+    try { setRedlineAuthor(mainAuthor); } catch (e) {}
+    const cmp = compareWithBytes(p && p.baseBytes, 'file:///tmp/awd_merge_main.docx');
+    if (!cmp.success) return fail('compare-main', cmp.message);
+    elapsedMs.compareMain = Date.now() - t;
+
+    // ③ 基线段序 → 当前段序：主线侧删掉的段仍留在流里（删除修订），只有新增的
+    // 段会让后面的段序往后挪。未被主线改过的段逐一核对归一文字，对不上即退回。
+    const mainTouched = Object.create(null);
+    const shifts = [];
+    mainChunks.forEach(function (c) {
+      const ords = paraOrdsIn(c);
+      ords.forEach(function (o) { mainTouched[o] = true; });
+      const type = String(c.type || 'MODIFY');
+      const texts = Array.isArray(c.texts) ? c.texts : [];
+      if (type === 'INSERT') {
+        let anchor = unitOfParaOrd.length;
+        for (let i = Number(c.baseStart); i < baseUnits.length; i++) {
+          if (paraOrdOfUnit[i] >= 0) { anchor = paraOrdOfUnit[i]; break; }
+        }
+        if (texts.length) shifts.push({ from: anchor, delta: texts.length });
+      } else if (type !== 'DELETE') {
+        const extra = texts.length - ords.length;
+        if (extra > 0 && ords.length) shifts.push({ from: ords[ords.length - 1] + 1, delta: extra });
+      }
+    });
+    const curParaIndexOf = function (ord) {
+      let d = 0;
+      for (let i = 0; i < shifts.length; i++) { if (ord >= shifts[i].from) d += shifts[i].delta; }
+      return ord + d;
+    };
+    let expectedTotal = unitOfParaOrd.length;
+    shifts.forEach(function (s) { expectedTotal += s.delta; });
+    const curParas = bodyParagraphStrings();
+    if (curParas.length !== expectedTotal) {
+      return fail('align', '段数与共同的上一版对不上（当前 ' + curParas.length + '，按计划应为 ' + expectedTotal + '）');
+    }
+    for (let ord = 0; ord < baseParaNorm.length; ord++) {
+      if (mainTouched[ord]) continue;
+      if (mergeNormalize(curParas[curParaIndexOf(ord)]) !== baseParaNorm[ord]) {
+        return fail('align', '第 ' + (ord + 1) + ' 段与共同的上一版对不上');
+      }
+    }
+
+    // ④ 以对方署名重放另一侧的改动（从后往前，前面的段序才不会漂）。
+    t = Date.now();
+    try { setRedlineAuthor(otherAuthor); } catch (e) {}
+    try { xModel.setPropertyValue('RecordChanges', true); } catch (e) {}
+    let replayed = 0;
+    let replayErr = null;
+    const rangeOfUnit = function (u) {
+      if (u.paraOrd >= 0) return paraAt(curParaIndexOf(u.paraOrd));
+      const ref = parseCellUnitKey(u.key);
+      return ref ? tableCellRange(ref) : null;
+    };
+    const deleteUnit = function (u) {
+      if (u.paraOrd >= 0) {
+        const para = paraAt(curParaIndexOf(u.paraOrd));
+        if (!para) return false;
+        const body = para.getText();
+        const cur = body.createTextCursorByRange(para.getStart());
+        cur.gotoEndOfParagraph(true);
+        try { cur.goRight(1, true); } catch (e) {}   // 连段末的换行一起选中 = 整段消失
+        cur.setString('');
+        return true;
+      }
+      const range = rangeOfUnit(u);
+      return range ? writeTrackedText(range, '') : false;
+    };
+    const insertParasAfter = function (prevOrd, texts) {
+      const body = xModel.getText();
+      let cur;
+      if (prevOrd < 0) cur = body.createTextCursorByRange(body.getStart());
+      else {
+        const anchor = paraAt(curParaIndexOf(prevOrd));
+        if (!anchor) return false;
+        cur = body.createTextCursorByRange(anchor.getEnd());
+      }
+      for (let i = 0; i < texts.length; i++) {
+        body.insertControlCharacter(cur, css.text.ControlCharacter.PARAGRAPH_BREAK, false);
+        body.insertString(cur, String(texts[i] == null ? '' : texts[i]), false);
+      }
+      return true;
+    };
+    const replayable = otherChunks.filter(function (c) { return !c.conflict; })
+      .slice().sort(function (a, b) { return Number(b.baseStart) - Number(a.baseStart); });
+    for (let k = 0; k < replayable.length && !replayErr; k++) {
+      const c = replayable[k];
+      const type = String(c.type || 'MODIFY');
+      const texts = Array.isArray(c.texts) ? c.texts : [];
+      const units = unitsIn(c);
+      try {
+        if (type === 'INSERT') {
+          let prevOrd = -1;
+          for (let i = Number(c.baseStart) - 1; i >= 0; i--) {
+            if (paraOrdOfUnit[i] >= 0) { prevOrd = paraOrdOfUnit[i]; break; }
+          }
+          if (!insertParasAfter(prevOrd, texts)) { replayErr = '插入新段失败（锚点段 ' + prevOrd + '）'; break; }
+          replayed += texts.length;
+        } else if (type === 'DELETE') {
+          for (let i = units.length - 1; i >= 0; i--) {
+            if (!deleteUnit(units[i])) { replayErr = '删除单元失败: ' + units[i].key; break; }
+            replayed++;
+          }
+        } else {
+          // 多出来的基线单元先清掉，多出来的新文本追加成新段，其余一一对应改写。
+          for (let i = units.length - 1; i >= texts.length; i--) {
+            if (!deleteUnit(units[i])) { replayErr = '删除单元失败: ' + units[i].key; break; }
+            replayed++;
+          }
+          if (!replayErr && texts.length > units.length && units.length) {
+            const last = units[units.length - 1];
+            if (last.paraOrd >= 0 && !insertParasAfter(last.paraOrd, texts.slice(units.length))) {
+              replayErr = '追加新段失败: ' + last.key;
+            } else replayed += texts.length - units.length;
+          }
+          const pairs = Math.min(units.length, texts.length);
+          for (let i = pairs - 1; i >= 0 && !replayErr; i--) {
+            const range = rangeOfUnit(units[i]);
+            if (!range) { replayErr = '找不到要改写的单元: ' + units[i].key; break; }
+            if (!writeTrackedText(range, texts[i])) { replayErr = '改写单元失败: ' + units[i].key; break; }
+            replayed++;
+          }
+        }
+      } catch (e) { replayErr = errStr(e); }
+    }
+    if (replayErr) return fail('replay', replayErr);
+    elapsedMs.replay = Date.now() - t;
+
+    // ⑤ 恢复用户本人的署名，回报结果。
+    restoreAuthor();
+    invalidateParaIndex();
+    const listed = EXEC.list_revisions({ limit: 500 });
+    const revisions = (listed && listed.revisions) || [];
+    let mainCount = 0, otherCount = 0;
+    revisions.forEach(function (r) {
+      const a = String(r.author || '');
+      if (a === mainAuthor) mainCount++;
+      else if (a === otherAuthor) otherCount++;
+    });
+    const formatOnly = formatOnlyOrds.map(function (ord) {
+      return { paraKey: curParaIndexOf(ord), preview: String(baseScan[ord].norm).slice(0, 40) };
+    });
+    const conflicts = [];
+    otherChunks.forEach(function (c) {
+      if (!c.conflict) return;
+      unitsIn(c).forEach(function (u) { if (u.key) conflicts.push(u.key); });
+    });
+    elapsedMs.total = Date.now() - t0;
+    return {
+      success: true, name: name, revisions: revisions, count: revisions.length,
+      mainCount: mainCount, otherCount: otherCount, replayed: replayed,
+      conflicts: conflicts, formatOnly: formatOnly, elapsedMs: elapsedMs,
+    };
+  },
+  // 同一段两边都改了时的「用律师乙的」：拒掉该段现有的（主线侧）修订让文字回到
+  // 共同的上一版，切成对方的署名把对方那一版文字写进去，再把刚产生的修订接受掉。
+  // 同样必须在一条命令里做完（署名）。「用你的」不需要新原语——直接接受该段修订。
+  merge_take_other(p) {
+    if (!isWriterDoc()) return tableFail(NOT_TEXT_DOC_MSG);
+    const paraKey = Number(p && p.paraKey);
+    if (!(paraKey >= 0)) return tableFail('段落序非法: ' + (p && p.paraKey));
+    const text = String((p && p.text) == null ? '' : p.text);
+    const author = String((p && p.author) || '');
+    const revsIn = function () {
+      const listed = EXEC.list_revisions({ limit: 500 });
+      return ((listed && listed.revisions) || []).filter(function (r) { return Number(r.paraKey) === paraKey; });
+    };
+    const resolve = function (revs, action) {
+      if (!revs.length) return { success: true, resolved: 0 };
+      const args = { indices: revs.map(function (r) { return r.index; }), action: action };
+      return runRevisionResolution(function () { return EXEC.resolve_revisions(args); }, args, 'resolve_revisions');
+    };
+    const rej = resolve(revsIn(), 'reject');
+    if (!rej || rej.success !== true) return tableFail('拒绝该段原有修订失败：' + ((rej && rej.message) || ''));
+    invalidateParaIndex();
+    try { setRedlineAuthor(author); } catch (e) {}
+    let wrote = false;
+    try {
+      try { xModel.setPropertyValue('RecordChanges', true); } catch (e) {}
+      const para = paraAt(paraKey);
+      if (para) wrote = writeTrackedText(para, text);
+    } catch (e) { wrote = false; }
+    if (!wrote) { try { setRedlineAuthor(humanAuthor); } catch (e) {} return tableFail('写入另一侧的文字失败（第 ' + (paraKey + 1) + ' 段）'); }
+    invalidateParaIndex();
+    const acc = resolve(revsIn(), 'accept');
+    try { setRedlineAuthor(humanAuthor); } catch (e) {}
+    invalidateParaIndex();
+    const left = revsIn();
+    const para2 = paraAt(paraKey);
+    return {
+      success: left.length === 0, paraKey: paraKey,
+      revisionCount: (acc && acc.resolved) || 0, remainingInParagraph: left.length,
+      text: para2 ? String(para2.getString() || '') : '',
+    };
+  },
+  // [逐段溯源] 表格里的「当前这一格」。段落级用 get_review_context 的
+  // paragraphIndex，xlsx 这一条与 pptx 的 slide_get_current 是它的对应物。
+  sheet_get_active_cell() {
+    if (!isCalcDoc()) return { success: false, error: NOT_SPREADSHEET_MSG, message: NOT_SPREADSHEET_MSG };
+    let sheet = '';
+    try { sheet = String(ctrl.getActiveSheet().getName() || ''); } catch (e) {}
+    let col = null, row = null;
+    try {
+      const sel = ctrl.getSelection();
+      if (sel && typeof sel.getCellAddress === 'function') {
+        const a = sel.getCellAddress(); col = a.Column; row = a.Row;
+      } else if (sel && typeof sel.getRangeAddress === 'function') {
+        const a = sel.getRangeAddress(); col = a.StartColumn; row = a.StartRow;
+      } else if (sel && typeof sel.getByIndex === 'function' && sel.getCount && sel.getCount() > 0) {
+        const a = sel.getByIndex(0).getRangeAddress(); col = a.StartColumn; row = a.StartRow;
+      }
+    } catch (e) { return { success: false, error: errStr(e), message: errStr(e) }; }
+    if (!(col >= 0) || !(row >= 0)) return { success: false, error: '取不到当前单元格', message: '取不到当前单元格' };
+    return { success: true, sheet: sheet, address: colLetterOf(col) + (row + 1) };
+  },
+  // [溯源光标条] 演示文稿里的「当前这一页」（1 基，与 slide_goto 同口径）。
+  slide_get_current() {
+    if (!isImpressDoc()) return slideFail(NOT_PRESENTATION_MSG);
+    try {
+      const page = ctrl.getCurrentPage ? ctrl.getCurrentPage() : null;
+      if (!page) return slideFail('取不到当前页');
+      let n = NaN;
+      try { n = Number(page.getPropertyValue('Number')); } catch (e) {}
+      if (!(n >= 1)) {
+        const i = locatePageIndex(page, {});
+        if (i >= 0) n = i + 1;
+      }
+      if (!(n >= 1)) return slideFail('取不到当前页');
+      return { success: true, slideNumber: n };
+    } catch (e) { return slideFail(errStr(e)); }
+  },
+  // ==================== Calc 电子表格原语（sheet_*） ====================
+  // 与 doc_* 平行的 xlsx 操作面。Calc 没有 Writer 的修订（redline）机制，写入
+  // 即生效；安全网是 undo（Calc 的 UndoManager 同样可用）与后端文档检查点。
+  // [表格·看] 工作表清单 + 每张表的已用区域。打开 xlsx 后的第一步。
+  sheet_get_overview() {
+    if (!isCalcDoc()) return { success: false, message: NOT_SPREADSHEET_MSG };
+    const sheets = xModel.getSheets();
+    let activeName = '';
+    try { activeName = ctrl.getActiveSheet().getName(); } catch (e) {}
+    const out = [];
+    const n = Math.min(sheets.getCount(), 50);
+    for (let i = 0; i < n; i++) {
+      const s = sheets.getByIndex(i);
+      const item = { index: i, name: s.getName(), active: s.getName() === activeName };
+      try {
+        const addr = usedRangeAddress(s);
+        item.usedRange = sheetRangeName(addr);
+        item.rows = addr.EndRow - addr.StartRow + 1;
+        item.cols = addr.EndColumn - addr.StartColumn + 1;
+      } catch (e) { item.usedRangeErr = errStr(e); }
+      out.push(item);
+    }
+    return { success: true, sheetCount: sheets.getCount(), activeSheet: activeName, sheets: out };
+  },
+  // [表格·看] 读取区域单元格值。数值/公式结果返回 number（日期是序列数），公式串
+  // 另列在 formulas。range 缺省 = 该表已用区域。超上限窗口化返回，提示分块读。
+  // withFormat=true 另回 format（按行分组的格式摘要），供新增内容对齐既有格式。
+  sheet_read_range(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return { success: false, message: r0.error };
+    const sheet = r0.sheet;
+    let range;
+    if (p && p.range) {
+      range = sheetRange(sheet, p.range);
+      if (!range) return { success: false, message: '无效的区域: ' + p.range + '（应为 A1 或 A1:D20 形式）' };
+    } else {
+      try { range = sheet.getCellRangeByName(sheetRangeName(usedRangeAddress(sheet))); }
+      catch (e) { return { success: false, message: '读取已用区域失败: ' + errStr(e) }; }
+    }
+    const addr = range.getRangeAddress();
+    const nRows = addr.EndRow - addr.StartRow + 1;
+    const nCols = addr.EndColumn - addr.StartColumn + 1;
+    const MAX_CELLS = 2000;
+    const colCap = Math.min(nCols, 100);
+    const rowCap = Math.min(nRows, Math.max(1, Math.floor(MAX_CELLS / colCap)));
+    const rows = [];
+    const formulas = [];
+    for (let r = 0; r < rowCap; r++) {
+      const row = [];
+      for (let c = 0; c < colCap; c++) {
+        const cell = range.getCellByPosition(c, r);
+        row.push(readCellOut(cell));
+        try {
+          if (enumEq(cell.getType(), css.table.CellContentType.FORMULA) && formulas.length < 100) {
+            formulas.push({ cell: colLetterOf(addr.StartColumn + c) + (addr.StartRow + r + 1), formula: cell.getFormula() });
+          }
+        } catch (e) {}
+      }
+      rows.push(row);
+    }
+    const res = { success: true, sheet: sheet.getName(), range: sheetRangeName(addr), rows: rows };
+    if (formulas.length) res.formulas = formulas;
+    if (rowCap < nRows || colCap < nCols) {
+      res.truncated = true;
+      res.note = '区域超过上限（' + MAX_CELLS + ' 格），只返回前 ' + rowCap + ' 行 × ' + colCap + ' 列，请缩小 range 分块读取';
+    }
+    // withFormat：按「格式相同的连续行」分组给出每列与默认格式不同的关键项。表格天然
+    // 是「表头一组 + 数据行一组」，分组后几十行数据只占一条，比逐格列省一个量级；
+    // 不按整列压缩——表头与数据行同列格式必然不同，整列一致几乎不成立。
+    if (p && p.withFormat) {
+      const MAX_FMT_CELLS = 400;
+      const fmtRows = Math.min(rowCap, Math.max(1, Math.floor(MAX_FMT_CELLS / colCap)));
+      const def = sheetDefaultFormat();
+      const groups = [];
+      let prev = null;
+      for (let r = 0; r < fmtRows; r++) {
+        const absRow = addr.StartRow + r;
+        const cols = {};
+        for (let c = 0; c < colCap; c++) {
+          const d = sheetFormatDiff(sheetRawFormat(range.getCellByPosition(c, r)), def);
+          if (Object.keys(d).length) cols[colLetterOf(addr.StartColumn + c)] = d;
+        }
+        let heightPt = null;
+        try {
+          const rowObj = sheet.getRows().getByIndex(absRow);
+          if (!rowObj.getPropertyValue('OptimalHeight')) heightPt = Math.round(Number(rowObj.getPropertyValue('Height')) * 72 / 2540 * 10) / 10;
+        } catch (e) {}
+        const key = JSON.stringify([cols, heightPt]);
+        if (prev && prev.key === key && prev.last === absRow - 1) { prev.last = absRow; continue; }
+        prev = { key: key, first: absRow, last: absRow, cols: cols, heightPt: heightPt };
+        groups.push(prev);
+      }
+      res.format = groups
+        .filter(function (g) { return Object.keys(g.cols).length || g.heightPt != null; })
+        .map(function (g) {
+          const o = { rows: g.first === g.last ? String(g.first + 1) : (g.first + 1) + '-' + (g.last + 1), cols: g.cols };
+          if (g.heightPt != null) o.rowHeightPt = g.heightPt;
+          return o;
+        });
+      res.formatNote = '按格式相同的连续行分组，每列只列与默认格式不同的项（键名同 sheet_format_cells 参数；borders 为 all/none 或 t/b/l/r 子集）；未列出的行或列即默认格式。';
+      if (fmtRows < rowCap) {
+        res.formatTruncated = true;
+        res.formatNote += '格式只读了前 ' + fmtRows + ' 行（上限 ' + MAX_FMT_CELLS + ' 格），需要更多请缩小 range。';
+      }
+    }
+    return res;
+  },
+  // [表格·写] 从 startCell 起按二维数组批量写入。number/数字样式字符串落数值，
+  // '=' 开头落公式，其余落文本；null 跳过不动，'' 清空该格。写完选中写过的区域
+  // 并回读首行做验证回路。追加到表格下方的空行沿用上一行格式（inheritFormat=false 关）。
+  sheet_write_cells(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return { success: false, message: r0.error };
+    const sheet = r0.sheet;
+    const rows = p && p.rows;
+    if (!Array.isArray(rows) || !rows.length) return { success: false, message: 'sheet_write_cells requires {rows: any[][]}' };
+    if (rows.length > 500) return { success: false, message: '一次最多写 500 行，请分批写入' };
+    const anchor = sheetRange(sheet, String(p.startCell || 'A1'));
+    if (!anchor) return { success: false, message: '无效的起始单元格: ' + p.startCell };
+    const a0 = anchor.getRangeAddress();
+    let nCols = 1;
+    for (let i = 0; i < rows.length; i++) if (Array.isArray(rows[i])) nCols = Math.max(nCols, rows[i].length);
+    if (nCols > 100) return { success: false, message: '一次最多写 100 列，请分批写入' };
+    let written = 0;
+    const formulaCells = []; // 写完统一验错：解析失败/求值出错的公式要报给 AI 自纠
+    // 追加到表格下方时沿用上一行格式（dev-board#844，判定见 shouldInheritRowFormat）。
+    // inheritFormat 缺省开，显式 false 才关。逐行判定、逐行级联：多行追加时第 2 行
+    // 看的「上一行」就是刚写好的第 1 行。
+    const inherit = !(p && p.inheritFormat === false);
+    const formatInherited = [];
+    // 抄格式是一串属性写入：摘下修改监听器（每条写入一次 35ms 回调，见
+    // suspendModifyListener），并把值和格式收进同一个撤销组——撤销一次，新行连同
+    // 它的格式一起退掉，不留一行空着但带边框的格子。
+    let um = null;
+    try { um = xModel.getUndoManager(); um.enterUndoContext('写入单元格'); } catch (e) { um = null; }
+    lockModel();
+    try {
+    for (let r = 0; r < rows.length; r++) {
+      const line = Array.isArray(rows[r]) ? rows[r] : [rows[r]];
+      const rowAbs = a0.StartRow + r;
+      if (inherit && line.length) {
+        const c0 = a0.StartColumn, c1 = a0.StartColumn + line.length - 1;
+        if (sheetRowSpanEmpty(sheet, rowAbs, c0, c1) && shouldInheritRowFormat(sheet, rowAbs, c0, c1)) {
+          for (let c = c0; c <= c1; c++) {
+            try { copyCellFormat(sheet.getCellByPosition(c, rowAbs - 1), sheet.getCellByPosition(c, rowAbs)); } catch (e) {}
+          }
+          copyRowHeight(sheet, rowAbs - 1, rowAbs);
+          formatInherited.push({ row: rowAbs + 1, from: rowAbs });
+        }
+      }
+      for (let c = 0; c < line.length; c++) {
+        const v = line[c];
+        if (v == null) continue;
+        const cell = sheet.getCellByPosition(a0.StartColumn + c, a0.StartRow + r);
+        if (typeof v === 'number') cell.setValue(v);
+        else if (typeof v === 'boolean') cell.setValue(v ? 1 : 0);
+        else {
+          const s = String(v);
+          if (s.charAt(0) === '=') {
+            cell.setFormula(normalizeFormula(s));
+            formulaCells.push({ cell: cell, name: colLetterOf(a0.StartColumn + c) + (a0.StartRow + r + 1), input: s });
+          }
+          else if (SHEET_NUMERIC_RE.test(s.trim())) cell.setValue(Number(s.trim()));
+          else cell.setString(s);
+        }
+        written++;
+      }
+    }
+    } finally {
+      unlockModel();
+      if (um) { try { um.leaveUndoContext(); } catch (e) {} }
+    }
+    const formulaErrors = [];
+    for (let i = 0; i < formulaCells.length && formulaErrors.length < 20; i++) {
+      try {
+        const err = formulaCells[i].cell.getError();
+        if (err) formulaErrors.push({ cell: formulaCells[i].name, formula: formulaCells[i].input, errorCode: err, display: formulaCells[i].cell.getString() });
+      } catch (e) {}
+    }
+    const wrote = sheetRangeName({
+      StartColumn: a0.StartColumn, StartRow: a0.StartRow,
+      EndColumn: a0.StartColumn + nCols - 1, EndRow: a0.StartRow + rows.length - 1,
+    });
+    try { ctrl.select(sheet.getCellRangeByName(wrote)); } catch (e) {} // 拟人：用户看到写入落点
+    const firstRowAfterWrite = [];
+    try {
+      const vr = sheet.getCellRangeByName(wrote);
+      for (let c = 0; c < Math.min(nCols, 10); c++) firstRowAfterWrite.push(readCellOut(vr.getCellByPosition(c, 0)));
+    } catch (e) {}
+    const res = { success: true, sheet: sheet.getName(), range: wrote, cellsWritten: written, firstRowAfterWrite: firstRowAfterWrite };
+    if (formatInherited.length) {
+      res.formatInherited = formatInherited;
+      res.formatNote = '新写入的行位于表格下方且原本为空，已沿用上一行的格式（字体/字号/对齐/数字格式/边框/底色/行高）；from 是被沿用的行号。不需要时传 inheritFormat=false。';
+    }
+    if (formulaErrors.length) {
+      res.formulaErrors = formulaErrors;
+      res.note = formulaErrors.length + ' 个公式出错（引擎为 LibreOffice 24.2：不支持 XLOOKUP 等新函数，用 VLOOKUP 或 INDEX+MATCH 改写；函数名必须是英文）。请修正后用 sheet_write_cells 重写这些单元格。';
+    }
+    return res;
+  },
+  // [表格·选] 选中一个区域（视图滚过去、选区亮出来——用户看得见 AI 在操作哪里）。
+  sheet_select_range(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return { success: false, message: r0.error };
+    const range = sheetRange(r0.sheet, String(p.range || ''));
+    if (!range) return { success: false, message: '无效的区域: ' + (p.range || '(空)') };
+    try { ctrl.select(range); } catch (e) { return { success: false, message: '选中失败: ' + errStr(e) }; }
+    const addr = range.getRangeAddress();
+    return {
+      success: true, sheet: r0.sheet.getName(), range: sheetRangeName(addr),
+      topLeftText: String(range.getCellByPosition(0, 0).getString() || ''),
+    };
+  },
+  // [表格·格式] 区域格式：字体/字号/加粗/斜体/下划线/字色/底色/水平垂直对齐/
+  // 自动换行/数字格式。CJK 走 Asian/Complex 姊妹属性（setCharProp）。
+  sheet_format_cells(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return { success: false, message: r0.error };
+    const range = sheetRange(r0.sheet, String(p.range || ''));
+    if (!range) return { success: false, message: '无效的区域: ' + (p.range || '(空)') };
+    const applied = {};
+    if (p.bold != null) { setCharProp(range, 'CharWeight', p.bold ? css.awt.FontWeight.BOLD : css.awt.FontWeight.NORMAL); applied.bold = !!p.bold; }
+    if (p.italic != null) { setCharProp(range, 'CharPosture', p.italic ? css.awt.FontSlant.ITALIC : css.awt.FontSlant.NONE); applied.italic = !!p.italic; }
+    if (p.underline != null) { range.setPropertyValue('CharUnderline', p.underline ? css.awt.FontUnderline.SINGLE : css.awt.FontUnderline.NONE); applied.underline = !!p.underline; }
+    if (p.fontSize != null) { setCharProp(range, 'CharHeight', Number(p.fontSize)); applied.fontSize = Number(p.fontSize); }
+    if (p.fontName != null && String(p.fontName) !== '') { setCharProp(range, 'CharFontName', String(p.fontName)); applied.fontName = String(p.fontName); }
+    if (p.color != null) {
+      const c = parseColor(p.color, { auto: -1 });
+      if (c == null) return { success: false, message: 'bad color: ' + p.color + ' (use #RRGGBB or auto)' };
+      range.setPropertyValue('CharColor', c); applied.color = String(p.color);
+    }
+    if (p.background != null) {
+      const c = parseColor(p.background, { none: -1 });
+      if (c == null) return { success: false, message: 'bad background: ' + p.background + ' (use #RRGGBB or none)' };
+      range.setPropertyValue('CellBackColor', c); applied.background = String(p.background);
+    }
+    if (p.hAlign != null) {
+      const m = { left: css.table.CellHoriJustify.LEFT, center: css.table.CellHoriJustify.CENTER, right: css.table.CellHoriJustify.RIGHT, standard: css.table.CellHoriJustify.STANDARD };
+      const v = m[String(p.hAlign).toLowerCase()];
+      if (v == null) return { success: false, message: 'bad hAlign: ' + p.hAlign + ' (left/center/right/standard)' };
+      range.setPropertyValue('HoriJustify', v); applied.hAlign = String(p.hAlign);
+    }
+    if (p.vAlign != null) {
+      // VertJustify 声明为 long（CellVertJustify2 常量 0..3）；个别引擎仍按
+      // short 校验，失败退 shortAny（PR#107 的 short 型属性教训）。
+      const m = { standard: 0, top: 1, center: 2, bottom: 3 };
+      const v = m[String(p.vAlign).toLowerCase()];
+      if (v == null) return { success: false, message: 'bad vAlign: ' + p.vAlign + ' (top/center/bottom/standard)' };
+      try { range.setPropertyValue('VertJustify', v); }
+      catch (e) { range.setPropertyValue('VertJustify', shortAny(v)); }
+      applied.vAlign = String(p.vAlign);
+    }
+    if (p.wrap != null) { range.setPropertyValue('IsTextWrapped', !!p.wrap); applied.wrap = !!p.wrap; }
+    if (p.numberFormat != null && String(p.numberFormat) !== '') {
+      const fmt = String(p.numberFormat);
+      try {
+        const formats = xModel.getNumberFormats();
+        const loc = new css.lang.Locale({ Language: '', Country: '', Variant: '' });
+        let key = formats.queryKey(fmt, loc, false);
+        if (key === -1) key = formats.addNew(fmt, loc);
+        range.setPropertyValue('NumberFormat', key);
+        applied.numberFormat = fmt;
+      } catch (e) { return { success: false, message: '数字格式无效: ' + fmt + ' — ' + errStr(e) }; }
+    }
+    if (Object.keys(applied).length === 0) return { success: false, message: 'no format params given' };
+    try { ctrl.select(range); } catch (e) {} // 拟人：让用户看到被格式化的区域
+    return { success: true, sheet: r0.sheet.getName(), range: sheetRangeName(range.getRangeAddress()), applied: applied };
+  },
+  // [表格·格式] 区域边框。preset: all（内外全部）/ outer（仅外框，内线清除）/
+  // none（全部清除）。同 Writer 表格走 TableBorder2（typedef 编组依赖 vendored
+  // zeta.js 的 TYPEDEF 分支，见 zetajs 编组硬规则）。
+  sheet_set_borders(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return { success: false, message: r0.error };
+    const range = sheetRange(r0.sheet, String(p.range || ''));
+    if (!range) return { success: false, message: '无效的区域: ' + (p.range || '(空)') };
+    const preset = String(p.preset || 'all').toLowerCase();
+    if (['all', 'outer', 'none'].indexOf(preset) === -1) return { success: false, message: 'bad preset: ' + preset + ' (all/outer/none)' };
+    const widthPt = Number(p.widthPt) || 0.75;
+    const widthMm = ptToMm100(widthPt);
+    const color = p.color != null ? parseColor(p.color, { black: 0 }) : 0;
+    if (color == null) return { success: false, message: 'bad color: ' + p.color + ' (use #RRGGBB)' };
+    const solid = (css.table.BorderLineStyle && css.table.BorderLineStyle.SOLID != null) ? css.table.BorderLineStyle.SOLID : 0;
+    const mk = function (on) {
+      return new css.table.BorderLine2({
+        Color: color, InnerLineWidth: 0, OuterLineWidth: 0, LineDistance: 0,
+        LineStyle: solid, LineWidth: on ? widthMm : 0,
+      });
+    };
+    const outer = mk(preset !== 'none');
+    const inner = mk(preset === 'all');
+    const tb = new css.table.TableBorder2({
+      TopLine: outer, BottomLine: outer, LeftLine: outer, RightLine: outer,
+      HorizontalLine: inner, VerticalLine: inner,
+      IsTopLineValid: true, IsBottomLineValid: true, IsLeftLineValid: true,
+      IsRightLineValid: true, IsHorizontalLineValid: true, IsVerticalLineValid: true,
+      Distance: 0, IsDistanceValid: false,
+    });
+    try { range.setPropertyValue('TableBorder2', tb); } catch (e) { return { success: false, message: '边框设置失败: ' + errStr(e) }; }
+    return {
+      success: true, sheet: r0.sheet.getName(), range: sheetRangeName(range.getRangeAddress()),
+      preset: preset, widthPt: preset === 'none' ? 0 : widthPt,
+    };
+  },
+  // [表格·格式] 行高列宽：作用于 range 覆盖到的整行/整列。autoFit* 优先于定值。
+  sheet_set_row_col(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return { success: false, message: r0.error };
+    const range = sheetRange(r0.sheet, String(p.range || ''));
+    if (!range) return { success: false, message: '无效的区域: ' + (p.range || '(空)') };
+    const applied = {};
+    try {
+      if (p.autoFitRows || p.rowHeightPt != null) {
+        const rows = range.getRows();
+        for (let i = 0; i < rows.getCount(); i++) {
+          const row = rows.getByIndex(i);
+          if (p.autoFitRows) row.setPropertyValue('OptimalHeight', true);
+          else { row.setPropertyValue('OptimalHeight', false); row.setPropertyValue('Height', ptToMm100(p.rowHeightPt)); }
+        }
+        if (p.autoFitRows) applied.autoFitRows = true; else applied.rowHeightPt = Number(p.rowHeightPt);
+      }
+      if (p.autoFitCols || p.colWidthPt != null) {
+        const cols = range.getColumns();
+        for (let i = 0; i < cols.getCount(); i++) {
+          const col = cols.getByIndex(i);
+          if (p.autoFitCols) col.setPropertyValue('OptimalWidth', true);
+          else col.setPropertyValue('Width', ptToMm100(p.colWidthPt));
+        }
+        if (p.autoFitCols) applied.autoFitCols = true; else applied.colWidthPt = Number(p.colWidthPt);
+      }
+    } catch (e) { return { success: false, message: '行高列宽设置失败: ' + errStr(e) }; }
+    if (Object.keys(applied).length === 0) return { success: false, message: 'no params given (rowHeightPt/colWidthPt/autoFitRows/autoFitCols)' };
+    return { success: true, sheet: r0.sheet.getName(), range: sheetRangeName(range.getRangeAddress()), applied: applied };
+  },
+  // [表格·结构] 工作表管理：add/rename/delete/move。add/move 的 position 是
+  // 0 开始的目标位置；delete 拒绝删除最后一张表。操作后返回最新工作表清单。
+  sheet_manage_sheets(p) {
+    if (!isCalcDoc()) return { success: false, message: NOT_SPREADSHEET_MSG };
+    const sheets = xModel.getSheets();
+    const op = String(p.op || '').toLowerCase();
+    const name = p.name != null ? String(p.name).trim() : '';
+    try {
+      if (op === 'add') {
+        if (!name) return { success: false, message: 'add 需要 {name}（新工作表名）' };
+        if (sheets.hasByName(name)) return { success: false, message: '工作表已存在: ' + name };
+        const pos = p.position != null ? Math.max(0, Math.min(Number(p.position), sheets.getCount())) : sheets.getCount();
+        sheets.insertNewByName(name, pos);
+        try { ctrl.setActiveSheet(sheets.getByName(name)); } catch (e) {}
+      } else if (op === 'rename') {
+        const newName = p.newName != null ? String(p.newName).trim() : '';
+        if (!name || !newName) return { success: false, message: 'rename 需要 {name, newName}' };
+        if (!sheets.hasByName(name)) return { success: false, message: '工作表不存在: ' + name };
+        if (sheets.hasByName(newName)) return { success: false, message: '目标名已存在: ' + newName };
+        sheets.getByName(name).setName(newName);
+      } else if (op === 'delete') {
+        if (!name) return { success: false, message: 'delete 需要 {name}' };
+        if (!sheets.hasByName(name)) return { success: false, message: '工作表不存在: ' + name };
+        if (sheets.getCount() <= 1) return { success: false, message: '不能删除最后一张工作表' };
+        sheets.removeByName(name);
+      } else if (op === 'move') {
+        if (!name) return { success: false, message: 'move 需要 {name}' };
+        if (!sheets.hasByName(name)) return { success: false, message: '工作表不存在: ' + name };
+        if (p.position == null) return { success: false, message: 'move 需要 {position}（0 开始的目标位置）' };
+        sheets.moveByName(name, Math.max(0, Math.min(Number(p.position), sheets.getCount())));
+      } else {
+        return { success: false, message: 'bad op: ' + op + ' (add/rename/delete/move)' };
+      }
+    } catch (e) { return { success: false, message: '工作表操作失败: ' + errStr(e) }; }
+    const list = [];
+    for (let i = 0; i < Math.min(sheets.getCount(), 50); i++) list.push(sheets.getByIndex(i).getName());
+    return { success: true, op: op, sheets: list };
+  },
+  // [表格·结构] 插入/删除整行整列。op: insert_rows/delete_rows/insert_cols/
+  // delete_cols；start 是 1 开始的行号或列标（'3' / 'B'）；count 默认 1。
+  // 插入发生在 start 位置之前（即新行/列占据 start 的位置）。
+  sheet_edit_rows_cols(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return { success: false, message: r0.error };
+    const sheet = r0.sheet;
+    const op = String(p.op || '').toLowerCase();
+    const count = Math.max(1, Math.min(Number(p.count) || 1, 100));
+    const isRow = op === 'insert_rows' || op === 'delete_rows';
+    const isCol = op === 'insert_cols' || op === 'delete_cols';
+    if (!isRow && !isCol) return { success: false, message: 'bad op: ' + op + ' (insert_rows/delete_rows/insert_cols/delete_cols)' };
+    let idx;
+    if (isRow) {
+      idx = /^\d+$/.test(String(p.start || '').trim()) ? Number(String(p.start).trim()) - 1 : -1;
+      if (idx < 0) return { success: false, message: '行号无效: ' + p.start + '（1 开始的数字）' };
+    } else {
+      idx = colIndexOf(p.start);
+      if (idx < 0) return { success: false, message: '列标无效: ' + p.start + "（如 'B' 或 1 开始的数字）" };
+    }
+    try {
+      const coll = isRow ? sheet.getRows() : sheet.getColumns();
+      if (op.indexOf('insert') === 0) coll.insertByIndex(idx, count);
+      else coll.removeByIndex(idx, count);
+    } catch (e) { return { success: false, message: '行列操作失败: ' + errStr(e) }; }
+    return { success: true, op: op, start: String(p.start), count: count, sheet: sheet.getName() };
+  },
+  // [表格·结构] 合并/取消合并单元格区域（XMergeable）。合并后内容以左上格为准。
+  sheet_merge_cells(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return { success: false, message: r0.error };
+    const range = sheetRange(r0.sheet, String(p.range || ''));
+    if (!range) return { success: false, message: '无效的区域: ' + (p.range || '(空)') };
+    const merge = p.merge !== false;
+    try { range.merge(merge); } catch (e) { return { success: false, message: '合并操作失败: ' + errStr(e) }; }
+    try { ctrl.select(range); } catch (e) {}
+    // 验证回路：XMergeable.getIsMerged() 读回实际状态（'IsMerged' 属性不存在）
+    let isMerged = merge;
+    try { isMerged = !!range.getIsMerged(); } catch (e) {}
+    return { success: true, range: sheetRangeName(range.getRangeAddress()), merged: isMerged };
+  },
+  // [表格·结构] 区域排序。byColumn 是列标（'B'，须在区域内），ascending 默认
+  // true，hasHeader 默认 true（首行不参与排序）。
+  // 为什么不走 XSortable.sort()：SortFields 需要 sequence<TableSortField>，而
+  // 引擎 WASM 没为该类型预编 embind 序列构造器（getEmbindSequenceCtor 直接抛，
+  // 裸 Array 又被猜成 sequence<any> 被 Calc 静默忽略——组 19 真机实证两条路都
+  // 死）。改为 worker 内读值 → JS 排 → 回写：值与公式文本随行整体移动；代价是
+  // 单元格格式不随行移动、公式相对引用不重定位（数值表主流场景无影响）。
+  sheet_sort_range(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return { success: false, message: r0.error };
+    const range = sheetRange(r0.sheet, String(p.range || ''));
+    if (!range) return { success: false, message: '无效的区域: ' + (p.range || '(空)') };
+    const addr = range.getRangeAddress();
+    const nRows = addr.EndRow - addr.StartRow + 1;
+    const nCols = addr.EndColumn - addr.StartColumn + 1;
+    if (nRows * nCols > 5000) return { success: false, message: '排序区域过大（上限 5000 格），请缩小范围' };
+    const byCol = p.byColumn != null ? colIndexOf(p.byColumn) : addr.StartColumn;
+    if (byCol < addr.StartColumn || byCol > addr.EndColumn) {
+      return { success: false, message: '排序列 ' + p.byColumn + ' 不在区域 ' + sheetRangeName(addr) + ' 内' };
+    }
+    const asc = p.ascending !== false;
+    const headerOfs = p.hasHeader !== false ? 1 : 0;
+    const keyOfs = byCol - addr.StartColumn;
+    const T = css.table.CellContentType;
+    // 读出待排行（每格记类型，回写时保真：公式回 setFormula、数值回 setValue）
+    const dataRows = [];
+    for (let r = headerOfs; r < nRows; r++) {
+      const line = [];
+      for (let c = 0; c < nCols; c++) {
+        const cell = range.getCellByPosition(c, r);
+        const t = cell.getType();
+        if (enumEq(t, T.EMPTY)) line.push({ k: 'e' });
+        else if (enumEq(t, T.FORMULA)) line.push({ k: 'f', f: cell.getFormula(), sort: readCellOut(cell) });
+        else if (enumEq(t, T.VALUE)) line.push({ k: 'v', v: cell.getValue() });
+        else line.push({ k: 's', s: cell.getString() });
+      }
+      dataRows.push(line);
+    }
+    const keyOf = function (line) {
+      const it = line[keyOfs];
+      if (!it || it.k === 'e') return null; // 空值恒排最后（Calc 口径）
+      if (it.k === 'v') return it.v;
+      if (it.k === 'f') return it.sort;
+      return it.s;
+    };
+    dataRows.sort(function (a, b) {
+      const ka = keyOf(a), kb = keyOf(b);
+      if (ka === null && kb === null) return 0;
+      if (ka === null) return 1;
+      if (kb === null) return -1;
+      const na = typeof ka === 'number', nb = typeof kb === 'number';
+      let cmp;
+      if (na && nb) cmp = ka - kb;
+      else if (na !== nb) cmp = na ? -1 : 1; // 数值排在文本前（Calc 升序口径）
+      else cmp = String(ka).localeCompare(String(kb), 'zh');
+      return asc ? cmp : -cmp;
+    });
+    try {
+      for (let r = 0; r < dataRows.length; r++) {
+        for (let c = 0; c < nCols; c++) {
+          const cell = range.getCellByPosition(c, headerOfs + r);
+          const it = dataRows[r][c];
+          if (it.k === 'v') cell.setValue(it.v);
+          else if (it.k === 'f') cell.setFormula(it.f);
+          else if (it.k === 's') cell.setString(it.s);
+          else cell.setString('');
+        }
+      }
+    } catch (e) { return { success: false, message: '排序回写失败: ' + errStr(e) }; }
+    try { ctrl.select(range); } catch (e) {}
+    // 验证回路：回读排序列前几个值
+    const sample = [];
+    try {
+      for (let r = headerOfs; r < Math.min(nRows, headerOfs + 5); r++) {
+        sample.push(readCellOut(range.getCellByPosition(keyOfs, r)));
+      }
+    } catch (e) {}
+    return { success: true, range: sheetRangeName(addr), byColumn: colLetterOf(byCol), ascending: asc, sortedSample: sample };
+  },
+  // [表格·结构] 自动筛选开关。经命名数据库区域（DatabaseRanges）实现——确定性
+  // 的 set 语义，比 .uno:DataFilterAutoFilter 的 toggle 可靠。range 缺省 = 已用区域。
+  sheet_set_autofilter(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return { success: false, message: r0.error };
+    const sheet = r0.sheet;
+    let addr;
+    if (p.range) {
+      const range = sheetRange(sheet, p.range);
+      if (!range) return { success: false, message: '无效的区域: ' + p.range };
+      addr = range.getRangeAddress();
+    } else {
+      try { addr = usedRangeAddress(sheet); } catch (e) { return { success: false, message: '读取已用区域失败: ' + errStr(e) }; }
+    }
+    const enabled = p.enabled !== false;
+    const dbName = '__awd_af_' + addr.Sheet;
+    try {
+      const dbs = xModel.getPropertyValue('DatabaseRanges');
+      if (dbs.hasByName(dbName)) {
+        try { dbs.getByName(dbName).setPropertyValue('AutoFilter', false); } catch (e) {}
+        dbs.removeByName(dbName);
+      }
+      if (enabled) {
+        dbs.addNewByName(dbName, addr);
+        dbs.getByName(dbName).setPropertyValue('AutoFilter', true);
+      }
+    } catch (e) { return { success: false, message: '筛选设置失败: ' + errStr(e) }; }
+    return { success: true, range: sheetRangeName(addr), autoFilter: enabled };
+  },
+  // [表格·结构] 冻结窗格（XViewFreezable）：冻结前 rows 行 / cols 列；0,0 取消。
+  sheet_freeze_panes(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return { success: false, message: r0.error };
+    const rows = Math.max(0, Number(p.rows) || 0);
+    const cols = Math.max(0, Number(p.cols) || 0);
+    try {
+      // 取消必须走 splitAtPosition(0,0)：freezeAtPosition(0,0) 在引擎里仍算
+      // 冻结态（hasFrozenPanes 保持 true，组 19 真机实证）。
+      if (rows === 0 && cols === 0) ctrl.splitAtPosition(0, 0);
+      else ctrl.freezeAtPosition(cols, rows);
+    } catch (e) { return { success: false, message: '冻结窗格失败: ' + errStr(e) }; }
+    let frozen = null;
+    try { frozen = ctrl.hasFrozenPanes(); } catch (e) {}
+    return { success: true, rows: rows, cols: cols, hasFrozenPanes: frozen };
+  },
+  // [表格·结构] 条件格式：满足条件的单元格套指定外观（底色/字色/加粗）。
+  // rule: greater/greaterEqual/less/lessEqual/equal/notEqual/between/notBetween/
+  // formula；clear=true 清除区域的全部条件格式。命中外观落在自建 CellStyle 上
+  //（__awd_cf_N），set 语义：每次调用替换该区域现有条件格式（确定性优先）。
+  sheet_conditional_format(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return { success: false, message: r0.error };
+    const range = sheetRange(r0.sheet, String(p.range || ''));
+    if (!range) return { success: false, message: '无效的区域: ' + (p.range || '(空)') };
+    if (p.clear) {
+      try {
+        const cf0 = range.getPropertyValue('ConditionalFormat');
+        cf0.clear();
+        range.setPropertyValue('ConditionalFormat', cf0);
+      } catch (e) { return { success: false, message: '清除条件格式失败: ' + errStr(e) }; }
+      return { success: true, range: sheetRangeName(range.getRangeAddress()), cleared: true };
+    }
+    const OPS = {
+      greater: 'GREATER', greaterequal: 'GREATER_EQUAL', less: 'LESS', lessequal: 'LESS_EQUAL',
+      equal: 'EQUAL', notequal: 'NOT_EQUAL', between: 'BETWEEN', notbetween: 'NOT_BETWEEN', formula: 'FORMULA',
+    };
+    const opKey = OPS[String(p.rule || '').toLowerCase().replace(/[_-]/g, '')];
+    if (!opKey) return { success: false, message: 'bad rule: ' + p.rule + ' (greater/greaterEqual/less/lessEqual/equal/notEqual/between/notBetween/formula)' };
+    if (p.value1 == null || String(p.value1) === '') return { success: false, message: '条件格式需要 value1（数值或公式）' };
+    if ((opKey === 'BETWEEN' || opKey === 'NOT_BETWEEN') && (p.value2 == null || String(p.value2) === '')) {
+      return { success: false, message: 'between/notBetween 需要 value2' };
+    }
+    // 命中外观 = 一个专用 CellStyle（条件格式只认样式名，不收散属性）
+    let styleName;
+    try {
+      const styles = xModel.getStyleFamilies().getByName('CellStyles');
+      do { styleName = '__awd_cf_' + (++cfStyleSeq); } while (styles.hasByName(styleName));
+      const style = xModel.createInstance('com.sun.star.style.CellStyle');
+      styles.insertByName(styleName, style);
+      if (p.background != null) {
+        const c = parseColor(p.background, { none: -1 });
+        if (c == null) return { success: false, message: 'bad background: ' + p.background };
+        style.setPropertyValue('CellBackColor', c);
+      }
+      if (p.color != null) {
+        const c = parseColor(p.color, { auto: -1 });
+        if (c == null) return { success: false, message: 'bad color: ' + p.color };
+        style.setPropertyValue('CharColor', c);
+      }
+      if (p.bold) style.setPropertyValue('CharWeight', css.awt.FontWeight.BOLD);
+      if (p.background == null && p.color == null && !p.bold) {
+        return { success: false, message: '条件格式需要至少一项外观（background/color/bold）' };
+      }
+    } catch (e) { return { success: false, message: '条件格式样式创建失败: ' + errStr(e) }; }
+    try {
+      const cf = range.getPropertyValue('ConditionalFormat');
+      cf.clear();
+      const entry = [
+        mkProp('Operator', css.sheet.ConditionOperator[opKey]),
+        mkProp('Formula1', normalizeFormula(String(p.value1))),
+        mkProp('StyleName', styleName),
+      ];
+      if (p.value2 != null && String(p.value2) !== '') entry.push(mkProp('Formula2', normalizeFormula(String(p.value2))));
+      cf.addNew(entry);
+      range.setPropertyValue('ConditionalFormat', cf);
+      const readBack = range.getPropertyValue('ConditionalFormat');
+      return {
+        success: true, range: sheetRangeName(range.getRangeAddress()),
+        rule: String(p.rule), entries: readBack.getCount(), styleName: styleName,
+      };
+    } catch (e) { return { success: false, message: '条件格式设置失败: ' + errStr(e) }; }
+  },
+  // ---- [Calc 二期] 批注 / 数据验证 / 图表 / 搜索 / 命名区域 / 保护 / 分组 / 透视表 ----
+  // 文档能力矩阵（4.2 节）Excel 待办：此前 sheet_* 对这批能力零支持。
+  // [表格·批注] 单元格批注（XSheetAnnotations）。Calc 批注没有 Word 那种线程
+  // 回复/解决态概念——本组只做增/查/删三件事，不做 reply/resolve，工具描述里
+  // 已向模型说明这条与 Word 批注的差异。
+  sheet_add_comment(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return tableFail(r0.error);
+    const sheet = r0.sheet;
+    const cellStr = p && p.cell ? String(p.cell).trim() : '';
+    const text = p && p.text != null ? String(p.text) : '';
+    if (!cellStr) return tableFail('sheet_add_comment requires {cell}（如 "B2"）');
+    if (!text) return tableFail('sheet_add_comment requires {text}');
+    const cellRange = sheetRange(sheet, cellStr);
+    if (!cellRange) return tableFail('无效的单元格: ' + cellStr);
+    const addr = cellRange.getRangeAddress();
+    let annotations;
+    try { annotations = sheet.getAnnotations(); } catch (e) { return tableFail('获取批注集合失败: ' + errStr(e)); }
+    let anno;
+    try {
+      anno = annotations.insertNew(
+        new css.table.CellAddress({ Sheet: addr.Sheet, Column: addr.StartColumn, Row: addr.StartRow }), text);
+    } catch (e) { return tableFail('新建批注失败: ' + errStr(e)); }
+    let author = '', date = '';
+    try { author = String(anno.getAuthor() || ''); } catch (e) {}
+    try { date = String(anno.getDate() || ''); } catch (e) {}
+    try { ctrl.select(cellRange); } catch (e) {}
+    return {
+      success: true, cell: colLetterOf(addr.StartColumn) + (addr.StartRow + 1),
+      sheet: sheet.getName(), author: author, date: date, text: text,
+    };
+  },
+  sheet_get_comments(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return tableFail(r0.error);
+    const sheet = r0.sheet;
+    let annotations;
+    try { annotations = sheet.getAnnotations(); } catch (e) { return tableFail('获取批注集合失败: ' + errStr(e)); }
+    const out = [];
+    try {
+      const n = annotations.getCount();
+      for (let i = 0; i < n; i++) {
+        const anno = annotations.getByIndex(i);
+        const pos = anno.getPosition();
+        const item = { index: i, cell: colLetterOf(pos.Column) + (pos.Row + 1) };
+        try { item.author = String(anno.getAuthor() || ''); } catch (e) {}
+        try { item.date = String(anno.getDate() || ''); } catch (e) {}
+        try { item.text = String(anno.getString() || '').slice(0, 500); } catch (e) {}
+        out.push(item);
+      }
+    } catch (e) { return tableFail(errStr(e)); }
+    return { success: true, sheet: sheet.getName(), count: out.length, comments: out };
+  },
+  sheet_delete_comment(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return tableFail(r0.error);
+    const sheet = r0.sheet;
+    const cellStr = p && p.cell ? String(p.cell).trim() : '';
+    if (!cellStr) return tableFail('sheet_delete_comment requires {cell}（如 "B2"）');
+    const cellRange = sheetRange(sheet, cellStr);
+    if (!cellRange) return tableFail('无效的单元格: ' + cellStr);
+    const addr = cellRange.getRangeAddress();
+    let annotations;
+    try { annotations = sheet.getAnnotations(); } catch (e) { return tableFail('获取批注集合失败: ' + errStr(e)); }
+    let idx = -1;
+    try {
+      const n = annotations.getCount();
+      for (let i = 0; i < n; i++) {
+        const pos = annotations.getByIndex(i).getPosition();
+        if (pos.Column === addr.StartColumn && pos.Row === addr.StartRow) { idx = i; break; }
+      }
+    } catch (e) { return tableFail(errStr(e)); }
+    if (idx < 0) return tableFail('单元格 ' + cellStr + ' 没有批注');
+    try { annotations.removeByIndex(idx); } catch (e) { return tableFail('删除批注失败: ' + errStr(e)); }
+    return { success: true, cell: colLetterOf(addr.StartColumn) + (addr.StartRow + 1), sheet: sheet.getName() };
+  },
+  // [表格·结构] 数据验证（TableValidation）。range 的 'Validation' 属性是一个
+  // 属性集对象，改完必须整体 setPropertyValue 回 range 才生效（读出来改、不能
+  // 就地改）。list 类型 value1 是逗号分隔候选值，落成带引号的 Calc 显式列表公式
+  // （"a";"b";"c"）；wholeNumber/decimal/date/time/textLength 需要 operator +
+  // value1（between/notBetween 再加 value2）；custom 的 value1 是校验公式本身。
+  // clear=true 清除数据验证（Type 置回 ANY），忽略其他参数。
+  sheet_set_data_validation(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return tableFail(r0.error);
+    const range = sheetRange(r0.sheet, String(p.range || ''));
+    if (!range) return tableFail('无效的区域: ' + (p.range || '(空)'));
+    if (p && p.clear) {
+      try {
+        const v0 = range.getPropertyValue('Validation');
+        v0.setPropertyValue('Type', css.sheet.ValidationType.ANY);
+        range.setPropertyValue('Validation', v0);
+      } catch (e) { return tableFail('清除数据验证失败: ' + errStr(e)); }
+      return { success: true, range: sheetRangeName(range.getRangeAddress()), cleared: true };
+    }
+    const TYPE_MAP = { list: 'LIST', wholenumber: 'WHOLE', whole: 'WHOLE', decimal: 'DECIMAL', date: 'DATE', time: 'TIME', textlength: 'TEXT_LEN', custom: 'CUSTOM' };
+    const typeKey = TYPE_MAP[String(p && p.type || '').toLowerCase().replace(/[_-]/g, '')];
+    if (!typeKey) return tableFail('bad type: ' + (p && p.type) + ' (list/wholeNumber/decimal/date/time/textLength/custom)');
+    const OP_MAP = { greater: 'GREATER', greaterequal: 'GREATER_EQUAL', less: 'LESS', lessequal: 'LESS_EQUAL', equal: 'EQUAL', notequal: 'NOT_EQUAL', between: 'BETWEEN', notbetween: 'NOT_BETWEEN' };
+    let formula1 = '', formula2 = '', operatorKey = null;
+    if (typeKey === 'LIST') {
+      const items = String((p && p.value1) || '').split(',').map(function (s) { return s.trim(); }).filter(function (s) { return s !== ''; });
+      if (!items.length) return tableFail('list 类型的 value1 需要逗号分隔的候选值，如 "合规,不合规,待核查"');
+      formula1 = items.map(function (v) { return '"' + v.replace(/"/g, '""') + '"'; }).join(';');
+    } else if (typeKey === 'CUSTOM') {
+      formula1 = (p && p.value1 != null) ? String(p.value1) : '';
+      if (!formula1) return tableFail('custom 类型的 value1 需要一个返回布尔值的校验公式');
+      formula1 = normalizeFormula(formula1);
+    } else {
+      operatorKey = OP_MAP[String((p && p.operator) || '').toLowerCase().replace(/[_-]/g, '')];
+      if (!operatorKey) return tableFail('bad operator: ' + (p && p.operator) + ' (greater/greaterEqual/less/lessEqual/equal/notEqual/between/notBetween)');
+      if (!p || p.value1 == null || String(p.value1) === '') return tableFail(typeKey + ' 类型需要 value1');
+      formula1 = normalizeFormula(String(p.value1));
+      if (operatorKey === 'BETWEEN' || operatorKey === 'NOT_BETWEEN') {
+        if (p.value2 == null || String(p.value2) === '') return tableFail('between/notBetween 需要 value2');
+        formula2 = normalizeFormula(String(p.value2));
+      }
+    }
+    try {
+      const v = range.getPropertyValue('Validation');
+      v.setPropertyValue('Type', css.sheet.ValidationType[typeKey]);
+      if (operatorKey) v.setPropertyValue('Operator', css.sheet.ConditionOperator[operatorKey]);
+      v.setPropertyValue('Formula1', formula1);
+      if (formula2) v.setPropertyValue('Formula2', formula2);
+      v.setPropertyValue('IgnoreBlankCells', (p && p.allowBlank) !== false);
+      if (p && p.showInputMessage) {
+        v.setPropertyValue('ShowInputMessage', true);
+        if (p.inputTitle != null) v.setPropertyValue('InputTitle', String(p.inputTitle));
+        if (p.inputMessage != null) v.setPropertyValue('InputMessage', String(p.inputMessage));
+      }
+      if (p && p.errorMessage != null && String(p.errorMessage) !== '') {
+        v.setPropertyValue('ShowErrorMessage', true);
+        v.setPropertyValue('ErrorAlertStyle', css.sheet.ValidationAlertStyle.STOP);
+        if (p.errorTitle != null) v.setPropertyValue('ErrorTitle', String(p.errorTitle));
+        v.setPropertyValue('ErrorMessage', String(p.errorMessage));
+      }
+      range.setPropertyValue('Validation', v);
+    } catch (e) { return tableFail('设置数据验证失败: ' + errStr(e)); }
+    const res = { success: true, range: sheetRangeName(range.getRangeAddress()), type: String(p.type).toLowerCase(), formula1: formula1 };
+    if (formula2) res.formula2 = formula2;
+    return res;
+  },
+  // [表格·结构] 图表（XTableCharts）。起步做「建图表 + 选类型 + 标题」三件事：
+  // 数据区域整体作为图表数据源，类型 column/bar/line/pie（column/bar 同用
+  // BarDiagram，靠 Vertical 属性区分方向），标题经 HasMainTitle+Title 设置。
+  // 复杂配置（多数据系列自定义、坐标轴样式等）不支持。放置位置固定在数据区域
+  // 右侧一列，默认尺寸约 14cm×9cm——不接受自定义位置/尺寸参数，保持起步简单。
+  sheet_add_chart(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return tableFail(r0.error);
+    const sheet = r0.sheet;
+    const range = sheetRange(sheet, String((p && p.range) || ''));
+    if (!range) return tableFail('无效的数据区域: ' + ((p && p.range) || '(空)'));
+    const addr = range.getRangeAddress();
+    const TYPE_MAP = { column: { cls: 'Bar', vertical: true }, bar: { cls: 'Bar', vertical: false }, line: { cls: 'Line' }, pie: { cls: 'Pie' } };
+    const typeInfo = TYPE_MAP[String((p && p.chartType) || 'column').toLowerCase()];
+    if (!typeInfo) return tableFail('bad chartType: ' + (p && p.chartType) + ' (column/bar/line/pie)');
+    let charts;
+    try { charts = sheet.getCharts(); } catch (e) { return tableFail('获取图表集合失败: ' + errStr(e)); }
+    const name = (p && p.name != null && String(p.name).trim()) ? String(p.name).trim() : ('Chart_' + Date.now());
+    if (charts.hasByName(name)) return tableFail('图表已存在: ' + name);
+    let rect;
+    try {
+      const anchorCol = Math.min(addr.EndColumn + 2, 1023);
+      const anchorCell = sheet.getCellByPosition(anchorCol, addr.StartRow);
+      const pos = anchorCell.getPropertyValue('Position');
+      rect = new css.awt.Rectangle({ X: pos.X, Y: pos.Y, Width: ptToMm100(400), Height: ptToMm100(250) });
+    } catch (e) { return tableFail('计算图表放置位置失败: ' + errStr(e)); }
+    try {
+      charts.addNewByName(name, rect, [addr], true, true);
+    } catch (e) { return tableFail('创建图表失败: ' + errStr(e)); }
+    const note = [];
+    try {
+      const embedded = charts.getByName(name).getEmbeddedObject();
+      const diagram = embedded.createInstance('com.sun.star.chart.' + typeInfo.cls + 'Diagram');
+      embedded.setDiagram(diagram);
+      if (typeInfo.cls === 'Bar') {
+        try { diagram.setPropertyValue('Vertical', !!typeInfo.vertical); } catch (e) { note.push('图表方向设置失败'); }
+      }
+      if (p && p.title) {
+        try {
+          embedded.setPropertyValue('HasMainTitle', true);
+          embedded.getTitle().setString(String(p.title));
+        } catch (e) { note.push('标题设置失败'); }
+      }
+    } catch (e) { note.push('图表类型/标题设置失败: ' + errStr(e)); }
+    const res = {
+      success: true, name: name, chartType: String((p && p.chartType) || 'column').toLowerCase(),
+      range: sheetRangeName(addr), sheet: sheet.getName(),
+    };
+    if (p && p.title) res.title = String(p.title);
+    if (note.length) res.note = note.join('；');
+    return res;
+  },
+  // [表格·看] Excel 专用查找：遍历区域（缺省=已用区域）逐格比对字符串，不区分
+  // 值来源（文本/数值/公式结果）。上限 50 条命中、20000 格扫描（超限要求缩小
+  // range）。与 doc_find_text 分开——那是 Writer 专属，本原语只认 Calc 文档。
+  sheet_search(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return tableFail(r0.error);
+    const sheet = r0.sheet;
+    const query = (p && p.query != null) ? String(p.query) : '';
+    if (!query) return tableFail('sheet_search requires {query}');
+    const matchCase = !!(p && p.matchCase);
+    let addr;
+    try {
+      const range = (p && p.range) ? sheetRange(sheet, p.range) : null;
+      addr = range ? range.getRangeAddress() : usedRangeAddress(sheet);
+    } catch (e) { return tableFail('读取搜索区域失败: ' + errStr(e)); }
+    const nRows = addr.EndRow - addr.StartRow + 1;
+    const nCols = addr.EndColumn - addr.StartColumn + 1;
+    const MAX_SCAN = 20000;
+    if (nRows * nCols > MAX_SCAN) return tableFail('搜索区域过大（上限 ' + MAX_SCAN + ' 格），请缩小 range');
+    const needle = matchCase ? query : query.toLowerCase();
+    const hits = [];
+    for (let r = 0; r < nRows && hits.length < 50; r++) {
+      for (let c = 0; c < nCols && hits.length < 50; c++) {
+        const cell = sheet.getCellByPosition(addr.StartColumn + c, addr.StartRow + r);
+        const val = readCellOut(cell);
+        const s = val == null ? '' : String(val);
+        const hay = matchCase ? s : s.toLowerCase();
+        if (hay.indexOf(needle) !== -1) {
+          hits.push({ cell: colLetterOf(addr.StartColumn + c) + (addr.StartRow + r + 1), value: val });
+        }
+      }
+    }
+    return {
+      success: true, sheet: sheet.getName(), range: sheetRangeName(addr), query: query,
+      count: hits.length, hits: hits, truncated: hits.length >= 50,
+    };
+  },
+  // [表格·写] Excel 专用查找替换（dev-board#804）。与 sheet_search 共用扫描循环，
+  // 命中后**只重写那一格**——区别于 sheet_write_cells 的矩形整块回写（散点命中用它
+  // 会把区域内不该动的格子一起覆盖掉，属于静默数据错误）。
+  //
+  // 只动纯文本格（CellContentType.TEXT）。公式格与数值格即使显示出来的字符串命中也
+  // 跳过：对公式格 setString 会把公式本身毁掉，对数值格会把数字变成文本（"2500.5"
+  // 里含 "50" 这种误伤在数字面上极其常见）。跳过多少格在返回值里如实交代，让模型
+  // 知道「没替的那些不是漏了，是本原语做不到」。
+  //
+  // Calc 没有修订机制，写入即生效——安全网是 doc_undo 与文档检查点（工具描述里已
+  // 对模型讲明）。
+  sheet_find_replace(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return tableFail(r0.error);
+    const sheet = r0.sheet;
+    const find = (p && p.find != null) ? String(p.find) : '';
+    if (!find) return tableFail('sheet_find_replace requires {find}');
+    // 省略 replace 不等于「替换成空串」——后端已拦一道，worker 这道是给宿主直调留的。
+    if (!p || p.replace == null) return tableFail('sheet_find_replace requires {replace}（要删除命中文本请显式传空字符串）');
+    const replace = String(p.replace);
+    if (find === replace) return tableFail('find 与 replace 相同，这次替换不会改变任何内容');
+    const matchCase = !!(p && p.matchCase);
+    const wholeCell = !!(p && p.wholeCell);
+    const MAX_REPLACEMENTS = 2000; // 与后端 DocumentEditTools.MAX_SHEET_REPLACEMENTS 同值
+    let cap = MAX_REPLACEMENTS;
+    if (p && p.maxReplacements != null) {
+      const n = Number(p.maxReplacements);
+      if (!isFinite(n) || n < 1) return tableFail('maxReplacements 需为不小于 1 的整数');
+      cap = Math.min(Math.floor(n), MAX_REPLACEMENTS);
+    }
+    let addr;
+    try {
+      const range = (p && p.range) ? sheetRange(sheet, p.range) : null;
+      if (p && p.range && !range) return tableFail('无效的区域: ' + p.range);
+      addr = range ? range.getRangeAddress() : usedRangeAddress(sheet);
+    } catch (e) { return tableFail('读取替换区域失败: ' + errStr(e)); }
+    const nRows = addr.EndRow - addr.StartRow + 1;
+    const nCols = addr.EndColumn - addr.StartColumn + 1;
+    const MAX_SCAN = 20000; // 同 sheet_search
+    if (nRows * nCols > MAX_SCAN) return tableFail('替换区域过大（上限 ' + MAX_SCAN + ' 格），请缩小 range');
+
+    const T = css.table.CellContentType;
+    const needle = matchCase ? find : find.toLowerCase();
+    const cells = [];        // 改过的坐标（回给模型的只取前 MAX_REPORTED 个）
+    const MAX_REPORTED = 50;
+    let replaced = 0;        // 改了几格
+    let occurrences = 0;     // 共替换几处（一格里可能有多处）
+    let skippedFormula = 0;  // 命中但不敢动的公式格
+    let skippedNumeric = 0;  // 命中但不敢动的数值格
+    let truncated = false;   // 因 cap 提前收手
+    let firstChanged = null;
+
+    for (let r = 0; r < nRows && !truncated; r++) {
+      for (let c = 0; c < nCols; c++) {
+        const cell = sheet.getCellByPosition(addr.StartColumn + c, addr.StartRow + r);
+        let type;
+        try { type = cell.getType(); } catch (e) { continue; }
+        if (enumEq(type, T.EMPTY)) continue;
+        const isFormula = enumEq(type, T.FORMULA);
+        const isValue = enumEq(type, T.VALUE);
+        // 判定用的文本：公式/数值格看显示值（是否「看起来命中」），文本格看原文
+        const shown = isFormula || isValue ? String(readCellOut(cell)) : String(cell.getString());
+        const hay = matchCase ? shown : shown.toLowerCase();
+        if (hay.indexOf(needle) === -1) continue;
+        if (wholeCell && (matchCase ? shown : hay) !== (matchCase ? find : needle)) continue;
+        if (isFormula) { skippedFormula++; continue; }
+        if (isValue) { skippedNumeric++; continue; }
+        const next = wholeCell ? replace : replaceAllLiteral(shown, find, replace, matchCase);
+        if (next === shown) continue;
+        occurrences += wholeCell ? 1 : countLiteral(shown, find, matchCase);
+        try { cell.setString(next); } catch (e) { return tableFail('写入单元格失败: ' + errStr(e)); }
+        const name = colLetterOf(addr.StartColumn + c) + (addr.StartRow + r + 1);
+        if (!firstChanged) firstChanged = name;
+        if (cells.length < MAX_REPORTED) cells.push(name);
+        replaced++;
+        if (replaced >= cap) { truncated = true; break; }
+      }
+    }
+    // 拟人：把视图停在第一处改动上，用户看得见 AI 动了哪儿
+    if (firstChanged) { try { ctrl.select(sheet.getCellRangeByName(firstChanged)); } catch (e) {} }
+
+    const res = {
+      success: true, sheet: sheet.getName(), range: sheetRangeName(addr),
+      find: find, replace: replace,
+      replaced: replaced, occurrences: occurrences,
+      cells: cells, cellsTruncated: replaced > cells.length,
+      truncated: truncated,
+    };
+    if (skippedFormula) res.skippedFormulaCells = skippedFormula;
+    if (skippedNumeric) res.skippedNumericCells = skippedNumeric;
+    const notes = [];
+    if (truncated) notes.push('已达单次替换上限（' + cap + ' 格）并提前停下，剩余命中未处理——缩小 range 或分批继续');
+    if (skippedFormula) notes.push(skippedFormula + ' 个公式格显示的文本命中但未改动（改了会毁掉公式，请用 sheet_write_cells 重写这些公式）');
+    if (skippedNumeric) notes.push(skippedNumeric + ' 个数值格显示的文本命中但未改动（改了会把数字变成文本，数值请用 sheet_write_cells 写）');
+    if (!replaced && !skippedFormula && !skippedNumeric) notes.push('区域内没有命中');
+    if (notes.length) res.note = notes.join('；');
+    return res;
+  },
+  // [表格·结构] 工作簿级命名区域（XNamedRanges）。op: add（name+range+可选
+  // sheet）/ remove（name）/ list（枚举全部）。add 落成绝对引用公式
+  // '$Sheet1.$A$1:$C$10'，与 range 参数所在工作表绑定。
+  sheet_define_name(p) {
+    const op = String((p && p.op) || 'list').toLowerCase();
+    let nr;
+    try { nr = xModel.getPropertyValue('NamedRanges'); } catch (e) { return tableFail('读取命名区域集合失败: ' + errStr(e)); }
+    if (op === 'list') {
+      const out = [];
+      try {
+        const n = nr.getCount();
+        for (let i = 0; i < n; i++) {
+          const item = nr.getByIndex(i);
+          out.push({ name: item.getName(), content: item.getContent() });
+        }
+      } catch (e) { return tableFail(errStr(e)); }
+      return { success: true, names: out };
+    }
+    const name = (p && p.name) ? String(p.name).trim() : '';
+    if (!name) return tableFail(op + ' 需要 {name}');
+    if (op === 'remove') {
+      if (!nr.hasByName(name)) return tableFail('命名区域不存在: ' + name);
+      try { nr.removeByName(name); } catch (e) { return tableFail('删除命名区域失败: ' + errStr(e)); }
+      return { success: true, op: 'remove', name: name };
+    }
+    if (op === 'add') {
+      if (nr.hasByName(name)) return tableFail('命名区域已存在: ' + name);
+      const r0 = resolveSheet(p);
+      if (r0.error) return tableFail(r0.error);
+      const range = sheetRange(r0.sheet, String((p && p.range) || ''));
+      if (!range) return tableFail('无效的区域: ' + ((p && p.range) || '(空)'));
+      const addr = range.getRangeAddress();
+      const content = '$' + r0.sheet.getName() + '.' + absCellRef(addr.StartColumn, addr.StartRow)
+        + ((addr.StartColumn !== addr.EndColumn || addr.StartRow !== addr.EndRow) ? ':' + absCellRef(addr.EndColumn, addr.EndRow) : '');
+      try {
+        nr.addNewByName(name, content, new css.table.CellAddress({ Sheet: addr.Sheet, Column: addr.StartColumn, Row: addr.StartRow }), 0);
+      } catch (e) { return tableFail('新建命名区域失败: ' + errStr(e)); }
+      return { success: true, op: 'add', name: name, range: content };
+    }
+    return tableFail('bad op: ' + op + ' (add/remove/list)');
+  },
+  // [表格·结构] 工作表保护（XProtectable）。密码可选（不传=无密码保护）；
+  // 密码参数不落日志，返回值也不回显密码。
+  sheet_protect_sheet(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return tableFail(r0.error);
+    const sheet = r0.sheet;
+    const action = String((p && p.action) || 'protect').toLowerCase();
+    if (action !== 'protect' && action !== 'unprotect') return tableFail('bad action: ' + action + ' (protect/unprotect)');
+    const password = (p && p.password != null) ? String(p.password) : '';
+    try {
+      if (action === 'protect') sheet.protect(password);
+      else sheet.unprotect(password);
+    } catch (e) { return tableFail((action === 'protect' ? '保护' : '取消保护') + '工作表失败: ' + errStr(e)); }
+    let isProtected = null;
+    try { isProtected = sheet.isProtected(); } catch (e) {}
+    return { success: true, action: action, protected: isProtected };
+  },
+  // [表格·结构] 行列分组/大纲（XSheetOutline）。op: group/ungroup/show/hide；
+  // orient: rows/cols（show/hide 不区分方向，直接对 range 生效）。
+  sheet_group_rows_cols(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return tableFail(r0.error);
+    const sheet = r0.sheet;
+    const range = sheetRange(sheet, String((p && p.range) || ''));
+    if (!range) return tableFail('无效的区域: ' + ((p && p.range) || '(空)'));
+    const addr = range.getRangeAddress();
+    const orientRaw = String((p && p.orient) || 'rows').toLowerCase();
+    const isCols = orientRaw === 'cols' || orientRaw === 'columns';
+    const isRows = orientRaw === 'rows';
+    if (!isCols && !isRows) return tableFail('bad orient: ' + (p && p.orient) + ' (rows/cols)');
+    const orientation = isCols ? css.table.TableOrientation.COLUMNS : css.table.TableOrientation.ROWS;
+    const op = String((p && p.op) || 'group').toLowerCase();
+    try {
+      if (op === 'group') sheet.group(addr, orientation);
+      else if (op === 'ungroup') sheet.ungroup(addr, orientation);
+      else if (op === 'show') sheet.showDetail(addr);
+      else if (op === 'hide') sheet.hideDetail(addr);
+      else return tableFail('bad op: ' + op + ' (group/ungroup/show/hide)');
+    } catch (e) { return tableFail('分组操作失败: ' + errStr(e)); }
+    return { success: true, op: op, orient: isCols ? 'cols' : 'rows', range: sheetRangeName(addr) };
+  },
+  // [表格·结构] 数据透视表（XDataPilotTables），基础形态：行分组 + 单个数据
+  // 字段求和。rowFields/dataField 必须与源区域首行表头文字完全一致（Calc 按
+  // 字段名定位）。复杂布局（列字段、多数据字段、自定义汇总函数、筛选字段）不
+  // 支持——起步只做「按行分组求和」这一种最常用形态。
+  sheet_add_pivot_table(p) {
+    const r0 = resolveSheet(p);
+    if (r0.error) return tableFail(r0.error);
+    const sheet = r0.sheet;
+    const source = sheetRange(sheet, String((p && p.sourceRange) || ''));
+    if (!source) return tableFail('无效的源数据区域: ' + ((p && p.sourceRange) || '(空)'));
+    const srcAddr = source.getRangeAddress();
+    const rowFieldNames = String((p && p.rowFields) || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    const dataFieldName = (p && p.dataField != null) ? String(p.dataField).trim() : '';
+    if (!rowFieldNames.length) return tableFail('sheet_add_pivot_table requires {rowFields}（逗号分隔的表头字段名）');
+    if (!dataFieldName) return tableFail('sheet_add_pivot_table requires {dataField}（求和字段的表头字段名）');
+    let dpTables;
+    try { dpTables = sheet.getDataPilotTables(); } catch (e) { return tableFail('获取数据透视表集合失败: ' + errStr(e)); }
+    const name = (p && p.name != null && String(p.name).trim()) ? String(p.name).trim() : ('PivotTable_' + Date.now());
+    if (dpTables.hasByName(name)) return tableFail('数据透视表已存在: ' + name);
+    let desc;
+    try {
+      desc = dpTables.createDataPilotDescriptor();
+      desc.setSourceRange(srcAddr);
+    } catch (e) { return tableFail('创建透视表描述失败: ' + errStr(e)); }
+    let fields;
+    try { fields = desc.getDataPilotFields(); } catch (e) { return tableFail('获取字段集合失败: ' + errStr(e)); }
+    const missing = [];
+    try {
+      rowFieldNames.forEach(function (fn) {
+        if (!fields.hasByName(fn)) { missing.push(fn); return; }
+        fields.getByName(fn).setPropertyValue('Orientation', css.sheet.DataPilotFieldOrientation.ROW);
+      });
+      if (!fields.hasByName(dataFieldName)) missing.push(dataFieldName);
+      else {
+        const df = fields.getByName(dataFieldName);
+        df.setPropertyValue('Orientation', css.sheet.DataPilotFieldOrientation.DATA);
+        df.setPropertyValue('Function', css.sheet.GeneralFunction.SUM);
+      }
+    } catch (e) { return tableFail('设置字段方向失败: ' + errStr(e)); }
+    if (missing.length) return tableFail('源区域表头找不到字段: ' + missing.join('、') + '（字段名须与首行表头文字完全一致）');
+    let outAddr;
+    try {
+      if (p && p.outputCell) {
+        const outCell = sheetRange(sheet, String(p.outputCell));
+        if (!outCell) return tableFail('无效的输出位置: ' + p.outputCell);
+        const oa = outCell.getRangeAddress();
+        outAddr = new css.table.CellAddress({ Sheet: oa.Sheet, Column: oa.StartColumn, Row: oa.StartRow });
+      } else {
+        const outCol = Math.min(srcAddr.EndColumn + 2, 1023);
+        outAddr = new css.table.CellAddress({ Sheet: srcAddr.Sheet, Column: outCol, Row: srcAddr.StartRow });
+      }
+    } catch (e) { return tableFail('计算输出位置失败: ' + errStr(e)); }
+    try {
+      dpTables.insertNewByName(name, outAddr, desc);
+    } catch (e) { return tableFail('插入数据透视表失败: ' + errStr(e)); }
+    return {
+      success: true, name: name, sourceRange: sheetRangeName(srcAddr),
+      rowFields: rowFieldNames, dataField: dataFieldName, function: 'sum', sheet: sheet.getName(),
+    };
+  },
+  // ==================== 演示文稿原语（slide_*，Phase 1） ====================
+  // 与 doc_*/sheet_* 平行的 pptx/odp 操作面。Impress 没有 Writer 的修订（redline）
+  // 机制，写入即生效；安全网是 doc_undo 与后端文档检查点（fileEffect=MODIFIED）。
+  // [幻灯片·看] 每页页码/名称/版式/母版/标题/形状数/是否有备注/是否含表格。
+  // 打开演示文稿后的第一步。
+  slide_get_overview() {
+    if (!isImpressDoc()) return slideFail(NOT_PRESENTATION_MSG);
+    let pages;
+    try { pages = xModel.getDrawPages(); } catch (e) { return slideFail('读取幻灯片列表失败: ' + errStr(e)); }
+    const count = pages.getCount();
+    const slides = [];
+    for (let i = 0; i < count; i++) {
+      let page; try { page = pages.getByIndex(i); } catch (e) { continue; }
+      let name = ''; try { name = page.getName ? page.getName() : ''; } catch (e) {}
+      let layout = null; try { layout = page.getPropertyValue('Layout'); } catch (e) {}
+      let masterName = ''; try { masterName = page.getMasterPage().getName(); } catch (e) {}
+      let shapeCount = 0; try { shapeCount = page.getCount(); } catch (e) {}
+      let titleText = '';
+      let hasTable = false;
+      for (let s = 0; s < shapeCount; s++) {
+        let shape; try { shape = page.getByIndex(s); } catch (e) { continue; }
+        const kind = shapeKind(shape);
+        if (kind === 'title' && !titleText) titleText = shapeText(shape);
+        if (kind === 'table') hasTable = true;
+      }
+      let hasNotes = false;
+      try { hasNotes = notesPageText(page.getNotesPage()).trim().length > 0; } catch (e) {}
+      slides.push({
+        number: i + 1, name: name, layout: layout, layoutName: layoutNameOf(layout),
+        masterName: masterName, titleText: titleText, shapeCount: shapeCount,
+        hasNotes: hasNotes, hasTable: hasTable,
+      });
+    }
+    return { success: true, slideCount: count, slides: slides };
+  },
+  // [幻灯片·看] 单页明细：尺寸/版式/母版/备注 + 每个形状的名称/类型/位置尺寸(磅)/
+  // 文字，表格形状另带行列数。未命名形状被分配稳定名 __awd_shape_N。
+  slide_get_page(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    const page = r0.page;
+    ensureShapeNames(page);
+    let width = 0, height = 0;
+    try { width = hmmToPt(page.getPropertyValue('Width')); height = hmmToPt(page.getPropertyValue('Height')); } catch (e) {}
+    let layout = null; try { layout = page.getPropertyValue('Layout'); } catch (e) {}
+    let masterName = ''; try { masterName = page.getMasterPage().getName(); } catch (e) {}
+    let notesText = ''; try { notesText = notesPageText(page.getNotesPage()); } catch (e) {}
+    const n = page.getCount();
+    const shapes = [];
+    for (let i = 0; i < n; i++) {
+      let shape; try { shape = page.getByIndex(i); } catch (e) { continue; }
+      let name = ''; try { name = shape.getName(); } catch (e) {}
+      const kind = shapeKind(shape);
+      let pos = null, size = null;
+      try { pos = shape.getPosition(); } catch (e) {}
+      try { size = shape.getSize(); } catch (e) {}
+      const item = {
+        name: name, kind: kind,
+        left: pos ? hmmToPt(pos.X) : null, top: pos ? hmmToPt(pos.Y) : null,
+        width: size ? hmmToPt(size.Width) : null, height: size ? hmmToPt(size.Height) : null,
+        text: shapeText(shape), isTable: kind === 'table',
+      };
+      if (item.isTable) {
+        try {
+          const table = shape.getPropertyValue('Model');
+          item.rows = table.getRows().getCount();
+          item.cols = table.getColumns().getCount();
+        } catch (e) { item.tableErr = errStr(e); }
+      } else {
+        // [Phase 3] 格式读回：首字符代表值，供 slide_format_text 的调用方核实
+        // 真实生效值（而非只信 setter 返回的 applied 回声）。表格形状不适用
+        // （每格文字可各自不同，读整格没有意义），保持 null。
+        item.format = shapeCharFormat(shape);
+      }
+      shapes.push(item);
+    }
+    return {
+      success: true, number: r0.index + 1, width: width, height: height,
+      layout: layout, layoutName: layoutNameOf(layout), masterName: masterName,
+      notesText: notesText, shapes: shapes,
+    };
+  },
+  // [幻灯片·看] 备注页（Speaker Notes）文字。不传 slideNumber 读取全篇。
+  slide_read_notes(p) {
+    if (!isImpressDoc()) return slideFail(NOT_PRESENTATION_MSG);
+    let pages;
+    try { pages = xModel.getDrawPages(); } catch (e) { return slideFail('读取幻灯片列表失败: ' + errStr(e)); }
+    const count = pages.getCount();
+    const want = p && p.slideNumber != null ? Number(p.slideNumber) : null;
+    if (want != null && (!Number.isFinite(want) || want < 1 || want > count)) {
+      return slideFail('页码越界: ' + p.slideNumber + '（共 ' + count + ' 页，1 开始）');
+    }
+    const from = want != null ? want - 1 : 0;
+    const to = want != null ? want - 1 : count - 1;
+    const notes = [];
+    for (let i = from; i <= to; i++) {
+      let page; try { page = pages.getByIndex(i); } catch (e) { continue; }
+      let text = ''; try { text = notesPageText(page.getNotesPage()); } catch (e) {}
+      notes.push({ slideNumber: i + 1, text: text });
+    }
+    return { success: true, notes: notes };
+  },
+  // [幻灯片·写] 整体覆盖指定页的备注文字。
+  slide_write_notes(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    const text = p && p.text != null ? String(p.text) : '';
+    let notesPage;
+    try { notesPage = r0.page.getNotesPage(); } catch (e) { return slideFail('获取备注页失败: ' + errStr(e)); }
+    if (!notesPage) return slideFail('该幻灯片没有备注页');
+    const noteShape = findNotesTextShape(notesPage);
+    if (!noteShape) return slideFail('该幻灯片没有备注文本框（备注正文形状未找到）');
+    let previousText = ''; try { previousText = shapeText(noteShape); } catch (e) {}
+    try { noteShape.getText().setString(text); } catch (e) { return slideFail('写入备注失败: ' + errStr(e)); }
+    return { success: true, slideNumber: r0.index + 1, previousText: previousText };
+  },
+  // [幻灯片·定位] 视图切到指定页，可选再选中某个形状——拟人：操作发生在哪要让
+  // 用户看得见（同 resolveSheet 切活动表口径）。
+  slide_goto(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    let selected = null;
+    const wantShape = p && p.shapeName != null && String(p.shapeName).trim() !== '' ? String(p.shapeName).trim() : null;
+    if (wantShape) {
+      ensureShapeNames(r0.page);
+      const rs = resolveShape(r0.page, { shapeName: wantShape });
+      if (rs.error) return slideFail(rs.error);
+      try {
+        if (ctrl && ctrl.select) ctrl.select(rs.shape);
+        selected = rs.name;
+      } catch (e) { return slideFail('选中形状失败: ' + errStr(e)); }
+    }
+    return { success: true, slideNumber: r0.index + 1, selected: selected };
+  },
+  // [幻灯片·写] 整体覆盖指定形状的文字（文本框/标题/占位符）。
+  slide_set_shape_text(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    if (!(p && p.shapeName)) return slideFail('缺少 shapeName 参数');
+    ensureShapeNames(r0.page);
+    const rs = resolveShape(r0.page, p);
+    if (rs.error) return slideFail(rs.error);
+    const text = p && p.text != null ? String(p.text) : '';
+    let previousText = ''; try { previousText = shapeText(rs.shape); } catch (e) {}
+    try { rs.shape.getText().setString(text); } catch (e) { return slideFail('写入形状文字失败: ' + errStr(e)); }
+    return { success: true, previousText: previousText };
+  },
+  // [幻灯片·写] 跨页（或限定单页）查找替换文字，覆盖普通文本框与表格单元格。
+  // 缺省只替换第一处命中即返回；all=true 替换全部匹配。
+  slide_replace_text(p) {
+    if (!isImpressDoc()) return slideFail(NOT_PRESENTATION_MSG);
+    const searchText = p && p.searchText != null ? String(p.searchText) : '';
+    if (!searchText) return slideFail('缺少 searchText 参数');
+    const replaceText = p && p.replaceText != null ? String(p.replaceText) : '';
+    const all = !!(p && p.all);
+    let pages;
+    try { pages = xModel.getDrawPages(); } catch (e) { return slideFail('读取幻灯片列表失败: ' + errStr(e)); }
+    const count = pages.getCount();
+    let from = 0, to = count - 1;
+    if (p && p.slideNumber != null) {
+      const want = Number(p.slideNumber);
+      if (!Number.isFinite(want) || want < 1 || want > count) {
+        return slideFail('页码越界: ' + p.slideNumber + '（共 ' + count + ' 页，1 开始）');
+      }
+      from = to = want - 1;
+    }
+    let replaced = 0;
+    const hits = [];
+    for (let pi = from; pi <= to; pi++) {
+      let page; try { page = pages.getByIndex(pi); } catch (e) { continue; }
+      ensureShapeNames(page);
+      const n = page.getCount();
+      for (let si = 0; si < n; si++) {
+        let shape; try { shape = page.getByIndex(si); } catch (e) { continue; }
+        const kind = shapeKind(shape);
+        if (kind === 'table') {
+          let table; try { table = shape.getPropertyValue('Model'); } catch (e) { continue; }
+          let rows = 0, cols = 0;
+          try { rows = table.getRows().getCount(); cols = table.getColumns().getCount(); } catch (e) { continue; }
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              let cell; try { cell = table.getCellByPosition(c, r); } catch (e) { continue; }
+              let cellText = ''; try { cellText = cell.getString() || ''; } catch (e) {}
+              if (!cellText || cellText.indexOf(searchText) === -1) continue;
+              const hitCount = cellText.split(searchText).length - 1;
+              const newText = cellText.split(searchText).join(replaceText);
+              try { cell.setString(newText); } catch (e) { continue; }
+              replaced += hitCount;
+              let name = ''; try { name = shape.getName(); } catch (e) {}
+              hits.push({ slideNumber: pi + 1, shapeName: name });
+              if (!all) return { success: true, replaced: replaced, hits: hits };
+            }
+          }
+          continue;
+        }
+        const text = shapeText(shape);
+        if (!text || text.indexOf(searchText) === -1) continue;
+        const hitCount = text.split(searchText).length - 1;
+        const newText = text.split(searchText).join(replaceText);
+        try { shape.getText().setString(newText); } catch (e) { continue; }
+        replaced += hitCount;
+        let name = ''; try { name = shape.getName(); } catch (e) {}
+        hits.push({ slideNumber: pi + 1, shapeName: name });
+        if (!all) return { success: true, replaced: replaced, hits: hits };
+      }
+    }
+    return { success: true, replaced: replaced, hits: hits };
+  },
+  // ==================== 演示文稿原语（slide_*，Phase 2：页与形状结构） ====================
+  // 设计依据：docs/superpowers/specs/2026-08-07-impress-bridge-design.md §4.2（原语 8-15）。
+  // [幻灯片·写] 插入新页。position（1 起，插到第 N 页之后；缺省末尾）+ 可选 layout
+  // （AutoLayout short 常量）+ 可选 title/body（需要 layout 生成对应占位符才有地方落字，
+  // 未显式给 layout 但给了 title/body 时默认套 layout=1「标题+内容」）。
+  slide_add_page(p) {
+    if (!isImpressDoc()) return slideFail(NOT_PRESENTATION_MSG);
+    let pages;
+    try { pages = xModel.getDrawPages(); } catch (e) { return slideFail('读取幻灯片列表失败: ' + errStr(e)); }
+    const count = pages.getCount();
+    let insertIndex; // 目标最终 0-based 落点，面向调用方语义不变
+    if (p && p.position != null) {
+      const want = Number(p.position);
+      if (!Number.isFinite(want) || want < 1 || want > count) {
+        return slideFail('position 越界: ' + p.position + '（共 ' + count + ' 页，1 开始，插到第 N 页之后）');
+      }
+      insertIndex = want; // 插到第 want 页之后 => 新页 0-based index = want
+    } else {
+      insertIndex = count; // 缺省末尾
+    }
+    // 真机实测（r4）：XDrawPages.insertNewByIndex(nIndex) 的落点在这个引擎构建上
+    // 不总是 nIndex 本身——边界情形（nIndex===当前页数）与看似正常的中间索引都
+    // 观察到过偏差（debug_impress_bare_append 探针 + e2e 组 22 实测均复现），死信
+    // 任何具体传入索引都不可靠。改用唯一没有歧义的调用方式：永远插在最前面
+    // （index 0，不存在"边界"这回事），定位到它后再用已验证可靠的 .uno:MovePage*
+    // 挪到真正目标位置（与 slide_move_page 同一套实现，已过多组真机断言）。
+    // 另外，文档已经历过一次插入后，同一文档上再插入可能连带清空某个"仅标题"
+    // 版式（无内容占位符）既有页的标题占位符——与我们往新页里塞了什么完全无关
+    // （裸调、不加任何内容也一样复现），疑似 r4 引擎对 AutoLayout 占位符的重算
+    // 逻辑本身有 bug，规避不了触发条件；用"插入前拍全篇标题快照、插入后逐页核对
+    // 补回"的自愈兜底，保证"新增一页"这个操作的净效果里不会有别的页丢内容。
+    const beforeTitles = [];
+    for (let i = 0; i < count; i++) {
+      let pg; try { pg = pages.getByIndex(i); } catch (e) { beforeTitles.push(null); continue; }
+      let t = null;
+      for (let s = 0; s < pg.getCount(); s++) {
+        let sh; try { sh = pg.getByIndex(s); } catch (e) { continue; }
+        if (shapeKind(sh) === 'title') { try { t = shapeText(sh); } catch (e) {} break; }
+      }
+      beforeTitles.push(t);
+    }
+    try { pages.insertNewByIndex(0); } catch (e) { return slideFail('插入幻灯片失败: ' + errStr(e)); }
+    let pages2;
+    try { pages2 = xModel.getDrawPages(); } catch (e) { return slideFail('重新读取幻灯片列表失败: ' + errStr(e)); }
+    const newCount = pages2.getCount();
+    if (newCount !== count + 1) return slideFail('插入幻灯片后页数未增加，疑似失败');
+    // 鲁棒定位新页：index 0 应当就是刚创建的空白页（形状数=0）；万一这个假设也不
+    // 成立（引擎行为超出预期），退化为全篇扫描找空白页，找不到就明确报错，不要
+    // 悄悄操作错的页。
+    let newIndex = -1;
+    try { if (pages2.getByIndex(0).getCount() === 0) newIndex = 0; } catch (e) {}
+    if (newIndex === -1) {
+      for (let i = 0; i < newCount; i++) {
+        let cand; try { cand = pages2.getByIndex(i); } catch (e) { continue; }
+        let n = -1; try { n = cand.getCount(); } catch (e) {}
+        if (n === 0) { newIndex = i; break; }
+      }
+    }
+    if (newIndex === -1) return slideFail('插入幻灯片后无法定位新页（未找到空白页）');
+    let page;
+    try { page = pages2.getByIndex(newIndex); } catch (e) { return slideFail('定位新页失败: ' + errStr(e)); }
+    // 挪位放在自愈之前：自愈是在既有页上补形状，不改变页顺序，先做后做都不影响
+    // movePageTo 的落点判定（它每步都重新核对 page 的实际位置，不依赖顺序假设）。
+    if (newIndex !== insertIndex) {
+      const finalIndex = movePageTo(page, insertIndex);
+      if (finalIndex !== insertIndex) {
+        return slideFail('新页未能挪到预期位置: 目标第 ' + (insertIndex + 1) + ' 页，实际落在第 ' + (finalIndex + 1) + ' 页');
+      }
+    }
+    // 自愈核对：此刻新页已确定落在 insertIndex（要么本来就是，要么挪位已复核通过）。
+    // "index i（i!==insertIndex）对应插入前 index：i<insertIndex 时是 i 本身，
+    // 否则是 i-1"——因为其余既有页彼此之间的相对顺序全程不变，只是被新页插入的
+    // 那个位置隔开，这条位置算术与新页具体经过几次挪位无关，只看它最终停在哪。
+    try {
+      const pagesFinal = xModel.getDrawPages();
+      const finalCount = pagesFinal.getCount();
+      for (let i = 0; i < finalCount; i++) {
+        if (i === insertIndex) continue;
+        const preIdx = i < insertIndex ? i : i - 1;
+        if (preIdx < 0 || preIdx >= beforeTitles.length) continue;
+        const expected = beforeTitles[preIdx];
+        if (expected == null) continue; // 该页原本就没有标题占位符，不用管
+        let pg; try { pg = pagesFinal.getByIndex(i); } catch (e) { continue; }
+        let curTitle = null;
+        for (let s = 0; s < pg.getCount(); s++) {
+          let sh; try { sh = pg.getByIndex(s); } catch (e) { continue; }
+          if (shapeKind(sh) === 'title') { try { curTitle = shapeText(sh); } catch (e) {} break; }
+        }
+        if (curTitle === expected) continue; // 完好
+        try {
+          const repairShape = xModel.createInstance('com.sun.star.presentation.TitleTextShape');
+          pg.add(repairShape);
+          let rpw = 720, rph = 540;
+          try { rpw = Number(pg.getPropertyValue('Width')); rph = Number(pg.getPropertyValue('Height')); } catch (e) {}
+          repairShape.setPosition(new css.awt.Point({ X: Math.round(rpw * 0.08), Y: Math.round(rph * 0.05) }));
+          repairShape.setSize(new css.awt.Size({ Width: Math.round(rpw * 0.84), Height: Math.round(rph * 0.15) }));
+          repairShape.getText().setString(expected);
+        } catch (e) { /* 自愈失败不阻断主流程，已尽力保留原内容 */ }
+      }
+    } catch (e) { /* 自愈整体失败不阻断主流程 */ }
+    // layout 只在调用方显式给出时才碰这个属性。title/body 走手工 createInstance
+    // 真占位符服务类型（presentation.TitleTextShape / OutlineTextShape）直接
+    // page.add()，**不经过 Layout 属性**——保留 slide_get_page/slide_get_overview
+    // 靠 shapeKind() 识别 'title'/'placeholder' 的既有读取路径不用改；createInstance
+    // 失败（真机未核实这两个服务在未设 Layout 时能否独立
+    // 创建）时回退普通文本框，保证功能不因服务名不可用而整体失败。
+    const layoutIn = p && p.layout != null ? Number(p.layout) : null;
+    if (layoutIn != null) { try { page.setPropertyValue('Layout', shortAny(layoutIn)); } catch (e) {} }
+    const wantTitle = p && p.title != null ? String(p.title) : null;
+    const wantBody = p && p.body != null ? String(p.body) : null;
+    let pw = 720, ph = 540; // 缺省 fallback（1/100mm），读不到页面尺寸时仍能给出合理位置
+    try { pw = Number(page.getPropertyValue('Width')); ph = Number(page.getPropertyValue('Height')); } catch (e) {}
+    function createPlaceholderShape(service) {
+      try { const s = xModel.createInstance(service); page.add(s); return s; }
+      catch (e) {
+        try { const s2 = xModel.createInstance('com.sun.star.drawing.TextShape'); page.add(s2); return s2; }
+        catch (e2) { return null; }
+      }
+    }
+    if (wantTitle != null) {
+      try {
+        const titleShape = createPlaceholderShape('com.sun.star.presentation.TitleTextShape');
+        if (titleShape) {
+          titleShape.setPosition(new css.awt.Point({ X: Math.round(pw * 0.08), Y: Math.round(ph * 0.05) }));
+          titleShape.setSize(new css.awt.Size({ Width: Math.round(pw * 0.84), Height: Math.round(ph * 0.15) }));
+          titleShape.getText().setString(wantTitle);
+          try {
+            const cur = titleShape.getText().createTextCursor();
+            cur.gotoStart(false); cur.gotoEnd(true);
+            setCharProp(cur, 'CharHeight', 28);
+            setCharProp(cur, 'CharWeight', css.awt.FontWeight.BOLD);
+          } catch (e) {}
+        }
+      } catch (e) { /* 标题框创建失败不阻断整体插页 */ }
+    }
+    if (wantBody != null) {
+      try {
+        const bodyShape = createPlaceholderShape('com.sun.star.presentation.OutlineTextShape');
+        if (bodyShape) {
+          bodyShape.setPosition(new css.awt.Point({ X: Math.round(pw * 0.08), Y: Math.round(ph * 0.25) }));
+          bodyShape.setSize(new css.awt.Size({ Width: Math.round(pw * 0.84), Height: Math.round(ph * 0.65) }));
+          bodyShape.getText().setString(wantBody);
+        }
+      } catch (e) { /* 正文框创建失败不阻断整体插页 */ }
+    }
+    ensureShapeNames(page);
+    try { if (ctrl && ctrl.setCurrentPage) ctrl.setCurrentPage(page); } catch (e) {}
+    let layoutOut = null; try { layoutOut = page.getPropertyValue('Layout'); } catch (e) {}
+    return { success: true, slideNumber: insertIndex + 1, layout: layoutOut };
+  },
+  // [幻灯片·写] 删除指定页。拒绝删到 0 页（至少保留一页）。
+  slide_delete_page(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    let pages;
+    try { pages = xModel.getDrawPages(); } catch (e) { return slideFail('读取幻灯片列表失败: ' + errStr(e)); }
+    if (pages.getCount() <= 1) return slideFail('无法删除：演示文稿只剩最后一页');
+    try { pages.remove(r0.page); } catch (e) { return slideFail('删除幻灯片失败: ' + errStr(e)); }
+    return { success: true, slideCount: pages.getCount() };
+  },
+  // [幻灯片·写] 把指定页移到新位置。XDrawPages 只有 insert/remove、无直接 move API
+  // （GenericDrawPage.Number 只读），走 .uno:MovePageUp/Down/First/Last 派发（同「删除键
+  // 必须走 .uno: 调度」PR#164/166 一个经验），再用页在 getDrawPages() 里的实际下标
+  // 双口径复核——不信 dispatch 本身的返回值。
+  slide_move_page(p) {
+    const r0 = resolvePage(p); // 顺手把 slideNumber 设为当前页，MovePage* 作用于当前页
+    if (r0.error) return slideFail(r0.error);
+    let pages;
+    try { pages = xModel.getDrawPages(); } catch (e) { return slideFail('读取幻灯片列表失败: ' + errStr(e)); }
+    const count = pages.getCount();
+    const to = p && p.toPosition != null ? Number(p.toPosition) : NaN;
+    if (!Number.isFinite(to) || to < 1 || to > count) {
+      return slideFail('toPosition 越界: ' + (p && p.toPosition) + '（共 ' + count + ' 页，1 开始）');
+    }
+    const from = r0.index;
+    const toIndex = to - 1;
+    const finalIndex = movePageTo(r0.page, toIndex);
+    if (finalIndex !== toIndex) {
+      return slideFail('移动幻灯片未达预期位置: 目标第 ' + to + ' 页，实际落在第 ' + (finalIndex + 1) + ' 页');
+    }
+    return { success: true, from: from + 1, to: to };
+  },
+  // [幻灯片·写] 设置版式（AutoLayout short 常量）与/或母版（按名匹配 XMasterPagesSupplier）。
+  // 至少给一个参数。
+  slide_set_layout(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    if (!p || (p.layout == null && (p.masterName == null || String(p.masterName).trim() === ''))) {
+      return slideFail('缺少 layout 或 masterName 参数（至少给一个）');
+    }
+    const page = r0.page;
+    if (p.layout != null) {
+      const layoutNum = Number(p.layout);
+      if (!Number.isFinite(layoutNum)) return slideFail('layout 必须是数字（AutoLayout 常量）');
+      try { page.setPropertyValue('Layout', shortAny(layoutNum)); } catch (e) { return slideFail('设置版式失败: ' + errStr(e)); }
+    }
+    if (p.masterName != null && String(p.masterName).trim() !== '') {
+      const wantMaster = String(p.masterName).trim();
+      let masters; try { masters = xModel.getMasterPages(); } catch (e) { return slideFail('读取母版列表失败: ' + errStr(e)); }
+      let found = null;
+      for (let i = 0; i < masters.getCount(); i++) {
+        let m; try { m = masters.getByIndex(i); } catch (e) { continue; }
+        let name = ''; try { name = m.getName(); } catch (e) {}
+        if (name === wantMaster) { found = m; break; }
+      }
+      if (!found) return slideFail('母版不存在: ' + wantMaster);
+      try { page.setMasterPage(found); } catch (e) { return slideFail('设置母版失败: ' + errStr(e)); }
+    }
+    let layoutOut = null; try { layoutOut = page.getPropertyValue('Layout'); } catch (e) {}
+    let masterOut = ''; try { masterOut = page.getMasterPage().getName(); } catch (e) {}
+    return { success: true, layout: layoutOut, layoutName: layoutNameOf(layoutOut), masterName: masterOut };
+  },
+  // [幻灯片·写] 插入文本框。位置尺寸缺省值（磅）：left/top=100, width=300, height=80。
+  slide_add_text_box(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    const text = p && p.text != null ? String(p.text) : '';
+    const leftPt = p && p.left != null ? Number(p.left) : 100;
+    const topPt = p && p.top != null ? Number(p.top) : 100;
+    const widthPt = p && p.width != null ? Number(p.width) : 300;
+    const heightPt = p && p.height != null ? Number(p.height) : 80;
+    let shape;
+    try { shape = xModel.createInstance('com.sun.star.drawing.TextShape'); }
+    catch (e) { return slideFail('创建文本框失败: ' + errStr(e)); }
+    try { r0.page.add(shape); } catch (e) { return slideFail('添加文本框到页面失败: ' + errStr(e)); }
+    try {
+      shape.setSize(new css.awt.Size({ Width: ptToMm100(widthPt), Height: ptToMm100(heightPt) }));
+      shape.setPosition(new css.awt.Point({ X: ptToMm100(leftPt), Y: ptToMm100(topPt) }));
+    } catch (e) { return slideFail('设置文本框位置尺寸失败: ' + errStr(e)); }
+    try { shape.getText().setString(text); } catch (e) { return slideFail('写入文本框文字失败: ' + errStr(e)); }
+    if (p && (p.fontSize != null || p.bold != null || p.color != null)) {
+      try {
+        const cur = shape.getText().createTextCursor();
+        cur.gotoStart(false); cur.gotoEnd(true);
+        if (p.fontSize != null) setCharProp(cur, 'CharHeight', Number(p.fontSize));
+        if (p.bold != null) setCharProp(cur, 'CharWeight', p.bold ? css.awt.FontWeight.BOLD : css.awt.FontWeight.NORMAL);
+        if (p.color != null) { const c = parseColor(p.color); if (c != null) setCharProp(cur, 'CharColor', c); }
+      } catch (e) {}
+    }
+    ensureShapeNames(r0.page);
+    let name = ''; try { name = shape.getName(); } catch (e) {}
+    return { success: true, shapeName: name };
+  },
+  // [幻灯片·写] 插入形状：矩形/椭圆/线条走对应 UNO 服务；三角形走 CustomShape +
+  // CustomShapeGeometry（Type='triangle' 是 LO 内建的预设几何名，与形状库里的三角形
+  // 同一条 preset）。位置尺寸缺省值（磅）：left/top=100, width=200, height=150。
+  slide_add_shape(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    const type = p && p.shapeType != null ? String(p.shapeType).trim().toLowerCase() : '';
+    const SHAPE_SERVICE = {
+      rectangle: 'com.sun.star.drawing.RectangleShape',
+      ellipse: 'com.sun.star.drawing.EllipseShape',
+      line: 'com.sun.star.drawing.LineShape',
+    };
+    const isTriangle = type === 'triangle';
+    const service = isTriangle ? 'com.sun.star.drawing.CustomShape' : SHAPE_SERVICE[type];
+    if (!service) return slideFail('未知 shapeType: ' + type + '（支持 rectangle/ellipse/triangle/line）');
+    const leftPt = p && p.left != null ? Number(p.left) : 100;
+    const topPt = p && p.top != null ? Number(p.top) : 100;
+    const widthPt = p && p.width != null ? Number(p.width) : 200;
+    const heightPt = p && p.height != null ? Number(p.height) : 150;
+    let shape;
+    try { shape = xModel.createInstance(service); } catch (e) { return slideFail('创建形状失败: ' + errStr(e)); }
+    try { r0.page.add(shape); } catch (e) { return slideFail('添加形状到页面失败: ' + errStr(e)); }
+    try {
+      shape.setSize(new css.awt.Size({ Width: ptToMm100(widthPt), Height: ptToMm100(heightPt) }));
+      shape.setPosition(new css.awt.Point({ X: ptToMm100(leftPt), Y: ptToMm100(topPt) }));
+    } catch (e) { return slideFail('设置形状位置尺寸失败: ' + errStr(e)); }
+    if (isTriangle) {
+      try { shape.setPropertyValue('CustomShapeGeometry', [mkProp('Type', 'triangle')]); }
+      catch (e) { return slideFail('设置三角形几何失败: ' + errStr(e)); }
+    }
+    if (p && p.fillColor != null) {
+      const c = parseColor(p.fillColor);
+      if (c != null) { try { shape.setPropertyValue('FillColor', c); } catch (e) {} }
+    }
+    if (p && p.text != null && String(p.text) !== '') {
+      try { shape.getText().setString(String(p.text)); } catch (e) {}
+    }
+    ensureShapeNames(r0.page);
+    let name = ''; try { name = shape.getName(); } catch (e) {}
+    return { success: true, shapeName: name };
+  },
+  // [幻灯片·写] 按 shapeName 精确删除一个形状。
+  slide_delete_shape(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    ensureShapeNames(r0.page);
+    const rs = resolveShape(r0.page, p);
+    if (rs.error) return slideFail(rs.error);
+    try { r0.page.remove(rs.shape); } catch (e) { return slideFail('删除形状失败: ' + errStr(e)); }
+    return { success: true, deleted: rs.name };
+  },
+  // [幻灯片·写] 移动/改尺寸一个形状（AI 逐步调排版）。left/top/width/height 均可选，
+  // 缺省保留原值；返回 before/after 供调用方核对实际生效值。
+  slide_set_shape_geometry(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    if (!(p && p.shapeName)) return slideFail('缺少 shapeName 参数');
+    ensureShapeNames(r0.page);
+    const rs = resolveShape(r0.page, p);
+    if (rs.error) return slideFail(rs.error);
+    const shape = rs.shape;
+    let beforePos = null, beforeSize = null;
+    try { beforePos = shape.getPosition(); beforeSize = shape.getSize(); } catch (e) {}
+    const before = {
+      left: beforePos ? hmmToPt(beforePos.X) : null, top: beforePos ? hmmToPt(beforePos.Y) : null,
+      width: beforeSize ? hmmToPt(beforeSize.Width) : null, height: beforeSize ? hmmToPt(beforeSize.Height) : null,
+    };
+    if (p.width != null || p.height != null) {
+      const w = p.width != null ? ptToMm100(Number(p.width)) : (beforeSize ? beforeSize.Width : 0);
+      const h = p.height != null ? ptToMm100(Number(p.height)) : (beforeSize ? beforeSize.Height : 0);
+      try { shape.setSize(new css.awt.Size({ Width: w, Height: h })); }
+      catch (e) { return slideFail('设置形状尺寸失败: ' + errStr(e)); }
+    }
+    if (p.left != null || p.top != null) {
+      const x = p.left != null ? ptToMm100(Number(p.left)) : (beforePos ? beforePos.X : 0);
+      const y = p.top != null ? ptToMm100(Number(p.top)) : (beforePos ? beforePos.Y : 0);
+      try { shape.setPosition(new css.awt.Point({ X: x, Y: y })); }
+      catch (e) { return slideFail('设置形状位置失败: ' + errStr(e)); }
+    }
+    let afterPos = null, afterSize = null;
+    try { afterPos = shape.getPosition(); afterSize = shape.getSize(); } catch (e) {}
+    const after = {
+      left: afterPos ? hmmToPt(afterPos.X) : null, top: afterPos ? hmmToPt(afterPos.Y) : null,
+      width: afterSize ? hmmToPt(afterSize.Width) : null, height: afterSize ? hmmToPt(afterSize.Height) : null,
+    };
+    return { success: true, before: before, after: after };
+  },
+  // ==================== 演示文稿原语（slide_*，Phase 3：格式与表格） ====================
+  // 设计依据同上 §4.2（原语表 16-20；slide_format_shape/slide_table_set_style 是
+  // 任务方直接点名要补的两项，不在原 20 个原语表里，随 Phase 3 一并实现）。
+  // [幻灯片·写] 设置形状文字的字体/字号/粗斜体/下划线/删除线/颜色/段落对齐。
+  // 不传 anchorText 格式化整个形状文字；传了则只格式化第一处命中该子串的文字。
+  slide_format_text(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    if (!(p && p.shapeName)) return slideFail('缺少 shapeName 参数（先用 slide_get_page 查看该页形状名）');
+    ensureShapeNames(r0.page);
+    const rs = resolveShape(r0.page, p);
+    if (rs.error) return slideFail(rs.error);
+    let xText; try { xText = rs.shape.getText(); } catch (e) { return slideFail('该形状不支持文字: ' + errStr(e)); }
+    const anchorText = p && p.anchorText != null && String(p.anchorText) !== '' ? String(p.anchorText) : null;
+    let cur;
+    if (anchorText) {
+      let full = ''; try { full = xText.getString() || ''; } catch (e) {}
+      const idx = full.indexOf(anchorText);
+      if (idx === -1) return slideFail('形状文字中未找到: ' + anchorText);
+      try {
+        cur = xText.createTextCursor();
+        cur.gotoStart(false);
+        if (idx > 0 && !cur.goRight(idx, false)) return slideFail('定位查找文字起点失败');
+        if (!cur.goRight(anchorText.length, true)) return slideFail('选中查找文字失败');
+      } catch (e) { return slideFail('定位查找文字失败: ' + errStr(e)); }
+    } else {
+      try { cur = xText.createTextCursor(); cur.gotoStart(false); cur.gotoEnd(true); }
+      catch (e) { return slideFail('选中形状全部文字失败: ' + errStr(e)); }
+      if ((cur.getString() || '').length === 0) return slideFail('该形状没有文字，无法格式化');
+    }
+    const applied = {};
+    if (p.fontName != null) { setCharProp(cur, 'CharFontName', String(p.fontName)); applied.fontName = String(p.fontName); }
+    if (p.fontSize != null) { setCharProp(cur, 'CharHeight', Number(p.fontSize)); applied.fontSize = Number(p.fontSize); }
+    if (p.bold != null) { setCharProp(cur, 'CharWeight', p.bold ? css.awt.FontWeight.BOLD : css.awt.FontWeight.NORMAL); applied.bold = !!p.bold; }
+    if (p.italic != null) { setCharProp(cur, 'CharPosture', p.italic ? css.awt.FontSlant.ITALIC : css.awt.FontSlant.NONE); applied.italic = !!p.italic; }
+    if (p.underline != null) {
+      const U = css.awt.FontUnderline;
+      const m = { none: U.NONE, single: U.SINGLE, double: U.DOUBLE, dotted: U.DOTTED, wave: U.WAVE };
+      const v = m[String(p.underline).toLowerCase()];
+      if (v == null) return slideFail('未知 underline: ' + p.underline + '（支持 none/single/double/dotted/wave）');
+      try { cur.setPropertyValue('CharUnderline', v); applied.underline = String(p.underline).toLowerCase(); }
+      catch (e) { return slideFail('设置下划线失败: ' + errStr(e)); }
+    }
+    if (p.strikethrough != null) {
+      try { cur.setPropertyValue('CharStrikeout', p.strikethrough ? css.awt.FontStrikeout.SINGLE : css.awt.FontStrikeout.NONE); applied.strikethrough = !!p.strikethrough; }
+      catch (e) { return slideFail('设置删除线失败: ' + errStr(e)); }
+    }
+    if (p.color != null) {
+      const c = parseColor(p.color, { auto: -1 });
+      if (c == null) return slideFail('颜色格式非法: ' + p.color + '（用 #RRGGBB 或 auto）');
+      try { cur.setPropertyValue('CharColor', c); applied.color = String(p.color); }
+      catch (e) { return slideFail('设置颜色失败: ' + errStr(e)); }
+    }
+    if (p.alignment != null) {
+      const A = css.style.ParagraphAdjust;
+      const m2 = { left: A.LEFT, right: A.RIGHT, center: A.CENTER, justify: A.BLOCK };
+      const v2 = m2[String(p.alignment).toLowerCase()];
+      if (v2 == null) return slideFail('未知 alignment: ' + p.alignment + '（支持 left/right/center/justify）');
+      try { cur.setPropertyValue('ParaAdjust', v2); applied.alignment = String(p.alignment).toLowerCase(); }
+      catch (e) { return slideFail('设置对齐失败: ' + errStr(e)); }
+    }
+    if (Object.keys(applied).length === 0) return slideFail('未给出任何格式参数');
+    return { success: true, shapeName: rs.name, applied: applied };
+  },
+  // [幻灯片·写] 设置形状的填充色/边框颜色与粗细/透明度。noFill/noLine 取消填充/边框。
+  slide_format_shape(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    if (!(p && p.shapeName)) return slideFail('缺少 shapeName 参数（先用 slide_get_page 查看该页形状名）');
+    ensureShapeNames(r0.page);
+    const rs = resolveShape(r0.page, p);
+    if (rs.error) return slideFail(rs.error);
+    const shape = rs.shape;
+    // FillStyle/LineStyle 枚举名防御式取值（同 applyTableBorders 里 BorderLineStyle
+    // 的既有口径）——本次调研未在真机上逐值核对 css.drawing 命名空间是否已在这个
+    // 引擎构建里可用，取不到就退回 idl 已知的数值常量，不让整个原语因为枚举取值
+    // 失败而报错。
+    const FILL_STYLE = (css.drawing && css.drawing.FillStyle) || { NONE: 0, SOLID: 1 };
+    const LINE_STYLE = (css.drawing && css.drawing.LineStyle) || { NONE: 0, SOLID: 1 };
+    const applied = {};
+    if (p.noFill === true) {
+      try { shape.setPropertyValue('FillStyle', FILL_STYLE.NONE); applied.noFill = true; }
+      catch (e) { return slideFail('取消填充失败: ' + errStr(e)); }
+    } else if (p.fillColor != null) {
+      const c = parseColor(p.fillColor);
+      if (c == null) return slideFail('fillColor 格式非法: ' + p.fillColor + '（用 #RRGGBB）');
+      try { shape.setPropertyValue('FillStyle', FILL_STYLE.SOLID); shape.setPropertyValue('FillColor', c); applied.fillColor = String(p.fillColor); }
+      catch (e) { return slideFail('设置填充色失败: ' + errStr(e)); }
+    }
+    if (p.noLine === true) {
+      try { shape.setPropertyValue('LineStyle', LINE_STYLE.NONE); applied.noLine = true; }
+      catch (e) { return slideFail('取消边框失败: ' + errStr(e)); }
+    } else if (p.lineColor != null) {
+      const c = parseColor(p.lineColor);
+      if (c == null) return slideFail('lineColor 格式非法: ' + p.lineColor + '（用 #RRGGBB）');
+      try { shape.setPropertyValue('LineStyle', LINE_STYLE.SOLID); shape.setPropertyValue('LineColor', c); applied.lineColor = String(p.lineColor); }
+      catch (e) { return slideFail('设置边框颜色失败: ' + errStr(e)); }
+    }
+    if (p.lineWidthPt != null) {
+      try { shape.setPropertyValue('LineWidth', ptToMm100(Number(p.lineWidthPt))); applied.lineWidthPt = Number(p.lineWidthPt); }
+      catch (e) { return slideFail('设置边框粗细失败: ' + errStr(e)); }
+    }
+    if (p.fillTransparency != null) {
+      const t = Math.max(0, Math.min(100, Math.round(Number(p.fillTransparency))));
+      try { shape.setPropertyValue('FillTransparence', shortAny(t)); applied.fillTransparency = t; }
+      catch (e) { return slideFail('设置填充透明度失败: ' + errStr(e)); }
+    }
+    if (Object.keys(applied).length === 0) return slideFail('未给出任何样式参数（fillColor/noFill/lineColor/noLine/lineWidthPt/fillTransparency 至少给一个）');
+    return { success: true, shapeName: rs.name, applied: applied };
+  },
+  // [幻灯片·写] 插入一张表格形状。rowsJson（后端已解析为二维数组）给出时按其行列数
+  // 建表并写满；否则按 rows/cols（默认各 2）建空表。新建的 TableShape 默认行列数
+  // 未知，统一按"当前行列数 vs 目标行列数"的差值调用 insertByIndex/removeByIndex
+  // 补齐（与 doc_table_add_row/col 同一 XTableRows/XTableColumns 接口）。
+  slide_add_table(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    const rowsData = p && Array.isArray(p.rowsJson) ? p.rowsJson : null;
+    if (rowsData != null && (!rowsData.length || !Array.isArray(rowsData[0]))) {
+      return slideFail('rowsJson 必须是非空二维数组');
+    }
+    let rowCount, colCount;
+    if (rowsData) { rowCount = rowsData.length; colCount = rowsData[0].length; }
+    else {
+      rowCount = p && p.rows != null ? Math.max(1, Math.round(Number(p.rows))) : 2;
+      colCount = p && p.cols != null ? Math.max(1, Math.round(Number(p.cols))) : 2;
+    }
+    if (rowCount > 50 || colCount > 20) return slideFail('表格过大（上限 50 行 × 20 列）');
+    let shape;
+    try { shape = xModel.createInstance('com.sun.star.drawing.TableShape'); }
+    catch (e) { return slideFail('创建表格形状失败: ' + errStr(e)); }
+    try { r0.page.add(shape); } catch (e) { return slideFail('添加表格到页面失败: ' + errStr(e)); }
+    const leftPt = p && p.left != null ? Number(p.left) : 100;
+    const topPt = p && p.top != null ? Number(p.top) : 100;
+    const widthPt = p && p.width != null ? Number(p.width) : 400;
+    const heightPt = p && p.height != null ? Number(p.height) : 200;
+    try {
+      shape.setSize(new css.awt.Size({ Width: ptToMm100(widthPt), Height: ptToMm100(heightPt) }));
+      shape.setPosition(new css.awt.Point({ X: ptToMm100(leftPt), Y: ptToMm100(topPt) }));
+    } catch (e) { return slideFail('设置表格位置尺寸失败: ' + errStr(e)); }
+    let table;
+    try { table = shape.getPropertyValue('Model'); } catch (e) { return slideFail('读取表格模型失败: ' + errStr(e)); }
+    if (!table) return slideFail('表格模型不可用（引擎未返回 Model）');
+    try {
+      const curRows = table.getRows().getCount();
+      if (rowCount > curRows) table.getRows().insertByIndex(curRows, rowCount - curRows);
+      else if (rowCount < curRows) table.getRows().removeByIndex(rowCount, curRows - rowCount);
+      const curCols = table.getColumns().getCount();
+      if (colCount > curCols) table.getColumns().insertByIndex(curCols, colCount - curCols);
+      else if (colCount < curCols) table.getColumns().removeByIndex(colCount, curCols - colCount);
+    } catch (e) { return slideFail('调整表格行列数失败: ' + errStr(e)); }
+    const afterRows = table.getRows().getCount(), afterCols = table.getColumns().getCount();
+    if (afterRows !== rowCount || afterCols !== colCount) {
+      return slideFail('表格行列数调整未生效（目标 ' + rowCount + '×' + colCount + '，实际 ' + afterRows + '×' + afterCols + '）');
+    }
+    if (rowsData) {
+      for (let rIdx = 0; rIdx < rowCount; rIdx++) {
+        for (let cIdx = 0; cIdx < colCount; cIdx++) {
+          const v = rowsData[rIdx][cIdx];
+          try { table.getCellByPosition(cIdx, rIdx).setString(v == null ? '' : String(v)); } catch (e) {}
+        }
+      }
+    }
+    ensureShapeNames(r0.page);
+    let name = ''; try { name = shape.getName(); } catch (e) {}
+    return { success: true, shapeName: name, rows: rowCount, cols: colCount };
+  },
+  // [幻灯片·看] 读一张表格形状为二维数组。不传 shapeName 要求该页只有一张表格。
+  slide_table_read(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    const rt = resolveSlideTable(r0.page, p);
+    if (rt.error) return slideFail(rt.error);
+    let rows = 0, cols = 0;
+    try { rows = rt.table.getRows().getCount(); cols = rt.table.getColumns().getCount(); }
+    catch (e) { return slideFail('读取表格行列数失败: ' + errStr(e)); }
+    const maxRows = Math.min(rows, Math.max(1, Number(p && p.maxRows) || 50));
+    const maxCols = Math.min(cols, Math.max(1, Number(p && p.maxCols) || 20));
+    const cells = [];
+    for (let rIdx = 0; rIdx < maxRows; rIdx++) {
+      const line = [];
+      for (let cIdx = 0; cIdx < maxCols; cIdx++) {
+        let v = ''; try { v = rt.table.getCellByPosition(cIdx, rIdx).getString() || ''; } catch (e) {}
+        line.push(v);
+      }
+      cells.push(line);
+    }
+    return {
+      success: true, shapeName: rt.shapeName, rows: rows, cols: cols, cells: cells,
+      truncated: maxRows < rows || maxCols < cols,
+    };
+  },
+  // [幻灯片·写] 改一张表格形状的一格文本。row/col 均 0 开始。不传 shapeName 要求
+  // 该页只有一张表格。Impress 表格没有修订机制，写入直接生效。
+  slide_table_set_cell(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    const rt = resolveSlideTable(r0.page, p);
+    if (rt.error) return slideFail(rt.error);
+    if (p == null || p.row == null || p.col == null) return slideFail('缺少 row/col 参数（均 0 开始）');
+    const rowIdx = Number(p.row), colIdx = Number(p.col);
+    let rows = 0, cols = 0;
+    try { rows = rt.table.getRows().getCount(); cols = rt.table.getColumns().getCount(); }
+    catch (e) { return slideFail('读取表格行列数失败: ' + errStr(e)); }
+    if (!Number.isFinite(rowIdx) || rowIdx < 0 || rowIdx >= rows) return slideFail('row 越界: ' + p.row + '（表格共 ' + rows + ' 行，0 开始）');
+    if (!Number.isFinite(colIdx) || colIdx < 0 || colIdx >= cols) return slideFail('col 越界: ' + p.col + '（表格共 ' + cols + ' 列，0 开始）');
+    let cell;
+    try { cell = rt.table.getCellByPosition(colIdx, rowIdx); } catch (e) { return slideFail('定位单元格失败: ' + errStr(e)); }
+    let previous = ''; try { previous = cell.getString() || ''; } catch (e) {}
+    const text = p.text != null ? String(p.text) : '';
+    try { cell.setString(text); } catch (e) { return slideFail('写入单元格失败: ' + errStr(e)); }
+    return { success: true, shapeName: rt.shapeName, row: rowIdx, col: colIdx, previous: previous };
+  },
+  // [幻灯片·写] 表格整体样式：表头加粗/边框/列宽。三项互相独立、各自尽力而为——
+  // Impress 表格的 UNO API 面比 Word/Calc 窄得多（本次实施调研没有查到 Impress
+  // 表格单元格是否真的暴露 Top/BottomBorder 或列的 Width 属性），每项都用
+  // try/catch 隔离，失败的项如实在返回值里报 applied:false 加原因，不装作成功。
+  slide_table_set_style(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    const rt = resolveSlideTable(r0.page, p);
+    if (rt.error) return slideFail(rt.error);
+    const table = rt.table;
+    let rows = 0, cols = 0;
+    try { rows = table.getRows().getCount(); cols = table.getColumns().getCount(); }
+    catch (e) { return slideFail('读取表格行列数失败: ' + errStr(e)); }
+    const result = { success: true, shapeName: rt.shapeName };
+    let didAnything = false;
+
+    if (p && p.headerBold != null) {
+      didAnything = true;
+      const want = !!p.headerBold;
+      let ok = 0, fail = 0;
+      for (let c = 0; c < cols; c++) {
+        try {
+          const cell = table.getCellByPosition(c, 0);
+          let cur;
+          try { cur = cell.createTextCursor(); }
+          catch (e1) { cur = cell.getText().createTextCursor(); }
+          cur.gotoStart(false); cur.gotoEnd(true);
+          setCharProp(cur, 'CharWeight', want ? css.awt.FontWeight.BOLD : css.awt.FontWeight.NORMAL);
+          ok++;
+        } catch (e) { fail++; }
+      }
+      result.headerBold = { applied: ok > 0, cellsOk: ok, cellsFailed: fail };
+      if (ok === 0) result.headerBold.note = '表格单元格文字光标获取失败（cell.createTextCursor / cell.getText().createTextCursor 均失败），表头加粗未生效';
+    }
+
+    if (p && (p.borderWidthPt != null || p.borderColor != null)) {
+      didAnything = true;
+      const widthMm = p.borderWidthPt != null ? ptToMm100(Number(p.borderWidthPt)) : ptToMm100(1);
+      const colorNum = p.borderColor != null ? parseColor(p.borderColor, { black: 0 }) : 0;
+      if (p.borderColor != null && colorNum == null) return slideFail('borderColor 格式非法: ' + p.borderColor + '（用 #RRGGBB）');
+      const solid = (css.table.BorderLineStyle && css.table.BorderLineStyle.SOLID != null) ? css.table.BorderLineStyle.SOLID : 0;
+      let bl;
+      try { bl = new css.table.BorderLine2({ Color: colorNum == null ? 0 : colorNum, LineWidth: widthMm, LineStyle: solid }); }
+      catch (e) { return slideFail('构建边框样式失败: ' + errStr(e)); }
+      let ok = 0, fail = 0;
+      for (let rIdx = 0; rIdx < rows; rIdx++) {
+        for (let cIdx = 0; cIdx < cols; cIdx++) {
+          try {
+            const cell = table.getCellByPosition(cIdx, rIdx);
+            cell.setPropertyValue('TopBorder', bl);
+            cell.setPropertyValue('BottomBorder', bl);
+            cell.setPropertyValue('LeftBorder', bl);
+            cell.setPropertyValue('RightBorder', bl);
+            ok++;
+          } catch (e) { fail++; }
+        }
+      }
+      result.borders = { applied: ok > 0, cellsOk: ok, cellsFailed: fail };
+      if (ok === 0) result.borders.note = 'Impress 表格单元格未暴露 Top/Bottom/Left/RightBorder 属性（引擎不支持或本 API 路径不适用），边框设置未生效';
+    }
+
+    if (p && Array.isArray(p.columnWidthsPt)) {
+      didAnything = true;
+      let ok = 0, fail = 0;
+      const n = Math.min(p.columnWidthsPt.length, cols);
+      for (let i = 0; i < n; i++) {
+        const wPt = Number(p.columnWidthsPt[i]);
+        if (!Number.isFinite(wPt) || wPt <= 0) { fail++; continue; }
+        try { table.getColumns().getByIndex(i).setPropertyValue('Width', ptToMm100(wPt)); ok++; }
+        catch (e) { fail++; }
+      }
+      result.columnWidths = { applied: ok > 0, colsOk: ok, colsFailed: fail };
+      if (ok === 0) result.columnWidths.note = 'Impress 表格列未暴露可写的 Width 属性（引擎不支持），列宽设置未生效';
+    }
+
+    if (!didAnything) return slideFail('未给出任何样式参数（headerBold / borderWidthPt+borderColor / columnWidthsPt 至少给一个）');
+    return result;
+  },
+  // [幻灯片·写] 在指定页查找文字并加超链接。优先走与 Writer 的
+  // set_hyperlink_at_anchor 同一实现口径：直接在选中范围上设 HyperLinkURL 字符
+  // 属性。**真机实测（r4，e2e 组 23）：Impress 的 drawing.Text 不支持这个字符
+  // 属性**（`UnknownPropertyException`，与 spec 调研阶段"drawing.Text 尽量复刻
+  // Writer 功能"的预期不符，字符级超链接在这个引擎构建上不可行）——退回 spec
+  // 备选方案：整个形状的交互动作 `OnClick=ClickAction.DOCUMENT` + `Bookmark=url`
+  // （Impress UI「交互」面板同款机制），点击形状任意位置都会跳转，不再是"只有
+  // 命中文字可点"这个更精确的粒度。返回值 via 字段区分两种情形（'HyperLinkURL'
+  // 精确到字符 / 'shape-click-action' 整个形状降级），note 字段在降级时如实说明，
+  // 不装作达成了字符级精度。只在非表格形状的文字里查找，命中第一处即返回。
+  slide_set_hyperlink(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    const searchText = p && p.searchText != null ? String(p.searchText) : '';
+    if (!searchText) return slideFail('缺少 searchText 参数');
+    const url = p && p.url != null ? String(p.url) : '';
+    if (!url) return slideFail('缺少 url 参数');
+    if (!/^https?:\/\//i.test(url)) return slideFail('url 仅支持 http/https: ' + url);
+    ensureShapeNames(r0.page);
+    const n = r0.page.getCount();
+    for (let i = 0; i < n; i++) {
+      let shape; try { shape = r0.page.getByIndex(i); } catch (e) { continue; }
+      if (shapeKind(shape) === 'table') continue; // 表格单元格内超链接本期不做
+      let xText; try { xText = shape.getText(); } catch (e) { continue; }
+      let full = ''; try { full = xText.getString() || ''; } catch (e) { continue; }
+      const idx = full.indexOf(searchText);
+      if (idx === -1) continue;
+      let name = ''; try { name = shape.getName(); } catch (e) {}
+      try {
+        const cur = xText.createTextCursor();
+        cur.gotoStart(false);
+        if (idx > 0 && !cur.goRight(idx, false)) return slideFail('定位查找文字起点失败');
+        if (!cur.goRight(searchText.length, true)) return slideFail('选中查找文字失败');
+        cur.setPropertyValue('HyperLinkURL', url);
+        return { success: true, shapeName: name, url: url, via: 'HyperLinkURL' };
+      } catch (charErr) {
+        try {
+          const CA = (css.presentation && css.presentation.ClickAction) || { DOCUMENT: 6 };
+          shape.setPropertyValue('OnClick', CA.DOCUMENT);
+          shape.setPropertyValue('Bookmark', url);
+          return {
+            success: true, shapeName: name, url: url, via: 'shape-click-action',
+            note: '该引擎的 Impress 文字不支持字符级超链接（HyperLinkURL 属性不存在），已回退为整个形状的点击交互动作——点击形状任意位置都会跳转，不只是命中文字',
+          };
+        } catch (shapeErr) {
+          return slideFail('设置超链接失败（字符级与形状级均不支持）: ' + errStr(shapeErr));
+        }
+      }
+    }
+    return slideFail('未在该页任何非表格形状的文字中找到: ' + searchText);
+  },
+  // [诊断] 当前文档内核类型——host UI（审阅按钮等）按 kind 隐藏的判据。常规打开
+  // 路径优先用 load_document 返回值里的 kind（省一次往返），本 action 供换文档
+  // 之外的场景（如 e2e 探针）直接查询。
+  get_doc_kind() {
+    return { success: true, kind: docKindOf() };
+  },
+  // housekeeping: drop the hidden anchor bookmarks.
+  clear_anchors() {
+    return { success: true, cleared: dropAiAnchors() };
+  },
+};
+
+// AI 工具面（宿主打 __agent 标记的命令）与即时审校 / 写作补全的只读取文命令
+// （FINAL_TEXT_ACTIONS）一律按**最终文本语义**执行。
+// WHY：AI 多轮改稿依赖「正文 = 改后的样子」——get_document_text / get_paragraph 读到的
+// 不能混进被删的旧字，find_text_locations / replace_nth_match 的计数只能数可见匹配
+// （dev-board#369）。内联「全部修订」是默认显示态，所以这条守卫是常态路径：执行前
+// 临时切到一种不含删除文字的态，执行完切回去；不强制全文重排。
+// 最终稿态与页边态的正文本来就不含删除文字，不需要切视图。
+// 非 Writer 文档一个属性都不碰（Impress 上问 Writer 专属属性会把引擎搞坏，
+// 见 withInlineMarkupForExport 头上的注释）。
+// 原语可能是 async（分批的 find_replace / apply_house_style），恢复必须等它 settle；
+// 批间仍让出事件循环，但后续最终文本命令及用户显示切换等待当前批次完成，
+// 避免中途改变段落成员，或收尾恢复覆盖用户的新选择。
+const FINAL_TEXT_ACTIONS = new Set(['get_completion_context', 'accept_completion', 'insert_completion_content', 'capture_writing_context', 'accept_writing_suggestion', 'get_review_context', 'goto_review_range', 'apply_review_edit']);
+// Only known readers may skip the view guard on a clean document. A write can
+// create its first deletion and then read paragraphAfterEdit in the same command.
+const FINAL_TEXT_READ_ACTIONS = new Set([
+  'get_selection', 'get_paragraph', 'get_outline', 'get_document_text', 'get_cursor_context',
+  'get_clauses', 'get_cursor_rect', 'get_ui_state', 'get_ui_lang', 'get_doc_kind',
+  'get_selection_hyperlink', 'get_hyperlink_at_cursor', 'get_bookmark_context',
+  'get_review_context', 'get_review_layout', 'get_completion_context', 'capture_writing_context',
+  'get_context_menu_context', 'find_text_locations', 'table_read', 'check_link_anchors',
+  'list_styles', 'list_fonts', 'list_revisions', 'list_comments', 'var_list', 'debug_revisions', 'probe_modules',
+]);
+const AGENT_VIEW_EXEMPT = { set_revision_view: 1, export_document: 1, load_document: 1 };
+let agentViewPending = null;
+function runAgentCommandInMarginView(action, fn) {
+  if (AGENT_VIEW_EXEMPT[action] || !isWriterDoc()) return fn();
+  const model = xModel;
+  if (agentViewPending) {
+    const resume = function () {
+      return model === xModel ? runAgentCommandInMarginView(action, fn) : tableFail('文档已切换，未执行排队的编辑命令');
+    };
+    return agentViewPending.then(resume, resume);
+  }
+  const before = revisionViewState().mode;
+  // 只读命令遇到零修订时，最终文本就是当前文本；写命令可能在这次执行中产生
+  // 第一条删除修订，不能跳过，否则验证回读仍含旧字（dev-board#1082）。这一趟
+  // 往返并不便宜：两次模型属性写 + 两次 invalidateParaIndex（下一
+  // 次读要把整份段落索引重新枚举一遍），还会把 Writer 缓存的光标屏幕坐标留在
+  // 另一个视图的几何里（dev-board#725）。一次 O(1) 的枚举探问就能整段跳过。
+  if (before === 'all' && !hasAnyRedline() && FINAL_TEXT_READ_ACTIONS.has(action)) return fn();
+  // 通向「正文 = 改后的样子」有两条路，读回的正文 / 段号 / 偏移完全一致：
+  //   隐藏修订  RedlineDisplayType   → **模型**属性
+  //   页边      ShowChangesInMargin  → **控制器的视图设置**
+  // 本引擎每写一次那个视图设置就把视图滚回光标。默认视图变成内联之后这条守卫成了
+  // 常态路径，于是用户往下滚动、180ms 后即时审校读一次上下文，视口就被拽回光标所在
+  // 的文首——dev-board#604 报的「自动跳回开头」。真机实测（24.2.8-zhcn-r5）：切页边
+  // top 44880 → 0，隐藏修订 top 21840 → 21840 一动不动，正文与偏移两者一字不差。
+  // 所以先隐藏；引擎隐不掉（hideSupported=false，读回仍是 all）时才退回页边。
+  // 回归：tests/lowa-e2e/scroll-stability.mjs。
+  // **不 refresh()**：真机实测（24.2.8-zhcn-r5）隐藏修订后不重排，getString /
+  // 段落枚举 / 区间偏移读回来的最终文本与「切+refresh」一字不差（探针：同一段
+  // 两条路径都读到 "第2段前置，新表述，后续内容在这里。"）。而 refresh() 是整份
+  // 文档重排，这条守卫在默认内联视图下是 35ms/180ms 节拍的常态路径，一读两排。
+  // 导出那条路（withInlineMarkupForExport）仍然必须 refresh——那里消费的是版面，
+  // 不是文本，别把这两处当同一回事。
+  if (before === 'all') withViewOnlyChange(function () {
+    if (applyRevisionView('final').mode === 'all') applyRevisionView('margin');
+  });
+  const restore = function () {
+    if (before !== 'all' || model !== xModel) return;
+    withViewOnlyChange(function () { applyRevisionView(before); });
+    // Writer 把光标的屏幕坐标缓存着，只在下一次**读正文**时按当时的视图几何重算。
+    // 这条命令最后一次读正文发生在最终文本视图里，所以不在这儿补一次读，光标就
+    // 一直画在「删除文字被藏起来」的位置上——IME 输入框、系统候选窗和闪烁的光标
+    // 全都左移一个删除段的宽度，直到用户再敲一个字才弹回去。用户报的「光标经常
+    // 左右横跳」就是这一左一右（真机实测 ±2142 twip / 每次读，dev-board#725）。
+    try { paragraphTextOf(ctrl.getViewCursor()); } catch (e) {}
+  };
+  // Neither view switch is guaranteed to succeed. Do not search or edit a body
+  // that may still contain deleted revision text, including a first AI write.
+  if (revisionViewState().mode === 'all') {
+    restore();
+    return tableFail('无法排除删除修订，未执行文档操作。请重新打开文档后再定位目标。');
+  }
+  let out;
+  try { out = fn(); }
+  catch (e) { restore(); throw e; }
+  if (out && typeof out.then === 'function') {
+    const pending = out.then(function (r) { restore(); return r; }, function (e) { restore(); throw e; })
+      .finally(function () { if (agentViewPending === pending) agentViewPending = null; });
+    agentViewPending = pending;
+    return pending;
+  }
+  restore();
+  return out;
+}
+
+const RESOLVE_REVISION_ACTIONS = new Set(['resolve_revision', 'resolve_revisions', 'resolve_all_revisions', 'resolve_revision_at_cursor']);
+// Keep an open comment draft usable across unrelated edits and delayed view
+// notifications. Its native identity, full state and document must still match.
+function matchCommentSnapshot(p) {
+  if (p && p.documentSeq != null && p.documentSeq !== docSeq) return false;
+  if (!p || p.expectedComment == null) return !p || p.revision == null || p.revision === currentReviewRevision();
+  const expected = p.expectedComment;
+  if (p.documentSeq !== docSeq || typeof expected.id !== 'string' || !expected.id || p.id !== expected.id) return false;
+  const listed = EXEC.list_comments({ limit: 500 });
+  const matches = listed.success ? listed.comments.filter(c => c.id === expected.id) : [];
+  const fields = ['id', 'author', 'content', 'timestamp', 'anchorText'];
+  if (matches.length !== 1 || !fields.every(key => typeof expected[key] === 'string' && matches[0][key] === expected[key])
+      || typeof expected.resolved !== 'boolean' || matches[0].resolved !== expected.resolved) return false;
+  p.index = matches[0].index;
+  p.revision = currentReviewRevision();
+  return true;
+}
+// reply_comment 的署名：审阅面板里用户亲手回复时带 asUser，署当前登录用户
+// （与 add_comment_at_selection 同源 humanAuthor）；AI 工具面（__agent）与不带
+// asUser 的调用一律署 AI WorkDeck——asUser 不许被 AI 下发的命令借去冒充用户。
+function replyCommentAuthor(p, human, aiAuthor) {
+  if (p && p.asUser && !p.__agent) return String(human || '');
+  return aiAuthor;
+}
+// A view-only native notification can arrive after its command has returned and
+// advance the global revision. Snapshot-backed cards remain usable if the same
+// native revision still has exactly the content the user reviewed. Remap by ID,
+// never by an expired index, and reject changed targets or replacement documents.
+function matchRevisionSnapshot(p, action) {
+  if (p.documentSeq !== docSeq || !Array.isArray(p.expectedRevisions) || !p.expectedRevisions.length) return false;
+  const requested = action === 'resolve_revision' ? [p.index] : action === 'resolve_revisions' ? p.indices : null;
+  if (!Array.isArray(requested) || requested.length !== p.expectedRevisions.length || new Set(requested).size !== requested.length) return false;
+  const expected = p.expectedRevisions;
+  if (new Set(expected.map(r => r.identifier)).size !== expected.length || !expected.every(r => requested.includes(r.index) && typeof r.identifier === 'string' && r.identifier)) return false;
+  const listed = EXEC.list_revisions({ limit: 500 });
+  if (!listed.success) return false;
+  const current = new Map();
+  listed.revisions.forEach(r => current.set(r.identifier, current.has(r.identifier) ? null : r));
+  const fields = ['identifier', 'type', 'text', 'author', 'timestamp'];
+  const matched = expected.map(r => current.get(r.identifier));
+  if (!matched.every((r, i) => r && fields.every(key => typeof expected[i][key] === 'string' && r[key] === expected[i][key]))) return false;
+  if (action === 'resolve_revision') p.index = matched[0].index;
+  else p.indices = matched.map(r => r.index);
+  p.revision = currentReviewRevision();
+  return true;
+}
+function runRevisionResolution(fn, p, action) {
+  if (!isWriterDoc()) return fn();
+  if (!isReviewWritable()) return tableFail('文档为只读状态');
+  if (p && p.expectedRevisions != null) {
+    if (!matchRevisionSnapshot(p, action)) return tableFail('修订已变化，请刷新后重试');
+  } else if (p && p.revision != null && p.revision !== currentReviewRevision()) return tableFail('文档已变化，请刷新修订后重试');
+  // Hidden markup cannot be resolved, margin markup cannot be undone safely:
+  // both resolve in the inline view (see undoStep for the margin case).
+  const inMargin = readShowChangesInMargin() === true;
+  if (readShowChanges() !== false && !inMargin) return fn();
+  const before = revisionViewState().mode;
+  try {
+    withViewOnlyChange(function () { applyRevisionView('all'); xModel.refresh(); });
+    const result = fn();
+    if (inMargin) rememberInlineUndo();
+    return result;
+  } finally {
+    withViewOnlyChange(function () { applyRevisionView(before); try { xModel.refresh(); } catch (e) {} });
+  }
+}
+
+function execCommand(reqId, action, params) {
+  // 原语可以是 async（分批的 find_replace / apply_house_style）：返回 Promise 就等它，
+  // 期间 worker 事件循环继续处理别的命令；同步原语路径与从前完全一样。
+  const finish = function (result) {
+    delete CANCELLED[reqId];
+    delete INFLIGHT[reqId];
+    if (action === 'get_review_context' && result && result.success) result.cursorRectRaw = EXEC.get_cursor_rect();
+    post('result', { reqId: reqId, result: result });
+  };
+  INFLIGHT[reqId] = true;
+  let result;
+  try {
+    const p = params || {};
+    p.__reqId = reqId; // 分批命令发 progress / 查 cancel 用
+    // 修订署名切换：AI 命令（宿主打 __agent 标记）→ AI WorkDeck；其余（IME 输入
+    // 等用户本人操作）→ 用户名。失败不阻断命令本身（降级为引擎默认作者）。
+    const fn = EXEC[action];
+    const run = function () {
+      if (CANCELLED[reqId]) return tableFail('操作已取消');
+      // A final-text command may have waited behind another batch. Assign its
+      // author at execution time, not while that other command is still editing.
+      try { setRedlineAuthor(p.__agent ? AI_AUTHOR : humanAuthor); }
+      catch (e) { log('修订作者设置失败 / redline author failed: ' + errStr(e)); }
+      return fn(p);
+    };
+    result = fn
+      ? (RESOLVE_REVISION_ACTIONS.has(action) ? runRevisionResolution(run, p, action) : (p.__agent || FINAL_TEXT_ACTIONS.has(action)) ? runAgentCommandInMarginView(action, run) : run())
+      : { success: false, message: 'not implemented in LibreOffice worker yet: ' + action };
+  } catch (e) {
+    result = { success: false, message: errStr(e) };
+  }
+  if (result && typeof result.then === 'function') {
+    result.then(finish, function (e) { finish({ success: false, message: errStr(e) }); });
+  } else {
+    finish(result);
+  }
+}
+
+// ---- message loop --------------------------------------------------------
+Module.zetajs.then(function (pZetajs) {
+  zetajs = pZetajs;
+  css = zetajs.uno.com.sun.star;
+  zetajs.mainPort.onmessage = function (e) {
+    switch (e.data.cmd) {
+      case 'exec': execCommand(e.data.reqId, e.data.action, e.data.params); break;
+      case 'selection': testSelection(); break;
+      case 'redline': testRedline(); break;
+      case 'perf': testPerf(Number(e.data.pages) || 50); break;
+      case 'inserttext': testInsertText(e.data.text); break;
+      default: log('unknown cmd: ' + e.data.cmd);
+    }
+  };
+  bootDoc();
+  post('thr_running');
+});

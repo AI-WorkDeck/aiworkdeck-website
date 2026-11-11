@@ -1,0 +1,280 @@
+// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// zetaOfficeRelay.js — transport-agnostic command relay across the
+// host <-> isolated-webview boundary for the embedded LibreOffice editor.
+// Epic #43.
+//
+// WHY a relay: ZetaOffice boots inside an isolated Electron <webview> (it needs
+// cross-origin isolation, which the main window can't have — see
+// desktop/main/zetaoffice-session.js). But the AI agent command pipeline runs in
+// the HOST (project-overview.vue's handleEditorCommand). So a host executeCommand
+// must cross the boundary: the host sends {action, params}, the webview runs it
+// against the booted executor (libreofficeExecutorClient -> worker -> UNO), and
+// returns the result. This module is that relay.
+//
+// Transport-agnostic ON PURPOSE: the caller supplies `send(msg)` and
+// `subscribe(handler) -> unsubscribe`. That lets the SAME relay run over
+// window.postMessage / a MessageChannel (how the Phase 0 spike verifies it
+// against a real LibreOffice) AND over Electron <webview> IPC
+// (webview.send / ipcRenderer.sendToHost) in the product — no Electron
+// dependency in this module, so it is unit-verifiable.
+//
+// Chosen over a one-time MessagePort transfer (webview -> host) because a
+// per-command relay does not depend on a MessagePort surviving the
+// isolated<->non-isolated boundary, which would need on-device validation
+// first. (Transfer stays a possible later optimization — see #47 notes.)
+
+const TAG = 'lo-relay' // ignore unrelated messages on a shared channel
+
+/**
+ * WEBVIEW side: serve a booted executor to the host. Listens for exec requests
+ * and replies with results, correlated by reqId.
+ *
+ * @param {object} args
+ * @param {{executeCommand:(a:string,p:object)=>Promise<any>}} args.executor
+ *        the booted LibreOffice executor (e.g. libreofficeExecutorClient).
+ * @param {(msg:any)=>void} args.send post a message to the host.
+ * @param {(handler:(msg:any)=>void)=>(()=>void)} args.subscribe register a
+ *        host-message handler; returns an unsubscribe fn.
+ * @returns {{dispose:()=>void}}
+ */
+export function serveExecutor({ executor, send, subscribe }) {
+  // 宿主 reqId -> worker reqId：progress 往上带宿主的 id，cancel 往下换成 worker 的 id。
+  const inflight = new Map()
+  const off = subscribe(async (msg) => {
+    if (!msg || msg.__lo !== TAG || msg.type !== 'exec') return
+    let result
+    try {
+      let params = msg.params || {}
+      if (msg.action === 'cancel' && params.reqId && inflight.has(params.reqId)) {
+        params = Object.assign({}, params, { reqId: inflight.get(params.reqId) })
+      }
+      result = await executor.executeCommand(msg.action, params, {
+        waitForCompletion: msg.waitForCompletion === true,
+        onIssued: (id) => inflight.set(msg.reqId, id),
+        onProgress: (p) => send({ __lo: TAG, type: 'progress', reqId: msg.reqId, done: p.done, total: p.total, ...(p.stage ? { stage: p.stage } : {}) }),
+      })
+    } catch (e) {
+      const message = e && e.message ? e.message : String(e)
+      result = { success: false, message, error: message }
+    }
+    inflight.delete(msg.reqId)
+    send({ __lo: TAG, type: 'result', reqId: msg.reqId, result })
+  })
+  return { dispose: off }
+}
+
+// 按 action 分级的等待预算（ms）——与 libreofficeExecutorClient.js 的
+// ACTION_BUDGET_MS、后端 EditorBridgeService.ACTION_TIMEOUT_SECONDS 三处同表。
+const ACTION_BUDGET_MS = {
+  load_document: 180000, export_document: 180000, export_pdf: 180000,
+  find_replace: 120000, apply_house_style: 120000, resolve_all_revisions: 120000, insert_table: 120000,
+  apply_style_profile: 120000,
+  // 流式 chunk 和收尾都可能一次写完整表格；完整回答插入也复用 stream_insert。
+  stream_insert: 120000, stream_flush: 120000,
+  resolve_revisions: 120000,
+  // 整段插入类（dev-board#464）：一份十几页的报告经修订逐行落字远超 30s，超时后
+  // 后端把「不再等」报成失败，模型重发一次 —— 同一份报告插了两遍。
+  insert_at_cursor: 120000, insert_under_heading: 120000,
+  replace_selection: 120000, modify_paragraph: 120000,
+  // 三方合并（合并比对稿）：与 libreofficeExecutorClient 同表。
+  build_merge_draft: 180000,
+  build_comparison_document: 180000,
+  // 读取类（dev-board#729 ③）：此前全部吃 30s 默认值。doc_open_file 是 fire-and-forget，
+  // 「打开文档 → 立刻读」时那条读命令正撞在装载中（doc_open_file_sync 自己就给了 180s），
+  // 30s 必然不够；超时后模型会再读一次，代价是一整个 LLM 往返（真机中位 80s）。
+  // 读取类没有副作用，与写入类同档 120s。三处同表，改一处要同步另两处。
+  get_document_text: 120000, find_text_locations: 120000, get_paragraph: 120000,
+  get_outline: 120000, get_clauses: 120000, get_cursor_context: 120000,
+  get_selection: 120000, get_formatting: 120000, get_bookmark_context: 120000,
+  list_revisions: 120000, list_comments: 120000, table_read: 120000, debug_revisions: 120000,
+  sheet_get_overview: 120000, sheet_read_range: 120000, sheet_search: 120000,
+  sheet_find_replace: 120000,
+  sheet_get_comments: 120000,
+  slide_get_overview: 120000, slide_get_page: 120000, slide_read_notes: 120000,
+  slide_table_read: 120000,
+  // sheet_/slide_ 写入类（dev-board#806）：与 libreofficeExecutorClient 同表，理由见那边。
+  sheet_write_cells: 120000, sheet_format_cells: 120000, sheet_set_borders: 120000,
+  sheet_edit_rows_cols: 120000, sheet_merge_cells: 120000, sheet_sort_range: 120000,
+  sheet_manage_sheets: 120000, sheet_freeze_panes: 120000, sheet_set_row_col: 120000,
+  sheet_set_autofilter: 120000, sheet_conditional_format: 120000, sheet_add_comment: 120000,
+  sheet_delete_comment: 120000, sheet_set_data_validation: 120000, sheet_add_chart: 120000,
+  sheet_define_name: 120000, sheet_protect_sheet: 120000, sheet_group_rows_cols: 120000,
+  sheet_add_pivot_table: 120000,
+  slide_add_page: 120000, slide_delete_page: 120000, slide_move_page: 120000,
+  slide_set_layout: 120000, slide_add_text_box: 120000, slide_set_shape_text: 120000,
+  slide_format_text: 120000, slide_format_shape: 120000, slide_add_shape: 120000,
+  slide_delete_shape: 120000, slide_set_shape_geometry: 120000, slide_replace_text: 120000,
+  slide_add_table: 120000, slide_table_set_cell: 120000, slide_table_set_style: 120000,
+  slide_set_hyperlink: 120000, slide_write_notes: 120000,
+}
+
+// 某条命令的等待预算（ms），表外的按默认 30s——与后端 EditorBridgeService 的
+// ACTION_TIMEOUT_SECONDS / EDITOR_ACTION_TIMEOUT 同口径（三处同表）。宿主 AI 命令等编辑器
+// 启动时据此给自己封顶，免得后端先到点（dev-board#1018，见 agentClientActions）。
+export const DEFAULT_ACTION_BUDGET_MS = 30000
+export function actionBudgetMs(action) {
+  return ACTION_BUDGET_MS[action] || DEFAULT_ACTION_BUDGET_MS
+}
+
+// 探活（dev-board#539）：备胎过继前先问一声「这个 guest 还活着吗」。用最便宜的
+// 只读命令（get_ui_state 实测 ~6ms），预算刻意短——探活的价值就在于**失败要早**，
+// 沿用 30s 默认预算等于把冷启动往后推半分钟。经 executeCommand 的
+// callOpts.timeoutMs 生效，不进 ACTION_BUDGET_MS（那张表只抬高下限、抬不低）。
+export const PROBE_ACTION = 'get_ui_state'
+export const PROBE_BUDGET_MS = 3000
+
+/**
+ * HOST side: an executeCommand(action, params) that round-trips to the webview.
+ * SAME contract as libreofficeExecutorClient.executeCommand, so useEditorBridge
+ * can use it as the LibreOffice executor when the editor lives in a webview.
+ *
+ * @param {object} args
+ * @param {(msg:any)=>void} args.send post a message to the webview.
+ * @param {(handler:(msg:any)=>void)=>(()=>void)} args.subscribe register a
+ *        webview-message handler; returns an unsubscribe fn.
+ * @param {number} [args.timeoutMs=30000]
+ * @param {()=>void} [args.onReady] fired once when the webview endpoint signals
+ *        it is booted and serving ({type:'ready'}). The host uses this to know
+ *        when it may push commands that must not be dropped pre-boot (e.g. Track
+ *        D's load_document — sent before this, serveExecutor isn't subscribed yet).
+ * @param {(action:string,result:any)=>void} [args.onLateResult] fired when a
+ *        'result' message arrives for a reqId that already timed out (see
+ *        below) — the caller decides whether the straggler is still relevant.
+ * @param {(reqId:string, p:{done:number,total:number})=>void} [args.onProgress]
+ *        batch progress of a command still in flight (find_replace >50 hits /
+ *        apply_house_style). The reqId is what executeCommand('cancel', {reqId})
+ *        takes to stop it (dev-board#108).
+ * @returns {{executeCommand:(a:string,p?:object)=>Promise<any>, dispose:()=>void}}
+ */
+export function createRelayExecutor({ send, subscribe, timeoutMs = 30000, onReady, onLateResult, onProgress }) {
+  let seq = 0
+  let disposed = false
+  let terminalResult
+  const disposedResult = () => ({ success: false, code: 'EDITOR_DISPOSED', message: 'Editor closed / 编辑器已关闭' })
+  let readyCb = onReady
+  const pending = new Map() // reqId -> {resolve, timer}
+  // Timing out a command only stops US from waiting on it — the worker-side
+  // operation (e.g. loadComponentFromURL for load_document) is not abortable
+  // and often keeps running to completion after we've already resolved
+  // failure to the caller. Without this, that late 'result' message has
+  // nowhere to land (pending.get returns undefined) and used to be silently
+  // dropped — the exact bug this fixes: editor reports "load failed" while
+  // the document actually finishes loading a moment later.
+  // Bounded + self-pruning on match: a long-lived webview must not leak one
+  // entry per timeout forever.
+  const tombstones = new Map() // reqId -> action
+  const MAX_TOMBSTONES = 20
+  const off = subscribe((msg) => {
+    if (!msg || msg.__lo !== TAG || disposed) return
+    if (msg.type === 'engine-failed') {
+      dispose({ success: false, code: 'EDITOR_ENGINE_FAILED', message: 'Editor engine stopped / 文档引擎异常停止' })
+      return
+    }
+    if (msg.type === 'ready') { if (readyCb) { const cb = readyCb; readyCb = null; cb() } return }
+    if (msg.type === 'progress') {
+      const p = { done: Number(msg.done) || 0, total: Number(msg.total) || 0,
+        ...(typeof msg.stage === 'string' ? { stage: msg.stage } : {}) }
+      const live = pending.get(msg.reqId)
+      if (live && live.onProgress) { try { live.onProgress(p) } catch (e) { /* ignore */ } }
+      if (onProgress) { try { onProgress(msg.reqId, p) } catch (e) { /* ignore */ } }
+      return
+    }
+    if (msg.type !== 'result') return
+    const entry = pending.get(msg.reqId)
+    if (!entry) {
+      const lateAction = tombstones.get(msg.reqId)
+      if (lateAction) {
+        tombstones.delete(msg.reqId)
+        if (onLateResult) onLateResult(lateAction, msg.result)
+      }
+      return
+    }
+    clearTimeout(entry.timer)
+    pending.delete(msg.reqId)
+    entry.resolve(msg.result)
+  })
+
+  // callOpts（可选）：{onProgress(p), onIssued(reqId), timeoutMs}；reqId 也是 cancel
+  // 的把手，timeoutMs 显式覆盖本次调用的等待预算（探活）。
+  function executeCommand(action, params = {}, callOpts) {
+    if (disposed) return Promise.resolve(terminalResult)
+    // Only the cancellable standalone comparison may opt out of the deadline.
+    const waitForCompletion = callOpts?.waitForCompletion === true &&
+      (action === 'build_comparison_document' || action === 'export_document')
+    const reqId = 'rly_' + Date.now() + '_' + (++seq)
+    // Whole-document transfers (load/export can be tens of MB and the worker
+    // marshals every byte into UNO) and whole-document batch edits get a longer
+    // deadline than interactive commands — a 18MB docx on a slow disk must not
+    // surface as "加载失败" just because the default 30s ran out mid-import.
+    // callOpts.timeoutMs 是**显式覆盖**（探活用），不受 ACTION_BUDGET_MS 的
+    // 「只抬高不降低」语义约束——调用方明说了要短就得真的短。
+    const budget = (callOpts && callOpts.timeoutMs)
+      ? callOpts.timeoutMs
+      : (ACTION_BUDGET_MS[action] ? Math.max(timeoutMs, ACTION_BUDGET_MS[action]) : timeoutMs)
+    if (callOpts && callOpts.onIssued) { try { callOpts.onIssued(reqId) } catch (e) { /* ignore */ } }
+    return new Promise((resolve) => {
+      const timer = waitForCompletion ? null : setTimeout(() => {
+        if (pending.has(reqId)) {
+          pending.delete(reqId)
+          tombstones.set(reqId, action)
+          if (tombstones.size > MAX_TOMBSTONES) tombstones.delete(tombstones.keys().next().value)
+          // 中英双行（同 LibreOfficeEditor.vue 的 '网络错误 / network error'）：这句会进
+          // EN 版的编辑器日志和 AI 工具结果，硬编码中文在英文界面上读不懂。
+          const message = '等待编辑器结果超时，操作可能仍在执行。请先检查文档和修订记录，确认结果前不要重复执行写入操作。 / Editor result timed out; the operation may still be running. Check the document and tracked changes before repeating any write.'
+          resolve({ success: false, message, error: message, code: 'EDITOR_RESULT_TIMEOUT', outcomeUnknown: true, retryable: false })
+        }
+      }, budget)
+      pending.set(reqId, { resolve, timer, onProgress: callOpts && callOpts.onProgress })
+      // 传输层拒收（典型是参数里混进了 Vue 响应式 Proxy，结构化克隆报 DataCloneError）：
+      // iframe postMessage 同步抛，Electron webview.send 返回被拒的 Promise。这条命令
+      // 根本没发出去、对端永远不会回——当场以失败收场，不干等满预算，也不立墓碑。
+      const sendFailed = (e) => {
+        if (!pending.has(reqId)) return
+        clearTimeout(timer)
+        pending.delete(reqId)
+        resolve({ success: false, message: 'LibreOffice relay send failed: ' + action + ': ' + (e && e.message ? e.message : String(e)) })
+      }
+      try {
+        const sent = send({ __lo: TAG, type: 'exec', reqId, action, params, ...(waitForCompletion ? { waitForCompletion: true } : {}) })
+        if (sent && typeof sent.then === 'function') sent.then(null, sendFailed)
+      } catch (e) {
+        sendFailed(e)
+      }
+    })
+  }
+
+  function dispose(result = disposedResult()) {
+    if (disposed) return
+    disposed = true
+    terminalResult = result
+    off()
+    readyCb = null
+    for (const entry of pending.values()) {
+      clearTimeout(entry.timer)
+      entry.resolve(terminalResult)
+    }
+    pending.clear()
+    tombstones.clear()
+  }
+  return { executeCommand, dispose }
+}
+
+/**
+ * Adapter: build {send, subscribe} for a MessagePort (MessageChannel port or an
+ * <iframe>/worker port). Used by the spike harness to simulate the
+ * host<->webview boundary, and reusable wherever a MessagePort is the transport.
+ *
+ * @param {MessagePort} port
+ */
+export function portTransport(port) {
+  return {
+    send: (msg) => port.postMessage(msg),
+    subscribe: (handler) => {
+      const f = (e) => handler(e.data)
+      port.addEventListener('message', f)
+      if (typeof port.start === 'function') port.start()
+      return () => port.removeEventListener('message', f)
+    },
+  }
+}

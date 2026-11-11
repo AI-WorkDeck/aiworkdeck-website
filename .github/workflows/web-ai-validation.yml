@@ -1,0 +1,185 @@
+# SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Manual, budget-approved provider validation only. This never deploys a website.
+name: Web AI isolated paid validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      reviewed_sha:
+        description: Reviewed source commit (exact 40 lowercase hex characters)
+        required: true
+        type: string
+      budget_confirmation:
+        description: Type APPROVE_MAX_0.12_USD after the coordinator allocates this run's budget
+        required: true
+        type: string
+      bailian_env_file:
+        description: Absolute path to the deployed Bailian env file on the China server (path only, no credentials)
+        required: true
+        type: string
+      budget_reference:
+        description: Coordinator budget allocation or approval reference (no secrets)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-ai-isolated-paid-validation
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    # Only the reviewed workflow on master can access the existing deployment key.
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BAILIAN_ENV_FILE: ${{ inputs.bailian_env_file }}
+      REVIEWED_SHA: ${{ inputs.reviewed_sha }}
+      BUDGET_CONFIRMATION: ${{ inputs.budget_confirmation }}
+      BUDGET_REFERENCE: ${{ inputs.budget_reference }}
+    steps:
+      - name: Require exact source and explicit per-run budget approval
+        run: |
+          set -euo pipefail
+          [[ "$REVIEWED_SHA" =~ ^[a-f0-9]{40}$ ]]
+          [ "$BUDGET_CONFIRMATION" = APPROVE_MAX_0.12_USD ]
+          [ -n "$BUDGET_REFERENCE" ]
+          [[ "$BAILIAN_ENV_FILE" =~ ^/[a-zA-Z0-9._/-]+$ ]] || { echo "An absolute deployed env path without shell metacharacters is required."; exit 1; }
+          # Re-running a job can incur another charge. Require a new reviewed
+          # dispatch and a new coordinator budget allocation instead.
+          [ "$GITHUB_RUN_ATTEMPT" = 1 ] || { echo 'Paid validation cannot be rerun; reconcile the previous run and allocate a fresh run first.'; exit 1; }
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.reviewed_sha }}
+          persist-credentials: false
+      - name: Archive the exact reviewed source
+        run: |
+          set -euo pipefail
+          [ "$(git rev-parse HEAD)" = "$REVIEWED_SHA" ]
+          test -f scripts/web-ai-live-smoke.mts
+          # Only tracked source is transferred: no .env, local data, .git, token,
+          # production checkout, or user documents are downloaded or copied.
+          git archive --format=tar.gz --output="$RUNNER_TEMP/web-ai-source.tar.gz" "$REVIEWED_SHA"
+          sha256sum "$RUNNER_TEMP/web-ai-source.tar.gz" | awk '{print $1}' > "$RUNNER_TEMP/web-ai-source.sha256"
+      - name: Configure the existing Actions SSH identity
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' '8.152.169.44 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGb3UVXZt2RBAHmh0odOP2sC17iqYW0jUrt6loT68dNM' > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+      - name: Upload into a new private server temporary directory
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_RUN_ID" =~ ^[0-9]+$ ]]
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes root@8.152.169.44 \
+            "umask 077; mkdir /tmp/awd-web-ai-$GITHUB_RUN_ID"
+          scp -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes "$RUNNER_TEMP/web-ai-source.tar.gz" \
+            "root@8.152.169.44:/tmp/awd-web-ai-$GITHUB_RUN_ID/source.tar.gz"
+      - name: Validate once against the real provider in isolated synthetic storage
+        run: |
+          set -euo pipefail
+          digest=$(cat "$RUNNER_TEMP/web-ai-source.sha256")
+          [[ "$digest" =~ ^[a-f0-9]{64}$ ]]
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o ServerAliveInterval=30 root@8.152.169.44 \
+            bash -s -- "$GITHUB_RUN_ID" "$REVIEWED_SHA" "$digest" "$BAILIAN_ENV_FILE" <<'REMOTE'
+          set -euo pipefail
+          umask 077
+          [[ "$1" =~ ^[0-9]+$ && "$2" =~ ^[a-f0-9]{40}$ && "$3" =~ ^[a-f0-9]{64}$ ]]
+          work="/tmp/awd-web-ai-$1"
+          trap 'rm -rf -- "$work"' EXIT
+          trap 'exit 143' HUP TERM
+          trap 'exit 130' INT
+          [[ "$4" =~ ^/[a-zA-Z0-9._/-]+$ ]] && [ -f "$4" ] && [ -r "$4" ] || { echo "Deployed Bailian environment file is missing or unreadable; no provider request made."; exit 1; }
+          export PATH=/root/.nvm/versions/node/v22.23.2/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          [ "$(node --version)" = v22.23.2 ] || { echo 'Required server Node 22.23.2 unavailable; no provider request made.'; exit 1; }
+          echo "$3  $work/source.tar.gz" | sha256sum -c - >/dev/null
+          mkdir "$work/source" "$work/runtime" "$work/npm-cache"
+          tar --no-same-owner -xzf "$work/source.tar.gz" -C "$work/source"
+          cd "$work/source"
+          # No server application environment or model key is inherited by npm.
+          # Private install logs are deleted by the trap, never uploaded/dumped.
+          if ! timeout --kill-after=10s 600s env -i PATH="$PATH" TMPDIR="$work/runtime" \
+            npm ci --include=dev --cache "$work/npm-cache" --no-audit --no-fund >"$work/install.log" 2>&1; then
+            echo 'Isolated dependency installation failed; no provider request made. Raw logs intentionally withheld.'
+            exit 1
+          fi
+          if ! env -i PATH="$PATH" TMPDIR="$work/runtime" \
+            node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.json scripts/web-ai-live-smoke.mts --dry-run >"$work/plan.json" 2>"$work/plan.err"; then
+            echo 'Smoke dry-run failed; no provider request made.'; exit 1
+          fi
+          node - "$work/plan.json" <<'NODE'
+          const p=JSON.parse(require('node:fs').readFileSync(process.argv[2],'utf8'));
+          if(p.status!=='dry_run'||p.model!=='qwen3.8-flash'||p.maximumRequests!==2||p.maxProviderUsdPerRequest!==0.056192||p.maxProviderUsdTotal!==0.112384) throw Error('Smoke plan differs from reviewed two-call budget');
+          NODE
+          # The smoke writes only its audited whitelist here, independently of
+          # the disposable tree, including before/after each call and on signals.
+          receipt_dir=/tmp/awd-web-ai-receipts
+          [ ! -L "$receipt_dir" ] || { echo 'Receipt directory must not be a symlink'; exit 1; }
+          mkdir -p "$receipt_dir"
+          [ "$(stat -c %u "$receipt_dir")" = "$(id -u)" ] || { echo 'Receipt directory has an unexpected owner'; exit 1; }
+          chmod 700 "$receipt_dir"
+          receipt="$receipt_dir/$1.json"
+          [ ! -e "$receipt" ] || { echo 'This run already has an audit receipt; reconcile before any new call.'; exit 1; }
+          # Only the smoke process receives permission plus a fixed read-only
+          # deployed Bailian env path. Only the four allowed model configuration
+          # fields are read; credentials stay inside that server process.
+          set +e
+          timeout --kill-after=10s 300s env -i PATH="$PATH" TMPDIR="$work/runtime" \
+            NEXT_PUBLIC_AWD_SITE=cn WEB_AI_SMOKE_APPROVED=1 \
+            AWD_SMOKE_BAILIAN_ENV_FILE="$4" \
+            AWD_SMOKE_RECEIPT_FILE="$receipt" \
+            node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.json scripts/web-ai-live-smoke.mts >"$work/result.log" 2>"$work/result.err"
+          result=$?
+          set -e
+          # Print only a schema-checked receipt, never raw stdout/stderr, sessions,
+          # config, environment, or provider error bodies. Failure may be billable.
+          node - "$receipt" "$work/result.log" "$result" "$2" <<'NODE'
+          const fs=require('node:fs');
+          const [receiptFile,logFile,exitCode,reviewedSha]=process.argv.slice(2);
+          let receipt;
+          try{receipt=JSON.parse(fs.readFileSync(receiptFile,'utf8'))}catch{
+            try{receipt=fs.readFileSync(logFile,'utf8').trim().split('\n').map(line=>{try{return JSON.parse(line)}catch{return null}}).findLast(v=>['passed','failed_or_unconfirmed'].includes(v?.status))}catch{}
+          }
+          const number=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0;
+          const cents=v=>Number.isSafeInteger(v)&&v>=0;
+          const uuid=v=>typeof v==='string'&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(v);
+          const states=['reserved','submitted','usage_pending','settled','released','refunded_pending','not_submitted_or_unknown'];
+          const calls=(Array.isArray(receipt?.calls)?receipt.calls:[]).slice(0,2).map(c=>({
+            mode:['chat','rewrite'].includes(c?.mode)?c.mode:null,
+            requestId:uuid(c?.requestId)?c.requestId:null,
+            generationId:typeof c?.generationId==='string'&&/^[a-zA-Z0-9_-]{1,200}$/.test(c.generationId)?c.generationId:null,
+            state:states.includes(c?.state)?c.state:'not_submitted_or_unknown',
+            costUsd:number(c?.costUsd)?c.costUsd:null,
+            chargedCents:cents(c?.chargedCents)?c.chargedCents:null
+          }));
+          const callCount=Number.isInteger(receipt?.callCount)&&receipt.callCount>=0&&receipt.callCount<=2?receipt.callCount:null;
+          const results=(Array.isArray(receipt?.results)?receipt.results:[]).slice(0,2).flatMap(r=>{
+            if(!['chat','rewrite'].includes(r?.mode)||r.model!=='qwen3.8-flash'||!number(r.costUsd)||!cents(r.chargedCents)||!['CNY','USD'].includes(r.currency)||r.verified!==true)return [];
+            return [{mode:r.mode,model:r.model,costUsd:r.costUsd,syntheticChargedCents:r.chargedCents,currency:r.currency,verified:true}];
+          });
+          const passed=exitCode==='0'&&receipt?.status==='passed'&&receipt.model==='qwen3.8-flash'&&receipt.maximumRequests===2&&callCount===2&&calls.length===2&&calls.every((c,i)=>c.mode===['chat','rewrite'][i]&&c.requestId&&c.state==='settled'&&number(c.costUsd)&&c.costUsd<=0.056192)&&results.length===2&&number(receipt.totalProviderUsd)&&receipt.totalProviderUsd<=0.112384;
+          const safe={status:passed?'passed':'failed_or_unconfirmed',reviewedSha,model:'qwen3.8-flash',maximumRequests:2,budgetCeilingUsd:0.12,callCount,calls,results,totalProviderUsd:passed?receipt.totalProviderUsd:null,automaticRetry:false};
+          const serialized=JSON.stringify(safe);
+          fs.writeFileSync(receiptFile+'.safe-tmp',serialized,{mode:0o600});
+          fs.renameSync(receiptFile+'.safe-tmp',receiptFile);
+          console.log(serialized);
+          process.exitCode=passed?0:1;
+          NODE
+          REMOTE
+      - name: Ensure temporary server tree is removed
+        if: always()
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_RUN_ID" =~ ^[0-9]+$ ]]
+          if [ -f ~/.ssh/id_ed25519 ]; then
+            ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o ConnectTimeout=15 root@8.152.169.44 \
+              "rm -rf -- /tmp/awd-web-ai-$GITHUB_RUN_ID"
+          fi

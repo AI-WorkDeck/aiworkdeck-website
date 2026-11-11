@@ -1,0 +1,38 @@
+// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+assert.ok(!fs.existsSync('data')&&!fs.existsSync('package.json'),'Use a fresh empty directory');
+fs.mkdirSync('data');fs.writeFileSync('data/users.json',JSON.stringify([{id:'api-a',username:'synthetic-a',displayName:'Synthetic',passwordHash:'unused',createdAt:new Date().toISOString()},{id:'api-b',username:'synthetic-b',displayName:'Synthetic',passwordHash:'unused',createdAt:new Date().toISOString()}]));
+process.env.AWD_MOBILE_BILLING_SECRET='synthetic-internal';
+const {NextRequest}=await import('next/server');
+const {POST}=await import('../app/api/internal/account/route');
+const {POST:accept,GET}=await import('../app/api/account/postpaid/route');
+const {generateApiKey}=await import('../lib/api-keys');
+const {registerCreditGrant,POSTPAID_VERSION,beginPaymentReview,endPaymentReview,cloudState,acknowledgeNotification}=await import('../lib/postpaid');
+const {spendCredits}=await import('../lib/credits');
+const {captureServiceFunding}=await import('../lib/subscription');
+const {withTransaction}=await import('../lib/db');
+const key=generateApiKey('api-a').key!.plaintextKey;
+const internal=(body:any,secret='synthetic-internal')=>POST(new NextRequest('http://localhost/api/internal/account',{method:'POST',headers:{'Content-Type':'application/json','X-Internal-Secret':secret},body:JSON.stringify(body)}));
+const publicRequest=(body:any)=>new NextRequest('http://localhost/api/account/postpaid',{method:'POST',headers:{'Content-Type':'application/json',authorization:`Bearer ${key}`},body:JSON.stringify(body)});
+assert.equal((await internal({action:'cloud-state',accountId:'api-a'},'wrong')).status,404);
+assert.equal((await internal({action:'cloud-state',accountId:'missing'})).status,404);
+assert.equal((await internal({action:'postpaid-accept',accountId:'api-a',policyVersion:POSTPAID_VERSION})).status,409,'default off');
+process.env.AWD_POSTPAID_ENABLED='true';
+assert.equal((await accept(publicRequest({policyVersion:POSTPAID_VERSION}))).status,400,'confirmation required');
+assert.equal((await accept(publicRequest({policyVersion:POSTPAID_VERSION,confirmed:true,accountId:'api-b'}))).status,200);
+assert.equal(cloudState('api-b').billing.accepted,false,'client cannot choose account identity');
+const response=await GET(new NextRequest('http://localhost/api/account/postpaid',{headers:{authorization:`Bearer ${key}`}}));
+const state=await response.json();assert.equal(state.billing.accepted,true);assert.equal(state.cloudAccess.epoch,1);assert.equal(state.billing.storagePrice.cashCentsPerGiBMonth,20);assert.equal(state.billing.egressPrice.cashCentsPerGiB,60);
+const epoch=1,from=state.billing.acceptedAt,to=new Date(Date.parse(from)+1000).toISOString();
+assert.equal((await internal({action:'storage-usage',accountId:'api-a',eventId:'invalid',epoch,from:'bad',to:'bad',storedBytes:'1'})).status,409);
+assert.equal((await internal({action:'cleanup-claim',accountId:'api-a',caseId:'fake',epoch,itemId:'fake'})).status,409,'manifest mandatory');
+withTransaction(d=>registerCreditGrant(d,'api-a','grant',10,from,new Date(Date.parse(from)+86400000).toISOString()));
+withTransaction(d=>spendCredits(d,{userId:'api-a',amountCents:11,ledgerKind:'service_spend',funding:captureServiceFunding('api-a'),delivered:true}));
+const debt=cloudState('api-a'),future=new Date(Date.parse(debt.billing.cleanupAt!)+1000).toISOString();
+acknowledgeNotification('api-a',debt.cloudAccess.caseId!,'receipt',debt.billing.remindAt!);process.env.AWD_POSTPAID_CLEANUP_ENABLED='true';
+assert.equal(cloudState('api-a',future).cloudAccess.cleanupEligible,true);
+beginPaymentReview('api-a','test-order');assert.equal(cloudState('api-a',future).cloudAccess.cleanupEligible,false);
+endPaymentReview('api-a','test-order');assert.equal(cloudState('api-a',future).cloudAccess.cleanupEligible,true);
+console.log('Internal secret, user identity, explicit acceptance, default-off, protocol validation and payment-review cleanup guard passed');

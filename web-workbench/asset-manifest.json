@@ -1,0 +1,50 @@
+{
+  "engineVersion": "24.2.8-zhcn-r5",
+  "encodings": {
+    "soffice.wasm": "br",
+    "soffice.data": "br"
+  },
+  "files": {
+    "lowa/soffice.js": {
+      "bytes": 858359,
+      "sha256": "308c26c3b03d9339f5e89fd7c2849afd1b9f348524fe231a4f87a14c964bd465",
+      "url": "https://www.aiworkdeck.com/lowa-engine/24.2.8-zhcn-r5/soffice.js"
+    },
+    "lowa/soffice.wasm": {
+      "bytes": 45463185,
+      "sha256": "f6804c69ec943a1db11ad4df84590b4ae469c9c0351284e67961127895002853",
+      "url": "https://www.aiworkdeck.com/lowa-engine/24.2.8-zhcn-r5/soffice.wasm"
+    },
+    "lowa/soffice.data": {
+      "bytes": 20874435,
+      "sha256": "e3bf5d58a979015861aefc559a10b8e01eaa1e0bf13182ba2aad377de8bb15cc",
+      "url": "https://www.aiworkdeck.com/lowa-engine/24.2.8-zhcn-r5/soffice.data"
+    },
+    "lowa/soffice.data.js.metadata": {
+      "bytes": 218793,
+      "sha256": "161be3a0dc822a468c8865ece4cba045d52c081ca3e5fbcd175013aa490c4203",
+      "url": "https://www.aiworkdeck.com/lowa-engine/24.2.8-zhcn-r5/soffice.data.js.metadata"
+    },
+    "cjk.ttc": {
+      "bytes": 8331336,
+      "sha256": "faa6c9df652116dde789d351359f3d7e5d2285a2b2a1f04a2d7244df706d5ea9",
+      "url": "https://cdn.jsdelivr.net/gh/googlefonts/noto-cjk@Sans2.004/Sans/SubsetOTF/SC/NotoSansSC-Regular.otf"
+    },
+    "cjk-serif.otf": {
+      "bytes": 11619528,
+      "sha256": "b634f451523f7e1cdacf4afd2143cf5913dbab8979f753921de759e0243989bd",
+      "url": "https://cdn.jsdelivr.net/gh/googlefonts/noto-cjk@Serif2.002/Serif/SubsetOTF/SC/NotoSerifSC-Regular.otf"
+    },
+    "cjk-kai.ttf": {
+      "bytes": 24744500,
+      "sha256": "8d6ba638ac9553413354cfaab97637c1cd778444e259441ea1e5f8fb2c697fba",
+      "url": "https://github.com/lxgw/LxgwWenKai/releases/download/v1.520/LXGWWenKai-Regular.ttf"
+    },
+    "cjk-fangsong.ttf": {
+      "bytes": 8824084,
+      "sha256": "558c62730844fe54ba220146ed62f859d4e2880188d92d985f8921c6e3743bc4",
+      "url": "https://github.com/TrionesType/zhuque/releases/download/v0.212/ZhuqueFangsong-v0.212.zip",
+      "zipEntrySuffix": ".ttf"
+    }
+  }
+}

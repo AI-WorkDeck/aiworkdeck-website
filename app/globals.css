@@ -1,0 +1,608 @@
+@import "tailwindcss";
+@source "../components/**/*.{js,ts,jsx,tsx}";
+@source "../app/**/*.{js,ts,jsx,tsx}";
+
+:root {
+  /* AWD-TOKENS:BEGIN website-root */
+  /* 此段由 scripts/generate-tokens.mjs 生成，勿手改。改色改 design/tokens/awd-palette.json */
+
+  /* King Forest Palette · 墨竹青族（原深松绿族；令牌名是公开契约，只换值） */
+  --king-forest: #2E5A50;
+  --king-forest-darker: #203F38;
+  --king-forest-lighter: #3E6E62;
+  --king-forest-lightest: #E3EDE9;
+
+  /* King Mint Palette · 竹月青族（氛围色：浅底/选中/悬停/装饰线。对白底 2.6:1，不承载正文与按钮文字） */
+  --king-mint: #89A8A0;
+  --king-mint-lighter: #AAC0BB;
+  --king-mint-lightest: #E3EDE9;
+  --king-bamboo: #89A8A0;
+
+  /* King Gold · 浅茶金点睛（分隔金线/引用块/徽章/空态描边；不做大面积底色，不承载信息层级） */
+  --king-gold: #D7C5A1;
+  --king-gold-line: #C9B48A;
+  --king-gold-text: #7E6439;
+  --king-gold-soft: #F5EFE2;
+
+  /* Neutral Palette · 玉脂白暖阶（浅档暖、深档收敛） */
+  --neutral-white: #FCFBF7;
+  --neutral-dark-bg: #221F1A;
+  --neutral-gray-dark: #2B2A26;
+  --neutral-gray-medium: #6B675C;
+  --neutral-gray-faint: #A8A296;
+  --neutral-gray-light: #DFDBCE;
+  --neutral-gray-pale: #F1EFE7;
+  /* AWD-TOKENS:END website-root */
+
+  --background: var(--neutral-white);
+  --foreground: var(--neutral-gray-dark);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* AWD-TOKENS:BEGIN website-theme */
+  /* 此段由 scripts/generate-tokens.mjs 生成，勿手改。改色改 design/tokens/awd-palette.json */
+
+  --color-king-forest: var(--king-forest);
+  --color-king-forest-darker: var(--king-forest-darker);
+  --color-king-forest-lighter: var(--king-forest-lighter);
+  --color-king-forest-lightest: var(--king-forest-lightest);
+
+  --color-king-mint: var(--king-mint);
+  --color-king-mint-lighter: var(--king-mint-lighter);
+  --color-king-mint-lightest: var(--king-mint-lightest);
+  --color-king-bamboo: var(--king-bamboo);
+
+  --color-king-gold: var(--king-gold);
+  --color-king-gold-line: var(--king-gold-line);
+  --color-king-gold-text: var(--king-gold-text);
+  --color-king-gold-soft: var(--king-gold-soft);
+
+  --color-neutral-white: var(--neutral-white);
+  --color-neutral-dark-bg: var(--neutral-dark-bg);
+  --color-neutral-gray-dark: var(--neutral-gray-dark);
+  --color-neutral-gray-medium: var(--neutral-gray-medium);
+  --color-neutral-gray-faint: var(--neutral-gray-faint);
+  --color-neutral-gray-light: var(--neutral-gray-light);
+  --color-neutral-gray-pale: var(--neutral-gray-pale);
+  /* AWD-TOKENS:END website-theme */
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* 站点为纯浅色设计：不随系统深色模式翻转 --background/--foreground，
+   否则白卡片内文字继承近白色、outline 按钮（bg-background）变深底（真机已踩坑） */
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@layer utilities {
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  .translate-z-10 {
+    transform: translateZ(20px);
+  }
+
+  .translate-z-20 {
+    transform: translateZ(40px);
+  }
+}
+
+.mh-page {
+  background: var(--neutral-white);
+  color: var(--neutral-gray-dark);
+  min-height: 100vh;
+}
+
+.mh-hero {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(137, 168, 160, 0.18), transparent 29rem),
+    linear-gradient(180deg, var(--neutral-white) 0%, var(--neutral-gray-pale) 100%);
+  overflow: hidden;
+  padding: 8.75rem 1rem 4.5rem;
+  position: relative;
+}
+
+.mh-hero-glow {
+  background: var(--king-mint);
+  border-radius: 999px;
+  filter: blur(90px);
+  height: 16rem;
+  opacity: 0.08;
+  position: absolute;
+  right: -4rem;
+  top: 8rem;
+  width: 27rem;
+}
+
+.mh-hero-inner {
+  align-items: center;
+  display: grid;
+  gap: 4rem;
+  grid-template-columns: minmax(0, 1fr) 23rem;
+  margin: 0 auto;
+  max-width: 80rem;
+  position: relative;
+}
+
+.mh-hero-copy {
+  max-width: 48rem;
+}
+
+.mh-kicker {
+  align-items: center;
+  background: var(--king-forest-lightest);
+  border-radius: 999px;
+  color: var(--king-forest);
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 700;
+  gap: 0.5rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 1.5rem;
+  padding: 0.6rem 0.95rem;
+}
+
+.mh-kicker svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.mh-latin {
+  color: var(--neutral-gray-medium);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.9rem;
+  text-transform: uppercase;
+}
+
+.mh-hero h1 {
+  color: var(--king-forest);
+  font-size: clamp(3.1rem, 6vw, 4.8rem);
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 1.12;
+}
+
+.mh-subtitle {
+  color: var(--neutral-gray-medium);
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  line-height: 1.8;
+  margin-top: 1.5rem;
+}
+
+.mh-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 2.4rem;
+}
+
+.mh-primary-action,
+.mh-secondary-action {
+  align-items: center;
+  border-radius: 0.6rem;
+  display: inline-flex;
+  font-size: 0.95rem;
+  font-weight: 700;
+  gap: 0.55rem;
+  height: 3rem;
+  padding: 0 1.35rem;
+  transition: all 180ms ease;
+}
+
+.mh-primary-action {
+  background: var(--king-forest);
+  box-shadow: 0 10px 25px rgba(46, 90, 80, 0.16);
+  color: white;
+}
+
+.mh-primary-action:hover {
+  background: var(--king-forest-lighter);
+  transform: translateY(-1px);
+}
+
+.mh-secondary-action {
+  background: var(--neutral-white);
+  border: 1px solid var(--neutral-gray-light);
+  color: var(--neutral-gray-dark);
+}
+
+.mh-secondary-action:hover {
+  border-color: rgba(46, 90, 80, 0.32);
+  color: var(--king-forest);
+}
+
+.mh-primary-action svg,
+.mh-secondary-action svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.mh-context-card {
+  background: rgba(252, 251, 247, 0.82);
+  border: 1px solid rgba(46, 90, 80, 0.1);
+  border-radius: 1.25rem;
+  box-shadow: 0 24px 60px rgba(58, 52, 40, 0.08);
+  padding: 1.65rem;
+}
+
+.mh-context-icon {
+  align-items: center;
+  background: var(--king-forest-lightest);
+  border-radius: 0.75rem;
+  color: var(--king-forest);
+  display: flex;
+  height: 2.8rem;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  width: 2.8rem;
+}
+
+.mh-context-icon svg {
+  height: 1.3rem;
+  width: 1.3rem;
+}
+
+.mh-context-label {
+  color: var(--neutral-gray-medium);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.mh-context-title {
+  color: var(--neutral-dark-bg);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0.6rem 0 1.55rem;
+}
+
+.mh-context-details {
+  border-top: 1px solid var(--neutral-gray-light);
+}
+
+.mh-context-details div {
+  border-bottom: 1px solid var(--neutral-gray-light);
+  display: flex;
+  gap: 1.25rem;
+  padding: 0.85rem 0;
+}
+
+.mh-context-details dt {
+  color: var(--neutral-gray-medium);
+  flex-shrink: 0;
+  font-size: 0.84rem;
+  width: 4rem;
+}
+
+.mh-context-details dd {
+  color: var(--neutral-gray-dark);
+  font-size: 0.84rem;
+  line-height: 1.65;
+}
+
+.mh-reading-shell {
+  background: var(--neutral-gray-pale);
+  border-top: 1px solid var(--neutral-gray-light);
+  padding: 3.25rem 1rem 5.5rem;
+}
+
+.mh-document {
+  background: var(--neutral-white);
+  border: 1px solid var(--neutral-gray-light);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 30px rgba(58, 52, 40, 0.035);
+  font-size: 1rem;
+  line-height: 2.02;
+  margin: 0 auto;
+  max-width: 56rem;
+  padding: clamp(1.4rem, 5vw, 3.4rem) clamp(1.1rem, 6vw, 4.5rem) 4rem;
+}
+
+.mh-document .mh-notice {
+  background: var(--king-forest-lightest);
+  border-radius: 0.75rem;
+  border-left: 3px solid var(--king-forest);
+  color: var(--neutral-gray-dark);
+  font-size: 0.88rem;
+  line-height: 1.7;
+  margin-bottom: 2.5rem;
+  padding: 1rem 1.25rem;
+}
+
+.mh-document .abstract {
+  display: none;
+}
+
+.mh-document p {
+  color: var(--neutral-gray-dark);
+  margin: 0 0 1.25rem;
+  text-align: justify;
+}
+
+.mh-document .text > p:nth-child(-n+15) {
+  background: var(--neutral-gray-pale);
+  margin: 0;
+  padding: 0.22rem 1.3rem;
+  text-align: left;
+}
+
+.mh-document .text > p:nth-child(1) {
+  border-radius: 0.9rem 0.9rem 0 0;
+  color: var(--king-forest);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  padding-top: 1.15rem;
+}
+
+.mh-document .text > p:nth-child(15) {
+  border-radius: 0 0 0.9rem 0.9rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.15rem;
+}
+
+.mh-document .text > p:nth-child(16),
+.mh-document .text > p:nth-child(17) {
+  display: none;
+}
+
+.mh-document p[style*="center"] {
+  color: var(--king-forest);
+  font-size: 1.45rem;
+  margin: 3.5rem 0 1.75rem;
+  text-align: left !important;
+}
+
+.mh-document a {
+  color: var(--king-forest);
+  text-decoration: underline transparent;
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color 160ms ease;
+}
+
+.mh-document a:hover {
+  text-decoration-color: var(--king-forest-lighter);
+}
+
+.mh-document a[name] {
+  scroll-margin-top: 6.5rem;
+}
+
+.mh-document b {
+  font-weight: 700;
+}
+
+.mh-document sup {
+  font-size: 0.72em;
+}
+
+@media (max-width: 640px) {
+  .mh-hero {
+    padding: 6.5rem 1rem 3.2rem;
+  }
+
+  .mh-hero-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+
+  .mh-context-card {
+    width: 100%;
+  }
+
+  .mh-reading-shell {
+    padding: 1rem 0 3rem;
+  }
+
+  .mh-document {
+    border-radius: 0;
+    font-size: 1rem;
+    line-height: 1.9;
+    padding-bottom: 3rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 960px) {
+  .mh-hero-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .mh-context-card {
+    max-width: 30rem;
+  }
+}
+
+@theme inline {
+  --animate-float-slow: float 6s ease-in-out infinite;
+  --animate-float-delayed: float 7s ease-in-out infinite 2s;
+
+  @keyframes float {
+
+    0%,
+    100% {
+      transform: translateY(0px) translateZ(20px);
+    }
+
+    50% {
+      transform: translateY(-10px) translateZ(20px);
+    }
+  }
+}
+
+/* ---------- Skill 广场 v2.1 视觉工具类 ---------- */
+
+/* 展示级无衬线：大标题/卡片题名专用 (DESIGN.md) */
+.font-display {
+  font-family: var(--font-interface), 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC', sans-serif;
+  letter-spacing: -0.025em;
+}
+
+/* 细颗粒噪点，压住大面积色块的"塑料感" */
+.texture-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+/* 首屏搜索光标闪烁（自动轮播占位词用） */
+@keyframes caret-blink {
+  0%, 45% { opacity: 1; }
+  50%, 95% { opacity: 0; }
+  100% { opacity: 1; }
+}
+.animate-caret {
+  animation: caret-blink 1.1s step-end infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-caret { animation: none; }
+}
+
+/* ---------- 首页 Hero「墨深至纸白」舞台（v2 · 2026-08-07） ---------- */
+
+/* 主底：只负责深色带。顶部深林绿承住 Navbar，向下自然变亮到 king-forest。 */
+.hero-stage {
+  background-image:
+    radial-gradient(56rem 34rem at 82% 4%, rgba(137, 168, 160, 0.17), transparent 70%),
+    radial-gradient(44rem 32rem at 2% 86%, rgba(16, 31, 27, 0.6), transparent 72%),
+    linear-gradient(180deg, #101F1B 0%, #172D28 22%, var(--king-forest-darker) 52%, var(--king-forest) 82%, var(--king-forest-lighter) 100%);
+}
+
+/* 溶解带：定高（不随首屏总高漂移），把墨竹青雾化成 #F1EFE7（玉脂白），
+   与紧随其后的 SkillsSpotlight（bg-neutral-gray-pale）无缝相接，
+   避免深色 hero 与浅色全站脱节。所有文字内容必须落在此带之上。 */
+.hero-dissolve {
+  background-image: linear-gradient(
+    180deg,
+    rgba(241, 239, 231, 0) 0%,
+    rgba(241, 239, 231, 0.16) 26%,
+    rgba(241, 239, 231, 0.5) 52%,
+    rgba(241, 239, 231, 0.84) 76%,
+    #F1EFE7 100%
+  );
+}
+
+/* 溶解带白色终点变体：首页 Hero 之后是 bg-white 的 Highlights（首页区块重排后），
+   梯度同构、终点对齐白底；.hero-dissolve 原类保留玉脂白 #F1EFE7 终点（/u/[username] 仍依赖）。 */
+.hero-dissolve-white {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.16) 26%,
+    rgba(255, 255, 255, 0.5) 52%,
+    rgba(255, 255, 255, 0.84) 76%,
+    #ffffff 100%
+  );
+}
+
+/* 竖向细栏线：法律刊物的分栏暗示，上下淡出，不与文字抢注意力 */
+.hero-rules {
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.075) 0 1px, transparent 1px);
+  background-size: calc(100% / 6) 100%;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 52%, transparent 76%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 52%, transparent 76%);
+}
+
+/* 噪点只压深色带，浅色带保持干净纸面 */
+.hero-grain {
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 78%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 78%);
+}
+
+/* 玻璃窗掠光：每 9s 扫过一次，其余时间静止，不做持续闪烁 */
+@keyframes hero-sheen {
+  0% { transform: translateX(-130%) skewX(-14deg); }
+  16% { transform: translateX(240%) skewX(-14deg); }
+  100% { transform: translateX(240%) skewX(-14deg); }
+}
+.animate-hero-sheen {
+  animation: hero-sheen 9s ease-in-out infinite;
+}
+
+/* 悬浮玻璃卡的缓慢漂移（两张错开相位，避免同步摆动像机械） */
+@keyframes hero-drift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-9px); }
+}
+.animate-hero-drift {
+  animation: hero-drift 7s ease-in-out infinite;
+}
+.animate-hero-drift-late {
+  animation: hero-drift 8.5s ease-in-out infinite 1.6s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-sheen,
+  .animate-hero-drift,
+  .animate-hero-drift-late,
+  .animate-float-slow,
+  .animate-float-delayed,
+  /* Tailwind 的 animate-ping 不受 reduced-motion 约束，首屏这颗状态点要自己关 */
+  .hero-stage .animate-ping {
+    animation: none;
+  }
+}
+
+/* 状态卡换词：纯 CSS，最低不透明度 0.25，永不消失。
+   （用 JS 动 opacity 会在 rAF 冻结/动画被打断时把内容永久卡在 0，已踩过） */
+@keyframes hero-swap {
+  from { opacity: 0.25; transform: translateY(7px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-hero-swap {
+  animation: hero-swap 480ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-swap { animation: none; }
+}
+
+/* ---------- RTL (Right-to-Left, e.g. ar / Arabic) Layout Safeguards ---------- */
+[dir="rtl"] pre,
+[dir="rtl"] code,
+[dir="rtl"] kbd,
+[dir="rtl"] samp,
+[dir="rtl"] .ltr-inline,
+[dir="rtl"] input[type="email"],
+[dir="rtl"] input[type="url"],
+[dir="rtl"] input[type="tel"] {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: left;
+}
+
+[dir="rtl"] .mh-document .mh-notice {
+  border-left: none;
+  border-right: 3px solid var(--king-forest);
+}
+
+[dir="rtl"] .mh-document .text > p:nth-child(-n+15),
+[dir="rtl"] .mh-document p[style*="center"] {
+  text-align: right !important;
+}
+
+[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}
+

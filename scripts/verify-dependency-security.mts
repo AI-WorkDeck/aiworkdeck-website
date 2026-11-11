@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import { validateAudit, parseAuditResult } from './check-dependency-security.mjs';
+const now = Date.parse('2026-11-04T00:00:00Z');
+const lock = { packages: { 'node_modules/minimatch': { dev: true } } };
+const audit = { auditReportVersion: 2, metadata: { vulnerabilities: { total: 1 } }, vulnerabilities: { minimatch: { name: 'minimatch', nodes: ['node_modules/minimatch'], via: [{ url: 'https://github.com/advisories/GHSA-g3hv-75wg-m249', name: 'minimatch', dependency: 'minimatch', range: '<11.0.1', severity: 'moderate' }] } } };
+assert.equal(validateAudit(audit, lock, '.', now).exceptions, 1);
+assert.throws(() => validateAudit(audit, { packages: { 'node_modules/minimatch': {} } }, '.', now));
+assert.throws(() => validateAudit(audit, lock, 'web-workbench', now));
+assert.throws(() => validateAudit(audit, lock, 'enterprise/frontend', now), 'Retired enterprise workspace must not retain an exception');
+assert.throws(() => validateAudit(audit, lock, '.', Date.parse('2027-02-02T00:00:00Z')));
+const fresh = structuredClone(audit); fresh.vulnerabilities.minimatch.via[0].url = 'https://github.com/advisories/GHSA-new';
+assert.throws(() => validateAudit(fresh, lock, '.', now));
+assert.throws(() => validateAudit({ error: { code: 'ENETWORK' } }, lock, '.', now));
+assert.throws(() => parseAuditResult({ status: 0, stdout: 'not json' }));
+assert.throws(() => parseAuditResult({ status: 2, stdout: JSON.stringify(audit) }));
+assert.throws(() => parseAuditResult({ status: null, signal: 'SIGTERM', stdout: JSON.stringify(audit) }));
+assert.throws(() => validateAudit({ ...audit, vulnerabilities: {} }, lock, '.', now));
+console.log('PASS: narrow dev-only exception; new advisories, runtime nodes, unknown workspace, expiry and failed audits rejected');

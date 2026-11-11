@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+assert.ok(!fs.existsSync('package.json'), 'Run in an empty temporary directory');
+const { createUser, findUserById, recordUserLogin, markUserDeleted } = await import('../lib/users');
+const { createSession, deleteSession, getUserByToken } = await import('../lib/sessions');
+const { issueLoginKey, revokeApiKey } = await import('../lib/api-keys');
+const { user } = await createUser({username: 'login-test', email: 'login@example.test', password: 'test-password-only', displayName: 'Test'});
+assert.ok(user);
+assert.equal(findUserById(user.id)?.lastLoginAt, undefined);
+const session = createSession(user.id);
+const first = findUserById(user.id)?.lastLoginAt;
+assert.ok(first);
+getUserByToken(session.token);
+assert.equal(findUserById(user.id)?.lastLoginAt, first, 'Reading a session is not a login');
+deleteSession(session.token);
+assert.equal(findUserById(user.id)?.lastLoginAt, first, 'Logout preserves login history');
+recordUserLogin(user.id, '2000-01-01T00:00:00.000Z');
+assert.equal(findUserById(user.id)?.lastLoginAt, first, 'Older writes cannot move time backwards');
+const key = issueLoginKey(user.id, 'test-client');
+assert.equal(findUserById(user.id)?.lastLoginAt, key.info.createdAt);
+revokeApiKey(user.id, key.info.id);
+assert.equal(findUserById(user.id)?.lastLoginAt, key.info.createdAt, 'Key revocation preserves login history');
+console.log('PASS: unknown history, browser/client login, reads, logout, revocation, monotonic timestamp');
+
+markUserDeleted(user.id, 'Deleted');
+assert.equal(findUserById(user.id)?.lastLoginAt, undefined);
+recordUserLogin(user.id, new Date().toISOString());
+assert.equal(findUserById(user.id)?.lastLoginAt, undefined, 'Deleted users cannot receive new login history');

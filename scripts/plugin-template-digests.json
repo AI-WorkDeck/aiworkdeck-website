@@ -1,0 +1,7 @@
+{
+  "scripts/plugin-dev.mjs": "94a0464fb65181f5c6c3e0e3b96ffff10346b9c1cddd8a95185517b3bc8c0b5c",
+  "sdk/plugin-sdk/awd-plugin-sdk.js": "e75b8e3415cccb516c1b4f796298ccb638e182c7ecfba38e9d79d12a0474a2bf",
+  "sdk/plugin-sdk/awd-plugin-sdk.d.ts": "66ceb6a6b7ec8f725da2ffb425dcf17217c5863e59ad1cf71eb5a11e76f5d993",
+  "sdk/plugin-sdk/manifest.d.ts": "da0fb44430091fa15ef68e36c763773dae9eafca3d2253323ec312581b5da788",
+  "sdk/plugin-sdk/manifest.schema.json": "2782d88892f494217ab7770dae2e9c6ef794fab065b72f926a5a3d1965666d1e"
+}

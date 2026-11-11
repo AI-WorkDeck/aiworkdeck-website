@@ -1,0 +1,13 @@
+# Individually reviewed synthetic test fixtures; no path/rule-wide exclusions.
+133cf5e8f1e8c39cfd4128f1d0f6d6b6d6ba31bd:scripts/verify-wxvp.mts:generic-api-key:35
+133cf5e8f1e8c39cfd4128f1d0f6d6b6d6ba31bd:scripts/verify-wxvp.mts:generic-api-key:98
+133cf5e8f1e8c39cfd4128f1d0f6d6b6d6ba31bd:scripts/verify-wxvp.mts:generic-api-key:124
+94672e35341b313ec07753b166485bc03629acfa:scripts/verify-transfer-billing.mts:generic-api-key:39
+6016cb7670e5dc842650f1303e600bc014d7adbb:scripts/verify-w2.mts:generic-api-key:72
+6016cb7670e5dc842650f1303e600bc014d7adbb:scripts/verify-w2.mts:generic-api-key:120
+
+# Legacy branch copies of the same exact synthetic fixture source lines.
+3065642b8912144d9492a2d54f3ae4af995a4a29:scripts/verify-wxvp.mts:generic-api-key:35
+3065642b8912144d9492a2d54f3ae4af995a4a29:scripts/verify-wxvp.mts:generic-api-key:98
+3065642b8912144d9492a2d54f3ae4af995a4a29:scripts/verify-wxvp.mts:generic-api-key:124
+53a67352d2efca33a312f706522d93b670baa2bc:scripts/verify-transfer-billing.mts:generic-api-key:39

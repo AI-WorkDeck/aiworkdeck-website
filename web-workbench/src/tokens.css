@@ -1,0 +1,87 @@
+/* SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors */
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Website DESIGN.md semantic values; only the workbench shell consumes this map. */
+:root{
+  /* AWD Core Theme Tokens (2026-10-11-cross-platform-design-system.md) */
+  --bg: #F1EFE7;
+  --panel: #F1EFE7;
+  --panel-elevated: #FCFBF7;
+  --panel-muted: #E9E6DC;
+  --panel-hover: #EAE6DC;
+  --border: #E8E3D7;
+  --border-strong: #DDD8CA;
+  --text: #1F1E1B;
+  --text-soft: #5C5952;
+  --text-faint: #8A857B;
+  --accent: #2E5A50;
+  --accent-strong: #244840;
+  --accent-soft: rgba(46, 90, 80, 0.10);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  --shadow-sm: 0 2px 6px rgba(24, 23, 20, 0.06);
+  --shadow-md: 0 8px 24px rgba(24, 23, 20, 0.10);
+
+  /* Semantic aliases for workbench components */
+  --text-secondary: var(--text-soft);
+  --text-muted: var(--text-soft);
+  --heading: #1F1E1B;
+  --brand: var(--accent);
+  --brand-hover: var(--accent-strong);
+  --surface: var(--panel-elevated);
+  --surface-subtle: var(--bg);
+  --surface-raised: var(--panel-elevated);
+  --surface-canvas: var(--panel-muted);
+  --surface-hover: var(--panel-hover);
+  --surface-selected: var(--accent-soft);
+  --line: var(--border);
+  --line-strong: var(--border-strong);
+  --focus: var(--accent);
+  --warning: #8b794d;
+  --warning-surface: #f5f1e7;
+  --danger: #a84736;
+  --danger-text: #8e5135;
+  --danger-surface: #fff4ed;
+  --danger-line: #eccbb8;
+  --success-text: #2E5A50;
+  --success-surface: var(--accent-soft);
+
+  /* Font scales: lifted 9px/10px to 11px (0.6875rem) */
+  --font-micro: 11px;
+  --font-tiny: 11px;
+  --font-caption: 11px;
+  --font-small: 12px;
+  --font-body: 13px;
+  --font-label: 15px;
+  --font-brand: 16px;
+  --font-title: 18px;
+  --font-section: 20px;
+  --font-mark: 22px;
+  --font-display: 23px;
+  --font-decoration: 30px;
+
+  /* Radius scales */
+  --radius-2: 2px;
+  --radius-4: var(--radius-sm);
+  --radius-5: var(--radius-sm);
+  --radius-6: var(--radius-md);
+  --radius-7: var(--radius-md);
+  --radius-8: var(--radius-lg);
+  --radius-9: var(--radius-lg);
+  --radius-12: 12px;
+  --radius-13: 13px;
+  --radius-17: 17px;
+
+  --motion-fast: 150ms;
+  --focus-width: 2px;
+  --focus-offset: 2px;
+  --control-size: 32px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+}

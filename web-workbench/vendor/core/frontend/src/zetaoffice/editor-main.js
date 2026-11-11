@@ -1,0 +1,508 @@
+// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// editor-main.js — entry for the embedded LibreOffice editor page that runs
+// INSIDE the isolated <webview>. Epic #43.
+//
+// Bundled by the dedicated Vite build (frontend/vite.zetaoffice.config.js), NOT
+// by uni-app: uni-app's h5 build won't let a static/ page import src/ modules,
+// so this page is its own self-contained bundle that pulls in the verified
+// product composables (startEditorEndpoint -> bootZetaOffice + executor +
+// serveExecutor). The build output (dist/zetaoffice/) ships in the desktop app
+// and is loaded by <webview partition="persist:zetaoffice"> (isolated by
+// desktop/main/zetaoffice-session.js).
+//
+// Transport auto-detect keeps the page verifiable OUTSIDE Electron too: in an
+// Electron <webview> it talks to the host over ipcRenderer; in a plain browser /
+// iframe it falls back to window.parent.postMessage, so the Phase 0 spike (and a
+// browser) can drive it the same way the host will.
+
+import { attachReviewBalloons } from '../composables/zetaOfficeReviewBalloons.js'
+import { attachReviewHover } from '../composables/zetaOfficeReviewHover.js'
+let reviewBalloons = null
+let reviewHover = null
+
+import { startEditorEndpoint } from '../composables/zetaOfficeEditorEndpoint.js'
+import { attachDocumentLinkClicks } from '../composables/zetaOfficeLinkClick.js'
+import { attachImeOverlay } from '../composables/zetaOfficeImeOverlay.js'
+import { attachWritingAssistance } from '../composables/zetaOfficeCompletion.js'
+import { attachSemanticWritingPanel } from '../composables/semanticWritingPanel.js'
+import { attachInlineReview } from '../composables/zetaOfficeInlineReview.js'
+// 光标邻域半径的单一出处：宿主侧 matchEntityAt 用同一个默认值做窗口截取，
+// 两边不一致会让「实体名明明就在光标上却匹配不到」（纯数据模块，不带 Vue/uni）。
+import { CURSOR_RADIUS } from '../utils/insightMatch.js'
+
+// Electron renderer require is a runtime property access (NOT a static import),
+// so the bundler leaves it alone and the browser fallback path stays clean.
+function getIpcRenderer() {
+  try {
+    if (typeof window !== 'undefined' && typeof window.require === 'function') {
+      return window.require('electron').ipcRenderer
+    }
+  } catch (e) { /* not Electron */ }
+  return null
+}
+
+// {send, subscribe} over the host boundary — Electron <webview> IPC if present,
+// else postMessage to the parent (browser/iframe/spike harness).
+function pickTransport() {
+  // Preferred Electron <webview> path: the webview preload
+  // (desktop/preload/zetaoffice-webview-preload.js) exposes a fixed-shape bridge
+  // over contextBridge (contextIsolation stays ON). Already {send, subscribe}.
+  if (typeof window !== 'undefined' && window.zetaHostBridge) {
+    return window.zetaHostBridge
+  }
+  // Legacy fallback: nodeIntegration webview where window.require is available.
+  const ipc = getIpcRenderer()
+  if (ipc) {
+    return {
+      send: (m) => ipc.sendToHost('lo-relay', m),
+      subscribe: (h) => {
+        const f = (_e, m) => h(m)
+        ipc.on('lo-relay', f)
+        return () => ipc.removeListener('lo-relay', f)
+      },
+    }
+  }
+  // <iframe> 路径（Web 服务器版 / 鸿蒙浏览器）。宿主与本页同源是部署硬前提
+  // （deploy/web/nginx.conf.example：站点与 /zetaoffice/ 同 origin + 全站 COOP/COEP），
+  // 所以收发都钉死在 location.origin：'*' 会把文档内容和编辑器指令暴露给任何把
+  // 本页嵌进去的第三方页面，也会让任何页面能伪造 lo-relay 指令改用户的文档。
+  const target = window.parent && window.parent !== window ? window.parent : window
+  const origin = window.location.origin
+  return {
+    send: (m) => target.postMessage(m, origin),
+    subscribe: (h) => {
+      const f = (e) => {
+        if (e.source !== target) return
+        if (e.origin !== origin) return
+        h(e.data)
+      }
+      window.addEventListener('message', f)
+      return () => window.removeEventListener('message', f)
+    },
+  }
+}
+
+// Runtime-configurable asset locations (query string), so the same bundle works
+// against the CDN LOWA in dev and a self-hosted bundle in the packaged app.
+const q = new URLSearchParams(location.search)
+const VERIFY = q.get('verify') === '1'
+
+// ---- 深浅主题（dev-board#273）----------------------------------------------
+// 初值来自 ?theme=（editor.html 头部内联脚本已抢先挂了 class，防白闪）；宿主
+// 切换主题时经 lo-relay 推 {type:'set-theme'}。页面底色走 class，引擎的
+// AppBackground 走 set_app_theme 命令——executor 就绪前先记账，ready 后补一发。
+let currentTheme = q.get('theme') === 'dark' ? 'dark' : 'light'
+let themeExecutor = null
+function applyTheme(theme) {
+  currentTheme = theme === 'dark' ? 'dark' : 'light'
+  try { document.documentElement.classList.toggle('theme-dark', currentTheme === 'dark') } catch (e) { /* ignore */ }
+  if (themeExecutor) {
+    themeExecutor.executeCommand('set_app_theme', { mode: currentTheme })
+      .catch((e) => console.warn('[zeta-editor] set_app_theme failed:', e))
+  }
+}
+
+// Standalone verification panel (?verify=1): a few buttons + an IME field that
+// drive the booted executor DIRECTLY (no host), so the editor can be exercised
+// inside the dedicated verification window (desktop/main/zetaoffice-verify.js)
+// of a packaged build. In normal (webview) mode the panel stays hidden and the
+// endpoint just serves the host over the transport.
+function vlog(m) {
+  const el = document.getElementById('vlog')
+  if (!el) return
+  el.classList.add('on')
+  el.textContent += m + '\n'
+  el.scrollTop = el.scrollHeight
+}
+
+function wireVerifyPanel(executor) {
+  const panel = document.getElementById('verify')
+  if (panel) panel.classList.add('on')
+  const status = document.getElementById('vstatus')
+  const ime = document.getElementById('vime')
+  const bIns = document.getElementById('vinsert')
+  const bRep = document.getElementById('vreplace')
+  const bSel = document.getElementById('vsel')
+  const bExp = document.getElementById('vexport')
+  if (status) status.textContent = '就绪 / ready ✓'
+  for (const b of [ime, bIns, bRep, bSel, bExp]) if (b) b.disabled = false
+
+  const run = async (label, action, params) => {
+    vlog('▶ ' + label + ' …')
+    try { vlog('  ← ' + JSON.stringify(await executor.executeCommand(action, params))) }
+    catch (e) { vlog('  ✗ ' + (e && e.message ? e.message : e)) }
+  }
+  if (bIns) bIns.onclick = () => run('插入示例', 'insert_at_cursor',
+    { text: '本协议由甲方与乙方于本日签订；协议自双方签署之日起生效。' })
+  if (bRep) bRep.onclick = () => run('查找替换 协议→合同 (redline)', 'find_replace',
+    { findText: '协议', replaceText: '合同', replaceAll: true })
+  if (bSel) bSel.onclick = () => run('读选区', 'get_selection', {})
+  // Track E save-pipeline verification: export the live document as .docx bytes
+  // (the exact worker path the host's 保存 uses), assert the ZIP magic, and hand
+  // the file to the browser so a human can open it in Word/LibreOffice.
+  if (bExp) bExp.onclick = async () => {
+    vlog('▶ export_document …')
+    try {
+      const res = await executor.executeCommand('export_document', { name: 'verify-export.docx' })
+      if (!res || !res.success) throw new Error((res && res.message) || 'no success')
+      const raw = res.bytes
+      const u8 = raw instanceof Uint8Array ? raw
+        : raw instanceof ArrayBuffer ? new Uint8Array(raw)
+        : raw && raw.buffer instanceof ArrayBuffer ? new Uint8Array(raw.buffer, raw.byteOffset || 0, raw.byteLength)
+        : Array.isArray(raw) ? new Uint8Array(raw) : null
+      if (!u8 || !u8.length) throw new Error('no bytes in result')
+      const magicOk = u8[0] === 0x50 && u8[1] === 0x4b // 'PK' — docx is a ZIP
+      vlog('  ← ' + u8.length + ' bytes, ZIP magic ' + (magicOk ? 'OK (PK)' : 'BAD: ' + u8[0] + ',' + u8[1]))
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }))
+      a.download = 'verify-export.docx'
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(a.href), 30000)
+      vlog('  ← 已触发下载 verify-export.docx——请用 Word/LibreOffice 打开核对内容')
+    } catch (e) { vlog('  ✗ ' + (e && e.message ? e.message : e)) }
+  }
+
+  // IME: commit composed/typed text into the document at the cursor.
+  if (ime) {
+    let composing = false, skipNext = false
+    const commit = (t) => { if (t) run('IME 插入「' + t + '」', 'insert_at_cursor', { text: t }); ime.value = '' }
+    ime.addEventListener('compositionstart', () => { composing = true })
+    ime.addEventListener('compositionend', (e) => { composing = false; skipNext = true; commit(e.data) })
+    ime.addEventListener('input', (e) => {
+      if (composing) return
+      if (skipNext) { skipNext = false; return }
+      commit(e.data != null ? e.data : ime.value)
+    })
+  }
+}
+
+// One transport instance, reused to both serve the host AND signal readiness.
+const hostTransport = pickTransport()
+
+// (#79) Hyperlink clicks: when LO opens a document hyperlink it lands on the
+// page's window.open. Inside the isolated <webview> a popup can't open anything
+// useful anyway — forward the URL to the HOST over the same lo-relay transport,
+// where project-overview routes it (checkba:// internal links → 关联文件/网核
+// 定位, http(s) → workspace browser tab). Wrapped BEFORE boot so no click races.
+try {
+  const nativeOpen = window.open ? window.open.bind(window) : null
+  window.open = (url, name, feats) => {
+    const u = url ? String(url) : ''
+    if (u) {
+      try { hostTransport.send({ __lo: 'lo-relay', type: 'open-url', url: u }); return null } catch (e) { /* fall through */ }
+    }
+    return nativeOpen ? nativeOpen(url, name, feats) : null
+  }
+} catch (e) { console.error('[zeta-editor] window.open hook failed:', e) }
+
+// (dev-board#171) 拖拽建链：原生拖拽的命中目标是本客体页（Electron 的 guest view
+// 在原生 DnD 命中测试里先于宿主 DOM），宿主的 .libre-evidence-drop 对真实鼠标
+// 拖拽永远收不到 dragover/drop——那条路只有合成事件能走到。本页过去没有任何
+// 拖拽处理，drop 被浏览器默认拒绝：用户把文件拖到画布上松手，什么都不发生。
+// 这里代收：dragover 放行（否则光标一直是「禁止」）、drop 把载荷经 lo-relay
+// 转发给宿主。锚点语义不变——锚点=文档内已选中的文字，与松手位置无关。
+try {
+  document.addEventListener('dragover', (e) => {
+    e.preventDefault()
+    try { if (e.dataTransfer) e.dataTransfer.dropEffect = 'link' } catch (err) { /* ignore */ }
+  }, true)
+  document.addEventListener('drop', (e) => {
+    e.preventDefault()
+    let payload = ''
+    try {
+      const dt = e.dataTransfer
+      payload = dt ? (dt.getData('application/x-checkba-file') || dt.getData('text/checkba-file-json') || '') : ''
+    } catch (err) { payload = '' }
+    try { hostTransport.send({ __lo: 'lo-relay', type: 'evidence-drop', payload }) }
+    catch (err) { console.error('[zeta-editor] evidence-drop relay failed:', err) }
+  }, true)
+} catch (e) { console.error('[zeta-editor] drop hook failed:', e) }
+
+// (autosave) The worker posts one 'modified' per document change (typed / IME /
+// AI command — see installModifyListener in office_thread.js). The host only
+// needs an edge to debounce-save on, so throttle the relay to 1/500ms.
+let inlineReview = null
+let lastModifiedRelay = 0
+function relayCommentRequest(documentSeq) {
+  try {
+    hostTransport.send({ __lo: 'lo-relay', type: 'comment-request',
+      ...(documentSeq != null ? { documentSeq } : {}) })
+  } catch (e) { /* ignore */ }
+}
+function relayModified(d) {
+  if (!d || !d.cmd) return
+  if (d.cmd === 'comment-request') { relayCommentRequest(d.documentSeq); return }
+  // 原生「导出为 PDF」入口被 worker 拦下（dev-board#886）：宿主取字节并下载
+  if (d.cmd === 'export-pdf-request') {
+    try { hostTransport.send({ __lo: 'lo-relay', type: 'export-pdf-request', source: d.source || '' }) } catch (e) { /* ignore */ }
+    return
+  }
+  if (d.cmd === 'sel_changed') { relaySelection(); return }
+  if (d.cmd !== 'modified') return
+  reviewBalloons?.documentChanged()
+  reviewHover?.documentChanged()
+  inlineReview?.documentChanged()
+  const now = Date.now()
+  if (now - lastModifiedRelay < 500) return
+  lastModifiedRelay = now
+  try { hostTransport.send({ __lo: 'lo-relay', type: 'modified' }) } catch (e) { /* ignore */ }
+}
+
+// (自建工具栏) 光标/选区动了 → 宿主重读 get_ui_state 刷新激活态。两个来源：
+// worker 的 XSelectionChangeListener（盖选区类变化）与 IME 覆盖层的
+// onCursorMoved（盖纯光标移动与画布点击，前者盖不住）。合流后节流 1/150ms，
+// 免得连续方向键把通道打满。
+let lastSelectionRelay = 0
+let selectionTimer = 0
+function relaySelection() {
+  reviewBalloons?.cursorMoved()
+  const now = Date.now()
+  const since = now - lastSelectionRelay
+  if (since < 150) {
+    // 尾随一发，保证最后一次移动的状态一定送到（否则连按方向键停下时是旧状态）
+    if (!selectionTimer) selectionTimer = setTimeout(() => { selectionTimer = 0; relaySelection() }, 150 - since)
+    return
+  }
+  lastSelectionRelay = now
+  try { hostTransport.send({ __lo: 'lo-relay', type: 'selection' }) } catch (e) { /* ignore */ }
+  relayCursorContext(null)
+}
+
+// (依据窗格, dev-board#182) 光标邻域上报。**默认不开**：宿主只有在「依据」窗格
+// 真绑在这份文档上时才下发 {type:'insight-sub', enabled:true}，此前一次
+// get_cursor_context 都不打——没开窗格的用户完全不受影响。
+//
+// 两个触发点：画布单击落定后（下面那段 link-click seam 里，带修饰键）与选区/光标
+// 变化（relaySelection 里，不带修饰键）。后者再节流一层到 ≥400ms：光标移动比
+// 工具栏激活态刷新贵得多（要过一次 worker 往返）。
+let insightSub = false
+let insightExecutor = null
+let lastCursorRelay = 0
+let cursorInFlight = false
+
+try {
+  hostTransport.subscribe((msg) => {
+    if (!msg || msg.__lo !== 'lo-relay') return
+    if (msg.type === 'set-theme') { applyTheme(msg.theme); return }
+    if (msg.type !== 'insight-sub') return
+    insightSub = !!msg.enabled
+  })
+} catch (e) { console.error('[zeta-editor] insight-sub subscribe failed:', e) }
+
+function relayCursorContext(meta) {
+  if (!insightSub || !insightExecutor) return
+  // 点击那一路必须送到（用户刚点的就是它），光标移动那一路节流
+  if (!meta) {
+    const now = Date.now()
+    if (now - lastCursorRelay < 400) return
+    lastCursorRelay = now
+  } else {
+    lastCursorRelay = Date.now()
+  }
+  // 上一发还没回来时丢掉光标移动那一路（别把 worker 排满）；**点击那一路不丢**——
+  // 用户刚点的就是它，丢了就是「Cmd+点击没反应」。
+  if (cursorInFlight && !meta) return
+  cursorInFlight = true
+  insightExecutor.executeCommand('get_cursor_context', { radius: CURSOR_RADIUS })
+    .then((r) => {
+      if (!r || !r.success) return
+      hostTransport.send({
+        __lo: 'lo-relay',
+        type: 'cursor-context',
+        payload: {
+          before: r.before || '', after: r.after || '', paragraph: r.paragraph || '',
+          selectedText: r.selectedText || '', hasSelection: !!r.hasSelection,
+          meta: meta || { metaKey: false, ctrlKey: false, clientX: null, clientY: null },
+          at: Date.now(),
+        },
+      })
+    })
+    .catch(() => { /* 只读查询失败不打扰 */ })
+    .then(() => { cursorInFlight = false }, () => { cursorInFlight = false })
+}
+
+let engineFailed = false
+// 本机字体（仅桌面：desktop/main/zetaoffice-server.js 的 /sysfonts/enabled.json，
+// 清单由用户在「编辑器字体」面板勾选）。短超时、任何失败都按「没有本机字体」处理，
+// 绝不明显拖慢启动；Web 版没有这个路由（404）同样落空。
+const SYSTEM_FONTS_TIMEOUT_MS = 1500
+function loadSystemFonts() {
+  const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null
+  const timer = setTimeout(() => { try { ctrl && ctrl.abort() } catch (e) { /* ignore */ } }, SYSTEM_FONTS_TIMEOUT_MS)
+  return fetch('./sysfonts/enabled.json', { cache: 'no-store', signal: ctrl ? ctrl.signal : undefined })
+    .then((r) => (r.ok ? r.json() : { fonts: [] }))
+    .then((j) => (Array.isArray(j && j.fonts) ? j.fonts : [])
+      .filter((f) => f && typeof f.url === 'string' && Array.isArray(f.families) && f.families.length)
+      .map((f) => ({ url: f.url, family: f.families[0], systemFamilies: f.families, fileName: f.file })))
+    .catch(() => [])
+    .finally(() => clearTimeout(timer))
+}
+loadSystemFonts().then((systemFonts) => startEditorEndpoint({
+  canvas: document.getElementById('qtcanvas'),
+  transport: hostTransport,
+  onWorkerMessage: relayModified,
+  onFatal() {
+    if (engineFailed) return
+    engineFailed = true
+    try { hostTransport.send({ __lo: 'lo-relay', type: 'engine-failed', code: 'EDITOR_ENGINE_FAILED' }) } catch (e) { /* host already removed */ }
+  },
+  sofficeBaseUrl: q.get('lowa') || 'https://cdn.zetaoffice.net/zetaoffice_latest/',
+  zetaJsUrl: q.get('zeta') || './zeta.js',
+  workerScriptUrl: q.get('worker') || './office_thread.js',
+  houseProfileUrl: q.get('house') || './house-default.js',
+  // Default to the CJK fonts served next to the page — one per Chinese typeface
+  // category (黑体类 sans / 宋体类 serif / 楷体 / 仿宋), baked by
+  // desktop/scripts/fetch-lowa-assets.js. bootZetaOffice skips any that 404
+  // (its fontconfig alias chains then fall through to the next category font).
+  // ?font= overrides/adds a single extra font (kept for the spike harness).
+  fontUrl: q.get('font') || undefined,
+  // family = the name LibreOffice registers (list_fonts diagnostic) — the
+  // boot's fontconfig alias rules point 宋体/黑体/楷体/仿宋/… at these.
+  fontUrls: [
+    { url: './cjk.ttc', family: 'Noto Sans SC', category: 'sans' },
+    { url: './cjk-serif.otf', family: 'Noto Serif SC', category: 'serif' },
+    { url: './cjk-kai.ttf', family: '霞鹜文楷', category: 'kai' },
+    { url: './cjk-fangsong.ttf', family: '朱雀仿宋（预览测试版）', category: 'fangsong' },
+    // 本机字体排在随包字体之后（无 category，不参与别名目标；其族名会让 boot
+    // 跳过同名别名规则，真字体不被 assign 劫持到随包字体上）。
+    ...systemFonts,
+  ],
+  // Deterministic Chinese UI regardless of the browser/Electron language (the
+  // engine follows navigator.languages otherwise — v0.3.1 shipped English on an
+  // en-GB system). ?uilang=env follows the environment; ?uilang=xx-YY overrides.
+  uiLang: q.get('uilang') === 'env' ? '' : (q.get('uilang') || 'zh-CN'),
+  // (#79) The #66 runtime zh-CN langpack injection was removed: the self-built
+  // engine ships zh-CN baked in, so injecting 38 files was pure boot overhead.
+  onLog: (m) => {
+    console.log('[zeta-editor]', m)
+    if (VERIFY) vlog(m)
+    // 启动里程碑同步给宿主：LibreOfficeEditor 的加载进度面板据此推进阶段
+    // （引擎下载/字体/线程/文档就绪）。宿主在 dom-ready 前就订阅了 lo-relay。
+    try { hostTransport.send({ __lo: 'lo-relay', type: 'boot-log', msg: String(m) }) } catch (e) { /* ignore */ }
+  },
+})).then((endpoint) => {
+  if (engineFailed) { endpoint.dispose(); return }
+  let semanticWriting = null
+  reviewBalloons = attachReviewBalloons({ canvas: document.getElementById('qtcanvas'), execute: (a,p) => endpoint.executor.executeCommand(a,p), transport: hostTransport, locale: q.get('uilang') || 'zh' })
+  reviewHover = attachReviewHover({ canvas: document.getElementById('qtcanvas'), execute: (a,p) => endpoint.executor.executeCommand(a,p), locale: q.get('uilang') || 'zh' })
+  // A layout result can arrive while the host has already started another UNO
+  // command. Never resize the Qt canvas during import/export or an edit.
+  const executeWithReview = endpoint.executor.executeCommand.bind(endpoint.executor)
+  endpoint.executor.executeCommand = async (action, params, callOpts) => {
+    if (['capture_writing_context', 'accept_writing_suggestion'].includes(action) && semanticWriting?.isComposing())
+      return { success: false, available: false, reason: 'composing', error: 'composing', message: '请先完成当前输入，再生成或采用建议。' }
+    if (/^(get_|list_)/.test(action) || action === 'capture_writing_context' || action === 'set_review_balloons' || (action === 'set_revision_view' && !params?.mode)) return executeWithReview(action, params, callOpts)
+    reviewBalloons.suspend(action)
+    reviewHover.suspend()
+    try { return await executeWithReview(action, params, callOpts) }
+    finally { reviewBalloons.resume(); reviewHover.resume() }
+  }
+
+  console.log('[zeta-editor] endpoint ready — serving host over transport')
+  insightExecutor = endpoint.executor
+  themeExecutor = endpoint.executor
+  applyTheme(currentTheme)
+  attachDocumentLinkClicks({
+    canvas: document.getElementById('qtcanvas'),
+    execute: (action, params) => endpoint.executor.executeCommand(action, params),
+    send: message => hostTransport.send(message),
+    cursorContext: meta => relayCursorContext(meta),
+  })
+  // Tell the host the office endpoint is booted and serving (serveExecutor is now
+  // subscribed). The host (createRelayExecutor onReady) waits for this before
+  // pushing load_document — sending it earlier would drop it (no subscriber yet,
+  // office not booted). Track D's real-file load is gated on this handshake.
+  try { hostTransport.send({ __lo: 'lo-relay', type: 'ready' }) } catch (e) { /* ignore */ }
+  // Transparent IME overlay over the canvas, so users can type Chinese directly
+  // in the document (Qt5-WASM gives the canvas no IME). Commits at the LO cursor
+  // via the same verified path as agent commands. Attached in BOTH webview and
+  // verify modes — local typing is a real-user need, not just a verification one.
+  let overlay = null
+  let writingAssistance = null
+  try {
+    overlay = attachImeOverlay({
+      canvas: document.getElementById('qtcanvas'),
+      // replaceSelection：用户手打 = Word 语义，选中的文字被新输入覆盖（删掉选区、
+      // 在原位置落字）。不带这个标记的 insert_at_cursor 仍是「塌到选区末尾追加」——
+      // AI 与插件管线依赖那条语义（先 select 再 insert_at_cursor 表示「插在后面」）。
+      commit: (text) => endpoint.executor.executeCommand('insert_at_cursor', { text, replaceSelection: true }),
+      getCursorRaw: () => endpoint.executor.executeCommand('get_cursor_rect', {}),
+      // Control keys: the overlay swallows keystrokes (it IS the focused input),
+      // so Enter/Backspace/arrows must be forwarded to the worker explicitly.
+      // The worker actions (insert_paragraph/delete_backward/move_cursor) have
+      // existed since Track C and are whitelisted — this wiring was the missing
+      // link (v0.3.1 real-machine report: Backspace did nothing).
+      onEnter: () => endpoint.executor.executeCommand('insert_paragraph', { replaceSelection: true }),
+      sendCommand: (action, params) => endpoint.executor.executeCommand(action, params),
+      // 覆盖层每做完一个移动光标的动作就报一声，宿主据此刷新工具栏激活态
+      onCursorMoved: (event) => { relaySelection(); writingAssistance?.cursorMoved(event); semanticWriting?.cursorMoved(event); inlineReview?.cursorMoved() },
+      onCommitted: (text) => { writingAssistance?.committed(text); semanticWriting?.committed(text); inlineReview?.committed(text) },
+      onAssistanceKey: (event) => writingAssistance?.keydown(event) || false,
+      onCommentRequested: () => relayCommentRequest(),
+      onLog: (m) => { console.log('[zeta-editor]', m); if (VERIFY) vlog(m) },
+    })
+    writingAssistance = attachWritingAssistance({
+      canvas: document.getElementById('qtcanvas'), input: overlay.element,
+      execute: (action, params) => endpoint.executor.executeCommand(action, params),
+      transport: hostTransport, focus: overlay.focus, language: q.get('uilang') || 'zh-CN',
+    })
+    semanticWriting = attachSemanticWritingPanel({ canvas: document.getElementById('qtcanvas'), input: overlay.element,
+      transport: hostTransport, focus: overlay.focus })
+    inlineReview = attachInlineReview({ canvas: document.getElementById('qtcanvas'), input: overlay.element,
+      execute: (action, params) => endpoint.executor.executeCommand(action, params), transport: hostTransport, language: q.get('uilang') || 'zh-CN' })
+    window.addEventListener('pagehide', () => { writingAssistance.destroy(); semanticWriting.destroy(); inlineReview.destroy(); reviewBalloons?.destroy(); reviewHover?.destroy() }, { once: true })
+  } catch (e) { console.error('[zeta-editor] IME overlay failed:', e); if (VERIFY) vlog('IME overlay failed: ' + (e && e.message || e)) }
+  // 触控板捏合缩放。Chromium 把捏合报成 ctrlKey + wheel；**不拦下来**浏览器就去
+  // 缩放整个 webview 页面——LO 自己的工具栏跟着一起放大、画布重采样发糊，而且
+  // IME 覆盖层的像素映射基准（CSS px per 1/100 mm）整个作废。拦下来改成缩放
+  // 文档视图（ViewSettings.ZoomValue），这才是用户要的那种缩放。
+  try {
+    const canvas = document.getElementById('qtcanvas')
+    let zoomPct = 100      // 本地镜像：捏合连发时以它为基准，引擎回值再校正
+    let zoomTarget = null
+    let zoomTimer = 0
+    // 起始缩放问一次引擎（无参 set_zoom = 只读回当前值）
+    endpoint.executor.executeCommand('set_zoom', {})
+      .then((r) => { if (r && r.success && r.zoom) zoomPct = r.zoom })
+      .catch(() => { /* 读不到就按 100% 起步 */ })
+    const flushZoom = () => {
+      zoomTimer = 0
+      const v = zoomTarget
+      zoomTarget = null
+      if (v == null) return
+      endpoint.executor.executeCommand('set_zoom', { value: v })
+        .then((r) => {
+          // 只有没有更新的目标在排队时才回写，否则会把连发中的中间值倒推回去
+          if (zoomTarget == null && r && r.success && r.zoom) zoomPct = r.zoom
+          if (overlay) overlay.reposition()   // 缩放后光标的像素位置变了
+        })
+        .catch((err) => console.warn('[zeta-editor] set_zoom failed:', err))
+    }
+    canvas.addEventListener('wheel', (ev) => {
+      if (!ev.ctrlKey) return                 // 普通两指滚动照旧交给 Qt
+      ev.preventDefault()
+      const next = Math.max(20, Math.min(600, Math.round(zoomPct * Math.exp(-ev.deltaY / 100))))
+      if (next === zoomPct) return
+      zoomPct = next
+      zoomTarget = next
+      // 一次捏合会连发几十个 wheel：合并到 ~60ms 一发，否则每一步都要等引擎重排版
+      if (!zoomTimer) zoomTimer = setTimeout(flushZoom, 60)
+    }, { passive: false })
+  } catch (e) { console.error('[zeta-editor] pinch-zoom wiring failed:', e) }
+  if (VERIFY) {
+    wireVerifyPanel(endpoint.executor)
+    // Automation hook: lets a headless-browser test driver call the executor
+    // directly (window.__loExecutor.executeCommand(...)) to exercise every
+    // primitive against the real LOWA engine. Verify mode only.
+    window.__loExecutor = endpoint.executor
+  }
+}).catch((e) => {
+  if (engineFailed) return // The abort callback already sent the terminal failure.
+  const reason = e && e.message ? e.message : String(e)
+  console.error('[zeta-editor] boot failed:', e)
+  if (VERIFY) vlog('boot failed: ' + reason)
+  // boot 挂了（WASM/CDN 拉不到、防火墙拦截、字体加载失败）必须告诉宿主：
+  // 否则 'ready' 永远不来，宿主的进度条会一直走下去，用户看不到任何原因。
+  try { hostTransport.send({ __lo: 'lo-relay', type: 'boot-failed', message: reason }) } catch (err) { /* ignore */ }
+})

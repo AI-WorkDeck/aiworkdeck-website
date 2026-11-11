@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+process.env.AWD_KEY_ENCRYPTION_SECRET = 'synthetic-encryption-fixture-not-a-real-key';
+const { encryptKeyMaterial, decryptKeyMaterial } = await import('../lib/openrouter-keys');
+const value = encryptKeyMaterial('synthetic-secret');
+assert.equal(decryptKeyMaterial(value), 'synthetic-secret');
+const shortened = value.split(':');
+shortened[2] = Buffer.from(shortened[2], 'base64').subarray(0, 4).toString('base64');
+assert.throws(() => decryptKeyMaterial(shortened.join(':')), 'Truncated GCM tags must never authenticate');
+const changed = value.split(':');
+changed[3] = Buffer.from('tampered').toString('base64');
+assert.throws(() => decryptKeyMaterial(changed.join(':')));
+console.log('PASS: AES-GCM round trip, shortened authentication tag and tampered ciphertext');

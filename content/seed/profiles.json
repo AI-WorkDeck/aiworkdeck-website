@@ -1,0 +1,27 @@
+[
+  {
+    "username": "contract-lab",
+    "displayName": "合同实验室",
+    "bio": "合同审查、条款比对与条款库类 Skill 策展账号。内容精选自全球开源社区并本地化为中国法执业语境，每个 Skill 详情页附原始出处与许可证。"
+  },
+  {
+    "username": "compliance-desk",
+    "displayName": "合规风控台",
+    "bio": "合规核查、风险评估与尽调类 Skill 策展账号。内容改编自注明出处的开源项目，欢迎在此基础上继续共建。"
+  },
+  {
+    "username": "litigation-bench",
+    "displayName": "诉讼工坊",
+    "bio": "诉讼文书、庭审准备与函件应对类 Skill 策展账号。内容改编自注明出处的开源项目，供执业参考，不构成法律意见。"
+  },
+  {
+    "username": "research-atelier",
+    "displayName": "法研社",
+    "bio": "法律研究、引用核查与文书速读类 Skill 策展账号。内容改编自注明出处的开源项目，强调可溯源、不编造。"
+  },
+  {
+    "username": "legal-ops",
+    "displayName": "法务运营组",
+    "bio": "法务日常运营与办公效率类 Skill 策展账号。内容改编自注明出处的开源项目，让重复工作自动跑起来。"
+  }
+]

@@ -1,0 +1,34 @@
+// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Real editor and full fonts; local missing-header fault simulates release/Next overlap.
+import assert from 'node:assert/strict';import fs from 'node:fs/promises';import path from 'node:path';import http from 'node:http';import {fileURLToPath} from 'node:url';import {createHash} from 'node:crypto';
+import puppeteer from 'puppeteer-core';import JSZip from 'jszip';import {createPreviewServer} from '../scripts/preview.mjs';import {createDocument} from '../src/docx.js';import {FONT_NAMES} from '../scripts/asset-representations.mjs';import {observeEditorResources,waitForSavedEditor} from './browser-observation.mjs';
+const root=fileURLToPath(new URL('../',import.meta.url)),out=path.resolve(process.env.FONT_TEST_OUTPUT||path.join(root,'test-results/fonts'));await fs.mkdir(out,{recursive:true});
+const families=['Noto Sans SC','Noto Serif SC','霞鹜文楷','朱雀仿宋（预览测试版）'],lines=['黑体中文验收甲。','宋体中文验收乙。','楷体中文验收丙。','仿宋中文验收丁。'],marker='真实中文输入保存验收戊。';
+const zip=await JSZip.loadAsync(await createDocument(lines));let i=0;zip.file('word/document.xml',(await zip.file('word/document.xml').async('string')).replace(/<w:rFonts[^>]+\/>/g,()=>{const family=families[i++];return `<w:rFonts w:ascii="${family}" w:eastAsia="${family}"/>`}));const fixture=path.join(out,'四字体合成验收.docx');await fs.writeFile(fixture,await zip.generateAsync({type:'nodebuffer'}));
+const results=[];
+for(const mode of ['normal','missing-header','missing-both']){
+ const fallback=createPreviewServer({testSupport:true});const requests=[],headers=[];
+ const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://localhost');requests.push(url.pathname);
+  if(mode==='missing-both'&&/^\/web\/editor\/(compressed\/)?cjk/.test(url.pathname)){res.writeHead(404);res.end();return}
+  if(mode==='missing-header'&&url.pathname.startsWith('/web/editor/compressed/')){const write=res.writeHead.bind(res);res.writeHead=(status,values)=>{const copy={...values};delete copy['Content-Encoding'];return write(status,copy)}}
+  fallback.emit('request',req,res);
+ });await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;let browser;const result={mode,resources:[],modelCalls:0};results.push(result);
+ try{
+  browser=await puppeteer.launch({executablePath:process.env.PUPPETEER_EXECUTABLE_PATH||'/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',headless:'new',protocolTimeout:180000,args:['--disable-dev-shm-usage']});const page=await browser.newPage();await page.setViewport({width:1440,height:1000});await page.setRequestInterception(true);page.on('request',r=>new URL(r.url()).origin===origin&&['GET','HEAD','OPTIONS'].includes(r.method())?r.continue():r.abort());
+  page.on('response',r=>{if(new URL(r.url()).pathname.startsWith('/web/editor/compressed/'))headers.push({path:new URL(r.url()).pathname,encoding:r.headers()['content-encoding']||null})});const stop=await observeEditorResources(page,origin,result.resources);
+  const start=Date.now();await page.goto(origin+'/web/?lang=zh',{waitUntil:'domcontentloaded'});if(mode==='missing-both'){await page.waitForFunction(()=>document.querySelector('#editor-cover').dataset.bootStatus==='error');assert.equal(await page.$('#editor-container iframe'),null);result.passed=true;result.requiredFontFailureStopsBoot=true;await stop();console.log('PASS',mode);continue}
+  await waitForSavedEditor(page);result.readyMs=Date.now()-start;
+  const attach=()=>page.evaluate(async()=>{const {createIframeEditorExecutor}=await import('/test-support/useZetaOfficeWebview.js');window.fontEditor=createIframeEditorExecutor(document.querySelector('#editor-container iframe'))});await attach();
+  const cmd=async(a,p={})=>{const r=await page.evaluate((a,p)=>window.fontEditor.executeCommand(a,p),a,p);assert.equal(r.success,true);return r};
+  const fonts=await cmd('list_fonts');for(const family of families)assert.ok(fonts.families.includes(family),'Missing native font: '+family);result.registeredFamilies=families;
+  for(const name of FONT_NAMES){const compressed='/web/editor/compressed/'+name,raw='/web/editor/'+name;assert.equal(requests.filter(p=>p===compressed).length,1);assert.equal(requests.filter(p=>p===raw).length,mode==='normal'?0:1);assert.equal(headers.find(r=>r.path===compressed).encoding,mode==='normal'?'br':null)}
+  for(const name of ['soffice.wasm','soffice.data','soffice.data.js.metadata'])assert.equal(requests.filter(p=>p==='/web/editor/lowa/'+name).length,1,'Preload duplicated '+name);
+  await (await page.$('#file-input')).uploadFile(fixture);await page.waitForFunction(()=>document.querySelector('.tab.active')?.textContent.includes('四字体'));await waitForSavedEditor(page);
+  await cmd('goto',{type:'end'});const frame=page.frames().find(f=>f.url().includes('/editor/editor.html'));await frame.$eval('[data-lo-ime]',e=>e.focus());const cdp=await page.createCDPSession();await cdp.send('Input.imeSetComposition',{text:'zhongwen',selectionStart:8,selectionEnd:8});await cdp.send('Input.insertText',{text:marker});await page.click('#save-button');await waitForSavedEditor(page);
+  await page.reload({waitUntil:'domcontentloaded'});await waitForSavedEditor(page);await attach();const text=JSON.stringify(await cmd('get_document_text',{__agent:true}));for(const line of [...lines,marker])assert.ok(text.includes(line));
+  const downloads=await fs.mkdtemp(path.join(out,mode+'-downloads-'));const browserCDP=await browser.target().createCDPSession();await browserCDP.send('Browser.setDownloadBehavior',{behavior:'allow',downloadPath:downloads,eventsEnabled:true});const downloaded=new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Download timeout')),30000);browserCDP.on('Browser.downloadProgress',e=>{if(e.state==='completed'){clearTimeout(timer);resolve()}if(e.state==='canceled'){clearTimeout(timer);reject(Error('Download canceled'))}})});await page.click('[data-action="download"]');await downloaded;
+  const names=(await fs.readdir(downloads)).filter(n=>n.endsWith('.docx'));assert.equal(names.length,1);const bytes=await fs.readFile(path.join(downloads,names[0]));const xml=await (await JSZip.loadAsync(bytes)).file('word/document.xml').async('string');for(const line of [...lines,marker])assert.ok(xml.includes(line));for(const family of families)assert.ok(xml.includes(family),'Export lost font family '+family);
+  result.download={bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex'),textAndFamiliesVerified:true};await page.screenshot({path:path.join(out,mode+'.png')});result.passed=true;await stop();console.log('PASS',mode,result.readyMs);
+ }finally{await fs.writeFile(path.join(out,'result.json'),JSON.stringify(results,null,2));if(browser)await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r))}
+}

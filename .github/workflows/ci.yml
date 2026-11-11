@@ -1,0 +1,524 @@
+# 官网 CI 与手动部署。2026-09-15 用户要求合并和发版分开（dev-board#653）。
+#
+# 在此之前本仓库没有任何 workflow，「完成」= 合并 master + 手动 SSH 两台服务器。
+# 结果是合并了却没上线的情况反复出现（2026-08-07 首页改版合并后生产站落后 3 个提交）。
+#
+# 两件事放在同一个文件里，是为了用 needs 拿到确定的先后顺序：跨 workflow 的
+# workflow_run 触发在 ref 解析与权限上都有坑，而这条链路末端是带支付的生产站，
+# 顺序错了的代价比文件多担一个职责大得多。
+#
+# 部署目标是**两台**：同一份代码、两个部署、两份数据（DEPLOY.md §9）。
+#   国内站 www.aiworkdeck.com  北京 8.152.169.44   pm2 aiworkdeck-website
+#   国际站 www.workdeck.ai     新加坡 8.219.94.204  pm2 workdeck-intl
+# 漏掉任何一台都是「上线了一半」。
+
+name: CI 与手动部署
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 制品生成或历史部署入口（服务器构建仍禁用）
+        type: choice
+        default: artifacts-only
+        options: [artifacts-only, both, cn, intl]
+      web_ai:
+        description: Web AI 开关（preserve 保持现状；enable 要求服务器已有密钥）
+        type: choice
+        default: preserve
+        options: [preserve, enable, disable]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # PR 上新提交可以取消旧跑；master 上不许取消——取消可能砍在部署中途
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: Typecheck + Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+          cache: npm
+      - run: npm ci
+      - name: 配色闸门
+        # 色源指纹 + 令牌区段与色源逐字节一致 + 对比度复算，见 scripts/check-palette.mjs。
+        # 纯 node，不依赖构建产物，所以放在 typecheck 前面先亮红。
+        run: node scripts/check-palette.mjs
+      - name: Plugin platform template and submission contracts
+        run: npm run test:plugin-platform
+      - name: CN-signed plugin mirror display localization
+        run: npx tsx --tsconfig tsconfig.json scripts/verify-plugin-mirror-l10n.mts
+      - name: Developer eligibility and scoped submission tokens
+        run: npm run test:developers
+      - name: Typecheck
+        # 生产构建关掉了类型检查（见 next.config.ts），这一步是唯一的类型闸
+        run: npm run typecheck
+      - name: 多语言令牌与词典对拍闸门
+        run: npm run check:locales
+      - name: Account subscription entry
+        run: npx tsx --tsconfig tsconfig.json scripts/verify-account-subscription.mts
+
+      - name: 本地部署预算回归
+        run: npx tsx scripts/verify-deployment-planner.mts
+      - name: 部署窗口降级验证
+        # 纯逻辑、与站点无关，所以放在这里跑一次，不进下面按站点跑两遍的契约矩阵。
+        # 守的是「部署那几分钟里登录注册报的错要说人话」，见 lib/api-result.ts。
+        run: npx tsx --tsconfig tsconfig.json scripts/verify-api-result.mts
+
+      - name: Web AI deployment flag fixtures (no server access)
+        run: node --test scripts/web-ai-flag.test.mjs
+
+      - name: Gated Next artifact promoter (sandbox only; no server access)
+        run: |
+          python3 -B scripts/promote-next-artifact.test.py
+          node --test scripts/promote-next-artifact.test.mjs
+
+      - name: Platform AI reconciliation CLI (isolated SQLite and management fixtures)
+        run: node --test scripts/platform-ai-reconcile.test.mjs
+
+      - name: Live smoke failure audit (network denied; no paid requests)
+        run: npx tsx --tsconfig tsconfig.json scripts/verify-web-live-smoke.mts
+
+      - name: Postpaid ledger, cleanup receipt and external budget contracts
+        env:
+          NEXT_PUBLIC_AWD_SITE: cn
+        run: |
+          set -e
+          REPO="$PWD"
+          for s in verify-postpaid verify-postpaid-api verify-postpaid-openrouter; do
+            d="$(mktemp -d)"
+            (cd "$d" && npx tsx --tsconfig "$REPO/tsconfig.json" "$REPO/scripts/$s.mts")
+          done
+
+      - name: Lint（不作为闸门）
+        # master 上有 248 项历史问题（204 error / 44 warning）。拿它当闸门会让 CI
+        # 从第一天起就是红的，而长期红着的 CI 等于没有 CI。先让它可见，清完再收紧。
+        run: npm run lint
+        continue-on-error: true
+      - name: Web workbench dependencies and pinned editor assets
+        run: |
+          npm ci --prefix web-workbench
+          npm run prepare:assets --prefix web-workbench
+      - name: Web workbench tests and standalone build
+        run: |
+          npm test --prefix web-workbench
+          node --test scripts/web-artifact.test.mjs
+          npm run build:web
+          node scripts/web-artifact.mjs pack
+          node scripts/web-artifact.mjs verify public/web "$GITHUB_SHA"
+          tar -czf "$RUNNER_TEMP/web-workbench.tar.gz" -C public/web .
+          shasum -a 256 "$RUNNER_TEMP/web-workbench.tar.gz" | awk '{print $1}' > "$RUNNER_TEMP/web-workbench.sha256"
+      # Only deployment jobs consume this package. PR/push still run every build and verification below.
+      # master push also uploads (1-day retention) so ship.sh reuses the merge's run instead of dispatching a duplicate CI.
+      - name: Upload reviewed Web package for deployment
+        if: (github.event_name == 'workflow_dispatch' || github.event_name == 'push') && (github.ref == 'refs/heads/master' || (startsWith(github.ref, 'refs/heads/codex/release-') && inputs.target == 'artifacts-only'))
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: web-workbench-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/web-workbench.tar.gz
+            ${{ runner.temp }}/web-workbench.sha256
+          if-no-files-found: error
+          retention-days: ${{ github.event_name == 'push' && 1 || 3 }}
+      - name: Build
+        run: npm run build
+
+      - name: 部署换入验证
+        # 真跑一次构建再断言 .next 一个文件都没被动过——验的是「构建不碰正在服务的
+        # 产物」这条性质本身，不是验代码长什么样。这条性质失效不会报错，只会让每次
+        # 发版重新出现几分钟的冷路由 500，非常难归因。见 scripts/deploy-build-swap.sh。
+        run: bash scripts/verify-deploy-swap.sh
+
+  contracts:
+    name: 契约脚本 (${{ matrix.site }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        site: [cn, intl]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+          cache: npm
+      - run: npm ci
+      - name: contract-check / verify-payments / verify-credits / verify-profile / verify-gateway / verify-sms / verify-mail / verify-code-throttle / verify-captcha / verify-packs / verify-web-plugins / verify-mobile-billing / verify-wxvp / verify-appstore / verify-wx-phone / verify-team / verify-collab-directory / verify-shared-memory / verify-us-entity / verify-transparency / verify-review-account / verify-fx-rate / verify-pro-subscription / verify-trial-api / verify-pricing-click-tracking
+        env:
+          NEXT_PUBLIC_AWD_SITE: ${{ matrix.site }}
+        run: |
+          set -e
+          REPO="$PWD"
+          for s in verify-last-login verify-mobile-download verify-appstore-sandbox verify-circle-bqt verify-admin-relay contract-check verify-payments verify-plugin-billing verify-credits verify-profile verify-gateway verify-sms verify-mail verify-password-flow verify-legacy-email-migration verify-code-throttle verify-captcha verify-captcha-challenge verify-packs verify-web-plugins verify-mobile-billing verify-wxvp verify-appstore verify-wx-phone verify-team verify-skill-submit verify-collab-directory verify-shared-memory verify-us-entity verify-transparency verify-review-account verify-edition-routing verify-fx-rate verify-pro-subscription verify-pro-purchase-flag verify-subscription-allowance verify-trial-api verify-pricing-click-tracking verify-web-ai verify-platform-ai verify-platform-images verify-platform-catalog-intl verify-postpaid-services verify-postpaid-shadow; do
+            # 每个脚本都要一个全新空目录：它们在 cwd 下建 data/awd.db，且用固定的
+            # outTradeNo。复用目录第二次必报 UNIQUE constraint failed —— 那是脏目录
+            # 的假失败，不是代码坏了（DEPLOY.md 记着这个坑）。
+            d="$(mktemp -d)"
+            echo "--- ${{ matrix.site }} / $s ---"
+            if [ "$s" = verify-mobile-download ] || [ "$s" = verify-skill-submit ]; then
+              (cd "$d" && NODE_OPTIONS=--conditions=react-server npx tsx --tsconfig "$REPO/tsconfig.json" "$REPO/scripts/$s.mts")
+            else
+              (cd "$d" && npx tsx --tsconfig "$REPO/tsconfig.json" "$REPO/scripts/$s.mts")
+            fi
+          done
+
+  deploy-cn:
+    name: 部署国内站（北京）
+    needs: [check, contracts]
+    if: >-
+      github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' && (inputs.target == 'both' || inputs.target == 'cn')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: deploy-cn
+      cancel-in-progress: false
+    steps:
+      - name: Block unsafe production build path (#1648)
+        run: |
+          echo "::error::Server-side npm install / Next build is disabled after #1648 OOM. Use next-build-artifact.yml and the reviewed artifact promotion procedure in DEPLOY.md; this workflow will not deploy."
+          exit 1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: 配置 SSH
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # 主机公钥写死在仓库里而不是放 secret：它本来就是公开信息，钉在版本控制里
+          # 才有意义——用 ssh-keyscan 现取等于每次跑都重新信任一次未知主机。
+          cat > ~/.ssh/known_hosts <<'EOF'
+          8.152.169.44 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGb3UVXZt2RBAHmh0odOP2sC17iqYW0jUrt6loT68dNM
+          8.219.94.204 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJoEDtAJzNwbVxRmhEr3MsrIdjzAHFjcfROiHkcX0Hx+
+          EOF
+          chmod 600 ~/.ssh/known_hosts
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: web-workbench-${{ github.sha }}
+          path: web-release
+      - name: Stage verified Web artifact
+        run: |
+          set -euo pipefail
+          digest=$(cat web-release/web-workbench.sha256)
+          [[ "$digest" =~ ^[a-f0-9]{64}$ ]]
+          echo "$digest  web-release/web-workbench.tar.gz" | sha256sum -c -
+          scp -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes web-release/web-workbench.tar.gz \
+            root@8.152.169.44:/tmp/awd-web-${{ github.sha }}-${{ github.run_id }}.tar.gz
+
+      - name: Prepare reviewed checkout and atomically install Web artifact
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+          RELEASE_RUN: ${{ github.run_id }}
+          WEB_AI_ACTION: ${{ inputs.web_ai || 'preserve' }}
+        run: |
+          set -euo pipefail
+          case "$WEB_AI_ACTION" in preserve|enable|disable) ;; *) echo "Invalid Web AI action"; exit 1 ;; esac
+          digest=$(cat web-release/web-workbench.sha256)
+          [[ "$digest" =~ ^[a-f0-9]{64}$ ]]
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes root@8.152.169.44 \
+            bash -s -- "$RELEASE_SHA" "$RELEASE_RUN" "$digest" "$WEB_AI_ACTION" <<'REMOTE'
+          set -euo pipefail
+          export PATH=/root/.nvm/versions/node/v22.23.2/bin:$PATH
+          cd /www/wwwroot/www.aiworkdeck.com/new
+          git checkout -- package-lock.json 2>/dev/null || true
+          git pull --ff-only origin master
+          [ "$(git rev-parse HEAD)" = "$1" ] || { echo "Website HEAD differs from reviewed artifact"; exit 1; }
+          # Update only this flag; preserve is a no-op and enable requires an existing key.
+          node scripts/web-ai-flag.mjs "$4" "$2"
+          archive="/tmp/awd-web-$1-$2.tar.gz"
+          echo "$3  $archive" | sha256sum -c -
+          mkdir -p .web-releases
+          stage=$(mktemp -d "$PWD/.web-releases/.stage-XXXXXX")
+          trap 'rm -rf "$stage"' EXIT
+          tar --no-same-owner -xzf "$archive" -C "$stage"
+          node scripts/web-install-artifact.mjs "$stage" "$1-${3:0:16}" "$1"
+          rm -f "$archive"
+          REMOTE
+
+      - name: 拉取、构建、种子、重启
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o ServerAliveInterval=30 \
+            root@8.152.169.44 bash -se -- "$GITHUB_SHA" <<'REMOTE'
+          set -euo pipefail
+          # Match the Node interpreter used by PM2 when installing native modules.
+          export PATH=/root/.nvm/versions/node/v22.23.2/bin:$PATH
+          cd /www/wwwroot/www.aiworkdeck.com/new
+          # 服务器上 npm install 会往 package-lock.json 写回噪声，挡住 git pull。
+          # 那一行是 npm 生成的不是手写内容，直接还原。
+          git checkout -- package-lock.json 2>/dev/null || true
+          # 只做快进，**绝不 reset --hard**：这份 checkout 上有未提交的订单数据与
+          # certbot 的 public/.well-known/（记在案的红线）。拉不动就在这里硬失败，
+          # 让人上去看一眼——悄悄丢掉服务器上的东西比部署失败严重得多。
+          # 同理也永远不要在这里加 git clean。
+          export AWD_WEB_RELEASE_SHA="$1"
+          node scripts/web-assert-release.mjs
+          npm install
+          # **不是 `npm run build`**：就地构建会把正在服务的 .next 边写边换，
+          # 任何还没被加载过的路由整场构建期间都是 500（实测：18 秒的构建里 83 次
+          # 冷路由请求 50 次 500）。这个脚本建到暂存目录、成功后才原子换入，
+          # 于是构建期间线上完全不受影响，构建失败也不会留下残缺产物。
+          bash scripts/deploy-build-swap.sh
+          # 精选 Skill 的真数据在 data/skills.json，那个文件不在 git 里，
+          # 仓库里只有 content/seed/ 这份种子。不跑这一步，新上架的 Skill
+          # 合并了也不会出现在广场上（幂等，只增不覆盖）。
+          npm run seed
+          unset AWD_WEB_RELEASE_SHA
+          pm2 restart aiworkdeck-website --update-env
+          echo "DEPLOYED_SHA=$(git rev-parse HEAD)"
+          REMOTE
+
+      - name: 核对线上确实是这次的提交
+        run: |
+          # 「合并了却没上线」正是这套 CI 要解决的问题，所以不能只看命令有没有报错，
+          # 要回头核对服务器上的 HEAD 就是本次的 SHA。
+          remote=$(ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes root@8.152.169.44 \
+            'cd /www/wwwroot/www.aiworkdeck.com/new && git rev-parse HEAD')
+          echo "线上 $remote / 期望 $GITHUB_SHA"
+          [ "$remote" = "$GITHUB_SHA" ] || { echo "线上 HEAD 与本次提交不符"; exit 1; }
+
+      - name: 健康检查
+        run: |
+          set -e
+          # --resolve 直打北京源站，绕开新加坡那层缓存反代，测的才是刚部署的这台。
+          # -L 跟随重定向：首页 / 没有 locale，会被 i18n middleware 307 到 /zh，
+          # 不跟随就恒等于 307、健康检查永远红（国际站那条测的是 /en，自带 locale
+          # 不跳，所以只有这一侧踩到）。
+          code=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 30 \
+            --resolve www.aiworkdeck.com:443:8.152.169.44 https://www.aiworkdeck.com/)
+          echo "首页 $code"; [ "$code" = "200" ]
+          # 广场 registry：既验接口活着，也验上面那步 seed 真的生效了
+          n=$(curl -s --max-time 30 --resolve www.aiworkdeck.com:443:8.152.169.44 \
+            https://www.aiworkdeck.com/api/registry/skills | node -e \
+            'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const a=JSON.parse(s);console.log(Array.isArray(a)?a.length:0)})')
+          echo "registry 条目数 $n"; [ "$n" -gt 0 ]
+
+      - name: Web artifact and response headers
+        run: bash scripts/web-healthcheck.sh www.aiworkdeck.com 8.152.169.44 "$GITHUB_SHA"
+
+  deploy-intl:
+    name: 部署国际站（新加坡）
+    needs: [check, contracts]
+    if: >-
+      github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' && (inputs.target == 'both' || inputs.target == 'intl')
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    concurrency:
+      group: deploy-intl
+      cancel-in-progress: false
+    steps:
+      - name: Block unsafe production build path (#1648)
+        run: |
+          echo "::error::Server-side npm install / Next build is disabled after #1648 OOM. Use next-build-artifact.yml and the reviewed artifact promotion procedure in DEPLOY.md; this workflow will not deploy."
+          exit 1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: 配置 SSH
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          cat > ~/.ssh/known_hosts <<'EOF'
+          8.152.169.44 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGb3UVXZt2RBAHmh0odOP2sC17iqYW0jUrt6loT68dNM
+          8.219.94.204 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJoEDtAJzNwbVxRmhEr3MsrIdjzAHFjcfROiHkcX0Hx+
+          EOF
+          chmod 600 ~/.ssh/known_hosts
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: web-workbench-${{ github.sha }}
+          path: web-release
+      - name: Stage verified Web artifact
+        run: |
+          set -euo pipefail
+          digest=$(cat web-release/web-workbench.sha256)
+          [[ "$digest" =~ ^[a-f0-9]{64}$ ]]
+          echo "$digest  web-release/web-workbench.tar.gz" | sha256sum -c -
+          scp -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes web-release/web-workbench.tar.gz \
+            root@8.219.94.204:/tmp/awd-web-${{ github.sha }}-${{ github.run_id }}.tar.gz
+
+      - name: Prepare reviewed checkout and atomically install Web artifact
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+          RELEASE_RUN: ${{ github.run_id }}
+          WEB_AI_ACTION: ${{ inputs.web_ai || 'preserve' }}
+        run: |
+          set -euo pipefail
+          case "$WEB_AI_ACTION" in preserve|enable|disable) ;; *) echo "Invalid Web AI action"; exit 1 ;; esac
+          digest=$(cat web-release/web-workbench.sha256)
+          [[ "$digest" =~ ^[a-f0-9]{64}$ ]]
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes root@8.219.94.204 \
+            bash -s -- "$RELEASE_SHA" "$RELEASE_RUN" "$digest" "$WEB_AI_ACTION" <<'REMOTE'
+          set -euo pipefail
+          cd /www/wwwroot/workdeck.ai/app
+          git checkout -- package-lock.json 2>/dev/null || true
+          git pull --ff-only origin master
+          [ "$(git rev-parse HEAD)" = "$1" ] || { echo "Website HEAD differs from reviewed artifact"; exit 1; }
+          # Update only this flag; preserve is a no-op and enable requires an existing key.
+          node scripts/web-ai-flag.mjs "$4" "$2"
+          archive="/tmp/awd-web-$1-$2.tar.gz"
+          echo "$3  $archive" | sha256sum -c -
+          mkdir -p .web-releases
+          stage=$(mktemp -d "$PWD/.web-releases/.stage-XXXXXX")
+          trap 'rm -rf "$stage"' EXIT
+          tar --no-same-owner -xzf "$archive" -C "$stage"
+          node scripts/web-install-artifact.mjs "$stage" "$1-${3:0:16}" "$1"
+          rm -f "$archive"
+          REMOTE
+
+      - name: 跑服务器上的部署脚本
+        run: |
+          set -e
+          # 复用服务器上已有的 /root/deploy-intl.sh，不在这里重抄一遍它的步骤。
+          # 那个脚本里有这台机独有的三道坑（package-lock 还原、python3.11、
+          # better-sqlite3 从源码重建后覆盖 prebuilds），抄成两份必然会漂。
+          #
+          # 它跑约 10 分钟，中途 better-sqlite3 的原生编译会把 SSH 会话挤掉，
+          # 所以后台跑 + 落状态文件 + 轮询，而不是把成败押在这条连接活着上。
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes root@8.219.94.204 \
+            'export AWD_WEB_RELEASE_SHA=${{ github.sha }}
+             test -x /root/deploy-intl.sh || { echo "缺 /root/deploy-intl.sh，见 DEPLOY.md 9.3"; exit 1; }
+             rm -f /root/deploy-intl.status /root/deploy-intl.log
+             nohup setsid bash -c "/root/deploy-intl.sh > /root/deploy-intl.log 2>&1; echo \$? > /root/deploy-intl.status" >/dev/null 2>&1 &
+             echo 已启动'
+
+          for i in $(seq 1 90); do
+            sleep 20
+            st=$(ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes root@8.219.94.204 \
+              'cat /root/deploy-intl.status 2>/dev/null' || true)
+            if [ -n "$st" ]; then break; fi
+            echo "…部署中（第 $((i*20)) 秒）"
+          done
+
+          echo "===== deploy-intl.log ====="
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes root@8.219.94.204 \
+            'tail -40 /root/deploy-intl.log' || true
+          [ -n "${st:-}" ] || { echo "部署脚本 30 分钟未结束"; exit 1; }
+          [ "$st" = "0" ] || { echo "部署脚本退出码 $st"; exit 1; }
+
+      - name: 种子数据
+        # deploy-intl.sh 里没有这一步，而国际站同样要有精选 Skill。
+        # 不改服务器上那个脚本，在这里单独补一次（幂等）。
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes root@8.219.94.204 \
+            'cd /www/wwwroot/workdeck.ai/app && npm run seed && AWD_WEB_RELEASE_SHA= pm2 restart workdeck-intl --update-env'
+
+      - name: 核对线上确实是这次的提交
+        run: |
+          remote=$(ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes root@8.219.94.204 \
+            'cd /www/wwwroot/workdeck.ai/app && git rev-parse HEAD')
+          echo "线上 $remote / 期望 $GITHUB_SHA"
+          [ "$remote" = "$GITHUB_SHA" ] || { echo "线上 HEAD 与本次提交不符"; exit 1; }
+
+      - name: 健康检查
+        run: |
+          set -e
+          # better-sqlite3 的加载探针。这台机最阴的失败模式是：install 与 build 全绿、
+          # 页面全部正常（静态页），只有碰库的 API 500，错误只在 pm2 err 日志里。
+          # 不主动探一下，自动部署只会让这种静默故障更难发现。
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes root@8.219.94.204 \
+            'cd /www/wwwroot/workdeck.ai/app && node -e "const D=require(\"better-sqlite3\"); new D(\":memory:\").exec(\"create table t(a)\"); console.log(\"better-sqlite3 OK\")"'
+
+          # GitHub 托管 runner 的出口在美国，会命中 nginx 的美国 IP 分流（dev-board#569）：
+          # workdeck.ai 对非爬虫的美国访客 301 到 www.aiworkdeck.us。2026-09-10 起这一步
+          # 因此天天红，而部署本身是成功的。所以两个 Host 分开验：workdeck.ai 接受 200，
+          # 或 301 且 Location 落在 aiworkdeck.us；aiworkdeck.us 自己（同一进程）必须 200。
+          hdr=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 30 \
+            --resolve www.workdeck.ai:443:8.219.94.204 https://www.workdeck.ai/en)
+          echo "首页 workdeck.ai $hdr"
+          case "$hdr" in
+            "200 "*) ;;
+            "301 https://www.aiworkdeck.us/"*) ;;
+            *) echo "workdeck.ai 首页既不是 200 也不是到 .us 的 301"; exit 1 ;;
+          esac
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \
+            --resolve www.aiworkdeck.us:443:8.219.94.204 https://www.aiworkdeck.us/en)
+          echo "首页 aiworkdeck.us $code"; [ "$code" = "200" ]
+
+          # 这条最要紧：桌面端的 JDK HttpClient 默认不跟随重定向，一个 301 会被判成
+          # 「预期外状态」→ MALFORMED。geo 分流最容易在这里做错。
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 -X POST \
+            -H 'Content-Type: application/json' -d '{"key":"ci-healthcheck"}' \
+            --resolve www.workdeck.ai:443:8.219.94.204 https://www.workdeck.ai/api/license/verify-key)
+          echo "verify-key $code"; [ "$code" = "200" ]
+
+      - name: Web artifact and response headers
+        run: |
+          bash scripts/web-healthcheck.sh www.workdeck.ai 8.219.94.204 "$GITHUB_SHA"
+          bash scripts/web-healthcheck.sh www.aiworkdeck.us 8.219.94.204 "$GITHUB_SHA"
+
+  notify-failure:
+    name: 部署失败告警
+    needs: [check, contracts, deploy-cn, deploy-intl]
+    # 只在用户明确触发的手动部署链路失败时告警：
+    #   - 失败才发（failure() 不含 cancelled，也不含 PR 的检查失败——PR 作者自己看得到）
+    #   - always() 前置让本 job 在上游失败后仍会被调度（默认 needs 失败会连坐跳过）
+    # 起因 dev-board#137：#94 带进的 typecheck 错误让部署 job 全 skipped、官网从
+    # 12:15 起没上线，四个多小时没人知道——run 级失败邮件只发给 actor，合并者不是
+    # 维护者本人时等于没通知。这里开一张指派给维护者的 issue，是他真会看到的一路。
+    if: >-
+      always() && failure()
+      && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: 开或续一张部署失败 issue（指派维护者）
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+          EVENT: ${{ github.event_name }}
+          # Issue assignees must be users, even when the repository owner is an organization.
+          MAINTAINER: zeweihan
+        run: |
+          set -euo pipefail
+          # 标签只是去重锚点，不存在就建（幂等）
+          gh label create deploy-failure --repo "$GH_REPO" --color b60205 --description "自动部署失败告警" 2>/dev/null || true
+          {
+            printf '官网自动部署失败，生产站可能停留在旧版本（这条链路末端是带支付的生产站）。\n\n'
+            printf -- '- 触发：`%s` @ `%s`（by @%s）\n' "$EVENT" "$SHA" "$ACTOR"
+            printf -- '- 运行日志：%s\n\n' "$RUN_URL"
+            printf '先看哪个 job 红：Typecheck+Build 红→通常是代码问题，修了重推；'
+            printf '部署 job 红→上服务器看（国内站 pm2 日志 / 国际站 /root/deploy-intl.log，DEPLOY.md §9）。\n'
+            printf '修复合并后本 issue 会在下一次成功部署时自动关闭。\n'
+          } > /tmp/notify-body.md
+          existing="$(gh issue list --repo "$GH_REPO" --state open --label deploy-failure --json number --jq '.[0].number' 2>/dev/null || true)"
+          if [ -n "${existing:-}" ] && [ "${existing}" != "null" ]; then
+            gh issue comment "$existing" --repo "$GH_REPO" --body-file /tmp/notify-body.md
+            echo "已在 #$existing 追加评论"
+          else
+            gh issue create --repo "$GH_REPO" --title "🚨 官网自动部署失败" --label deploy-failure --assignee "$MAINTAINER" --body-file /tmp/notify-body.md
+          fi
+
+  notify-recovered:
+    name: 部署恢复后关告警
+    needs: [deploy-cn, deploy-intl]
+    # 两台都部署成功 → 若之前开着部署失败 issue，自动关掉（否则得手工清）
+    if: >-
+      success()
+      && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: 关闭遗留的部署失败 issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          for n in $(gh issue list --repo "$GH_REPO" --state open --label deploy-failure --json number --jq '.[].number' 2>/dev/null || true); do
+            gh issue comment "$n" --repo "$GH_REPO" --body "已恢复：本次部署两台均成功（${RUN_URL}），自动关闭。"
+            gh issue close "$n" --repo "$GH_REPO" --reason completed
+            echo "已关闭 #$n"
+          done
