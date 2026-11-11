@@ -48,6 +48,13 @@ function compact(o: Record<string, unknown>): Record<string, unknown> {
 
 const snake = (k: string) => k.replace(/([A-Z])/g, '_$1').toLowerCase();
 const asArray = (v: unknown) => (Array.isArray(v) ? v : v === undefined || v === null ? [] : [v]);
+// verify_law_citations 的条目只认 law_title（多给 title 会被 extra_forbidden 拒掉）；桌面端仍发旧键 title。
+const lawItems = (v: unknown) =>
+    asArray(v).map((item) => {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) return item;
+        const { title, ...rest } = item as Record<string, unknown>;
+        return title === undefined || 'law_title' in rest ? rest : { law_title: title, ...rest };
+    });
 
 function requireArg(v: unknown, name: string): unknown {
     if (v === undefined || v === null || (typeof v === 'string' && v.trim() === '')) {
@@ -57,7 +64,7 @@ function requireArg(v: unknown, name: string): unknown {
 }
 
 /** 桌面端 op + 入参 → 法宝当前的（工具名, 入参）。 */
-function buildCall(op: string, params: Record<string, unknown>): { tool: string; args: Record<string, unknown> } {
+export function buildCall(op: string, params: Record<string, unknown>): { tool: string; args: Record<string, unknown> } {
     const a = objectParam(params, 'args');
     switch (op) {
         case 'search_article':
@@ -95,7 +102,7 @@ function buildCall(op: string, params: Record<string, unknown>): { tool: string;
         case 'adjust_provisions':
             return {
                 tool: 'verify_law_citations',
-                args: compact({ user_law: asArray(a.userlaw), answer_law: asArray(a.answerlaw), prompt: a.prompt }),
+                args: compact({ user_law: lawItems(a.userlaw), answer_law: lawItems(a.answerlaw), prompt: a.prompt }),
             };
         default:
             throw new GatewayError('bad_request', `未知操作 ${op}`);
