@@ -1,6 +1,6 @@
-# Public repository AI-WorkDeck/aiworkdeck-website since 2026-11-11 (fresh history).
 # SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
 # SPDX-License-Identifier: AGPL-3.0-or-later
+# Public repository AI-WorkDeck/aiworkdeck-website since 2026-11-11 (fresh history).
 #
 # 把 next-build-artifact.yml 已构建、已验证的 Next 产物推上生产（dev-board#1648 之后的唯一部署入口）。
 #   verify  ：无 secret、无 SSH。核官方 artifact 摘要与 provenance（源 SHA / 站点 / webpack /
