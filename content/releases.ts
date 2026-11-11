@@ -30,6 +30,24 @@ export type ReleaseNote = LegacyReleaseNote | {
 
 export const RELEASES: ReleaseNote[] = [
     {
+        version: '0.83.0',
+        date: '2026-11-11',
+        headline: {
+            zh: 'AI 排版只改你说的那一项，不再顺手动别的格式',
+            en: 'When the AI formats text, it now changes only what you asked for',
+        },
+        items: [
+            {
+                zh: '让 AI 改格式（如「第三条首行缩进 2 字符」「全文 1.5 倍行距」「把第四条加粗」）时，它只改你点名的那一项。此前部分模型会顺手把对齐、行距、段前段后、缩进甚至标题级别一并重置，可能把标题打回正文；实测个别模型此前约三分之二的调用会多改，现在基本不再出现。',
+                en: 'When you ask the AI to format text (for example "indent clause 3 by two characters", "1.5 line spacing throughout" or "bold clause 4"), it now changes only that one setting. Previously some models also reset alignment, line spacing, paragraph spacing, indents and even heading levels, which could turn headings back into body text; in our tests one model did this in about two of every three calls before; now it essentially no longer happens.',
+            },
+            {
+                zh: 'AI 工具体系升级收尾：上一版合并后保留的 48 个旧工具名已移除，工具清单更短更清楚；旧对话或旧版技能里出现的旧名会自动对应到新工具，或提示改用哪个新工具，不会报错中断。插件 SDK 的工具关键词上限放宽到 64 个。',
+                en: 'The AI tool-system upgrade is complete: the 48 old tool names kept for compatibility after the last release are gone, so the tool list is shorter and clearer. Old names that appear in past conversations or older skills are mapped to the new tools, or the AI is told which new tool to use, instead of failing. The plugin SDK now allows up to 64 tool keywords.',
+            },
+        ],
+    },
+    {
         version: '0.82.0',
         date: '2026-11-10',
         headline: {
