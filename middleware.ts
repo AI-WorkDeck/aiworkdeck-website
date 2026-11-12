@@ -9,6 +9,7 @@ import {
 } from './i18n-config';
 import Negotiator from 'negotiator';
 import { SITE_ID } from '@/lib/site-config';
+import { isWishPath, WISH_URL } from '@/lib/wish-link';
 
 export function resolveRequestLocale(request: NextRequest): string {
     const cookieLang = request.cookies.get(LANG_COOKIE)?.value;
@@ -141,6 +142,11 @@ export function middleware(request: NextRequest) {
     // API 分支：只做 CORS，绝不做 locale 重定向
     if (CORS_API_PREFIXES.some(p => pathname === p || pathname.startsWith(p))) {
         return handleApiCors(request);
+    }
+
+    // 许愿短链（见 lib/wish-link.ts）：不补语种前缀，直接 307 到 GitHub 预填页
+    if (isWishPath(pathname, i18n.locales)) {
+        return NextResponse.redirect(WISH_URL, 307);
     }
 
     const optIn = handleSiteOptIn(request);
