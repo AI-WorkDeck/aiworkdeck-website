@@ -14,6 +14,8 @@ export function createPreviewServer({mockAI=false,testSupport=false}={}){
   res.setHeader('Cross-Origin-Opener-Policy','same-origin');res.setHeader('Cross-Origin-Embedder-Policy','require-corp');res.setHeader('Cache-Control','no-store');
   try{
    const url=new URL(req.url,'http://localhost');
+   // The workbench refuses to open local documents until the session is known; the preview has no accounts, so it is a guest.
+   if(url.pathname==='/api/auth/me'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({user:null}));return}
    if(url.pathname==='/api/web/capabilities'&&mockAI){const anonymous=url.searchParams.get('testAnonymous')==='1';res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({authenticated:!anonymous,aiEnabled:!anonymous,reason:anonymous?'unauthorized':null,agentEnabled:!anonymous,agentReason:anonymous?'unauthorized':null,agent:{maxChargeCents:25,maxRunChargeCents:100,maxGenerations:4},currency:'TEST',maxChargeCents:100,webTrialSupported:false,loginUrl:`/${url.searchParams.get('lang')||'zh'}/account?next=%2Fweb%2F`}));return}
    if(url.pathname.startsWith('/api/web/requests/')&&mockAI){const receipt=receipts.get(url.pathname.split('/').at(-1));res.writeHead(receipt?200:404,{'Content-Type':'application/json'});res.end(JSON.stringify(receipt||{error:{code:'not_found',message:'TEST: Request not recorded; charge unverified'}}));return}
    if(url.pathname==='/api/web/chat'&&mockAI&&req.method==='POST'){
