@@ -194,6 +194,8 @@ try {
     const stored = JSON.stringify(getRequest(a.id, b.requestId));
     assert.ok(!stored.includes('clear passage') && !stored.includes(b.document.text));
   });
+  // Deliberately still billed: the charge waiver covers only unusable agent tool calls (invalid_tool_call).
+  // Rewrite billing was not part of that decision; its error text keeps saying usage is charged.
   await check('Invalid proposal never emits an applyable proposal but actual generation is billed', async () => {
     const a = user(100), b = input({ mode: 'rewrite', selection: { text: 'unique passage' } });
     providerReply = async () => sse('{"replacement":"unsafe","explanation":"x","command":"execute"}');
@@ -472,7 +474,9 @@ try {
     assert.equal(lastProviderBody.tool_choice, 'none'); assert.equal((lastProviderBody.messages as unknown[]).length, 8);
     assert.ok(frames.some(e => e.event === 'delta')); assert.ok(!frames.some(e => e.event === 'tool_calls'));
   });
-  await check('Invalid, parallel, final-step and truncated tool output is never executable but verified generation remains billed', async () => {
+  // An unusable agent tool call delivers nothing to the user (no text is streamed in agent mode, no tool_calls event is sent),
+  // so the generation is settled at zero while the supplier cost stays on record. Delivered output is still billed below.
+  await check('Invalid, parallel, final-step and truncated tool output is never executable and is not charged', async () => {
     for (const kind of ['unknown', 'extra_key', 'parallel', 'truncated', 'eof', 'final']) {
       const a = user(100), b = agentInput();
       if (kind === 'final') { b.agentStep = 3; b.agentHistory = [...pair(b, 'c1'), ...pair(b, 'c2'), ...pair(b, 'c3')]; primeAgentSteps(a.id, b, 3); }
@@ -480,8 +484,25 @@ try {
       if (kind === 'eof') generationReply = id => new Response(JSON.stringify({ data: { id, total_cost: 0.01 } }));
       const frames = await events(await POST(request(b, a)));
       assert.ok(!frames.some(e => e.event === 'tool_calls'), kind); assert.ok(frames.some(e => e.event === 'error'), kind);
-      assert.equal(getRequest(a.id, b.requestId)!.state, 'settled'); assert.equal(getBalance(a.id), kind === 'final' ? 96 : 99);
+      // A stream cut before [DONE] carried a well-formed call: that is an incomplete supplier reply (upstream_failed), billed as before.
+      const waived = kind !== 'eof', row = getRequest(a.id, b.requestId)!;
+      assert.equal(frames.find(e => e.event === 'error')?.data.code, waived ? 'invalid_tool_call' : 'upstream_failed', kind); assert.equal(frames.find(e => e.event === 'usage')?.data.chargedCents, waived ? 0 : 1, kind);
+      assert.equal(row.state, 'settled'); assert.equal(row.chargedCents, waived ? 0 : 1); assert.equal(row.costUsd, 0.01, 'supplier cost stays on record');
+      assert.equal(getBalance(a.id), kind === 'final' ? 97 : waived ? 100 : 99);
     }
+  });
+  await check('The waiver cannot yield free output: valid tool calls, agent answers and non-agent replies stay billed', async () => {
+    const a = user(100), b = agentInput();
+    providerReply = async () => toolSse();
+    assert.ok((await events(await POST(request(b, a)))).some(e => e.event === 'tool_calls')); assert.equal(getBalance(a.id), 99);
+    const c = user(100), d = agentInput();
+    providerReply = async () => sse('Nothing to change.');
+    assert.ok((await events(await POST(request(d, c)))).some(e => e.event === 'delta')); assert.equal(getBalance(c.id), 99);
+    // Chat text is streamed as it arrives, so a stray tool call there never makes the generation free.
+    const e = user(100), f = input();
+    providerReply = async () => toolSse();
+    const frames = await events(await POST(request(f, e)));
+    assert.equal(frames.find(v => v.event === 'error')?.data.code, 'upstream_failed'); assert.equal(frames.find(v => v.event === 'usage')?.data.chargedCents, 1); assert.equal(getBalance(e.id), 99);
   });
   await check('Unknown agent usage withholds tools until receipt reconciliation without replaying generation', async () => {
     const a = user(100), b = agentInput(), before = providerCalls;

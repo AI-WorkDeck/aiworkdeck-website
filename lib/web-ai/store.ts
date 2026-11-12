@@ -94,7 +94,8 @@ export function releaseRequest(userId: string, requestId: string, code: string, 
     return getRequest(userId,requestId)!;
   });
 }
-export function settleRequest(userId: string, requestId: string, costUsd: number) {
+/** `waive` records the supplier cost but charges nothing: the generation delivered no usable output. */
+export function settleRequest(userId: string, requestId: string, costUsd: number, waive = false) {
   if (!Number.isFinite(costUsd) || costUsd < 0) throw new WebError('usage_pending',503);
   return withTransaction(db => {
     const row = getRequest(userId,requestId)!;
@@ -108,11 +109,12 @@ export function settleRequest(userId: string, requestId: string, costUsd: number
     }
     const settledAt = new Date().toISOString();
     refundSpend(db,row.reserveLedgerId,{ meta: { service: 'web_ai',phase: 'unreserve',requestId } });
-    const ledger = cents > 0 ? spendCredits(db,{ userId,amountCents:cents,funding:JSON.parse(row.fundingJson) as ServiceFunding,ledgerKind:'service_spend',
+    const charge = waive ? 0 : cents;
+    const ledger = charge > 0 ? spendCredits(db,{ userId,amountCents:charge,funding:JSON.parse(row.fundingJson) as ServiceFunding,ledgerKind:'service_spend',
       // Re-debit at original authorization time, including lots that expired during generation.
       // Transaction contains both operations; other spends never see the released funds.
       nowIso:row.createdAt,meta:{service:'web_ai',phase:'settle',requestId,model:row.model,costUsd,exchangeRate:row.exchangeRate,margin:row.margin,settledAt} }) : null;
-    db.prepare("UPDATE web_ai_request SET state='settled',costUsd=?,chargedCents=?,chargeLedgerId=?,errorCode=NULL,updatedAt=? WHERE userId=? AND requestId=?").run(costUsd,cents,ledger?.id ?? null,settledAt,userId,requestId);
+    db.prepare("UPDATE web_ai_request SET state='settled',costUsd=?,chargedCents=?,chargeLedgerId=?,errorCode=NULL,updatedAt=? WHERE userId=? AND requestId=?").run(costUsd,charge,ledger?.id ?? null,settledAt,userId,requestId);
     return getRequest(userId,requestId)!;
   });
 }
