@@ -27,23 +27,6 @@ function contentSecurityPolicy(frameAncestors: string): string {
   ].join("; ");
 }
 
-/** 许愿短链 /wish 的目标：GitHub 新建文件页，预填路径与模板（模板与主仓 community/wishes/README.md 一致）。 */
-const WISH_TEMPLATE = [
-  "# 我的愿望",
-  "",
-  "- 许愿人：（姓名或化名）",
-  "- 业务领域：（如 商标 / 专利 / 争议解决 / 公司）",
-  "- 这件麻烦事：",
-  "- 用户会怎么说：",
-  "- 先问什么：",
-  "- 步骤和标准：",
-  "- 怎么算做完：",
-  "",
-].join("\n");
-const WISH_URL =
-  "https://github.com/AI-WorkDeck/aiworkdeck/new/master/community/wishes" +
-  `?filename=${encodeURIComponent("你的GitHub用户名.md")}&value=${encodeURIComponent(WISH_TEMPLATE)}`;
-
 const nextConfig: NextConfig = {
   // Full-width product UI needs a higher-quality variant to keep small text sharp.
   images: { qualities: [75, 90] },
@@ -207,12 +190,6 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
-      // 许愿短链（2026-11-16 金杜 AI 元力营「法律人的第一个 GitHub PR」课堂带练用）：
-      // 跳到 GitHub 新建文件页，预填 community/wishes/ 路径与愿望模板。课件二维码和直播评论区
-      // 都用这条短链，所以只发 307——模板或目标仓库调整时改这里即可，不让浏览器缓存成永久跳转。
-      // 无语种前缀的 /wish 在 middleware 之前就命中；带语种前缀的也一并接住。
-      { source: "/wish", destination: WISH_URL, permanent: false },
-      { source: "/:lang/wish", destination: WISH_URL, permanent: false },
       // /download-free 是一张站内无人链接的死页：全英文硬编码、三个下载按钮没有 href、
       // 写着不存在的 CLI、还列了个从未发布过的 Intel Mac 版本。页面已删，
       // 线上是 200 可达的 URL，留一条永久重定向指向新的引导页。
