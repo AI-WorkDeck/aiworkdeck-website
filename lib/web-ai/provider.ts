@@ -4,13 +4,25 @@ import { withBailianCost } from '../platform-ai/usage-stream';
 import { getExchangeRateInfo } from '../ai-config';
 // SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { LIMITS, PRICE_CAP, WEB_MODEL, WebError, messagesFor, validateAgentCall, type AgentToolCall, type WebInput } from './contract';
+import { LIMITS, PRICE_CAP, WEB_MODEL, WebError, messagesFor, validateAgentCall, type AgentToolCall, type WebInput, type WebPrice } from './contract';
 import { AGENT_LIMITS, AGENT_TOOLS } from '../../web-workbench/src/agent-contract.js';
 const API = 'https://openrouter.ai/api/v1';
 /** Dependency injection exists only for isolated tests; never selected by request/env URL. */
 export interface ProviderHooks { onId(id: string): void; onDelta(text: string): void }
 export class ProviderRejected extends Error {
   constructor(readonly status:number) { super('Provider request rejected'); this.name='ProviderRejected'; }
+}
+/** Price the reservation is computed at. Bailian bills its catalog price, so the hold uses the model's dearest tier
+ * instead of the generic cap; OpenRouter may route to any provider under PRICE_CAP, so the cap stays.
+ * An unknown or over-cap model keeps the cap: the request itself is rejected before any spend. */
+export async function reservePrice(exchangeRate: number, fetcher: typeof fetch = fetch): Promise<WebPrice> {
+  if (platformProvider() !== 'bailian') return PRICE_CAP;
+  try {
+    const model = (await platformModels(fetcher, true)).find(m => m.id === WEB_MODEL);
+    if (!model) return PRICE_CAP;
+    const price = { prompt: Math.max(...model.priceTiers.map(t => t.input)) / exchangeRate, completion: Math.max(...model.priceTiers.map(t => t.output)) / exchangeRate };
+    return price.prompt > 0 && price.completion > 0 && price.prompt <= PRICE_CAP.prompt && price.completion <= PRICE_CAP.completion ? price : PRICE_CAP;
+  } catch { return PRICE_CAP; }
 }
 export async function streamCompletion(apiKey: string, input: WebInput, hooks: ProviderHooks, fetcher: typeof fetch = fetch, exchangeRate = getExchangeRateInfo().rate) {
   // One fixed-model request; OpenRouter may use another eligible provider under the same caps.

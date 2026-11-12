@@ -6,7 +6,7 @@ import { createHash } from 'crypto';
 import { getDb, withTransaction } from '@/lib/db';
 import { spendCredits, refundSpend, InsufficientCreditsError } from '@/lib/credits';
 import { captureServiceFunding, type ServiceFunding } from '@/lib/subscription';
-import { WebError, WEB_MODEL, reserveUsdFor, type WebInput } from './contract';
+import { WebError, WEB_MODEL, PRICE_CAP, reserveUsdFor, type WebInput, type WebPrice } from './contract';
 export interface WebRequestRow {
   userId: string; requestId: string; payloadHash: string; state: 'reserved' | 'submitted' | 'usage_pending' | 'settled' | 'released' | 'refunded_pending';
   model: string; reserveCents: number; reserveLedgerId: number; fundingJson: string; exchangeRate: number; margin: number;
@@ -43,10 +43,10 @@ function stopAgentRun(userId: string, requestId: string) {
 }
 export const payloadHash = (input: WebInput) => createHash('sha256').update(JSON.stringify(input)).digest('hex');
 export function getRequest(userId: string, requestId: string) { return getDb().prepare('SELECT * FROM web_ai_request WHERE userId=? AND requestId=?').get(userId, requestId) as WebRequestRow | undefined; }
-export const webReserveCents = (input: WebInput, exchangeRate: number, margin: number) => Math.ceil(reserveUsdFor(input) * exchangeRate * margin * 100);
-export function reserveRequest(userId: string, input: WebInput, exchangeRate: number, margin: number, now = new Date().toISOString()): WebRequestRow {
+export const webReserveCents = (input: WebInput, exchangeRate: number, margin: number, price: WebPrice = PRICE_CAP) => Math.ceil(reserveUsdFor(input, price) * exchangeRate * margin * 100);
+export function reserveRequest(userId: string, input: WebInput, exchangeRate: number, margin: number, now = new Date().toISOString(), price: WebPrice = PRICE_CAP): WebRequestRow {
   if (![exchangeRate, margin].every(n => Number.isFinite(n) && n > 0)) throw new WebError('ai_unavailable', 503);
-  const reserveCents = webReserveCents(input, exchangeRate, margin), hash = payloadHash(input);
+  const reserveCents = webReserveCents(input, exchangeRate, margin, price), hash = payloadHash(input);
   if (!Number.isSafeInteger(reserveCents) || reserveCents < 1 || reserveCents > 10000) throw new WebError('ai_unavailable', 503);
   if (input.mode === 'agent' && (!input.agentBudget || input.agentBudget.currency !== siteConfig.currency || reserveCents > input.agentBudget.perGenerationMaxChargeCents || (input.agentStep === 0 && reserveCents !== input.agentBudget.perGenerationMaxChargeCents))) throw new WebError('price_changed', 409);
   return withTransaction(db => {

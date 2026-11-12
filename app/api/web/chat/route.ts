@@ -7,6 +7,7 @@ import { authorize, failure, languageOf, readBody } from '@/lib/web-ai/http';
 import { reserveRequest } from '@/lib/web-ai/store';
 import { AGENT_LIMITS } from '@/web-workbench/src/agent-contract.js';
 import { responseStream } from '@/lib/web-ai/service';
+import { reservePrice } from '@/lib/web-ai/provider';
 export const dynamic='force-dynamic';
 export const runtime='nodejs';
 export async function POST(request:NextRequest) {
@@ -17,7 +18,7 @@ export async function POST(request:NextRequest) {
     const config=getAiConfig();
     if(process.env.WEB_AI_ENABLED!=='1'||!config.apiKey)throw new WebError('ai_unavailable',503);
     const rate=getExchangeRateInfo().rate,margin=config.marginMultiplier;
-    reserveRequest(user.id,input,rate,margin);
+    reserveRequest(user.id,input,rate,margin,undefined,await reservePrice(rate));
     return new Response(responseStream(user.id,input,config.apiKey),{headers:{'Content-Type':'text/event-stream; charset=utf-8','Cache-Control':'no-store, no-transform','X-Accel-Buffering':'no','Vary':'Cookie'}});
   }catch(e){return failure(e,lang);}
 }

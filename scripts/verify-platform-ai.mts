@@ -154,7 +154,13 @@ await check('recorded Qwen tool-call streams (empty id on continuation chunks) r
   try{for(const [label,edits] of [['single-clause',1],['three-issues',3]] as const){
     const fixture=recorded.cases.find((c:any)=>c.label===label);assert.ok(fixture.sse.includes('"id":""'),'fixture keeps the supplier quirk');
     const b=user(),id=randomUUID(),body:any={requestId:id,language:'zh',mode:'agent',message:fixture.instruction,history:[],document:fixture.document,agentStep:0,agentHistory:[],agentContext:fixture.agentContext};
-    body.agentBudget={currency:'CNY',perGenerationMaxChargeCents:webReserveCents(body,10,1)};
+    // The hold is priced at the model's dearest catalog tier (3/6 CNY per million here), not the generic USD cap,
+    // and still covers the largest request the route accepts together with the full max_tokens it sends.
+    const {reservePrice}=await import('@/lib/web-ai/provider');const {LIMITS:webLimits}=await import('@/lib/web-ai/contract');const {AGENT_LIMITS}=await import('@/web-workbench/src/agent-contract.js');
+    const price=await reservePrice(10),hold=webReserveCents(body,10,1,price),flash=parseBailianModel({...rawModel,model:'qwen3.8-flash'})!;
+    assert.deepEqual(price,{prompt:0.3,completion:0.6});assert.equal(hold,33);assert.ok(hold<webReserveCents(body,10,1));
+    assert.ok(usageCostCny(flash,{prompt_tokens:AGENT_LIMITS.contextBytes+4096,completion_tokens:webLimits.agentOutputTokens},false)*100<=hold,'hold is never below the true maximum');
+    body.agentBudget={currency:'CNY',perGenerationMaxChargeCents:hold};
     providerReply=async()=>new Response(fixture.sse);
     const response=await webChat(new NextRequest('https://www.aiworkdeck.com/api/web/chat',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://www.aiworkdeck.com',Cookie:`${SESSION_COOKIE}=${createSession(b.id).token}`},body:JSON.stringify(body)}));
     assert.equal(response.status,200);const text=await response.text();
@@ -163,7 +169,7 @@ await check('recorded Qwen tool-call streams (empty id on continuation chunks) r
     const data=JSON.parse(frame!.slice(frame!.indexOf('data: ')+6));assert.equal(data.calls.length,1);assert.equal(data.calls[0].function.name,'doc_apply_edits');
     const args=validateToolCall('doc_apply_edits',data.calls[0].function.arguments);assert.equal(args.edits.length,edits);
     const known=new Set(fixture.agentContext.targets.map((t:any)=>t.targetId));assert.ok(args.edits.every((e:any)=>known.has(e.targetId)));
-    assert.equal(lastBody.model,'qwen3.8-flash');assert.equal(getRequest(b.id,id)?.state,'settled');
+    assert.equal(lastBody.model,'qwen3.8-flash');assert.equal(lastBody.max_tokens,webLimits.agentOutputTokens);assert.equal(getRequest(b.id,id)?.state,'settled');assert.equal(getRequest(b.id,id)?.reserveCents,hold);
   }}finally{globalThis.fetch=originalCatalogFetch;clearCatalogCache();}
 });
 await check('Skill stays free at zero balance, survives disconnect, and never double charges',async()=>{

@@ -8,16 +8,18 @@ import { getDb } from '@/lib/db';
 import { siteConfig } from '@/lib/site-config';
 import { authorize,failure,json,languageOf } from '@/lib/web-ai/http';
 import { AGENT_LIMITS } from '@/web-workbench/src/agent-contract.js';
-import { LIMITS,RESERVE_USD,AGENT_RESERVE_USD,WEB_MODEL,WebError } from '@/lib/web-ai/contract';
+import { LIMITS,reserveUsd,WEB_MODEL,WebError } from '@/lib/web-ai/contract';
+import { reservePrice } from '@/lib/web-ai/provider';
 export const dynamic='force-dynamic';
 export const runtime='nodejs';
 export async function GET(request:NextRequest) {
   const lang=languageOf(request), loginUrl=`/${lang}/account?next=${encodeURIComponent(`/web/?lang=${lang}`)}`;
   try {
     const config=getAiConfig(),enabled=process.env.WEB_AI_ENABLED==='1'&&!!config.apiKey;
+    const rate=getExchangeRateInfo().rate,price=await reservePrice(rate);
     const quote=(margin:number)=>{
-      const maxChargeCents=Math.ceil(RESERVE_USD*getExchangeRateInfo().rate*margin*100);
-      const agentMaxChargeCents=Math.ceil(AGENT_RESERVE_USD*getExchangeRateInfo().rate*margin*100);
+      const maxChargeCents=Math.ceil(reserveUsd('chat',price)*rate*margin*100);
+      const agentMaxChargeCents=Math.ceil(reserveUsd('agent',price)*rate*margin*100);
       const agent={limits:AGENT_LIMITS,maxGenerations:AGENT_LIMITS.maxGenerations,maxChargeCents:agentMaxChargeCents,maxRunChargeCents:agentMaxChargeCents*AGENT_LIMITS.maxGenerations};
       return {maxChargeCents,agentMaxChargeCents,common:{agent,model:WEB_MODEL,limits:LIMITS,currency:siteConfig.currency,maxChargeCents,webTrialSupported:false,loginUrl}};
     };

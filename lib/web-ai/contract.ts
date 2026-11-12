@@ -7,8 +7,13 @@ export const LIMITS = { bodyBytes: 96_000, contextBytes: 48_000, messageChars: 4
 export const PRICE_CAP = { prompt: 1, completion: 2, request: 0 } as const;
 // UTF-8 bytes bound byte-level tokenization; ample fixed allowance covers framing.
 // Only this fixed non-reasoning text model is enabled. Legacy modes have no tools.
-export const RESERVE_USD = ((LIMITS.contextBytes + 4096) * PRICE_CAP.prompt + LIMITS.outputTokens * PRICE_CAP.completion) / 1_000_000;
-export const AGENT_RESERVE_USD = ((AGENT_LIMITS.contextBytes + 4096) * PRICE_CAP.prompt + LIMITS.outputTokens * PRICE_CAP.completion) / 1_000_000;
+/** USD per million tokens. The hold covers the largest request this mode can send and the full max_tokens the provider is given. */
+export interface WebPrice { prompt: number; completion: number }
+export const reserveUsd = (mode: WebInput['mode'], price: WebPrice = PRICE_CAP) => mode === 'agent'
+  ? ((AGENT_LIMITS.contextBytes + 4096) * price.prompt + LIMITS.agentOutputTokens * price.completion) / 1_000_000
+  : ((LIMITS.contextBytes + 4096) * price.prompt + LIMITS.outputTokens * price.completion) / 1_000_000;
+export const RESERVE_USD = reserveUsd('chat');
+export const AGENT_RESERVE_USD = reserveUsd('agent');
 export interface AgentToolCall { id: string; type: 'function'; function: { name: string; arguments: string } }
 export interface AgentAssistant { role: 'assistant'; content: string | null; tool_calls: AgentToolCall[] }
 export interface AgentResult { role: 'tool'; tool_call_id: string; content: string }
@@ -77,7 +82,7 @@ export function validateAgentCall(raw: unknown): AgentToolCall {
   try { validateToolCall(fn.name, JSON.parse(args)); } catch { throw new WebError('invalid_tool_call', 502); }
   return { id: call.id, type: 'function', function: { name: fn.name, arguments: args } };
 }
-export function reserveUsdFor(input: WebInput) { return input.mode === 'agent' ? AGENT_RESERVE_USD : RESERVE_USD; }
+export function reserveUsdFor(input: WebInput, price: WebPrice = PRICE_CAP) { return reserveUsd(input.mode, price); }
 const AGENT_APPLIED_REMINDER = 'The tool result above is the verified outcome of your previous call, and the document and context.targets in this conversation already include it. If the user instruction is now fully carried out, reply in plain text summarizing the verified changes and make NO tool call. Only call a tool for a requested change that is still missing from the current document.';
 export function messagesFor(input: WebInput) {
   if (input.mode === 'agent') {
