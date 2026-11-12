@@ -30,6 +30,36 @@ export type ReleaseNote = LegacyReleaseNote | {
 
 export const RELEASES: ReleaseNote[] = [
     {
+        version: '0.85.0',
+        date: '2026-11-13',
+        headline: {
+            zh: 'PPT 和 Excel 明显更快，团队与客户协作更安全',
+            en: 'PowerPoint and Excel are noticeably faster, and team and client collaboration is safer',
+        },
+        items: [
+            {
+                zh: 'PPT、Excel 更快：保存耗时降到原来的一半到三分之一，输入、翻页等操作的响应快了数倍；大文稿不再每停一下就卡几秒。Excel 冷启动时先显示第一屏内容（当前工作表、冻结窗格、数字与日期格式都照原样），不用对着进度条等；首屏有图片、图表或未计算的公式时仍显示进度，不给你看一张不准的图。',
+                en: 'Faster PowerPoint and Excel: saving takes a half to a third of the time it did, and typing, paging and similar actions respond several times faster. Large decks no longer freeze for seconds at every pause. On a cold start Excel shows the first screen straight away (active sheet, frozen panes, number and date formats as saved). If that screen has pictures, charts or uncalculated formulas you still see the progress card, never an inaccurate preview.',
+            },
+            {
+                zh: 'AI 说到做到：以前个别模型会回一句「已为第 1 页添加备注」「已冻结首行」却什么都没做，现在会被发现并纠正一次；纠正后仍没做，回答末尾会如实写明「本轮没有执行任何修改」。「在某一列后面加一列」不再插错边。AI 也不会再因为自己攒下的一堆重复经验，动不动先反问你。',
+                en: 'The AI does what it says: some models used to reply "added a note to slide 1" or "froze the first row" without doing anything. That is now caught and corrected once, and if nothing was done after the correction the answer says so plainly. "Insert a column after column C" no longer lands on the wrong side. The AI also stops asking you needless questions because of duplicate lessons it had saved for itself.',
+            },
+            {
+                zh: '请客户进群时，由你决定对方能不能看之前的消息：默认只能看到入群之后的内容，要分享此前的讨论需在邀请时明确勾选，附件和聊天记录导出按同一规则。默认规则在服务器上线后即生效；邀请时的勾选项需要项目沟通插件 0.2.6，随后上架。',
+                en: 'When you invite a client into a conversation, you decide whether they can read earlier messages. By default they see only what is sent after they join; sharing earlier discussion is an explicit choice at invite time, and attachments and chat exports follow the same rule. The default applies as soon as the servers are updated; the option at invite time needs Project Messaging plugin 0.2.6, which will be listed shortly afterwards.',
+            },
+            {
+                zh: '团队版与云端更安全、更稳：客户访问码输错只锁输错的那一方，不再连带锁住其他客户；客户看不到项目成员名单；本机收费台账只在桌面端可用，服务器上不再提供；单个账号的 AI 对话、上传、识别次数有了每分钟上限，超出时提示稍后再试；云端单个文件上限 200MB（团队案件库 2GB）。多人同时在一个群里时，消息面板不再互相排队。',
+                en: 'Safer, steadier team and cloud use: a mistyped client access code locks out only the party who mistyped it, not every client. Clients cannot see the project member list. The local fee ledger is available only in the desktop app and no longer on servers. Each account has per-minute limits on AI chats, uploads and OCR, with a "try again shortly" message when exceeded. Cloud uploads are capped at 200 MB per file (2 GB for the team case library). Message panels no longer queue behind each other when many people are in one group.',
+            },
+            {
+                zh: '修复：新账号第一次登录偶尔提示「AI 额度尚未就绪」、要重新登录才好；两个人几乎同时对同一份利冲申请点放行时，一方偶尔收到「申请已结束」的报错。',
+                en: 'Fixes: a new account could see "AI quota is not ready yet" at its first sign-in and had to sign in again; when two people cleared the same conflict-check request almost simultaneously, one of them could get an "already closed" error.',
+            },
+        ],
+    },
+    {
         version: '0.84.2',
         date: '2026-11-12',
         headline: {
