@@ -1454,7 +1454,8 @@
       "credits": "entspricht {amount}",
       "outstanding": "Noch nicht abgebucht: {amount}",
       "failed": "{count} Punkteabbuchung(en) sind nicht durchgegangen. Bis zur Klärung wird DeepSeek-Nutzung aus Ihrem Kontoguthaben bezahlt.",
-      "aiClosed": "Ihre Mitgliedschaft umfasst die AI-Workbench nicht, daher wird DeepSeek-Nutzung aus Ihrem Kontoguthaben bezahlt.",
+      "renewHint": "Baoqingtian-Punkte können nur bei aktiver Baoqingtian-Mitgliedschaft mit aktivierter KI-Workbench genutzt werden. Aktivieren Sie die Mitgliedschaft in der Baoqingtian-Anwalts-App unter „Profil“, um Ihre {points} Punkte zu nutzen; bis dahin wird die Nutzung von Ihrem Kontoguthaben abgebucht.",
+      "walletHint": "Die gesamte Nutzung wird derzeit von Ihrem Kontoguthaben abgebucht. Bei niedrigem Guthaben oben „Aufladen“ verwenden.",
       "proRights": "Enthält Pro-Vorteile (3 GB Cloud-Speicher), solange die Mitgliedschaft aktiv ist.",
       "priorityHint": "DeepSeek-Nutzung wird zuerst mit Ihren Baoqingtian-Punkten bezahlt; reichen die Punkte nicht, wird automatisch Ihr Kontoguthaben verwendet. Andere Modelle und Dienste nutzen Ihr Kontoguthaben.",
       "fetchedAt": "Aktualisiert {time}"

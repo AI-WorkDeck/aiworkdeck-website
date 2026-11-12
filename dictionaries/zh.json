@@ -1456,7 +1456,8 @@
       "credits": "折合 {amount}",
       "outstanding": "尚未扣成：{amount}",
       "failed": "有 {count} 笔积分扣减未成功，处理完成前 DeepSeek 用量改用账户余额。",
-      "aiClosed": "当前会员未开通 AI 工作台权益，DeepSeek 用量将使用账户余额。",
+      "renewHint": "包晴天会员有效并开通 AI 工作台后才能使用积分。请前往包晴天律师端 App「个人中心」开通会员，即可使用你的 {points} 积分；在此之前，用量从账户余额扣。",
+      "walletHint": "目前所有用量都从账户余额扣，余额不够可直接点上方「充值」。",
       "proRights": "会员有效期内享有个人 Pro 权益（含 3GB 云空间）。",
       "priorityHint": "DeepSeek 模型的用量优先扣包晴天积分，积分不够时自动改用账户余额；其他模型和服务使用账户余额。",
       "fetchedAt": "更新于 {time}"

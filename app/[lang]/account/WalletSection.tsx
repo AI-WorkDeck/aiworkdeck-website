@@ -244,13 +244,17 @@ export function WalletSection({ lang, dict }: { lang: Locale; dict: any }) {
                             {bqt.failedCount > 0 && (
                                 <p role="alert" className="mt-1 text-sm text-red-700">{tb.failed.replace('{count}', String(bqt.failedCount))}</p>
                             )}
-                            {bqt.status === 'ACTIVE' && !bqt.aiWorkbench && (
-                                <p className="mt-1 text-sm text-neutral-gray-dark">{tb.aiClosed}</p>
-                            )}
                             {data?.subscription?.source === 'bqt' && (
                                 <p className="mt-1 text-sm text-king-forest">{tb.proRights}</p>
                             )}
-                            <p className="mt-1 text-sm text-neutral-gray-dark">{tb.priorityHint}</p>
+                            {/* 会员有效且开了 AI 工作台才扣积分；否则：有积分 → 引导去包晴天开会员，没积分 → 引导本站充值 */}
+                            {bqt.status === 'ACTIVE' && bqt.aiWorkbench ? (
+                                <p className="mt-1 text-sm text-neutral-gray-dark">{tb.priorityHint}</p>
+                            ) : Number(bqt.points) > 0 ? (
+                                <p role="note" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{tb.renewHint.replace('{points}', bqt.points)}</p>
+                            ) : (
+                                <p className="mt-1 text-sm text-neutral-gray-dark">{tb.walletHint}</p>
+                            )}
                             <p className="mt-2 text-xs text-neutral-gray-medium">
                                 {tb.fetchedAt.replace('{time}', new Date(bqt.fetchedAt).toLocaleString(dateLocale))}
                             </p>
