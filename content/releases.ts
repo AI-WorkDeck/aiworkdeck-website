@@ -30,6 +30,36 @@ export type ReleaseNote = LegacyReleaseNote | {
 
 export const RELEASES: ReleaseNote[] = [
     {
+        version: '0.84.0',
+        date: '2026-11-12',
+        headline: {
+            zh: 'AI 助手办事更可靠，你随时可以暂停、改方向、一键撤销',
+            en: 'The AI assistant gets more done reliably, and you can pause, redirect or undo it at any time',
+        },
+        items: [
+            {
+                zh: '多步任务更靠谱：改条款、加批注、导出 PDF、整理文件、处置修订等连续操作，实测在国内常用模型上的完成率从约四到七成提升到九成以上，用的轮次和额度也明显更少。此前部分模型「先说一句话再动手」时动作会被悄悄丢掉、只回一句话就结束，现在照常执行。',
+                en: 'Multi-step work is far more dependable: chains like editing a clause, adding comments, exporting a PDF, organising files or resolving revisions now succeed over 90% of the time on common models in our tests, up from roughly 40–70%, using fewer rounds and less quota. Some models used to announce an action and then silently drop it; the action now runs.',
+            },
+            {
+                zh: '你始终掌控：AI 运行中可以暂停、继续，或在任务窗格里补一句话改方向；停下时会告诉你已经做完了什么；对文档的改动可以一键撤销整次运行。',
+                en: 'You stay in control: pause or resume a run, or add an instruction in the task pane to change direction; when you stop it, it tells you what it already did; and all of a run\'s document edits can be undone in one click.',
+            },
+            {
+                zh: '改合同更稳：新增一整条条款一步到位并沿用原有样式，插入后自动核对条号是否顺延；接受 / 拒绝修订后给出重新排好的编号，不会处置错条；带修订的文档按接受后的文字交给 AI，不再把「7」和「15」读成「715」。回答声称「已完成」但实际没执行时会被自动纠正。',
+                en: 'Safer contract editing: a whole new clause is inserted in one step with matching style, and clause numbering is checked afterwards; accepting or rejecting a revision shows the renumbered list so the wrong one is never touched; documents with tracked changes reach the AI as accepted text, so "7" and "15" are no longer read as "715". If the AI claims something is done when it was not, it is corrected automatically.',
+            },
+            {
+                zh: '法规更可信：北大法宝查到原文的法规卡显示为已检索；法宝暂时不可用时，AI 最多做两次替代检索，引用的条文标注「未核实」，不会冒称已核实。',
+                en: 'More trustworthy legal sources: law cards backed by a live PKULaw result are marked as retrieved; when PKULaw is down the AI makes at most two fallback lookups and marks cited articles "unverified" instead of claiming they were checked.',
+            },
+            {
+                zh: '用起来更顺手：文件右键菜单新增打印、移动到、压缩 / 解压、复制路径；平台 AI 需要重新同意时在对话里原地确认、自动重发这一问；设置、律所管理、项目沟通等多处版式修整；诉讼可视化引擎升级到最新版。',
+                en: 'Smoother everyday use: the file context menu adds print, move to, compress / extract and copy path; when platform AI needs your consent again you confirm right in the chat and the question is resent; layouts are tidied across settings, firm management and project chat; the litigation-visualisation engine is updated to its latest version.',
+            },
+        ],
+    },
+    {
         version: '0.83.0',
         date: '2026-11-11',
         headline: {
