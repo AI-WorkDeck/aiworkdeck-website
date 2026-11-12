@@ -7,8 +7,7 @@ import { accountSubscriptionView } from '@/lib/account-subscription-view';
 import { verifySubscriptionTransaction, appstoreEnv } from '@/lib/payments/appstore-adapter';
 import { prepareAppstoreSubscription, appstoreAccountToken, applyAppstoreSubscription, appstoreSubscriptionCapability, SubscriptionRejected } from '@/lib/appstore-subscription';
 import { subscriptionSnapshot } from '@/lib/subscription';
-import { bqtChargeTarget } from '@/lib/bqt-member';
-import { BQT_RECHARGE_ERROR, accountBillingFields, bqtDisplayBalanceCents, refreshBqtSnapshot } from '@/lib/bqt-account';
+import { accountBillingFields, refreshBqtSnapshot } from '@/lib/bqt-account';
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import {
@@ -832,12 +831,8 @@ export async function POST(request: NextRequest) {
     // 清掉那行失效绑定去自愈，而不是把它当成「上游挂了」。
     if (!user || isDeletedUser(user)) return fail(404, 'account_not_found');
 
-    // 包晴天律师（积分通道开着）：手机端也不建充值单/订阅单（已付款的确认照常入账，钱已到苹果）；
-    // 读余额/云状态前刷新权益快照。
-    if (bqtChargeTarget(user.id)) {
-      if (action === 'create-recharge' || action === 'prepare-appstore-subscription') return fail(409, BQT_RECHARGE_ERROR);
-      if (action === 'balance' || action === 'cloud-state' || action === 'egress-reserve' || action === 'egress-quote') await refreshBqtSnapshot(user.id);
-    }
+    // 绑定了包晴天的律师：读余额/云状态前刷新积分快照（展示用；充值、订阅照常）。
+    if (action === 'balance' || action === 'cloud-state') await refreshBqtSnapshot(user.id);
 
     if (action === 'egress-quote') return NextResponse.json(egressQuote(String(body.bytes??''),user.id,typeof body.resourceHash==='string'?body.resourceHash:undefined,typeof body.exportCaseId==='string'?body.exportCaseId:undefined));
     if (action === 'egress-reserve') return NextResponse.json(reserveEgress(user.id,body as unknown as EgressRequest));
@@ -868,8 +863,8 @@ export async function POST(request: NextRequest) {
         // 币种由部署站点决定，不由请求决定
         currency: siteConfig.currency,
         plan: getPlan(user.id),
-        // 余额 = 未过期批次 remainingCents 之和（lib/credits.ts），不是账本最后一行；包晴天线报积分折算值
-        balanceCents: bqtDisplayBalanceCents(user.id) ?? getBalance(user.id),
+        // 余额 = 未过期批次 remainingCents 之和（lib/credits.ts），不是账本最后一行；包晴天积分另见 bqtMember
+        balanceCents: getBalance(user.id),
         ...accountBillingFields(user.id),
       });
     }

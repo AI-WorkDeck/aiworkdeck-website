@@ -1453,11 +1453,10 @@
       "points": "{points} points",
       "credits": "soit {amount}",
       "outstanding": "Pas encore débité : {amount}",
-      "failed": "{count} débit(s) de points n’ont pas abouti. Rechargez vos points dans l’app Baoqingtian ; les nouvelles dépenses sont suspendues d’ici là.",
-      "aiClosed": "Votre adhésion n’inclut pas l’AI workbench et ne peut donc pas servir à payer ici.",
+      "failed": "{count} déduction(s) de points n'ont pas abouti. En attendant leur résolution, l'utilisation de DeepSeek est payée avec le solde de votre compte.",
+      "aiClosed": "Votre abonnement n'inclut pas l'atelier IA ; l'utilisation de DeepSeek est donc payée avec le solde de votre compte.",
       "proRights": "Inclut les avantages Pro (3 Go de stockage cloud) tant que l’adhésion est active.",
-      "rechargeHint": "Rechargez vos points ou renouvelez l’adhésion dans l’app Baoqingtian. Ce site n’accepte pas de paiement direct pour les comptes Baoqingtian.",
-      "unavailable": "Informations d’adhésion momentanément indisponibles. Réessayez plus tard.",
+      "priorityHint": "L'utilisation de DeepSeek est d'abord payée avec vos points Baoqingtian ; quand ils sont épuisés, le solde de votre compte prend automatiquement le relais. Les autres modèles et services utilisent le solde de votre compte.",
       "fetchedAt": "Mis à jour {time}"
     }
   },
@@ -1477,9 +1476,7 @@
     "failed": "Le paiement a échoué",
     "retry": "Réessayer",
     "creating": "Création de la commande…",
-    "amountLabel": "Montant",
-    "bqtConfirm": "Payer {amount} avec des points Baoqingtian ?",
-    "bqtPay": "Payer avec des points"
+    "amountLabel": "Montant"
   },
   "supportDialog": {
     "orderUnavailable": "Ce don n'a pas pu être trouvé. Vérifiez le lien de retour ou revenez à l'appareil où vous avez commencé le paiement.",

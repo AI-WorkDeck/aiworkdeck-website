@@ -20,7 +20,7 @@ export async function connectPostpaidSkill(req:UpstreamRequest,international:boo
         const exchange=international?getExchangeRateInfo().rate:1;
         const inputPrice=Math.max(...model.priceTiers.map(t=>t.input)),outputPrice=Math.max(...model.priceTiers.map(t=>t.output));
         const maxCostCny=(inputTokens*inputPrice+outputTokens*outputPrice)/1e6*exchange;
-        await authorizeCostCny(userId,id,maxCostCny);
+        await authorizeCostCny(userId,id,maxCostCny,model.id);
         reserveCostCny(userId,id,body,model.id,maxCostCny,{model,exchange,international});
         submitted(userId,id);
         const config=bailianConfig();

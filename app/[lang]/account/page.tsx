@@ -36,8 +36,8 @@ import { gateForUser, bindingDeadlineLabel } from '@/lib/phone-policy';
 import { codeChannelReady } from '@/lib/login-channel';
 import { captchaClientConfig } from '@/lib/captcha';
 import { NOINDEX } from '@/lib/page-metadata';
-import { bqtDisplayBalanceCents, refreshBqtSnapshot } from '@/lib/bqt-account';
-import { bqtChargeTarget } from '@/lib/bqt-member';
+import { refreshBqtSnapshot } from '@/lib/bqt-account';
+import { bqtProRightsUntil } from '@/lib/bqt-member';
 
 export const dynamic = 'force-dynamic';
 
@@ -109,9 +109,9 @@ export default async function AccountPage({
         );
     }
 
-    // 包晴天律师（积分通道开着）：先刷新权益快照，余额/Pro 读快照
+    // 绑定了包晴天的律师：先刷新权益快照（积分卡与 Pro 读快照）。Pro 正由包晴天会员提供时，续费指向包晴天；会员失效后照常可在本站买 Pro。
     await refreshBqtSnapshot(user.id);
-    const bqtMember = !!bqtChargeTarget(user.id);
+    const bqtMember = !!bqtProRightsUntil(user.id);
     const mySkills = listSkills({ authorId: user.id, sort: 'newest' });
     const ta = dict.accountPage;
 
@@ -135,7 +135,7 @@ export default async function AccountPage({
                     nameIsDefault={isDefaultDisplayName(user)}
                     stats={{
                         // 两个都是同步的本地读（SQLite / JSON），服务端直出，页面上没有加载态
-                        balanceCents: bqtDisplayBalanceCents(user.id) ?? getBalance(user.id),
+                        balanceCents: getBalance(user.id),
                         skillCount: mySkills.length,
                         downloads: mySkills.reduce((sum, s) => sum + s.downloads, 0),
                     }}

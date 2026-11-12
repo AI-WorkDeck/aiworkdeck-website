@@ -10,7 +10,7 @@
  *     超时/无响应/SYSTEM_BUSY 用原 requestNo、原积分重发（retryPendingConsumes），其余失败不重试；
  *   - 失败的扣减挂在用户身上（outstanding），未处理前拦新的花费，后台可放弃或换新单号重扣。
  *
- * 通道关闭（后台开关 / 环境变量缺失 / 未设比例）时 bqtChargeTarget 返回 null，包晴天律师走原有本站钱包。
+ * 通道关闭（后台开关 / 环境变量缺失 / 未设比例）时 bqtLinkedLawyer 返回 null，包晴天律师走原有本站钱包。
  * 鉴权见《对 AI WorkDeck · 律师会员权益查询与积分扣减》：EXT_SITE 签名，签名不含 URL/Query/Body。
  */
 
@@ -95,8 +95,11 @@ export function bqtMarginMultiplier(): number {
   return getBqtSettings().marginMultiplier ?? getAiConfig().marginMultiplier;
 }
 
-/** 通道打开且该用户是扫码绑定的包晴天律师 → 返回 lawyerId；否则 null（走原有线路）。 */
-export function bqtChargeTarget(userId: string, d: Database.Database = getDb()): { lawyerId: string } | null {
+/**
+ * 通道打开且该用户扫码绑定过包晴天 → 返回 lawyerId；否则 null。
+ * 绑定只是多了一个付款来源（DeepSeek 用量优先扣积分），不改变账户的其他能力：钱包、充值、全部模型照常。
+ */
+export function bqtLinkedLawyer(userId: string, d: Database.Database = getDb()): { lawyerId: string } | null {
   if (!bqtTunnelActive(d)) return null;
   const row = d.prepare('SELECT bqtUserId FROM bqt_user_binding WHERE userId = ?').get(userId) as { bqtUserId: string } | undefined;
   return row && /^\d{1,19}$/.test(row.bqtUserId) ? { lawyerId: row.bqtUserId } : null;
@@ -393,7 +396,7 @@ export function bqtBalanceView(userId: string, lawyerId: string): null | {
 
 /** Pro 权益到期时刻（同步，读快照）：通道开、后台允许、会员有效且开了 AI 工作台。 */
 export function bqtProRightsUntil(userId: string, nowIso = new Date().toISOString()): string | null {
-  const target = bqtChargeTarget(userId);
+  const target = bqtLinkedLawyer(userId);
   if (!target || !getBqtSettings().grantProRights) return null;
   const e = bqtEntitlementSnapshot(target.lawyerId);
   if (!e || !canUseAiWorkbench(e) || !e.expireAt || e.expireAt <= nowIso) return null;

@@ -12,7 +12,6 @@ import { CategoryIcon } from '@/components/skills/CategoryIcon';
 import { findUserById } from '@/lib/users';
 import { Avatar } from '@/components/user/Avatar';
 import { getSessionUser } from '@/lib/sessions';
-import { bqtChargeTarget } from '@/lib/bqt-member';
 import { CopyButton } from '@/components/skills/CopyButton';
 import { hasEntitlement } from '@/lib/purchases';
 import { BuyButton } from '@/components/purchase/BuyButton';
@@ -73,7 +72,6 @@ export default async function SkillDetailPage({
     const authorName = author && localizeDisplayName(author, lang);
     const me = await getSessionUser();
     // 包晴天律师（积分通道开着）：购买按钮改为扣包晴天积分
-    const bqtPoints = !!me && !!bqtChargeTarget(me.id);
     const isAuthor = me?.id === skill.authorId;
     const priceCents = skill.priceCents ?? 0;
     const owned = priceCents > 0 && !!me && hasEntitlement(me.id, `skill:${skill.id}`);
@@ -175,7 +173,6 @@ export default async function SkillDetailPage({
                                     itemName={display.name}
                                     owned={owned}
                                     loggedIn={!!me}
-                                    bqtPoints={bqtPoints}
                                 />
                             </div>
                         )}
@@ -234,7 +231,6 @@ export default async function SkillDetailPage({
                                                 itemName={display.name}
                                                 owned={owned}
                                                 loggedIn={!!me}
-                                                bqtPoints={bqtPoints}
                                             />
                                         </div>
                                     )}

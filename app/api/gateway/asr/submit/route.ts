@@ -1,7 +1,6 @@
 import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveKeyUser } from '@/lib/account-auth';
-import { refreshBqtSnapshot } from '@/lib/bqt-account';
 import { GatewayError, gatewayErrorResponse } from '@/lib/gateway/errors';
 import { requireEnabledPricing, assertUnitsWithinCap } from '@/lib/gateway/pricing';
 import { openHold, releaseHold, attachUpstreamRef } from '@/lib/gateway/spend';
@@ -44,9 +43,6 @@ export async function POST(request: NextRequest) {
     if (!user) {
         return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
-    // 包晴天律师：放行前按 5 秒内的实时权益判断（等同 bqtPreflight 的口径，见 lib/gateway/spend.ts）
-    await refreshBqtSnapshot(user.id, 5_000);
-
     let idempotencyKey: string;
     let objectKey: string;
     let durationSec: number;

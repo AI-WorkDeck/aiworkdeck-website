@@ -6,8 +6,6 @@ import {cloudState,postpaidPolicy} from './postpaid';
 import {spendCredits,refundSpend} from './credits';
 import {captureServiceFunding,type ServiceFunding} from './subscription';
 import {siteConfig} from './site-config';
-import {bqtChargeTarget} from './bqt-member';
-import {bqtSpendableCents,enqueueBqtServiceCharge,dispatchBqtLater} from './bqt-account';
 const GIB=BigInt(1073741824);
 const rate=()=>BigInt(siteConfig.id==='intl'?15:60);
 function bytes(input:unknown):bigint {
@@ -49,10 +47,7 @@ export function reserveEgress(userId:string,input:EgressRequest) {
             db.prepare('INSERT OR IGNORE INTO postpaid_export(userId,caseId,resourceHash,totalBytes) VALUES(?,?,?,?)').run(userId,input.exportCaseId,input.resourceHash,total.toString());
         } else if(!state.cloudAccess.canUse)throw new Error('egress_not_authorized');
         const funding=captureServiceFunding(userId),quote=egressQuote(input.bytes).quoteCents;
-        // 包晴天没有冻结：不预扣，只按快照余额放行，结算时整笔扣积分。
-        const bqt=bqtChargeTarget(userId,db);
-        if(bqt&&!free&&quote>bqtSpendableCents(userId,60_000))throw new Error('egress_not_authorized');
-        const hold=!bqt&&!free&&quote?spendCredits(db,{userId,amountCents:quote,ledgerKind:'service_spend',funding,meta:{service:'cloud_egress',phase:'hold',eventId:input.eventId}}):null;
+        const hold=!free&&quote?spendCredits(db,{userId,amountCents:quote,ledgerKind:'service_spend',funding,meta:{service:'cloud_egress',phase:'hold',eventId:input.eventId}}):null;
         db.prepare('INSERT INTO postpaid_egress(userId,eventId,payloadHash,resourceHash,reservedBytes,holdLedgerId,freeExport,caseId,offsetBytes,totalBytes,fundingJson,createdAt,rateCents) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)').run(userId,input.eventId,hash,input.resourceHash,n.toString(),hold?.id??null,free?1:0,input.exportCaseId??null,offset.toString(),total.toString(),JSON.stringify(funding),new Date().toISOString(),Number(rate()));
         return {reservationId:input.eventId,freeExport:free,reservedCents:free?0:quote,settled:false};
     });
@@ -60,8 +55,7 @@ export function reserveEgress(userId:string,input:EgressRequest) {
 export function settleEgress(userId:string,eventId:string,deliveredBytes:string,completed:boolean) {
     if(typeof completed!=='boolean')throw new Error('egress_completion_required');
     const actual=bytes(deliveredBytes);
-    let bqtRequestNo:string|null=null;
-    const result=withTransaction(db=>{
+    return withTransaction(db=>{
         const row=db.prepare('SELECT * FROM postpaid_egress WHERE userId=? AND eventId=?').get(userId,eventId) as EgressRow|undefined;
         if(!row)throw new Error('egress_reservation_not_found');
         if(actual>BigInt(row.reservedBytes)||(completed&&actual!==BigInt(row.reservedBytes)))throw new Error('egress_budget_exceeded');
@@ -80,9 +74,7 @@ export function settleEgress(userId:string,eventId:string,deliveredBytes:string,
             const previousFunding=meter?.fundingJson?JSON.parse(meter.fundingJson) as ServiceFunding:funding;
             const numerator=actual*BigInt(row.rateCents)+residue;charged=Number(numerator/GIB);
             const previousCharge=charged>0&&residue>BigInt(0)?1:0;
-            const bqt=bqtChargeTarget(userId,db);
-            if(bqt){if(charged>0)bqtRequestNo=enqueueBqtServiceCharge(db,{userId,lawyerId:bqt.lawyerId,cents:charged,service:'cloud_egress',refId:eventId});}
-            else for(const allocation of [{cents:previousCharge,funding:previousFunding},{cents:charged-previousCharge,funding}])if(allocation.cents>0)
+            for(const allocation of [{cents:previousCharge,funding:previousFunding},{cents:charged-previousCharge,funding}])if(allocation.cents>0)
                 spendCredits(db,{userId,amountCents:allocation.cents,ledgerKind:'service_spend',funding:allocation.funding,delivered:true,nowIso:row.createdAt,meta:{service:'cloud_egress',phase:'settle',eventId,bytes:actual.toString(),rateCents:row.rateCents}});
             const origin=charged===0&&residue>BigInt(0)?previousFunding:funding;
             db.prepare("INSERT INTO postpaid_meter(userId,kind,remainder,fundingJson) VALUES(?,'egress',?,?) ON CONFLICT(userId,kind) DO UPDATE SET remainder=excluded.remainder,fundingJson=excluded.fundingJson").run(userId,(numerator%GIB).toString(),JSON.stringify(origin));
@@ -90,6 +82,4 @@ export function settleEgress(userId:string,eventId:string,deliveredBytes:string,
         db.prepare('UPDATE postpaid_egress SET deliveredBytes=?,chargedCents=?,completed=? WHERE userId=? AND eventId=?').run(actual.toString(),charged,completed?1:0,userId,eventId);
         return {chargedCents:charged,freeExport:!!row.freeExport,deliveredBytes:actual.toString(),nextOffset};
     });
-    dispatchBqtLater(bqtRequestNo);
-    return result;
 }

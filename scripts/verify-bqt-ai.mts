@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 /**
- * 包晴天律师 AI 计费接线验收（lib/bqt-ai.ts + 平台 AI / Web AI / Skill 结算）。
+ * 包晴天积分 AI 计费验收（lib/bqt-ai.ts + 平台 AI / Web AI / Skill 结算）。
+ * 规则（2026-11-12）：绑定包晴天只是多一个付款来源——DeepSeek 用量优先扣积分，任何包晴天问题都回落到钱包、不报错；其他一律走钱包。
  * 必须在空目录运行：npm run test:bqt-ai。包晴天用 setBqtFetchForTest 假装，绝不调真实扣减接口。
  */
 import assert from 'node:assert/strict';
@@ -25,11 +26,9 @@ const { issueRuntimeToken } = await import('@/lib/platform-ai/auth');
 const { parseBailianModel } = await import('@/lib/platform-ai/catalog');
 const billing = await import('@/lib/platform-ai/billing');
 const m = await import('@/lib/bqt-member');
-const { BqtDenialError } = await import('@/lib/bqt-ai');
 const { settleAiUsage } = await import('@/lib/ai-usage');
 const webStore = await import('@/lib/web-ai/store');
 const { validateInput } = await import('@/lib/web-ai/contract');
-const { failure } = await import('@/lib/web-ai/http');
 const { POST: chat } = await import('@/app/api/account/ai/v1/chat/completions/route');
 const { POST: keyRoute } = await import('@/app/api/account/ai-key/route');
 const { NextRequest } = await import('next/server');
@@ -84,38 +83,39 @@ const lawyer = user(10000);
 db.prepare(`INSERT INTO bqt_user_binding (userId, bqtUserId, mobile, userName, userType, boundAt, updatedAt) VALUES (?, '10001', NULL, 'L', 'lawyer', ?, ?)`).run(lawyer.id, new Date().toISOString(), new Date().toISOString());
 const normal = user(10000);
 const lawyerToken = issueRuntimeToken(lawyer.id, accountRequest(lawyer));
-assert.deepEqual(m.bqtChargeTarget(lawyer.id), { lawyerId: '10001' });
+assert.deepEqual(m.bqtLinkedLawyer(lawyer.id), { lawyerId: '10001' });
 
-await check('preflight denials map to the contract error codes in the gateway error format', async () => {
-  const expectDenial = async (code: string, status: number, lang = 'zh') => {
+const walletOnly = (id: string) => { const r = billing.requestRow(lawyer.id, id)!; assert.notDeepEqual(JSON.parse(r.fundingJson)?.line, 'bqt'); return r; };
+
+await check('any BQT problem falls back to the wallet: the request succeeds, no points are touched', async () => {
+  const fallback = async (label: string, lang = 'zh') => {
     staleSnapshot();
-    const before = providerCalls, res = await chat(callRequest(lawyerToken, randomUUID(), lang));
-    assert.equal(res.status, status);
-    const body = await res.json();
-    assert.deepEqual(Object.keys(body.error).sort(), ['code', 'message', 'type']);
-    assert.equal(body.error.code, code); assert.equal(body.error.type, code);
-    assert.equal(providerCalls, before, 'denied requests never reach the provider');
-    return body.error.message as string;
+    const id = randomUUID(), wallet = getBalance(lawyer.id), n = count('SELECT COUNT(*) n FROM bqt_consume'), before = providerCalls;
+    const res = await chat(callRequest(lawyerToken, id, lang));
+    assert.equal(res.status, 200, label);
+    assert.equal(providerCalls, before + 1, label);
+    const row = walletOnly(id);
+    assert.equal(row.state, 'settled', label); assert.equal(row.margin, 1, `${label}: wallet margin`);
+    assert.equal(getBalance(lawyer.id), wallet - 12, `${label}: 0.12 CNY × 1.0 from the wallet`);
+    assert.equal(count('SELECT COUNT(*) n FROM bqt_consume'), n, label);
   };
-  member = { status: 'EXPIRED', aiWorkbench: true };
-  assert.match(await expectDenial('bqt_member_invalid', 403), /包晴天/);
-  assert.match(await expectDenial('bqt_member_invalid', 403, 'en'), /BQT membership/);
-  member = { status: 'ACTIVE', aiWorkbench: false }; await expectDenial('bqt_ai_closed', 403);
+  member = { status: 'EXPIRED', aiWorkbench: true }; await fallback('member expired');
+  member = { status: 'ACTIVE', aiWorkbench: false }; await fallback('AI workbench closed');
   member = { status: 'ACTIVE', aiWorkbench: true };
-  const saved = points; points = 0; await expectDenial('bqt_insufficient_points', 402); points = saved;
-  down = true; await expectDenial('bqt_unavailable', 503); down = false;
+  const saved = points; points = 0; await fallback('no points'); points = saved;
+  down = true; await fallback('BQT unreachable', 'en'); down = false;
   withTransaction(d => m.enqueueConsume(d, { userId: lawyer.id, lawyerId: '10001', cents: 1, service: 'test', refId: 'debt' }));
   db.prepare("UPDATE bqt_consume SET state='failed' WHERE refId='debt'").run();
-  await expectDenial('bqt_outstanding_debt', 402);
+  await fallback('outstanding debt');
   db.prepare("UPDATE bqt_consume SET state='waived' WHERE refId='debt'").run();
+  withTransaction(d => grantCredits(d, { userId: lawyer.id, pool: 'topup', amountCents: 10000 - getBalance(lawyer.id), ledgerKind: 'recharge' }));
   assert.equal(getBalance(lawyer.id), 10000);
-  assert.equal(count('SELECT COUNT(*) n FROM platform_ai_request WHERE userId=?', lawyer.id), 0);
 });
 
-await check('ai-key route reports BQT denials with the same codes', async () => {
+await check('ai-key route issues a key whatever the BQT membership state', async () => {
   staleSnapshot(); member = { status: 'EXPIRED', aiWorkbench: true };
   const res = await keyRoute(accountRequest(lawyer));
-  assert.equal(res.status, 403); assert.equal((await res.json()).error, 'bqt_member_invalid');
+  assert.equal(res.status, 200); assert.equal((await res.json()).provider, 'bailian');
   staleSnapshot(); member = { status: 'ACTIVE', aiWorkbench: true };
   const ok = await keyRoute(accountRequest(lawyer));
   assert.equal(ok.status, 200); assert.equal((await ok.json()).provider, 'bailian');
@@ -137,15 +137,18 @@ await check('gateway chat: wallet untouched, settle enqueues and dispatches poin
   assert.equal(points, before - 18);
 });
 
-await check('reserve without preflight fails closed; release and zero cost never touch the wallet or BQT', async () => {
-  assert.throws(() => billing.reserveCostCny(lawyer.id, randomUUID(), {}, 'deepseek-v4.1-flash-1017', 1, {}), (e: unknown) => e instanceof BqtDenialError && e.code === 'bqt_unavailable');
+await check('reserve without preflight uses the wallet; release and zero cost never touch the wallet or BQT', async () => {
+  const skipped = randomUUID();
+  billing.reserveCostCny(lawyer.id, skipped, {}, 'deepseek-v4.1-flash-1017', 1, {});
+  assert.equal(walletOnly(skipped).reserveCents, 100, 'no preflight → wallet at the wallet margin');
+  billing.release(lawyer.id, skipped);
   const id = randomUUID();
-  await billing.authorizeCostCny(lawyer.id, id, 1);
+  await billing.authorizeCostCny(lawyer.id, id, 1, 'deepseek-v4.1-flash-1017');
   assert.equal(billing.reserveCostCny(lawyer.id, id, {}, 'deepseek-v4.1-flash-1017', 1, {}).reserveCents, 150);
   billing.release(lawyer.id, id);
   assert.equal(billing.requestRow(lawyer.id, id)!.state, 'released');
   const id2 = randomUUID(), n = count('SELECT COUNT(*) n FROM bqt_consume');
-  await billing.authorizeCostCny(lawyer.id, id2, 1); billing.reserveCostCny(lawyer.id, id2, {}, 'deepseek-v4.1-flash-1017', 1, {});
+  await billing.authorizeCostCny(lawyer.id, id2, 1, 'deepseek-v4.1-flash-1017'); billing.reserveCostCny(lawyer.id, id2, {}, 'deepseek-v4.1-flash-1017', 1, {});
   billing.submitted(lawyer.id, id2);
   assert.equal(billing.settleCostCny(lawyer.id, id2, 0, {}).chargedCents, 0);
   assert.equal(count('SELECT COUNT(*) n FROM bqt_consume'), n);
@@ -154,7 +157,7 @@ await check('reserve without preflight fails closed; release and zero cost never
 
 await check('cost above the preflighted ceiling is never billed', async () => {
   const id = randomUUID();
-  await billing.authorizeCostCny(lawyer.id, id, 1); billing.reserveCostCny(lawyer.id, id, {}, 'deepseek-v4.1-flash-1017', 1, {}); billing.submitted(lawyer.id, id);
+  await billing.authorizeCostCny(lawyer.id, id, 1, 'deepseek-v4.1-flash-1017'); billing.reserveCostCny(lawyer.id, id, {}, 'deepseek-v4.1-flash-1017', 1, {}); billing.submitted(lawyer.id, id);
   assert.equal(billing.settleCostCny(lawyer.id, id, 2, {}).state, 'usage_pending');
   assert.equal(count("SELECT COUNT(*) n FROM bqt_consume WHERE refId=?", `${lawyer.id}:${id}`), 0);
   db.prepare("UPDATE platform_ai_request SET state='released' WHERE requestId=?").run(id);
@@ -162,7 +165,7 @@ await check('cost above the preflighted ceiling is never billed', async () => {
 
 await check('SYSTEM_BUSY keeps the consume pending; retry resends the same points once', async () => {
   const id = randomUUID(), before = points;
-  await billing.authorizeCostCny(lawyer.id, id, 1); billing.reserveCostCny(lawyer.id, id, {}, 'deepseek-v4.1-flash-1017', 1, {}); billing.submitted(lawyer.id, id);
+  await billing.authorizeCostCny(lawyer.id, id, 1, 'deepseek-v4.1-flash-1017'); billing.reserveCostCny(lawyer.id, id, {}, 'deepseek-v4.1-flash-1017', 1, {}); billing.submitted(lawyer.id, id);
   script.push('busy');
   billing.settleCostCny(lawyer.id, id, 0.6, {});
   const requestNo = (db.prepare('SELECT requestNo FROM bqt_consume WHERE refId=?').get(`${lawyer.id}:${id}`) as any).requestNo;
@@ -175,22 +178,18 @@ await check('SYSTEM_BUSY keeps the consume pending; retry resends the same point
   assert.equal(getBalance(lawyer.id), 10000);
 });
 
-await check('BQT lawyers are limited to one in-flight request (platform and web combined)', async () => {
+await check('one in-flight points request per lawyer; a concurrent one is paid from the wallet', async () => {
   const id = randomUUID();
-  await billing.authorizeCostCny(lawyer.id, id, 1); billing.reserveCostCny(lawyer.id, id, {}, 'deepseek-v4.1-flash-1017', 1, {}); billing.submitted(lawyer.id, id);
+  await billing.authorizeCostCny(lawyer.id, id, 1, 'deepseek-v4.1-flash-1017'); billing.reserveCostCny(lawyer.id, id, {}, 'deepseek-v4.1-flash-1017', 1, {}); billing.submitted(lawyer.id, id);
+  assert.equal(JSON.parse(billing.requestRow(lawyer.id, id)!.fundingJson).line, 'bqt');
   const id2 = randomUUID();
-  await billing.authorizeCostCny(lawyer.id, id2, 1);
-  assert.throws(() => billing.reserveCostCny(lawyer.id, id2, {}, 'deepseek-v4.1-flash-1017', 1, {}), /busy/);
-  staleSnapshot();
-  const res = await chat(callRequest(lawyerToken));
-  assert.equal(res.status, 429); assert.equal((await res.json()).error.code, 'busy');
-  const input = validateInput({ requestId: randomUUID(), language: 'zh', mode: 'chat', message: 'hi', history: [], document: { id: randomUUID(), version: 0, name: 'a', text: '' } });
-  const { bqtAuthorize } = await import('@/lib/bqt-ai');
-  await bqtAuthorize(lawyer.id, `web_ai:${input.requestId}`, webStore.webReserveCents(input, 10, 1.5));
-  // 网页工作台模型固定为 Qwen：包晴天律师先被「仅 DeepSeek」拦下
-  assert.throws(() => webStore.reserveRequest(lawyer.id, input, 10, 1.5), (e: unknown) => e instanceof BqtDenialError && e.code === 'bqt_model_not_allowed');
+  await billing.authorizeCostCny(lawyer.id, id2, 1, 'deepseek-v4.1-flash-1017');
+  billing.reserveCostCny(lawyer.id, id2, {}, 'deepseek-v4.1-flash-1017', 1, {});
+  assert.equal(walletOnly(id2).reserveCents, 100);
+  billing.release(lawyer.id, id2);
+  assert.equal(getBalance(lawyer.id), 10000);
   // Normal users keep the old limit of 4.
-  for (let i = 0; i < 4; i++) { const rid = randomUUID(); await billing.authorizeCostCny(normal.id, rid, 0.01); billing.reserveCostCny(normal.id, rid, {}, 'deepseek-v4.1-flash-1017', 0.01, {}); billing.release(normal.id, rid); }
+  for (let i = 0; i < 4; i++) { const rid = randomUUID(); await billing.authorizeCostCny(normal.id, rid, 0.01, 'deepseek-v4.1-flash-1017'); billing.reserveCostCny(normal.id, rid, {}, 'deepseek-v4.1-flash-1017', 0.01, {}); billing.release(normal.id, rid); }
   // 15-minute incident sweep: same state/circuit semantics, no local refund for BQT rows.
   db.prepare('UPDATE platform_ai_request SET createdAt=? WHERE requestId=?').run(new Date(Date.now() - 16 * 60_000).toISOString(), id);
   billing.recoverPending();
@@ -200,51 +199,48 @@ await check('BQT lawyers are limited to one in-flight request (platform and web 
   db.prepare("UPDATE platform_ai_request SET state='released' WHERE requestId=?").run(id);
 });
 
-await check('Web AI: fixed Qwen web model is refused for BQT lawyers (DeepSeek only); denials map through failure()', async () => {
-  const { bqtAuthorize } = await import('@/lib/bqt-ai');
+await check('Web AI (fixed Qwen model) is paid from the wallet for linked lawyers', async () => {
   const input = validateInput({ requestId: randomUUID(), language: 'zh', mode: 'chat', message: 'hi', history: [], document: { id: randomUUID(), version: 0, name: 'a', text: '' } });
-  await bqtAuthorize(lawyer.id, `web_ai:${input.requestId}`, webStore.webReserveCents(input, 10, 1.5));
-  assert.throws(() => webStore.reserveRequest(lawyer.id, input, 10, 1.5), (e: unknown) => e instanceof BqtDenialError && e.code === 'bqt_model_not_allowed');
+  const cents = webStore.webReserveCents(input, 10, 1);
+  const row = webStore.reserveRequest(lawyer.id, input, 10, 1);
+  assert.equal(row.reserveCents, cents); assert.notEqual(JSON.parse(row.fundingJson)?.line, 'bqt');
+  assert.equal(getBalance(lawyer.id), 10000 - cents);
+  webStore.releaseRequest(lawyer.id, input.requestId, 'test');
   assert.equal(getBalance(lawyer.id), 10000);
-  const res = failure(new BqtDenialError('bqt_model_not_allowed'), 'en');
-  assert.equal(res.status, 403); assert.equal((await res.json()).error.code, 'bqt_model_not_allowed');
-  const res2 = failure(new BqtDenialError('bqt_insufficient_points'), 'en');
-  assert.equal(res2.status, 402); assert.equal((await res2.json()).error.code, 'bqt_insufficient_points');
 });
 
-await check('quota view and skill usage reflect BQT, not local credits', async () => {
+await check('quota shows wallet + points; skill usage is charged to the wallet', async () => {
   staleSnapshot(); await m.fetchBqtEntitlement('10001');
   const q = billing.domesticQuota(lawyer.id);
-  assert.equal(q.creditsCents, points); // 100 分/积分 → 百分之一积分数 = 分数
-  assert.equal(q.remainingUsd, Math.floor(points / (10 * 1.5)) / 100);
+  assert.equal(q.creditsCents, getBalance(lawyer.id) + points); // 100 分/积分 → 百分之一积分数 = 分数
+  assert.ok(Math.abs(q.remainingUsd - (getBalance(lawyer.id) / 10 / 100 + points / (10 * 1.5) / 100)) < 0.011);
   const bill = settleAiUsage({ userId: lawyer.id, costUsd: 0, costCny: 0.1, model: 'm', service: 'skill_draft' });
-  assert.equal(bill.charged, false); assert.equal(getBalance(lawyer.id), 10000);
+  assert.equal(bill.charged, true); assert.equal(getBalance(lawyer.id), 10000 - 10);
+  withTransaction(d => grantCredits(d, { userId: lawyer.id, pool: 'topup', amountCents: 10, ledgerKind: 'recharge' }));
   assert.equal(billing.domesticQuota(normal.id).creditsCents, getBalance(normal.id));
 });
 
-await check('BQT lawyers may only use DeepSeek models (2026-11-06 decision)', async () => {
-  const id = randomUUID();
-  await billing.authorizeCostCny(lawyer.id, id, 1);
-  assert.throws(() => billing.reserveCostCny(lawyer.id, id, {}, 'qwen3.8-max', 1, {}), (e: unknown) => e instanceof BqtDenialError && e.code === 'bqt_model_not_allowed' && e.status === 403);
-  assert.equal(billing.requestRow(lawyer.id, id), undefined);
-  // 普通用户不受限
-  const nid = randomUUID();
-  await billing.authorizeCostCny(normal.id, nid, 1);
-  billing.reserveCostCny(normal.id, nid, {}, 'qwen3.8-max', 1, {});
-  billing.release(normal.id, nid);
+await check('non-DeepSeek models are paid from the wallet at the wallet margin (no error)', async () => {
+  const id = randomUUID(), n = count('SELECT COUNT(*) n FROM bqt_consume');
+  await billing.authorizeCostCny(lawyer.id, id, 1, 'qwen3.8-max');
+  const row = billing.reserveCostCny(lawyer.id, id, {}, 'qwen3.8-max', 1, {});
+  assert.equal(walletOnly(id).margin, 1); assert.equal(row.reserveCents, 100);
+  billing.submitted(lawyer.id, id); billing.settleCostCny(lawyer.id, id, 0.5, {});
+  assert.equal(getBalance(lawyer.id), 10000 - 50);
+  assert.equal(count('SELECT COUNT(*) n FROM bqt_consume'), n);
+  withTransaction(d => grantCredits(d, { userId: lawyer.id, pool: 'topup', amountCents: 50, ledgerKind: 'recharge' }));
 });
 
 await check('tunnel off: the lawyer is back on the original wallet path', async () => {
   assert.ok(m.updateBqtSettings({ tunnelEnabled: false }, 'test').ok);
-  assert.equal(m.bqtChargeTarget(lawyer.id), null);
+  assert.equal(m.bqtLinkedLawyer(lawyer.id), null);
   const id = randomUUID(), n = count('SELECT COUNT(*) n FROM bqt_consume');
-  await billing.authorizeCostCny(lawyer.id, id, 1);
+  await billing.authorizeCostCny(lawyer.id, id, 1, 'deepseek-v4.1-flash-1017');
   const row = billing.reserveCostCny(lawyer.id, id, {}, 'deepseek-v4.1-flash-1017', 1, {});
   assert.equal(row.margin, 1); assert.equal(getBalance(lawyer.id), 10000 - 100);
   billing.submitted(lawyer.id, id); billing.settleCostCny(lawyer.id, id, 0.5, {});
   assert.equal(getBalance(lawyer.id), 10000 - 50);
   assert.equal(count('SELECT COUNT(*) n FROM bqt_consume'), n);
-  assert.equal(settleAiUsage({ userId: lawyer.id, costUsd: 0, costCny: 0.1, model: 'm', service: 'skill_draft' }).charged, true);
 });
 
 console.log(`verify-bqt-ai: ${counted} checks OK`);

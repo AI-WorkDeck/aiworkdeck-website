@@ -5,7 +5,6 @@ import { randomUUID } from 'crypto';
 import { getDb, withTransaction } from './db';
 import { subscriptionSnapshot, type ServiceFunding } from './subscription';
 import { siteConfig } from './site-config';
-import { bqtBalanceView, bqtChargeTarget } from './bqt-member';
 
 export const POSTPAID_VERSION = '2026-11-04';
 export interface Policy { userId: string; version: string; acceptedAt: string; epoch: number; frozen: number }
@@ -65,16 +64,13 @@ export function cloudState(userId:string,now=new Date().toISOString()) {
         const accepted=policy?.version===POSTPAID_VERSION;
         const recentCase=c??db.prepare('SELECT * FROM postpaid_case WHERE userId=? ORDER BY openedAt DESC LIMIT 1').get(userId) as Case|undefined;
         const paymentReview=!!db.prepare('SELECT 1 FROM postpaid_payment_review WHERE userId=?').get(userId);
-        // 包晴天线：云空间/流量扣的是包晴天积分，可用额 = 快照积分折分 − 未扣成（会员失效/有失败扣减为 0）。
-        const bqt=bqtChargeTarget(userId,db),bqtView=bqt?bqtBalanceView(userId,bqt.lawyerId):null;
-        const bqtCents=bqt?(bqtView&&bqtView.status==='ACTIVE'&&bqtView.aiWorkbench&&bqtView.failedCount===0?bqtView.cents:0):null;
-        const available=bqtCents??(sub.availableCents+(accepted||sub.walletFallbackEnabled||!sub.active?wallet.n:0)+p.available);
+        const available=sub.availableCents+(accepted||sub.walletFallbackEnabled||!sub.active?wallet.n:0)+p.available;
         // Not accepting keeps the pre-postpaid subscription rules; accepting only adds the postpaid capability.
         const legacy=sub.active&&sub.cloudStorageBytes>0;
         const canUse=accepted?!c&&!policy?.frozen&&available>0:legacy;
         return {
             billing:{policyVersion:POSTPAID_VERSION,accepted,acceptEnabled:process.env.AWD_POSTPAID_ENABLED==='true',acceptedAt:policy?.acceptedAt??null,unit:'credit_cent',cashCurrency:siteConfig.currency,paymentReview,
-                balanceCents:bqt?(bqtView?.cents??0):wallet.n,giftAvailableCents:sub.availableCents,creditLimitCents:p.limit,debtCents:p.debt,reservedCreditCents:p.reserved,availableCreditCents:p.available,
+                balanceCents:wallet.n,giftAvailableCents:sub.availableCents,creditLimitCents:p.limit,debtCents:p.debt,reservedCreditCents:p.reserved,availableCreditCents:p.available,
                 overLimitAt:c?.openedAt??null,remindAt:c?.remindAt??null,cleanupAt:c?.cleanupAt??null,storageMeteredThrough:meter?.throughAt??policy?.acceptedAt??null,
                 storagePrice:{cashCentsPerGiBMonth:siteConfig.id==='intl'?3:20,cashCurrency:siteConfig.currency,periodSeconds:2592000,gibBytes:1073741824},
                 egressPrice:{cashCentsPerGiB:siteConfig.id==='intl'?15:60,cashCurrency:siteConfig.currency,gibBytes:1073741824}},

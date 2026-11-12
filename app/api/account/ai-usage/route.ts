@@ -12,7 +12,7 @@ import { siteConfig } from '@/lib/site-config';
 import { trialBlockReason } from '@/lib/trial';
 import { getUserCircleFirm, getUserMarginMultiplier } from '@/lib/circle-firms';
 import { getBqtQingtianStatus } from '@/lib/bqt-auth';
-import { accountBillingFields, bqtDisplayBalanceCents, refreshBqtSnapshot } from '@/lib/bqt-account';
+import { accountBillingFields, refreshBqtSnapshot } from '@/lib/bqt-account';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,8 +47,6 @@ export async function GET(request: NextRequest) {
     }
     await refreshBqtSnapshot(user.id);
     const bqtQingtian = getBqtQingtianStatus(user.id);
-    // 包晴天线：余额字段报积分折算后的分
-    const bqtCents = bqtDisplayBalanceCents(user.id);
     const circleFirm = getUserCircleFirm(user.id);
     const marginMultiplier = getUserMarginMultiplier(user.id);
     const fx = getExchangeRateInfo();
@@ -80,8 +78,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             ...base,
             usageAvailable: true,
-            creditsCents: bqtCents ?? state.creditsCents,
-            walletBalanceCents: bqtCents ?? getBalance(user.id),
+            creditsCents: state.creditsCents,
+            walletBalanceCents: getBalance(user.id),
             subscription: subscriptionSnapshot(user.id),
             hasKey: state.hasKey,
             limitUsd: state.limitUsd,
@@ -98,8 +96,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             ...base,
             usageAvailable: false,
-            creditsCents: bqtCents ?? (subscriptionSnapshot(user.id).active ? 0 : getAiSpendableBalance(user.id)),
-            walletBalanceCents: bqtCents ?? getBalance(user.id),
+            creditsCents: subscriptionSnapshot(user.id).active ? 0 : getAiSpendableBalance(user.id),
+            walletBalanceCents: getBalance(user.id),
             subscription: subscriptionSnapshot(user.id),
             hasKey: !!existing,
             limitUsd: 0,

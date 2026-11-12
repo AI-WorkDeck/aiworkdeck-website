@@ -3,7 +3,7 @@ import { resolveKeyUser } from '@/lib/account-auth';
 import { listPricing } from '@/lib/gateway/pricing';
 import { pendingHoldCents } from '@/lib/gateway/spend';
 import { getBalance } from '@/lib/credits';
-import { accountBillingFields, bqtDisplayBalanceCents } from '@/lib/bqt-account';
+import { accountBillingFields } from '@/lib/bqt-account';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
         pricing: rows,
-        balanceCents: bqtDisplayBalanceCents(user.id) ?? getBalance(user.id),
+        balanceCents: getBalance(user.id),
         pendingHoldCents: pendingHoldCents(user.id),
         ...accountBillingFields(user.id),
     });

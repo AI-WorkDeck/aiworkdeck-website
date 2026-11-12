@@ -7,31 +7,6 @@ import { syncAiQuota } from '@/lib/ai-quota';
 import { GatewayError } from './errors';
 import { creditsFor, type PricingRow } from './pricing';
 import { getThresholds } from './config';
-import { bqtChargeTarget } from '@/lib/bqt-member';
-import { bqtMemberView, bqtSpendableCents, enqueueBqtServiceCharge, dispatchBqtLater } from '@/lib/bqt-account';
-import { randomUUID } from 'crypto';
-
-/**
- * 包晴天线（通道开着且是扫码绑定的律师）：本站钱包一分不动。
- * 事前按快照余额放行；事后整笔登记到包晴天发件箱、提交后发出。包晴天没有冻结和退款，
- * 所以 ASR 预扣不占钱，hold 行的 holdLedgerId 记 BQT_HOLD（0，wallet_ledger 自增 id 从 1 起，不会撞）。
- */
-const BQT_HOLD = 0;
-const BQT_FRESH_MS = 60_000;
-function assertBqtFunds(userId: string, requiredCents: number): void {
-    // 与 bqtPreflight 同口径：不拿旧快照做花钱判断（路由层先 refreshBqtSnapshot(…, 5s)）。
-    const view = bqtMemberView(userId);
-    if (!view || Date.now() - Date.parse(view.fetchedAt) > BQT_FRESH_MS) {
-        throw new GatewayError('upstream_failed', '包晴天暂时无法连接，稍后再试');
-    }
-    const available = bqtSpendableCents(userId);
-    if (available < requiredCents) {
-        throw new GatewayError('no_credits', '包晴天积分不足或会员不可用，请在包晴天 App 内处理', {
-            balanceCents: available,
-            requiredCents,
-        });
-    }
-}
 
 /**
  * 网关的记账。整个文件只做一件事：把「调了多少上游」变成「扣了多少 Credits」，
@@ -90,7 +65,6 @@ function writeShortfall(
 export function assertBalanceFor(userId: string, estimatedCents: number): ServiceFunding {
     const funding = captureServiceFunding(userId);
     if (estimatedCents <= 0) return funding;
-    if (bqtChargeTarget(userId)) { assertBqtFunds(userId, estimatedCents); return funding; }
     const balance = getSpendableBalance(userId, new Date().toISOString(), funding);
     if (balance < estimatedCents) {
         throw new GatewayError('no_credits', 'Credits 余额不足，到官网充值后即可继续', {
@@ -140,17 +114,6 @@ export interface ChargeResult {
 export function chargeAfterSuccess(input: ChargeInput): ChargeResult {
     const owedCents = creditsFor(input.pricing, input.actualUnits);
     if (owedCents <= 0) return { ledgerId: null, chargedCents: 0, shortfallCents: 0 };
-
-    const bqt = bqtChargeTarget(input.userId);
-    if (bqt) {
-        // 服务已交付：整笔记给包晴天。ledgerId 为 null → 调用方不会走本地退款。
-        const requestNo = withTransaction((d) => enqueueBqtServiceCharge(d, {
-            userId: input.userId, lawyerId: bqt.lawyerId, cents: owedCents,
-            service: `${input.pricing.service}.${input.pricing.op}`, refId: input.taskId ?? randomUUID(),
-        }));
-        dispatchBqtLater(requestNo);
-        return { ledgerId: null, chargedCents: owedCents, shortfallCents: 0 };
-    }
 
     const result = withTransaction((d) => {
         const available = getSpendableBalance(input.userId, new Date().toISOString(), input.funding);
@@ -235,11 +198,6 @@ export function chargeTransfer(input: ChargeTransferInput): LedgerEntry {
     if (!Number.isInteger(input.credits) || input.credits <= 0) {
         throw new GatewayError('bad_request', '扣费金额必须为正整数（分）', { refId: input.refId });
     }
-    // 传输是「先扣、失败再退」，而包晴天积分扣了就退不回来：包晴天线暂不开放跨设备中转计费。
-    if (bqtChargeTarget(input.userId)) {
-        throw new GatewayError('no_credits', '包晴天律师账户暂不支持跨设备中转计费', { refId: input.refId, bqt: true });
-    }
-
     const entry = withTransaction((d) =>
         spendCredits(d, {
             userId: input.userId,
@@ -375,19 +333,6 @@ export function openHold(input: OpenHoldInput): { holdLedgerId: number; heldCent
         input.nowMs + getThresholds().holdTtlMinutes * 60_000
     ).toISOString();
 
-    if (bqtChargeTarget(input.userId)) {
-        assertBqtFunds(input.userId, heldCents);
-        withTransaction((d) => {
-            d.prepare(
-                `INSERT INTO gateway_hold
-                   (taskId, userId, service, op, holdLedgerId, estimatedUnits, status, createdAt, holdExpiresAt, meta)
-                 VALUES (?, ?, ?, ?, ?, ?, 'held', ?, ?, ?)`
-            ).run(input.taskId, input.userId, input.pricing.service, input.pricing.op, BQT_HOLD, input.estimatedUnits,
-                nowIso, expiresIso, input.meta ? JSON.stringify(input.meta) : null);
-        });
-        return { holdLedgerId: BQT_HOLD, heldCents };
-    }
-
     const result = withTransaction((d) => {
         const available = getSpendableBalance(input.userId);
         if (available < heldCents) {
@@ -457,7 +402,6 @@ export interface SettleResult {
  * 回滚等于「服务交付了、我们向上游付过费了、账面上却什么都没发生」。
  */
 export function settleHold(taskId: string, actualUnits: number, pricing: PricingRow): SettleResult {
-    let bqtRequestNo: string | null = null;
     const result = withTransaction((d) => {
         const hold = findHold(taskId, d);
         if (!hold) throw new GatewayError('bad_request', `找不到预扣记录：${taskId}`);
@@ -465,19 +409,6 @@ export function settleHold(taskId: string, actualUnits: number, pricing: Pricing
             // 幂等：已结算/已释放的重复结算请求直接返回零变更，不抛错。
             return { chargedCents: 0, shortfallCents: 0 };
         }
-        if (hold.holdLedgerId === BQT_HOLD) {
-            const owed = creditsFor(pricing, actualUnits);
-            const bqt = bqtChargeTarget(hold.userId, d);
-            if (owed > 0 && bqt) {
-                bqtRequestNo = enqueueBqtServiceCharge(d, { userId: hold.userId, lawyerId: bqt.lawyerId, cents: owed, service: `${hold.service}.${hold.op}`, refId: taskId });
-            } else if (owed > 0) {
-                // 结算前通道被关：这笔包晴天没法再扣，平台承担并留痕。
-                writeShortfall(d, { userId: hold.userId, service: hold.service, op: hold.op, owedCents: owed, takenCents: 0, taskId });
-            }
-            d.prepare("UPDATE gateway_hold SET status = 'settled', settledAt = ? WHERE taskId = ?").run(new Date().toISOString(), taskId);
-            return { chargedCents: bqt ? owed : 0, shortfallCents: bqt ? 0 : owed };
-        }
-
         const original = d.prepare('SELECT meta FROM wallet_ledger WHERE id = ?').get(hold.holdLedgerId) as { meta: string | null };
         // Legacy holds predate subscriptions and were wallet-funded. New holds retain explicit consent and period.
         const funding: ServiceFunding = (original.meta ? JSON.parse(original.meta).funding : null)
@@ -525,7 +456,6 @@ export function settleHold(taskId: string, actualUnits: number, pricing: Pricing
         return { chargedCents: takeCents, shortfallCents: owedCents - takeCents };
     });
 
-    dispatchBqtLater(bqtRequestNo);
     const hold = findHold(taskId);
     if (hold) resyncAiQuota(hold.userId);
     return result;
@@ -536,7 +466,7 @@ export function releaseHold(taskId: string, reason: string): void {
     const userId = withTransaction((d) => {
         const hold = findHold(taskId, d);
         if (!hold || hold.status !== 'held') return null;
-        if (hold.holdLedgerId !== BQT_HOLD) refundSpend(d, hold.holdLedgerId, {
+        refundSpend(d, hold.holdLedgerId, {
             ledgerKind: 'adjust',
             meta: { phase: 'hold_release', taskId, reason },
         });

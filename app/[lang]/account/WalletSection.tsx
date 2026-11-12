@@ -172,7 +172,6 @@ export function WalletSection({ lang, dict }: { lang: Locale; dict: any }) {
     const credits = (cents: number) => (cents / 100).toLocaleString(dateLocale, { maximumFractionDigits: 2 });
 
     const totalPages = data ? Math.max(Math.ceil(data.total / PAGE_SIZE), 1) : 1;
-    const isBqt = data?.billingLine === 'bqt';
     const tb = t.bqtMember;
     const bqt = data?.bqtMember;
 
@@ -212,25 +211,18 @@ export function WalletSection({ lang, dict }: { lang: Locale; dict: any }) {
                             </p>
                         )}
                     </div>
-                    {isBqt ? (
-                        <p className="max-w-xs text-xs leading-relaxed text-neutral-gray-medium">{tb.rechargeHint}</p>
-                    ) : (
-                        <Button
-                            onClick={() => setRechargeOpen(true)}
-                            className="bg-king-forest hover:bg-king-forest/90 font-bold"
-                        >
-                            {t.recharge}
-                        </Button>
-                    )}
+                    <Button
+                        onClick={() => setRechargeOpen(true)}
+                        className="bg-king-forest hover:bg-king-forest/90 font-bold"
+                    >
+                        {t.recharge}
+                    </Button>
                 </div>
             </div>
 
-            {isBqt && (
+            {bqt && (
                 <section className="mb-6 rounded-xl border border-king-mint bg-king-mint/10 p-5" aria-label={tb.title}>
                     <h3 className="font-semibold text-king-forest">{tb.title}</h3>
-                    {!bqt ? (
-                        <p className="mt-1.5 text-sm text-neutral-gray-medium">{tb.unavailable}</p>
-                    ) : (
                         <>
                             <p className="mt-1.5 text-sm text-neutral-dark-bg">
                                 {tb.levelLabel}: {bqt.levelCode ? tb.levels[bqt.levelCode] : tb.levels.none}
@@ -258,11 +250,11 @@ export function WalletSection({ lang, dict }: { lang: Locale; dict: any }) {
                             {data?.subscription?.source === 'bqt' && (
                                 <p className="mt-1 text-sm text-king-forest">{tb.proRights}</p>
                             )}
+                            <p className="mt-1 text-sm text-neutral-gray-dark">{tb.priorityHint}</p>
                             <p className="mt-2 text-xs text-neutral-gray-medium">
                                 {tb.fetchedAt.replace('{time}', new Date(bqt.fetchedAt).toLocaleString(dateLocale))}
                             </p>
                         </>
-                    )}
                 </section>
             )}
 
@@ -304,7 +296,7 @@ export function WalletSection({ lang, dict }: { lang: Locale; dict: any }) {
                 </section>
             )}
 
-            {data?.subscription && !isBqt && <div className="mb-6">
+            {data?.subscription && data.subscription.source !== 'bqt' && <div className="mb-6">
                     <label className="mt-4 flex items-start gap-2 text-sm">
                         <input type="checkbox" checked={data.subscription.walletFallbackEnabled} disabled={savingSubscription} onChange={e => setFallback(e.target.checked)} className="mt-1" />
                         <span>{t.proFallbackToggleLabel}</span>
@@ -402,7 +394,7 @@ export function WalletSection({ lang, dict }: { lang: Locale; dict: any }) {
                 </>
             )}
 
-            {!isBqt && <RechargeDialog
+            <RechargeDialog
                 open={rechargeOpen}
                 onOpenChange={setRechargeOpen}
                 dict={dict}
@@ -410,7 +402,7 @@ export function WalletSection({ lang, dict }: { lang: Locale; dict: any }) {
                     setPage(0);
                     load(0);
                 }}
-            />}
+            />
         </div>
     );
 }

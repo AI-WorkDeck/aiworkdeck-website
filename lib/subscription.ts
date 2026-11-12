@@ -57,7 +57,8 @@ export function subscriptionSnapshot(userId: string, now = new Date().toISOStrin
     const base: SubscriptionSnapshot = { active: !!p, expiresAt: p ? entitlement?.expiresAt ?? null : null, periodId: p?.id ?? null, periodStart: p?.startsAt ?? null, periodEnd: p?.endsAt ?? null, monthlyLimitCents: p?.monthlyCents ?? 0, monthlyUsedCents: 0, weeklyStart: null, weeklyEnd: null, weeklyLimitCents: p?.weeklyCents ?? 0, weeklyUsedCents: 0, availableCents: 0, walletFallbackEnabled: !!fallback?.walletFallbackEnabled, cloudStorageBytes: p ? SUBSCRIPTION_LIMITS.cloudStorageBytes : 0, relayBytes: SUBSCRIPTION_LIMITS.relayBytes, autoRenew: appstoreRenewalSnapshot(userId, d) };
     if (!p) {
         const bqtUntil = bqtProRightsUntil(userId, now);
-        return bqtUntil ? { ...base, active: true, expiresAt: bqtUntil, cloudStorageBytes: SUBSCRIPTION_LIMITS.cloudStorageBytes, source: 'bqt' } : base;
+        // 包晴天来的 Pro 没有本站月度额度：花费一律可以走钱包（否则积分用完就什么都用不了）。
+        return bqtUntil ? { ...base, active: true, expiresAt: bqtUntil, cloudStorageBytes: SUBSCRIPTION_LIMITS.cloudStorageBytes, walletFallbackEnabled: true, source: 'bqt' } : base;
     }
     const weekStart = new Date(Date.parse(p.startsAt) + Math.floor((Date.parse(now) - Date.parse(p.startsAt)) / (7 * DAY)) * 7 * DAY).toISOString();
     const weekEnd = new Date(Math.min(Date.parse(p.endsAt), Date.parse(weekStart) + 7 * DAY)).toISOString();

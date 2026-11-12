@@ -1453,11 +1453,10 @@
       "points": "{points} puntos",
       "credits": "equivale a {amount}",
       "outstanding": "Pendiente de cobro: {amount}",
-      "failed": "{count} cargo(s) de puntos no se completaron. Recarga puntos en la app Baoqingtian; los nuevos gastos quedan en pausa hasta resolverlo.",
-      "aiClosed": "Tu membresía no incluye el AI workbench, así que no puede usarse para pagar aquí.",
+      "failed": "{count} deducción(es) de puntos no se completaron. Hasta que se resuelvan, el uso de DeepSeek se paga con el saldo de tu cuenta.",
+      "aiClosed": "Tu membresía no incluye el banco de trabajo de IA, así que el uso de DeepSeek se paga con el saldo de tu cuenta.",
       "proRights": "Incluye las ventajas Pro (3 GB de almacenamiento en la nube) mientras la membresía esté activa.",
-      "rechargeHint": "Recarga puntos o renueva la membresía en la app Baoqingtian. Este sitio no acepta pagos directos para cuentas Baoqingtian.",
-      "unavailable": "La información de la membresía no está disponible por ahora. Inténtalo más tarde.",
+      "priorityHint": "El uso de DeepSeek se paga primero con tus puntos de Baoqingtian; cuando se agotan, se usa automáticamente el saldo de tu cuenta. Los demás modelos y servicios usan el saldo de tu cuenta.",
       "fetchedAt": "Actualizado {time}"
     }
   },
@@ -1477,9 +1476,7 @@
     "failed": "El pago ha fallado",
     "retry": "Reintentar",
     "creating": "Creando el pedido…",
-    "amountLabel": "Importe",
-    "bqtConfirm": "¿Pagar {amount} con puntos Baoqingtian?",
-    "bqtPay": "Pagar con puntos"
+    "amountLabel": "Importe"
   },
   "supportDialog": {
     "orderUnavailable": "No se ha podido encontrar esta donación. Comprueba el enlace de retorno o vuelve al dispositivo donde iniciaste el pago.",

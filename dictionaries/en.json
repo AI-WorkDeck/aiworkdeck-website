@@ -1453,11 +1453,10 @@
       "points": "{points} points",
       "credits": "worth {amount}",
       "outstanding": "Not yet deducted: {amount}",
-      "failed": "{count} point deduction(s) did not go through. Top up points in the Baoqingtian app; new spending is paused until this is resolved.",
-      "aiClosed": "Your membership does not include the AI workbench, so it cannot be used for spending here.",
+      "failed": "{count} points deduction(s) did not go through. Until resolved, DeepSeek usage is paid from your account balance.",
+      "aiClosed": "Your membership does not include the AI workbench, so DeepSeek usage is paid from your account balance.",
       "proRights": "Includes Pro benefits (3 GB cloud storage) while your membership is active.",
-      "rechargeHint": "Top up points or renew your membership in the Baoqingtian app. This site does not take direct payment for Baoqingtian accounts.",
-      "unavailable": "Membership info is temporarily unavailable. Try again later.",
+      "priorityHint": "DeepSeek usage is paid from your Baoqingtian points first; when points run out it automatically uses your account balance. Other models and services use your account balance.",
       "fetchedAt": "Updated {time}"
     }
   },
@@ -1477,9 +1476,7 @@
     "failed": "Payment failed",
     "retry": "Retry",
     "creating": "Creating order…",
-    "amountLabel": "Amount",
-    "bqtConfirm": "Pay {amount} with Baoqingtian points?",
-    "bqtPay": "Pay with points"
+    "amountLabel": "Amount"
   },
   "supportDialog": {
     "orderUnavailable": "This donation could not be found. Check the return link or return to the device where you started checkout.",

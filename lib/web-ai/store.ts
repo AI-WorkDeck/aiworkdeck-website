@@ -7,8 +7,6 @@ import { getDb, withTransaction } from '@/lib/db';
 import { spendCredits, refundSpend, InsufficientCreditsError } from '@/lib/credits';
 import { captureServiceFunding, type ServiceFunding } from '@/lib/subscription';
 import { WebError, WEB_MODEL, reserveUsdFor, type WebInput } from './contract';
-import { bqtChargeTarget, enqueueConsume } from '@/lib/bqt-member';
-import { assertBqtModel, bqtFunding, bqtFundingJson, bqtHasActiveRequest, bqtReserveLedgerId, bqtTakeApproval, dispatchBqtConsume } from '@/lib/bqt-ai';
 export interface WebRequestRow {
   userId: string; requestId: string; payloadHash: string; state: 'reserved' | 'submitted' | 'usage_pending' | 'settled' | 'released' | 'refunded_pending';
   model: string; reserveCents: number; reserveLedgerId: number; fundingJson: string; exchangeRate: number; margin: number;
@@ -46,15 +44,11 @@ function stopAgentRun(userId: string, requestId: string) {
 export const payloadHash = (input: WebInput) => createHash('sha256').update(JSON.stringify(input)).digest('hex');
 export function getRequest(userId: string, requestId: string) { return getDb().prepare('SELECT * FROM web_ai_request WHERE userId=? AND requestId=?').get(userId, requestId) as WebRequestRow | undefined; }
 export const webReserveCents = (input: WebInput, exchangeRate: number, margin: number) => Math.ceil(reserveUsdFor(input) * exchangeRate * margin * 100);
-/** BQT lawyers: the caller must first await bqtAuthorize(userId, `web_ai:${requestId}`, webReserveCents(...)) with the BQT margin. */
 export function reserveRequest(userId: string, input: WebInput, exchangeRate: number, margin: number, now = new Date().toISOString()): WebRequestRow {
   if (![exchangeRate, margin].every(n => Number.isFinite(n) && n > 0)) throw new WebError('ai_unavailable', 503);
   const reserveCents = webReserveCents(input, exchangeRate, margin), hash = payloadHash(input);
   if (!Number.isSafeInteger(reserveCents) || reserveCents < 1 || reserveCents > 10000) throw new WebError('ai_unavailable', 503);
   if (input.mode === 'agent' && (!input.agentBudget || input.agentBudget.currency !== siteConfig.currency || reserveCents > input.agentBudget.perGenerationMaxChargeCents || (input.agentStep === 0 && reserveCents !== input.agentBudget.perGenerationMaxChargeCents))) throw new WebError('price_changed', 409);
-  const bqt = bqtChargeTarget(userId);
-  if (bqt) assertBqtModel(WEB_MODEL);
-  if (bqt && Number.isSafeInteger(reserveCents) && reserveCents >= 1 && reserveCents <= 10000) bqtTakeApproval(userId, `web_ai:${input.requestId}`, reserveCents);
   return withTransaction(db => {
     const prior = getRequest(userId, input.requestId);
     if (prior) throw new WebError(prior.payloadHash === hash ? 'request_exists' : 'request_conflict', 409);
@@ -62,17 +56,11 @@ export function reserveRequest(userId: string, input: WebInput, exchangeRate: nu
     const globalActive = db.prepare("SELECT COUNT(*) n FROM web_ai_request WHERE state IN ('reserved','submitted','usage_pending')").get() as { n:number };
     if (globalActive.n >= 8) throw new WebError('busy',429);
     if (db.prepare("SELECT 1 FROM web_ai_request WHERE userId=? AND state IN ('reserved','submitted','usage_pending')").get(userId)) throw new WebError('busy', 409);
-    if (bqt && bqtHasActiveRequest(db, userId)) throw new WebError('busy', 409);
     const minute = new Date(Date.parse(now) - 60_000).toISOString(), day = now.slice(0, 10);
     const counts = db.prepare('SELECT SUM(createdAt >= ?) minute, COUNT(*) day FROM web_ai_request WHERE userId=? AND createdAt>=?').get(minute, userId, day) as { minute: number; day: number };
     const minuteLimit = input.mode === 'agent' ? 24 : 6, dayLimit = input.mode === 'agent' ? 160 : 80;
     if (counts.minute >= minuteLimit || counts.day >= dayLimit) throw new WebError('rate_limited', 429);
     reserveAgentStep(db,userId,input,reserveCents,now);
-    if (bqt) {
-      // BQT line: points only, the wallet is never touched.
-      db.prepare(`INSERT INTO web_ai_request(userId,requestId,payloadHash,state,model,reserveCents,reserveLedgerId,fundingJson,exchangeRate,margin,createdAt,updatedAt) VALUES (?,?,?,'reserved',?,?,?,?,?,?,?,?)`).run(userId,input.requestId,hash,WEB_MODEL,reserveCents,bqtReserveLedgerId(db),bqtFundingJson(bqt.lawyerId),exchangeRate,margin,now,now);
-      return getRequest(userId,input.requestId)!;
-    }
     const funding = captureServiceFunding(userId, now);
     let ledger;
     try { ledger = spendCredits(db, { userId, amountCents: reserveCents, funding, ledgerKind: 'service_spend', nowIso: now, meta: { service: 'web_ai', phase: 'reserve', requestId: input.requestId, model: WEB_MODEL, ...(input.mode === 'agent' ? { runId: input.agentContext!.runId, agentStep: input.agentStep } : {}) } }); }
@@ -101,15 +89,14 @@ export function releaseRequest(userId: string, requestId: string, code: string, 
     if (row.state === 'released' || row.state === 'settled' || row.state === 'refunded_pending') return row;
     if (row.state !== 'reserved' && !providerRejected) throw new Error('Cannot release an uncertain upstream request');
     stopAgentRun(userId,requestId);
-    if (!bqtFunding(row.fundingJson)) refundSpend(db,row.reserveLedgerId,{ meta: { service: 'web_ai',phase: 'release',requestId,reason: code } });
+    refundSpend(db,row.reserveLedgerId,{ meta: { service: 'web_ai',phase: 'release',requestId,reason: code } });
     db.prepare("UPDATE web_ai_request SET state='released',chargedCents=0,errorCode=?,updatedAt=? WHERE userId=? AND requestId=?").run(code,new Date().toISOString(),userId,requestId);
     return getRequest(userId,requestId)!;
   });
 }
 export function settleRequest(userId: string, requestId: string, costUsd: number) {
   if (!Number.isFinite(costUsd) || costUsd < 0) throw new WebError('usage_pending',503);
-  let requestNo: string | undefined;
-  const settled = withTransaction(db => {
+  return withTransaction(db => {
     const row = getRequest(userId,requestId)!;
     if (row.state === 'settled') return row;
     if (!['submitted','usage_pending'].includes(row.state)) throw new Error('Request has not been submitted');
@@ -120,12 +107,6 @@ export function settleRequest(userId: string, requestId: string, costUsd: number
       markPending(userId,requestId,'cost_cap_exceeded'); return getRequest(userId,requestId)!;
     }
     const settledAt = new Date().toISOString();
-    const bqt = bqtFunding(row.fundingJson);
-    if (bqt) {
-      if (cents > 0) requestNo = enqueueConsume(db, { userId, lawyerId: bqt.lawyerId, cents, service: 'web_ai', refId: `${userId}:${requestId}` }).requestNo;
-      db.prepare("UPDATE web_ai_request SET state='settled',costUsd=?,chargedCents=?,chargeLedgerId=NULL,errorCode=NULL,updatedAt=? WHERE userId=? AND requestId=?").run(costUsd,cents,settledAt,userId,requestId);
-      return getRequest(userId,requestId)!;
-    }
     refundSpend(db,row.reserveLedgerId,{ meta: { service: 'web_ai',phase: 'unreserve',requestId } });
     const ledger = cents > 0 ? spendCredits(db,{ userId,amountCents:cents,funding:JSON.parse(row.fundingJson) as ServiceFunding,ledgerKind:'service_spend',
       // Re-debit at original authorization time, including lots that expired during generation.
@@ -134,8 +115,6 @@ export function settleRequest(userId: string, requestId: string, costUsd: number
     db.prepare("UPDATE web_ai_request SET state='settled',costUsd=?,chargedCents=?,chargeLedgerId=?,errorCode=NULL,updatedAt=? WHERE userId=? AND requestId=?").run(costUsd,cents,ledger?.id ?? null,settledAt,userId,requestId);
     return getRequest(userId,requestId)!;
   });
-  dispatchBqtConsume(requestNo);
-  return settled;
 }
 export function receipt(row: WebRequestRow) {
   return { requestId:row.requestId,state:row.state,model:row.model,reservedCents:row.reserveCents,
@@ -154,7 +133,7 @@ export function refundUnverified(userId:string,requestId:string,now=new Date().t
   return withTransaction(db=>{
     const row=getRequest(userId,requestId)!;
     if(!['submitted','usage_pending'].includes(row.state) || Date.parse(now)-Date.parse(row.createdAt)<RECONCILIATION_DEADLINE_MS)return row;
-    if(!bqtFunding(row.fundingJson))refundSpend(db,row.reserveLedgerId,{meta:{service:'web_ai',phase:'incident_refund',requestId,reason:'unverified_usage'}});
+    refundSpend(db,row.reserveLedgerId,{meta:{service:'web_ai',phase:'incident_refund',requestId,reason:'unverified_usage'}});
     db.prepare("UPDATE web_ai_request SET state='refunded_pending',chargedCents=0,errorCode='refunded_unverified',updatedAt=? WHERE userId=? AND requestId=?").run(now,userId,requestId);
     return getRequest(userId,requestId)!;
   });

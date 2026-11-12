@@ -1453,11 +1453,10 @@
       "points": "{points} pontos",
       "credits": "equivale a {amount}",
       "outstanding": "Ainda não debitado: {amount}",
-      "failed": "{count} débito(s) de pontos não foram concluídos. Recarregue pontos no app Baoqingtian; novos gastos ficam suspensos até resolver.",
-      "aiClosed": "Sua assinatura não inclui o AI workbench, então não pode ser usada para pagar aqui.",
+      "failed": "{count} dedução(ões) de pontos não foram concluídas. Até serem resolvidas, o uso do DeepSeek é pago com o saldo da conta.",
+      "aiClosed": "Sua assinatura não inclui a bancada de IA, então o uso do DeepSeek é pago com o saldo da conta.",
       "proRights": "Inclui os benefícios Pro (3 GB de armazenamento em nuvem) enquanto a assinatura estiver ativa.",
-      "rechargeHint": "Recarregue pontos ou renove a assinatura no app Baoqingtian. Este site não aceita pagamento direto para contas Baoqingtian.",
-      "unavailable": "Informações da assinatura indisponíveis no momento. Tente novamente mais tarde.",
+      "priorityHint": "O uso do DeepSeek é pago primeiro com seus pontos Baoqingtian; quando acabam, o saldo da sua conta é usado automaticamente. Outros modelos e serviços usam o saldo da conta.",
       "fetchedAt": "Atualizado {time}"
     }
   },
@@ -1477,9 +1476,7 @@
     "failed": "Pagamento falhou",
     "retry": "Tentar novamente",
     "creating": "Criando pedido…",
-    "amountLabel": "Valor",
-    "bqtConfirm": "Pagar {amount} com pontos Baoqingtian?",
-    "bqtPay": "Pagar com pontos"
+    "amountLabel": "Valor"
   },
   "supportDialog": {
     "orderUnavailable": "Esta doação não foi encontrada. Verifique o link de retorno ou volte ao dispositivo onde você iniciou o checkout.",

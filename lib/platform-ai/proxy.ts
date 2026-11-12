@@ -9,8 +9,7 @@ import { InsufficientCreditsError } from '../credits';
 import { pickLangText, resolveRequestLocale } from '../api-locale';
 import { canCircleUserCallOverseasModel } from '../circle-firms';
 import { getAiConfig } from '../ai-config';
-import { bqtChargeTarget } from '../bqt-member';
-import { BQT_ERROR_TEXT, BqtDenialError } from '../bqt-ai';
+import { bqtLinkedLawyer } from '../bqt-member';
 type Obj=Record<string,any>;
 export class AiGatewayError extends Error { constructor(public code:string,public status=400){super(code);} }
 const errors:Record<string,[string,string]>={
@@ -27,11 +26,10 @@ const errors:Record<string,[string,string]>={
   model_not_activated:['平台尚未开通此模型，请选择其他模型','The platform has not activated this model. Choose another model'],
   upstream_permission_denied:['平台暂无此模型的调用权限，请选择其他模型','The platform does not have permission to use this model. Choose another model'],
   upstream_failed:['模型服务暂时不可用','Model service is temporarily unavailable'],input_too_large:['输入内容超过模型请求上限','Input exceeds the model request limit'],
-  ...BQT_ERROR_TEXT,
 };
 export function gatewayError(error:unknown,request:Request) {
   const code=error instanceof InsufficientCreditsError?'no_credits':error instanceof Error && errors[error.message]?error.message:'upstream_failed';
-  const status=error instanceof AiGatewayError||error instanceof BqtDenialError?error.status:(code==='no_credits'||code==='circle_paid_credits_required')?402:code==='unauthorized'?401:code==='busy'?429:code==='request_already_submitted'||code==='request_id_conflict'?409:503;
+  const status=error instanceof AiGatewayError?error.status:(code==='no_credits'||code==='circle_paid_credits_required')?402:code==='unauthorized'?401:code==='busy'?429:code==='request_already_submitted'||code==='request_id_conflict'?409:503;
   const [zh,en]=errors[code]||errors.upstream_failed;
   return Response.json({error:{code,type:code,message:pickLangText(resolveRequestLocale(request),zh,en)}},{status,headers:{'Cache-Control':'no-store'}});
 }
@@ -117,7 +115,7 @@ export function validateChat(raw:Obj,model:PlatformModel) {
 export async function chatCompletion(userId:string,request:Request,fetcher:typeof fetch=fetch):Promise<Response> {
   const isBailian=platformProvider()==='bailian';
   // BQT lawyers are gated by BQT preflight, not by the local-credits trial.
-  if(!bqtChargeTarget(userId)&&trialBlockReason(userId))throw new AiGatewayError('no_credits',402);
+  if(!bqtLinkedLawyer(userId)&&trialBlockReason(userId))throw new AiGatewayError('no_credits',402);
   const raw=await readChatBody(request);
   if(isBailian&&raw?.model==='qwen-image-3.0') {
     const config=bailianConfig();if(!config.apiKey||!config.baseUrl)throw new AiGatewayError('not_configured',503);

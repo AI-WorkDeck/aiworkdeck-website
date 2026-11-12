@@ -6,7 +6,7 @@ import { getSessionUser } from '@/lib/sessions';
 import { getBalance, getBalanceBreakdown, listLedger } from '@/lib/wallet';
 import { getUserCircleFirm } from '@/lib/circle-firms';
 import { getBqtQingtianStatus } from '@/lib/bqt-auth';
-import { accountBillingFields, bqtDisplayBalanceCents, refreshBqtSnapshot } from '@/lib/bqt-account';
+import { accountBillingFields, refreshBqtSnapshot } from '@/lib/bqt-account';
 
 /**
  * 账户页钱包数据（awd_session Cookie 鉴权，浏览器用）。
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
   });
   return NextResponse.json({
     ...cloudState(user.id),
-    balanceCents: bqtDisplayBalanceCents(user.id) ?? getBalance(user.id),
+    balanceCents: getBalance(user.id),
     ...accountBillingFields(user.id),
     subscription: accountSubscriptionView(user.id),
     breakdown: getBalanceBreakdown(user.id),
