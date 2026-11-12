@@ -3,7 +3,11 @@
 
 export const TEMPORARY_PROJECT_ID = "temporary-project";
 
-const DATABASE_NAME = "ai-workdeck-web-workbench";
+// Before per-account scoping every user shared this single database name.
+export const LEGACY_DATABASE_NAME = "ai-workdeck-web-workbench";
+export const GUEST_SCOPE = "guest";
+const SCOPED_PREFIX = LEGACY_DATABASE_NAME + ":";
+const databaseName = (scope) => SCOPED_PREFIX + scope;
 const DATABASE_VERSION = 1;
 const PROJECTS = "projects";
 const FILES = "files";
@@ -39,9 +43,9 @@ function requestResult(request) {
   });
 }
 
-function openDatabase(indexedDB) {
+function openDatabase(indexedDB, name) {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
+    const request = indexedDB.open(name, DATABASE_VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(PROJECTS)) db.createObjectStore(PROJECTS, { keyPath: "id" });
@@ -62,9 +66,74 @@ function id() {
   return globalThis.crypto.randomUUID();
 }
 
-export async function openWorkspace({ indexedDB = globalThis.indexedDB } = {}) {
+function validateScope(scope) {
+  if (typeof scope !== "string" || !/^[a-z0-9-]{1,64}$/.test(scope)) throw new TypeError("invalid storage scope");
+  return scope;
+}
+
+function deleteDatabase(indexedDB, name) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(name);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error || new Error("Unable to delete workspace database"));
+    request.onblocked = () => reject(new Error("Workspace database deletion is blocked by another tab"));
+  });
+}
+
+async function databaseNames(indexedDB) {
+  if (typeof indexedDB.databases !== "function") return null;
+  return (await indexedDB.databases()).map((d) => d.name);
+}
+
+/** Scopes (guest and account hashes) that have a local database in this browser. */
+export async function listScopes({ indexedDB = globalThis.indexedDB } = {}) {
+  const names = (await databaseNames(indexedDB)) || [];
+  return names.filter((n) => n.startsWith(SCOPED_PREFIX)).map((n) => n.slice(SCOPED_PREFIX.length));
+}
+
+/** Permanently removes one scope's database. */
+export function deleteScope(scope, { indexedDB = globalThis.indexedDB } = {}) {
+  return deleteDatabase(indexedDB, databaseName(validateScope(scope)));
+}
+
+/**
+ * Moves the pre-scoping shared database into `scope` (the first account that signs in
+ * after the upgrade), then removes it. Copy uses put(), so an interrupted run can be
+ * repeated safely; the legacy database is deleted only after the copy committed.
+ * Returns true when something was adopted.
+ */
+export async function adoptLegacyDatabase(scope, { indexedDB = globalThis.indexedDB } = {}) {
+  if (validateScope(scope) === GUEST_SCOPE) return false;
+  const names = await databaseNames(indexedDB);
+  if (names && !names.includes(LEGACY_DATABASE_NAME)) return false;
+  const legacy = await openDatabase(indexedDB, LEGACY_DATABASE_NAME);
+  const stores = [PROJECTS, FILES, SETTINGS].filter((n) => legacy.objectStoreNames.contains(n));
+  const rows = {};
+  try {
+    if (stores.length) {
+      const tx = legacy.transaction(stores, "readonly");
+      for (const n of stores) rows[n] = await requestResult(tx.objectStore(n).getAll());
+    }
+  } finally { legacy.close(); }
+  if (stores.length) {
+    const target = await openDatabase(indexedDB, databaseName(scope));
+    try {
+      const tx = target.transaction(stores, "readwrite");
+      const done = new Promise((resolve, reject) => {
+        tx.oncomplete = resolve;
+        tx.onabort = () => reject(tx.error || new Error("Migration aborted"));
+      });
+      for (const n of stores) for (const row of rows[n]) tx.objectStore(n).put(row);
+      await done;
+    } finally { target.close(); }
+  }
+  await deleteDatabase(indexedDB, LEGACY_DATABASE_NAME);
+  return stores.some((n) => rows[n].length > 0);
+}
+
+export async function openWorkspace({ indexedDB = globalThis.indexedDB, scope = GUEST_SCOPE } = {}) {
   if (!indexedDB) throw new Error("IndexedDB is unavailable");
-  const db = await openDatabase(indexedDB);
+  const db = await openDatabase(indexedDB, databaseName(validateScope(scope)));
   let closed = false;
 
   function run(stores, mode, work) {

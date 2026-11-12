@@ -4,7 +4,8 @@ import './style.css';
 import {readLocalFile} from './import-file.js';
 import {ConversationStore} from './conversations.js';
 import {progressView} from './boot-progress-view.js';
-import {openWorkspace,TEMPORARY_PROJECT_ID} from './storage.js';
+import {openWorkspace,TEMPORARY_PROJECT_ID,GUEST_SCOPE,adoptLegacyDatabase,listScopes,deleteScope} from './storage.js';
+import {resolveScope,exportScopeZip,countScopeFiles,mayLeaveScope} from './account-scope.js';
 import {projectLocales,projectLocale} from './project-locales.js';
 import {EditorSession} from './editor.js';
 import {createDocument,validateDocx,downloadFile} from './docx.js';
@@ -23,7 +24,7 @@ const icons={folder:'<path d="M3 7h6l2 2h10v11H3z"/><path d="M3 7V4h6l2 3"/>',fi
 const icon=(name)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]||icons.file}</svg>`;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const button=(action,name,label,cls='icon-button')=>`<button type="button" class="${cls}" data-action="${action}" aria-label="${esc(label)}" title="${esc(label)}">${icon(name)}${cls==='icon-button'?'':`<span>${esc(label)}</span>`}</button>`;
-const state={store:null,session:null,projects:[],projectId:null,files:[],tabs:[],activeId:null,busy:false,booting:true,messages:[],aiRunning:false,selection:null,controller:null,capabilities:null};
+const state={scope:null,store:null,session:null,projects:[],projectId:null,files:[],tabs:[],activeId:null,busy:false,booting:true,messages:[],aiRunning:false,selection:null,controller:null,capabilities:null};
 document.querySelector('#app').innerHTML=`
  <header class="topbar"><a class="brand" href="/${language}" aria-label="AI WorkDeck"><span class="brand-mark">W<span>·</span></span><strong>AI WorkDeck</strong><span class="web-badge">WEB</span></a><div class="top-divider"></div><span class="workspace-name">${t('工作台','Workspace')}</span><div class="top-spacer"></div><span class="local-label"><i></i>${t('本浏览器保存','Saved in this browser')}</span><a class="language-link" href="?lang=${en?'zh':'en'}">${en?'中文':'EN'}</a><a class="desktop-link" href="/${language}/start" target="_blank" rel="noopener noreferrer" aria-label="${t('下载桌面端（在新标签页打开）','Download desktop (opens in a new tab)')}">${icon('download')}${t('下载桌面端','Download desktop')}</a><a class="account-link" id="account-link" href="/${language}/account?next=${encodeURIComponent('/web/?lang='+language)}">${t('账户与额度','Account & credits')}</a></header>
  <div class="layout"><nav class="activity-bar" aria-label="${t('面板','Panels')}">${button('toggle-files','folder',t('项目文件','Project files'),'activity-button active')}${button('toggle-ai','spark',t('AI 助手','AI assistant'),'activity-button')}<div class="activity-spacer"></div><a class="activity-button" href="/web/UPSTREAM.md" target="_blank" title="${t('开源与许可','Source & licenses')}" aria-label="${t('开源与许可','Source & licenses')}">ⓘ</a></nav>
@@ -42,7 +43,7 @@ let activeAgentRun=null,restorableAgentRun=null;
 let importing=null,importRetry=null,historyStore=null,historyBusy=false;
 const errorText=e=>{
  const code=e?.name==='QuotaExceededError'?e.name:e?.code||e?.message||'';
- const map={QuotaExceededError:t('浏览器存储空间不足。请先备份重要文档，再释放空间后重试。','Browser storage is full. Back up important documents, free space, and retry.'),FILE_READ_TIMEOUT:t('读取超时。若文件在 iCloud 或其他云盘，请先下载到本机后重试。','Reading timed out. Download cloud-drive files to this device, then retry.'),FILE_READ_FAILED:t('无法读取文件，请确认文件已下载到本机且有读取权限。','Cannot read the file. Make sure it is downloaded and readable.'),DOCUMENT_TOO_LARGE:t('正文超过首版 AI 上下文限制；手动编辑和下载仍可用。','The body text exceeds this version’s AI context limit. Manual editing and download remain available.'),INCOMPLETE_DOCUMENT:t('正文未能完整读取，未发送给 AI。','The body text could not be read completely and was not sent to AI.'),VERSION_CONFLICT:t('此文档已在另一个窗口更新。当前稿仍在编辑器中，请先下载备份，再重新打开。','This document changed in another window. Download your current draft before reopening.'),STALE_PROPOSAL:t('文档或选区已变化。请重新选择文字并请求建议。','The document or selection has changed. Select the passage and request a new suggestion.'),AMBIGUOUS_SELECTION:t('无法唯一定位这段文字。请只选择同一段落中唯一的一处内容。','The passage could not be located uniquely. Select unique text within a single paragraph.'),REPLACEMENT_VERIFICATION_FAILED:t('修改回读未通过，已撤销本次修改。请核对文档后重试。','The change could not be verified and was undone. Check the document before retrying.'),DOCUMENT_CHANGED:t('读取期间文档发生变化，请稍后重试。','The document changed while reading. Please try again.'),NO_DOCUMENT:t('请先打开一份文档。','Open a document first.'),INVALID_DOCX:t('这不是可读取的 DOCX 文件。请检查文件格式或是否加密。','This is not a readable DOCX. Check its format or encryption.'),FILE_TOO_LARGE:t('首版支持 20 MB 以内的 DOCX。','This version supports DOCX files up to 20 MB.'),AI_STREAM_INTERRUPTED:t('连接中断，回复尚未完成。请核对文档改动记录和费用状态。','The connection ended before the reply completed. Check document changes and billing status before another request.'),EDITOR_BOOT_TIMEOUT:t('编辑器在十分钟内未能完成加载。请检查网络后重试。','The editor could not finish loading within ten minutes. Check your connection and retry.'),EDITOR_BOOT_FAILED:t('编辑器未能加载。请检查网络后重试。','The editor could not load. Check your connection and retry.'),EDITOR_ENGINE_FAILED:t('编辑器已停止响应。请重新加载工作区。','The editor stopped responding. Reload the workspace.'),INVALID_AI_RESPONSE:t('AI 响应格式不正确，请稍后重试。','The AI response could not be read. Please retry.')};
+ const map={SESSION_UNVERIFIED:t('无法确认登录状态，为保护本机文档暂不打开工作区。请检查网络后重试。','Could not verify who is signed in, so the workspace stays closed to protect local documents. Check your connection and retry.'),QuotaExceededError:t('浏览器存储空间不足。请先备份重要文档，再释放空间后重试。','Browser storage is full. Back up important documents, free space, and retry.'),FILE_READ_TIMEOUT:t('读取超时。若文件在 iCloud 或其他云盘，请先下载到本机后重试。','Reading timed out. Download cloud-drive files to this device, then retry.'),FILE_READ_FAILED:t('无法读取文件，请确认文件已下载到本机且有读取权限。','Cannot read the file. Make sure it is downloaded and readable.'),DOCUMENT_TOO_LARGE:t('正文超过首版 AI 上下文限制；手动编辑和下载仍可用。','The body text exceeds this version’s AI context limit. Manual editing and download remain available.'),INCOMPLETE_DOCUMENT:t('正文未能完整读取，未发送给 AI。','The body text could not be read completely and was not sent to AI.'),VERSION_CONFLICT:t('此文档已在另一个窗口更新。当前稿仍在编辑器中，请先下载备份，再重新打开。','This document changed in another window. Download your current draft before reopening.'),STALE_PROPOSAL:t('文档或选区已变化。请重新选择文字并请求建议。','The document or selection has changed. Select the passage and request a new suggestion.'),AMBIGUOUS_SELECTION:t('无法唯一定位这段文字。请只选择同一段落中唯一的一处内容。','The passage could not be located uniquely. Select unique text within a single paragraph.'),REPLACEMENT_VERIFICATION_FAILED:t('修改回读未通过，已撤销本次修改。请核对文档后重试。','The change could not be verified and was undone. Check the document before retrying.'),DOCUMENT_CHANGED:t('读取期间文档发生变化，请稍后重试。','The document changed while reading. Please try again.'),NO_DOCUMENT:t('请先打开一份文档。','Open a document first.'),INVALID_DOCX:t('这不是可读取的 DOCX 文件。请检查文件格式或是否加密。','This is not a readable DOCX. Check its format or encryption.'),FILE_TOO_LARGE:t('首版支持 20 MB 以内的 DOCX。','This version supports DOCX files up to 20 MB.'),AI_STREAM_INTERRUPTED:t('连接中断，回复尚未完成。请核对文档改动记录和费用状态。','The connection ended before the reply completed. Check document changes and billing status before another request.'),EDITOR_BOOT_TIMEOUT:t('编辑器在十分钟内未能完成加载。请检查网络后重试。','The editor could not finish loading within ten minutes. Check your connection and retry.'),EDITOR_BOOT_FAILED:t('编辑器未能加载。请检查网络后重试。','The editor could not load. Check your connection and retry.'),EDITOR_ENGINE_FAILED:t('编辑器已停止响应。请重新加载工作区。','The editor stopped responding. Reload the workspace.'),INVALID_AI_RESPONSE:t('AI 响应格式不正确，请稍后重试。','The AI response could not be read. Please retry.')};
  return map[code]||e?.message||t('操作未完成，请重试。','The operation did not complete. Please retry.');
 };
 function toast(message){clearTimeout(toastTimer);$('#toast').textContent=message;$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,5000)}
@@ -372,7 +373,7 @@ $('#file-input').addEventListener('change',e=>importFiles([...e.target.files]).c
 $('#project-select').addEventListener('change',e=>selectProject(e.target.value).catch(e=>{render();fail(e)}));
 $('#font-size').addEventListener('change',e=>{if(!activeAgentRun&&!importing&&e.target.value)state.session.command('format_selection',{sizePt:Number(e.target.value),atCursor:true}).catch(fail)});
 $('#review-mode').addEventListener('change',e=>!activeAgentRun&&!importing&&state.session.run(()=>state.session.exec('set_revision_view',{mode:e.target.value})).catch(fail));
-window.addEventListener('beforeunload',e=>{if(state.session?.dirty||activeAgentRun||importing){e.preventDefault();e.returnValue=''}});
+window.addEventListener('beforeunload',e=>{if(!leavingScope&&(state.session?.dirty||activeAgentRun||importing)){e.preventDefault();e.returnValue=''}});
 window.addEventListener('pagehide',()=>state.session?.save().catch(()=>{}));
 document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='s'){e.preventDefault();if(!activeAgentRun&&!importing)state.session?.save().catch(fail)}});
 for(const [selector,variable,min,max,inverse] of [['.left-resize','--files-width',180,360,false],['.right-resize','--ai-width',280,540,true]]){
@@ -382,11 +383,44 @@ for(const [selector,variable,min,max,inverse] of [['.left-resize','--files-width
  handle.addEventListener('pointerup',()=>document.body.classList.remove('resizing'));
  handle.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();const n=parseFloat(getComputedStyle(document.documentElement).getPropertyValue(variable));document.documentElement.style.setProperty(variable,Math.min(max,Math.max(min,n+(e.key==='ArrowRight'?20:-20)*(inverse?-1:1)))+'px')});
 }
-window.addEventListener('focus',()=>{if(!state.aiRunning)refreshCapabilities()});
+let leavingScope=false,scopeChecking=false;
+// Local data belongs to one account. If the signed-in account changed (e.g. logout in the account page),
+// save what is open, then reload so the page opens the new account's store and never shows the old one.
+async function checkScope(){
+ if(!state.scope||state.booting||state.aiRunning||activeAgentRun||importing||scopeChecking)return;
+ scopeChecking=true;
+ try{
+  let scope;try{scope=await resolveScope()}catch{return}
+  if(scope===state.scope)return;
+  if(!await mayLeaveScope({save:()=>state.session?.save(),isDirty:()=>!!state.session?.dirty,confirmDiscard:()=>modal({title:t('账户已变化，最近的修改未能保存','Account changed; latest edits could not be saved'),description:t('继续将关闭此账户的工作区并丢弃未保存的修改。如需保留，请先取消并下载文档。','Continuing closes this account\'s workspace and discards the unsaved edits. Cancel first to download the document if you want to keep them.'),confirm:t('继续并丢弃','Continue and discard'),danger:true})}))return;
+  leavingScope=true;location.reload();
+ }finally{scopeChecking=false}
+}
+// Other accounts' stores on this browser: offer a ZIP backup, then deletion. Never deleted silently when they hold documents.
+async function offerForeignCleanup(){
+ const others=(await listScopes()).filter(s=>s.startsWith('u-')&&s!==state.scope);
+ for(const scope of others){
+  const count=await countScopeFiles(scope);
+  if(!count){await deleteScope(scope);continue}
+  const dialog=$('#dialog');
+  dialog.innerHTML=`<form method="dialog"><h2>${t('此浏览器中有其他账户的本地文档','Another account\'s local documents are on this browser')}</h2><p>${t(`共 ${count} 份文档只保存在这台电脑上，登录当前账户看不到它们。共用电脑建议下载备份后删除。`,`${count} document(s) are stored only on this computer and are not visible to the current account. On a shared computer, download a backup, then delete them.`)}</p><p id="cleanup-note" role="status"></p><div class="dialog-actions"><button type="button" value="backup" class="secondary-button">${t('下载备份 (ZIP)','Download backup (ZIP)')}</button><button value="keep" class="secondary-button">${t('暂不处理','Not now')}</button><button value="delete" class="danger-button">${t('从此浏览器删除','Delete from this browser')}</button></div></form>`;
+  dialog.returnValue='';
+  dialog.querySelector('[value=backup]').addEventListener('click',async()=>{
+   try{const {bytes}=await exportScopeZip(scope);if(bytes){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([bytes],{type:'application/zip'}));a.download='workbench-backup.zip';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),10000);$('#cleanup-note').textContent=t('备份已下载。','Backup downloaded.')}}
+   catch(e){$('#cleanup-note').textContent=errorText(e)}
+  });
+  dialog.showModal();
+  await new Promise(resolve=>dialog.addEventListener('close',resolve,{once:true}));
+  if(dialog.returnValue==='delete')try{await deleteScope(scope)}catch(e){fail(e)}
+ }
+}
+window.addEventListener('focus',()=>{if(!state.aiRunning){refreshCapabilities();void checkScope()}});
 async function start(){
  void refreshCapabilities();
  if(!window.isSecureContext||!window.crossOriginIsolated||typeof SharedArrayBuffer==='undefined'){throw Error(t('浏览器无法启用文档编辑器。请使用最新版 Edge 或 Chrome，并确认站点的跨源隔离配置。','The editor needs a current Edge or Chrome browser and correctly configured cross-origin isolation.'))}
- state.store=await openWorkspace();historyStore=new ConversationStore(state.store);state.projects=await state.store.listProjects();
+ state.scope=await resolveScope();
+ if(state.scope!==GUEST_SCOPE)await adoptLegacyDatabase(state.scope);
+ state.store=await openWorkspace({scope:state.scope});historyStore=new ConversationStore(state.store);state.projects=await state.store.listProjects();
  const firstVisit=!state.projects.length;
  const temporary=await state.store.ensureTemporaryProject();
  state.projects=[temporary,...state.projects.filter(p=>p.id!==temporary.id)];
@@ -404,5 +438,6 @@ async function start(){
  for(const m of state.messages){if(m.pending){m.pending=false;if(m.agent){m.agent.status='interrupted';for(const step of m.agent.steps)if(step.status==='executing')step.status='unknown';}m.error=t('连接已结束，请核对费用状态；不会自动重发。','Connection ended. Check billing status; the request is not resent.');delete m.proposal}}
  if(state.messages.length)renderMessages();
  for(const m of state.messages.filter(m=>m.role==='assistant')){if(m.requestId&&!m.receipt)void checkReceipt(m.requestId);for(const r of m.agent?.requests||[])if(!r.receipt)void checkReceipt(r.requestId)}
+ void offerForeignCleanup().catch(()=>{});
 }
 start().catch(e=>{renderBootProgress({status:'error'});state.booting=false;$('#editor-cover').dataset.bootStatus='error';$('#cover-title').textContent=t('暂时无法打开工作区','Workspace could not open');$('#cover-detail').textContent=errorText(e);$('#editor-cover').hidden=false;$('#editor-cover .spinner').hidden=true;$('#cover-retry').hidden=false;fail(e)});
