@@ -1454,7 +1454,8 @@
       "credits": "equivale a {amount}",
       "outstanding": "Ainda não debitado: {amount}",
       "failed": "{count} dedução(ões) de pontos não foram concluídas. Até serem resolvidas, o uso do DeepSeek é pago com o saldo da conta.",
-      "aiClosed": "Sua assinatura não inclui a bancada de IA, então o uso do DeepSeek é pago com o saldo da conta.",
+      "renewHint": "Os pontos Baoqingtian só podem ser usados com a assinatura Baoqingtian ativa e o AI Workbench habilitado. Ative a assinatura no app de advogados Baoqingtian → Perfil para usar seus {points} pontos; até lá, o uso é debitado do saldo da conta.",
+      "walletHint": "Todo o uso está sendo debitado do saldo da conta. Se faltar saldo, use «Recarregar» acima.",
       "proRights": "Inclui os benefícios Pro (3 GB de armazenamento em nuvem) enquanto a assinatura estiver ativa.",
       "priorityHint": "O uso do DeepSeek é pago primeiro com seus pontos Baoqingtian; quando acabam, o saldo da sua conta é usado automaticamente. Outros modelos e serviços usam o saldo da conta.",
       "fetchedAt": "Atualizado {time}"

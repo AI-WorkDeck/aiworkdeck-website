@@ -361,7 +361,8 @@
       "credits": "折合 {amount}",
       "outstanding": "尚未扣成：{amount}",
       "failed": "有 {count} 筆積分扣減未成功，處理完成前 DeepSeek 用量改用帳戶餘額。",
-      "aiClosed": "目前會員未開通 AI 工作台權益，DeepSeek 用量將使用帳戶餘額。",
+      "renewHint": "包晴天會員有效並開通 AI 工作台後才能使用積分。請前往包晴天律師端 App「個人中心」開通會員，即可使用你的 {points} 積分；在此之前，用量從帳戶餘額扣。",
+      "walletHint": "目前所有用量都從帳戶餘額扣，餘額不夠可直接點上方「儲值」。",
       "proRights": "會員有效期內享有個人 Pro 權益（含 3GB 雲端空間）。",
       "priorityHint": "DeepSeek 模型的用量優先扣包晴天積分，積分不夠時自動改用帳戶餘額；其他模型和服務使用帳戶餘額。",
       "fetchedAt": "更新於 {time}"

@@ -1454,7 +1454,8 @@
       "credits": "ter waarde van {amount}",
       "outstanding": "Nog niet afgeschreven: {amount}",
       "failed": "{count} puntenafschrijving(en) zijn niet gelukt. Tot dit is opgelost, wordt DeepSeek-gebruik betaald uit je accountsaldo.",
-      "aiClosed": "Je lidmaatschap bevat de AI-werkbank niet, dus DeepSeek-gebruik wordt betaald uit je accountsaldo.",
+      "renewHint": "Baoqingtian-punten zijn alleen bruikbaar met een actief Baoqingtian-lidmaatschap en ingeschakelde AI-werkbank. Activeer het lidmaatschap in de Baoqingtian-advocatenapp → Profiel om je {points} punten te gebruiken; tot dan wordt gebruik van je accountsaldo afgeschreven.",
+      "walletHint": "Al het gebruik wordt nu van je accountsaldo afgeschreven. Is het saldo te laag, gebruik dan ‘Opwaarderen’ hierboven.",
       "proRights": "Inclusief Pro-voordelen (3 GB cloudopslag) zolang het lidmaatschap actief is.",
       "priorityHint": "DeepSeek-gebruik wordt eerst betaald met je Baoqingtian-punten; zijn die op, dan wordt automatisch je accountsaldo gebruikt. Andere modellen en diensten gebruiken je accountsaldo.",
       "fetchedAt": "Bijgewerkt {time}"

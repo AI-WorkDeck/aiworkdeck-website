@@ -1454,7 +1454,8 @@
       "credits": "bernilai {amount}",
       "outstanding": "Belum ditolak: {amount}",
       "failed": "{count} potongan mata tidak berjaya. Sehingga diselesaikan, penggunaan DeepSeek dibayar daripada baki akaun anda.",
-      "aiClosed": "Keahlian anda tidak termasuk AI workbench, jadi penggunaan DeepSeek dibayar daripada baki akaun anda.",
+      "renewHint": "Mata Baoqingtian hanya boleh digunakan apabila keahlian Baoqingtian aktif dan AI Workbench didayakan. Aktifkan keahlian dalam aplikasi peguam Baoqingtian → Profil untuk menggunakan {points} mata anda; sehingga itu, penggunaan dicaj ke baki akaun.",
+      "walletHint": "Semua penggunaan kini dicaj ke baki akaun anda. Jika tidak cukup, gunakan \"Tambah nilai\" di atas.",
       "proRights": "Termasuk faedah Pro (storan awan 3 GB) semasa keahlian aktif.",
       "priorityHint": "Penggunaan DeepSeek dibayar dahulu dengan mata Baoqingtian anda; apabila mata habis, baki akaun digunakan secara automatik. Model dan perkhidmatan lain menggunakan baki akaun.",
       "fetchedAt": "Dikemas kini {time}"

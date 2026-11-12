@@ -1454,7 +1454,8 @@
       "credits": "{amount} değerinde",
       "outstanding": "Henüz düşülmedi: {amount}",
       "failed": "{count} puan kesintisi tamamlanmadı. Çözülene kadar DeepSeek kullanımı hesap bakiyenizden ödenir.",
-      "aiClosed": "Üyeliğiniz AI çalışma alanını içermiyor, bu yüzden DeepSeek kullanımı hesap bakiyenizden ödenir.",
+      "renewHint": "Baoqingtian puanları yalnızca Baoqingtian üyeliği etkinken ve AI Workbench açıkken kullanılabilir. {points} puanınızı kullanmak için Baoqingtian avukat uygulaması → Profil’den üyeliği etkinleştirin; o zamana kadar kullanım hesap bakiyenizden düşülür.",
+      "walletHint": "Şu anda tüm kullanım hesap bakiyenizden düşülüyor. Yetersizse yukarıdaki “Yükle”yi kullanın.",
       "proRights": "Üyelik etkin olduğu sürece Pro avantajlarını (3 GB bulut depolama) içerir.",
       "priorityHint": "DeepSeek kullanımı önce Baoqingtian puanlarınızdan ödenir; puanlar bitince otomatik olarak hesap bakiyeniz kullanılır. Diğer modeller ve hizmetler hesap bakiyenizi kullanır.",
       "fetchedAt": "{time} güncellendi"

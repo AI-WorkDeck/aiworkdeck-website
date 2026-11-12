@@ -1454,7 +1454,8 @@
       "credits": "senilai {amount}",
       "outstanding": "Belum terpotong: {amount}",
       "failed": "{count} pemotongan poin belum berhasil. Sampai diselesaikan, penggunaan DeepSeek dibayar dari saldo akun Anda.",
-      "aiClosed": "Keanggotaan Anda tidak mencakup AI workbench, jadi penggunaan DeepSeek dibayar dari saldo akun Anda.",
+      "renewHint": "Poin Baoqingtian hanya dapat digunakan saat keanggotaan Baoqingtian aktif dan AI Workbench diaktifkan. Aktifkan keanggotaan di aplikasi pengacara Baoqingtian → Profil untuk memakai {points} poin Anda; sampai saat itu, penggunaan ditagihkan ke saldo akun.",
+      "walletHint": "Semua penggunaan saat ini ditagihkan ke saldo akun Anda. Jika kurang, gunakan \"Isi ulang\" di atas.",
       "proRights": "Termasuk manfaat Pro (penyimpanan cloud 3 GB) selama keanggotaan aktif.",
       "priorityHint": "Penggunaan DeepSeek dibayar lebih dulu dengan poin Baoqingtian Anda; jika poin habis, saldo akun otomatis digunakan. Model dan layanan lain menggunakan saldo akun.",
       "fetchedAt": "Diperbarui {time}"
