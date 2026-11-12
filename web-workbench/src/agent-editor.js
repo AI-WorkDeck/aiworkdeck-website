@@ -191,7 +191,14 @@ export class AgentEditor{
   const result={tables:[]};
   for(const requested of tables){
    this.active(run);
-   const table=await this.native(run,'table_read',{tableIndex:requested.tableIndex,maxRows:requested.maxRows??20,maxCols:requested.maxCols??10});
+   let table;
+   try{table=await this.native(run,'table_read',{tableIndex:requested.tableIndex,maxRows:requested.maxRows??20,maxCols:requested.maxCols??10})}
+   catch(error){
+    // A document with no tables is a truthful empty read. Failing it aborts a
+    // run whose edits already verified when the model merely probes for tables.
+    if(/^表格序号越界: \d+（文档共 0 张表，/.test(error.message)){result.tableCount=0;break}
+    throw error;
+   }
    const row={tableIndex:table.tableIndex,name:table.table,rows:table.rows,cols:table.cols,truncated:!!table.truncated,cells:[]};
    if(table.note)row.note=table.note;
    result.tables.push(row);

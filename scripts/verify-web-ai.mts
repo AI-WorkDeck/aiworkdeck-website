@@ -41,7 +41,7 @@ const { grantCredits, getBalance, expireCredits } = await import('@/lib/credits'
 const { createSession, SESSION_COOKIE, getUserByToken } = await import('@/lib/sessions');
 const { deleteAccount, findDeletionBlocker, tombstoneUserId } = await import('@/lib/account-deletion');
 const { __setFetchForTests: setMgmtFetch } = await import('@/lib/openrouter-mgmt');
-const { LIMITS, WEB_MODEL, PRICE_CAP, AGENT_RESERVE_USD, validateInput, WebError } = await import('@/lib/web-ai/contract');
+const { LIMITS, WEB_MODEL, PRICE_CAP, AGENT_RESERVE_USD, validateInput, messagesFor, WebError } = await import('@/lib/web-ai/contract');
 const { reserveRequest, getRequest, markSubmitted, markPending, settleRequest, releaseRequest, refundUnverified, RECONCILIATION_DEADLINE_MS } = await import('@/lib/web-ai/store');
 const { validateToolCall, validateToolResult } = await import('@/web-workbench/src/agent-contract.js');
 const { streamCompletion, generationCost, ProviderRejected } = await import('@/lib/web-ai/provider');
@@ -424,6 +424,13 @@ try {
     { role: 'assistant', content: null, tool_calls: [{ ...nativeCall(), id }] },
     { role: 'tool', tool_call_id: id, content: JSON.stringify({ ok: true, tool: 'doc_find_text', runId: b.agentContext!.runId, document: { id: b.document.id, name: b.document.name, version: b.document.version }, revision: 0, saved: true, partial: false, verification: 'verified', result: { queries: [] } }) },
   ] as NonNullable<WebInput['agentHistory']>;
+  await check('A verified edit batch is followed by a stop reminder; read-only results and the tool-less final step are not', () => {
+    const b = agentInput(), found = pair(b), result = JSON.parse((found[1] as { content: string }).content);
+    const edited = [found[0], { ...found[1], content: JSON.stringify({ ...result, tool: 'doc_apply_edits', result: { edits: [] } }) }] as NonNullable<WebInput['agentHistory']>;
+    const tail = (history: NonNullable<WebInput['agentHistory']>, agentStep = 1) => messagesFor({ ...b, agentStep, agentHistory: history }).at(-1)!;
+    assert.equal(tail(edited).role, 'user'); assert.match(String(tail(edited).content), /make NO tool call/);
+    assert.equal(tail(found).role, 'tool'); assert.equal(tail(edited, 3).role, 'tool'); assert.equal(messagesFor(b).at(-1)!.role, 'user'); assert.equal(messagesFor(b).length, 2);
+  });
   function primeAgentSteps(userId: string, b: WebInput, steps: number) {
     for (let step = 0; step < steps; step++) {
       const previous = { ...b, agentStep: step, requestId: randomUUID() };

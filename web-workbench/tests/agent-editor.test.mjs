@@ -114,6 +114,11 @@ test('native table create/read and multiple exact cell writes use explicit ident
  assert.deepEqual(f.engine.tables[0].cells,[['改','乙'],['1','']]);
  await f.s.restoreAgent(ctx.runId);assert.deepEqual(f.engine.tables,[]);
 });
+test('reading tables of a document without tables is a verified empty result, not a failed run',async t=>{
+ const f=fixture(t),ctx=await f.begin();
+ const result=await f.s.executeAgentTool(ctx.runId,'probe','doc_read_tables',{tables:[{tableIndex:0}]});validateToolResult(result);
+ assert.equal(result.ok,true);assert.deepEqual(result.result,{tables:[],tableCount:0});
+});
 test('merged table read never mints writable cell handles',async t=>{
  const f=fixture(t);f.engine.tables=[{table:'合并',cells:[['a']],note:'merged'}];const ctx=await f.begin();
  const result=await f.s.executeAgentTool(ctx.runId,'read','doc_read_tables',{tables:[{tableIndex:0}]});assert.equal(result.result.tables[0].cells[0][0].targetId,undefined);
