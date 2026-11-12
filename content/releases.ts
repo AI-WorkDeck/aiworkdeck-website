@@ -30,7 +30,7 @@ export type ReleaseNote = LegacyReleaseNote | {
 
 export const RELEASES: ReleaseNote[] = [
     {
-        version: '0.84.0',
+        version: '0.84.1',
         date: '2026-11-12',
         headline: {
             zh: 'AI 助手办事更可靠，你随时可以暂停、改方向、一键撤销',
@@ -42,8 +42,8 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Multi-step work is far more dependable: chains like editing a clause, adding comments, exporting a PDF, organising files or resolving revisions now succeed over 90% of the time on common models in our tests, up from roughly 40–70%, using fewer rounds and less quota. Some models used to announce an action and then silently drop it; the action now runs.',
             },
             {
-                zh: '你始终掌控：AI 运行中可以暂停、继续，或在任务窗格里补一句话改方向；停下时会告诉你已经做完了什么；对文档的改动可以一键撤销整次运行。',
-                en: 'You stay in control: pause or resume a run, or add an instruction in the task pane to change direction; when you stop it, it tells you what it already did; and all of a run\'s document edits can be undone in one click.',
+                zh: '你始终掌控：AI 运行中可以暂停、继续，或在任务窗格里补一句话改方向；对文档的改动可以一键撤销整次运行。退出时只检查本次有改动的项目，也可关闭自动检查；提交失败会说明原因，可单独重试或直接退出。',
+                en: 'You stay in control: pause or redirect an AI run, and undo all of its document edits in one click. Quitting checks only projects changed in this session, and automatic checks can be turned off. Failed commits explain the reason and can be retried individually or skipped.',
             },
             {
                 zh: '改合同更稳：新增一整条条款一步到位并沿用原有样式，插入后自动核对条号是否顺延；接受 / 拒绝修订后给出重新排好的编号，不会处置错条；带修订的文档按接受后的文字交给 AI，不再把「7」和「15」读成「715」。回答声称「已完成」但实际没执行时会被自动纠正。',
