@@ -21,14 +21,16 @@ import { getAiConfig } from './ai-config';
 
 // ─── 配置 ─────────────────────────────────────────────────────────────
 
-export interface BqtMemberEnv { baseUrl: string; appId: string; appSecret: string }
+export interface BqtMemberEnv { baseUrl: string; appId: string; appSecret: string; version?: string }
 
 /** 生产用 https://uat.bqt.com（包晴天 2026-11-06 告知），测试 https://bqt-test.bqt.com。 */
 export function bqtMemberEnv(): BqtMemberEnv | null {
   const baseUrl = process.env.AWD_BQT_MEMBER_BASE_URL?.trim().replace(/\/+$/, '');
   const appId = process.env.AWD_BQT_MEMBER_APP_ID?.trim();
   const appSecret = process.env.AWD_BQT_MEMBER_APP_SECRET?.trim();
-  return baseUrl && appId && appSecret ? { baseUrl, appId, appSecret } : null;
+  // 包晴天灰度期间要带请求头 version（2026-11-12 告知 v2.5.7）；全量发布后删掉这个变量即可。
+  const version = process.env.AWD_BQT_MEMBER_VERSION?.trim() || undefined;
+  return baseUrl && appId && appSecret ? { baseUrl, appId, appSecret, ...(version ? { version } : {}) } : null;
 }
 
 export interface BqtSettings {
@@ -148,7 +150,7 @@ async function call(method: 'GET' | 'POST', pathAndQuery: string, body?: string)
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
   try {
-    const res = await fetchImpl(env.baseUrl + pathAndQuery, { method, headers: bqtSignHeaders(env.appId, env.appSecret), body, signal: ctl.signal });
+    const res = await fetchImpl(env.baseUrl + pathAndQuery, { method, headers: { ...bqtSignHeaders(env.appId, env.appSecret), ...(env.version ? { version: env.version } : {}) }, body, signal: ctl.signal });
     const text = await res.text();
     try { return { status: res.status, json: JSON.parse(text) }; } catch { return { status: res.status, json: null }; }
   } catch (e) {

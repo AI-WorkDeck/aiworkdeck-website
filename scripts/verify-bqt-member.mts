@@ -94,6 +94,15 @@ m.setBqtFetchForTest(async (url, init) => {
   return res('SUCCESS', 0, { consumedPoints: want / 100, usablePoints: points / 100 });
 });
 
+// 灰度请求头 version：配了才带，没配不带
+await m.fetchBqtEntitlement('10001');
+assert.equal(seen.at(-1)!.headers.version, undefined);
+process.env.AWD_BQT_MEMBER_VERSION = 'v2.5.7';
+await m.fetchBqtEntitlement('10001');
+assert.equal(seen.at(-1)!.headers.version, 'v2.5.7');
+assert.ok(seen.at(-1)!.headers['X-Sign'], '签名头照带');
+delete process.env.AWD_BQT_MEMBER_VERSION;
+
 // 权益 + 快照 + 预检
 const e = await m.fetchBqtEntitlement('10001');
 assert.equal(e.usablePointsHundredths, 1200_00);
