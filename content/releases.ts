@@ -30,7 +30,7 @@ export type ReleaseNote = LegacyReleaseNote | {
 
 export const RELEASES: ReleaseNote[] = [
     {
-        version: '0.84.1',
+        version: '0.84.2',
         date: '2026-11-12',
         headline: {
             zh: 'AI 助手办事更可靠，你随时可以暂停、改方向、一键撤销',
