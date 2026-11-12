@@ -1455,11 +1455,10 @@
       "points": "{points} 积分",
       "credits": "折合 {amount}",
       "outstanding": "尚未扣成：{amount}",
-      "failed": "有 {count} 笔积分扣减未成功。请在包晴天 App 补足积分，处理完成前暂停新的花费。",
-      "aiClosed": "当前会员未开通 AI 工作台权益，暂不能在本站消费。",
+      "failed": "有 {count} 笔积分扣减未成功，处理完成前 DeepSeek 用量改用账户余额。",
+      "aiClosed": "当前会员未开通 AI 工作台权益，DeepSeek 用量将使用账户余额。",
       "proRights": "会员有效期内享有个人 Pro 权益（含 3GB 云空间）。",
-      "rechargeHint": "积分充值与会员续费请在包晴天 App 内完成，本站不直接收款。",
-      "unavailable": "暂时无法获取会员信息，请稍后再试。",
+      "priorityHint": "DeepSeek 模型的用量优先扣包晴天积分，积分不够时自动改用账户余额；其他模型和服务使用账户余额。",
       "fetchedAt": "更新于 {time}"
     }
   },
@@ -1479,9 +1478,7 @@
     "failed": "支付遇到问题",
     "retry": "重试",
     "creating": "正在创建订单…",
-    "amountLabel": "金额",
-    "bqtConfirm": "确认用包晴天积分支付 {amount}？",
-    "bqtPay": "用积分支付"
+    "amountLabel": "金额"
   },
   "supportDialog": {
     "orderUnavailable": "未找到这笔捐赠。请检查返回链接，或回到发起支付的设备查看。",

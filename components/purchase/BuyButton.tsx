@@ -40,9 +40,6 @@ export interface PurchaseLabels {
     retry: string;
     creating: string;
     amountLabel: string;
-    /** 包晴天律师：用包晴天积分购买的确认文案（{amount}） */
-    bqtConfirm: string;
-    bqtPay: string;
 }
 
 interface BuyButtonProps {
@@ -55,8 +52,6 @@ interface BuyButtonProps {
     loggedIn: boolean;
     /** 紧凑模式：列表卡片里用小号按钮 */
     compact?: boolean;
-    /** 包晴天律师（积分通道开着）：不走直付，确认后扣包晴天积分（/api/account/purchase） */
-    bqtPoints?: boolean;
 }
 
 export function BuyButton({
@@ -68,12 +63,11 @@ export function BuyButton({
     owned,
     loggedIn,
     compact,
-    bqtPoints,
 }: BuyButtonProps) {
     const router = useRouter();
     const pathname = usePathname();
     const [open, setOpen] = useState(false);
-    const [status, setStatus] = useState<'confirm' | 'creating' | 'pending' | 'redirecting' | 'success' | 'error'>(
+    const [status, setStatus] = useState<'creating' | 'pending' | 'redirecting' | 'success' | 'error'>(
         'creating'
     );
     const [qrCode, setQrCode] = useState('');
@@ -137,31 +131,7 @@ export function BuyButton({
         }, 2000);
     };
 
-    // 包晴天积分购买：服务端扣成才交付；扣减确认中（202）也按错误展示服务端文案，再点一次不会重复扣
-    const payWithBqt = async () => {
-        setStatus('creating');
-        setErrorMsg('');
-        try {
-            const res = await fetch('/api/account/purchase', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ skuId, lang }),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (res.ok && data.ok) {
-                setStatus('success');
-                return;
-            }
-            setStatus('error');
-            setErrorMsg(data.message || labels.failed);
-        } catch {
-            setStatus('error');
-            setErrorMsg(labels.failed);
-        }
-    };
-
     const createOrder = async () => {
-        if (bqtPoints) return payWithBqt();
         setStatus('creating');
         setErrorMsg('');
         setQrCode('');
@@ -212,8 +182,7 @@ export function BuyButton({
 
     const handleOpen = () => {
         setOpen(true);
-        if (bqtPoints) setStatus('confirm');
-        else createOrder();
+        createOrder();
     };
 
     const handleClose = () => {
@@ -246,17 +215,6 @@ export function BuyButton({
                                   : labels.title}
                         </DialogTitle>
                     </DialogHeader>
-
-                    {status === 'confirm' && (
-                        <div className="space-y-6 py-6 text-center">
-                            <p className="text-sm text-neutral-gray-medium">
-                                {itemName} · {labels.bqtConfirm.replace('{amount}', formatPrice(priceCents))}
-                            </p>
-                            <Button onClick={payWithBqt} className="bg-king-forest hover:bg-king-forest/90 font-bold">
-                                {labels.bqtPay}
-                            </Button>
-                        </div>
-                    )}
 
                     {status === 'creating' && (
                         <div className="py-10 flex flex-col items-center gap-3">

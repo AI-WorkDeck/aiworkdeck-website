@@ -98,7 +98,7 @@ db.prepare(`INSERT INTO bqt_user_binding (userId, bqtUserId, mobile, userName, u
 
 console.log('\n[1] 通道关闭：一切照旧');
 {
-  assert.equal(m.bqtChargeTarget(U), null);
+  assert.equal(m.bqtLinkedLawyer(U), null);
   assert.equal(acct.billingLine(U), 'standard');
   assert.equal(acct.bqtMemberView(U), null);
   assert.equal(subscriptionSnapshot(U).active, false);
@@ -114,9 +114,8 @@ console.log('\n[1] 通道关闭：一切照旧');
 
 console.log('\n[2] 通道开：Pro 权益随有效会员');
 assert.ok(m.updateBqtSettings({ centsPerPoint: 100, tunnelEnabled: true }, 'test').ok);
-const localBefore = getBalance(U);
 {
-  assert.deepEqual(m.bqtChargeTarget(U), { lawyerId: LAWYER });
+  assert.deepEqual(m.bqtLinkedLawyer(U), { lawyerId: LAWYER });
   await acct.refreshBqtSnapshot(U);
   const sub = subscriptionSnapshot(U);
   assert.equal(sub.active, true); assert.equal(sub.source, 'bqt');
@@ -143,135 +142,90 @@ const localBefore = getBalance(U);
   ok('EXPIRED / aiWorkbench=false / 后台关 Pro → 无 Pro；非包晴天用户不受影响');
 }
 
-console.log('\n[3] API 字段');
+console.log('\n[3] API 字段：计费线照旧，积分另报');
 {
+  withTransaction(d => grantCredits(d, { userId: U, pool: 'topup', amountCents: 3000, ledgerKind: 'recharge' }));
+  const local = getBalance(U);
   const me = await (await meGET(bearer('/api/account/me'))).json();
-  assert.equal(me.billingLine, 'bqt');
+  assert.equal(me.billingLine, 'standard', '绑定包晴天不再是单独计费线（老客户端据 bqt 藏充值）');
   assert.deepEqual(Object.keys(me.bqtMember).sort(), ['aiWorkbench', 'cents', 'centsPerPoint', 'expireAt', 'failedCount', 'fetchedAt', 'levelCode', 'outstandingCents', 'points', 'rechargeAllowed', 'status'].sort());
   assert.equal(me.bqtMember.points, '1200.00'); assert.equal(me.bqtMember.cents, 120000);
-  assert.equal(me.bqtMember.rechargeAllowed, false); assert.equal(me.bqtMember.levelCode, 'GROWTH');
-  assert.equal(me.balanceCents, 120000, '旧余额字段报折算值');
+  assert.equal(me.bqtMember.rechargeAllowed, true); assert.equal(me.bqtMember.levelCode, 'GROWTH');
+  assert.equal(me.balanceCents, local, '余额字段报本站钱包');
   assert.equal(me.subscription.active, true);
-  assert.equal(me.bqtQingtian, undefined, '通道开时不再报晴天币');
   assert.equal(me.plan, 'paid');
   const ent = await (await entGET(bearer('/api/account/entitlements'))).json();
   assert.ok(ent.entitlements.some((e: { feature: string }) => e.feature === 'cloud.storage.3gb'));
   const bal = await (await internal({ action: 'balance', accountId: U })).json();
-  assert.equal(bal.billingLine, 'bqt'); assert.equal(bal.balanceCents, 120000); assert.equal(bal.bqtMember.cents, 120000);
+  assert.equal(bal.billingLine, 'standard'); assert.equal(bal.balanceCents, local); assert.equal(bal.bqtMember.cents, 120000);
   const cs = await (await internal({ action: 'cloud-state', accountId: U })).json();
-  assert.equal(cs.billingLine, 'bqt'); assert.equal(cs.billing.balanceCents, 120000);
+  assert.equal(cs.billing.balanceCents, local);
   assert.equal(cs.cloudAccess.includedStorageBytes, SUBSCRIPTION_LIMITS.cloudStorageBytes);
-  ok('/api/account/me、entitlements、internal balance/cloud-state 带 billingLine/bqtMember，余额报折算值');
+  assert.equal(subscriptionSnapshot(U).walletFallbackEnabled, true, '包晴天 Pro 没有本站额度，钱包总能用');
+  ok('me / entitlements / internal balance / cloud-state：billingLine=standard、余额=钱包、bqtMember 另报积分');
 }
 
-console.log('\n[4] 拒收直付');
+console.log('\n[4] 本站照常收款');
 {
-  for (const body of [{ amount: 1000, kind: 'recharge' }, { amount: 14900, kind: 'subscription', skuId: 'pro_monthly' }, { amount: 990, kind: 'purchase', skuId: 'feature:clipboard.unlimited' }]) {
-    const r = await payPOST(bearer('/api/payment/create', body));
-    assert.equal(r.status, 409, body.kind); assert.equal((await r.json()).code, 'bqt_recharge_via_bqt');
-  }
-  const r = await internal({ action: 'create-recharge', accountId: U, amountCents: 1000, channel: 'wxpay', idempotencyKey: 'k' });
-  assert.equal(r.status, 409); assert.equal((await r.json()).error, 'bqt_recharge_via_bqt');
-  const sub = await internal({ action: 'prepare-appstore-subscription', accountId: U });
-  assert.equal((await sub.json()).error, 'bqt_recharge_via_bqt');
-  assert.equal((db.prepare('SELECT COUNT(*) n FROM orders').get() as { n: number }).n, 0);
-  ok('payment/create（充值/Pro/直付购买）与手机端建单一律 409 bqt_recharge_via_bqt，不建单');
+  const r = await payPOST(bearer('/api/payment/create', { amount: 1000, kind: 'recharge' }));
+  assert.notEqual((await r.json()).code, 'bqt_recharge_via_bqt');
+  const ir = await internal({ action: 'create-recharge', accountId: U, amountCents: 1000, channel: 'wxpay', idempotencyKey: 'k' });
+  assert.notEqual((await ir.json()).error, 'bqt_recharge_via_bqt');
+  const code = (generateGiftCodes({ count: 1, kind: 'recharge', amountCents: 100, createdBy: 't' }) as { codes: string[] }).codes[0];
+  const before = getBalance(U);
+  assert.equal((redeemGiftCode(U, code) as { ok?: boolean }).ok, true);
+  assert.equal(getBalance(U), before + 100);
+  ok('充值、手机端建单、充值类兑换码都不再拒收');
 }
 
-console.log('\n[5] 广场购买：扣成才交付');
+console.log('\n[5] 广场购买走本站钱包');
 {
-  m.updateBqtSettings({ grantProRights: false }, 'test'); // 让 clipboard/stage 不随 Pro 自带
-  const buy = async (skuId: string) => { const r = await buyPOST(bearer('/api/account/purchase', { skuId })); return { status: r.status, body: await r.json() }; };
-  const sku = 'feature:clipboard.unlimited';
-  // 预检不足
-  const saved = points; points = 1; await m.fetchBqtEntitlement(LAWYER);
-  let r = await buy(sku);
-  assert.equal(r.body.error, 'bqt_insufficient_points'); assert.ok(!hasEntitlement(U, 'clipboard.unlimited'));
-  points = saved; await m.fetchBqtEntitlement(LAWYER);
-  // 预检过但包晴天回 INSUFFICIENT_POINTS → 不交付、不挂账
-  script.push('insufficient');
-  r = await buy(sku);
-  assert.equal(r.body.error, 'bqt_consume_failed'); assert.ok(!hasEntitlement(U, 'clipboard.unlimited'));
-  assert.equal(consumes('purchase')[0].state, 'waived', '没交付的失败扣减直接放弃，不算欠账');
-  assert.equal(m.bqtOutstandingCents(U).failed, 0);
-  // 超时/繁忙 → 不交付；再点一次复用原单号，只扣一次
-  script.push('busy');
-  r = await buy(sku);
-  assert.equal(r.status, 202); assert.equal(r.body.error, 'bqt_consume_pending'); assert.ok(!hasEntitlement(U, 'clipboard.unlimited'));
-  const before = points;
-  r = await buy(sku);
-  assert.equal(r.status, 200); assert.equal(r.body.paidWith, 'bqt'); assert.ok(hasEntitlement(U, 'clipboard.unlimited'));
-  const rows = consumes('purchase');
-  assert.equal(rows.length, 2); assert.equal(rows[1].state, 'succeeded');
-  assert.equal(before - points, rows[1].cents, '1 积分 = 100 分，只扣一次');
-  const order = db.prepare('SELECT * FROM orders WHERE id=?').get(r.body.orderId) as { status: string; channel: string; amountCents: number };
-  assert.equal(order.status, 'paid'); assert.equal(order.channel, 'bqt');
-  assert.equal((await buy(sku)).body.error, 'already_owned');
-  assert.equal(getBalance(U), localBefore, '本站钱包一分未动');
+  m.updateBqtSettings({ grantProRights: false }, 'test'); // 让 clipboard 不随 Pro 自带
+  const before = getBalance(U), n = consumes().length;
+  const r = await buyPOST(bearer('/api/account/purchase', { skuId: 'feature:clipboard.unlimited' }));
+  const body = await r.json();
+  assert.equal(r.status, 200, JSON.stringify(body)); assert.ok(hasEntitlement(U, 'clipboard.unlimited'));
+  assert.equal(getBalance(U), before - body.priceCents);
+  assert.equal(consumes().length, n, '不扣积分');
   m.updateBqtSettings({ grantProRights: true }, 'test');
-  ok('预检不足/扣减被拒 → 不交付；pending → 不交付且重试不重扣；成功 → 交付并记 bqt 订单');
+  ok('付费条目从钱包扣，积分不动');
 }
 
-console.log('\n[6] 云空间计量走发件箱，3GB 先抵扣');
+console.log('\n[6] 云空间：包晴天送的 3GB 先抵，超出走钱包');
 {
   const GiB = 1073741824;
   const day = 86400000, t0 = Date.now() - 30 * day;
   acceptPostpaid(U, POSTPAID_VERSION, new Date(t0).toISOString());
-  // 本站留一笔余额：不许被花
-  withTransaction(d => grantCredits(d, { userId: U, pool: 'reward', amountCents: 5000, ledgerKind: 'gift' }));
   const local = getBalance(U);
   const epoch = postpaidPolicy(U)!.epoch;
   const mid = new Date(t0 + 15 * day).toISOString(), end = new Date(t0 + 30 * day).toISOString();
   recordStorage(U, { eventId: 'st-1', epoch, from: new Date(t0).toISOString(), to: mid, storedBytes: String(3 * GiB) });
-  await settle();
-  assert.equal(consumes('cloud_storage').length, 0, '3GB 以内免费');
+  assert.equal(getBalance(U), local, '3GB 以内免费');
   recordStorage(U, { eventId: 'st-2', epoch, from: mid, to: end, storedBytes: String(13 * GiB) });
-  await settle();
-  const st = consumes('cloud_storage');
-  assert.equal(st.length, 1); assert.equal(st[0].state, 'succeeded');
-  assert.equal(st[0].cents, 100, '超出 10GiB × 半个月 × 20 分/GiB·月 = 100 分');
-  assert.equal(getBalance(U), local, '本站钱包未扣');
-  assert.equal((db.prepare("SELECT COUNT(*) n FROM wallet_ledger WHERE userId=? AND kind='service_spend'").get(U) as { n: number }).n, 0);
-  ok('存储计量：免费额度先抵扣，超出部分整笔进发件箱并扣成，本站钱包不动');
-
+  assert.equal(getBalance(U), local - 100, '超出 10GiB × 半个月 × 20 分/GiB·月 = 100 分，从钱包扣');
   const res = 'a'.repeat(64);
-  const resv = reserveEgress(U, { eventId: 'eg-1', epoch, resourceHash: res, bytes: String(2 * GiB) });
-  assert.equal(resv.freeExport, false);
-  assert.equal(getBalance(U), local, '包晴天不预扣');
+  reserveEgress(U, { eventId: 'eg-1', epoch, resourceHash: res, bytes: String(2 * GiB) });
   settleEgress(U, 'eg-1', String(2 * GiB), true);
-  await settle();
-  const eg = consumes('cloud_egress');
-  assert.equal(eg.length, 1); assert.equal(eg[0].cents, 120); assert.equal(eg[0].state, 'succeeded');
-  assert.equal(getBalance(U), local);
-  ok('流量：不预扣，结算整笔进发件箱');
+  assert.equal(getBalance(U), local - 100 - 120);
+  assert.equal(consumes('cloud_storage').length + consumes('cloud_egress').length, 0);
+  ok('存储与流量从钱包扣，不进积分发件箱');
 }
 
-console.log('\n[7] 平台网关服务（ASR/OCR 等）');
+console.log('\n[7] 平台网关服务（ASR/OCR 等）走钱包');
 {
   const local = getBalance(U);
   const pricing = { service: 'asr', op: 'transcribe', unit: 'minute', creditsPerUnit: 3, maxUnitsPerCall: 600, enabled: 1 } as any;
-  await acct.refreshBqtSnapshot(U, 0);
-  gw.assertBalanceFor(U, 10);
-  const c = gw.chargeAfterSuccess({ userId: U, pricing, actualUnits: 4, taskId: 'ocr-1' });
-  assert.deepEqual(c, { ledgerId: null, chargedCents: 12, shortfallCents: 0 });
-  const held = gw.openHold({ userId: U, taskId: 'asr-1', pricing, estimatedUnits: 10, nowMs: Date.now() });
-  assert.equal(held.holdLedgerId, 0); assert.equal(gw.pendingHoldCents(U), 0);
-  assert.deepEqual(gw.settleHold('asr-1', 7, pricing), { chargedCents: 21, shortfallCents: 0 });
-  assert.deepEqual(gw.settleHold('asr-1', 7, pricing), { chargedCents: 0, shortfallCents: 0 }, '幂等');
-  gw.openHold({ userId: U, taskId: 'asr-2', pricing, estimatedUnits: 10, nowMs: Date.now() });
-  gw.releaseHold('asr-2', 'test');
-  await settle();
-  const g = consumes().filter(r => r.service === 'asr.transcribe');
-  assert.deepEqual(g.map(r => [r.cents, r.state]), [[12, 'succeeded'], [21, 'succeeded']], '释放的 hold 不扣');
-  assert.equal(getBalance(U), local, '本站钱包未扣');
-  assert.throws(() => gw.chargeTransfer({ userId: U, bytes: 1, credits: 1, refId: 't' }), /跨设备中转/);
-  db.prepare("UPDATE bqt_entitlement_snapshot SET fetchedAt='2000-01-01T00:00:00Z' WHERE lawyerId=?").run(LAWYER);
-  assert.throws(() => gw.assertBalanceFor(U, 1), (e: any) => e.code === 'upstream_failed', '旧快照不做花钱判断');
-  await m.fetchBqtEntitlement(LAWYER);
-  ok('网关：事前按实时权益放行、事后整笔进发件箱、ASR 不预扣、跨设备中转暂拒');
+  const funding = gw.assertBalanceFor(U, 10);
+  const c = gw.chargeAfterSuccess({ userId: U, pricing, actualUnits: 4, taskId: 'ocr-1', funding });
+  assert.equal(c.chargedCents, 12); assert.ok(c.ledgerId);
+  assert.equal(getBalance(U), local - 12);
+  assert.equal(consumes().filter(r => r.service === 'asr.transcribe').length, 0);
+  gw.chargeTransfer({ userId: U, bytes: 1, credits: 1, refId: 't' });
+  assert.equal(getBalance(U), local - 13);
+  ok('网关服务与跨设备中转都从钱包扣');
 }
 
-console.log('\n[8] 晴天币停发、Circle 互斥、兑换码');
+console.log('\n[8] 晴天币停发、Circle 互斥');
 {
   const nextMonth = new Date(Date.now() + 40 * 86400000);
   assert.equal(ensureBqtMonthlyQingtianGrant(U, nextMonth), null);
@@ -282,18 +236,7 @@ console.log('\n[8] 晴天币停发、Circle 互斥、兑换码');
   assert.deepEqual(bindCircleFirm(U, 'KW-ABNR-2026'), { ok: false, error: 'bqt_member' });
   const rr = await redeemPOST(bearer('/api/account/redeem', { code: 'KW-ABNR-2026' }));
   assert.equal(rr.status, 409); assert.equal((await rr.json()).error, 'bqt_member');
-  assert.equal((db.prepare('SELECT COUNT(*) n FROM user_circle_binding WHERE userId=?').get(U) as { n: number }).n, 0);
   ok('包晴天律师不能绑 Circle 邀请码（明确错误码 bqt_member）');
-
-  const batch = generateGiftCodes({ count: 1, kind: 'recharge', amountCents: 100, createdBy: 't' }) as { codes: string[] };
-  const code = batch.codes[0];
-  assert.deepEqual(redeemGiftCode(U, code), { error: 'bqt_recharge_via_bqt' });
-  assert.equal((db.prepare('SELECT redeemedByUserId FROM gift_codes WHERE code=?').get(code) as { redeemedByUserId: string | null }).redeemedByUserId, null, '码未被消耗');
-  const fcode = (generateGiftCodes({ count: 1, kind: 'entitlement', feature: 'stage.unlimited', createdBy: 't' }) as { codes: string[] }).codes[0];
-  m.updateBqtSettings({ grantProRights: false }, 'test');
-  assert.equal((redeemGiftCode(U, fcode) as { ok?: boolean }).ok, true, '权益类码照常');
-  m.updateBqtSettings({ grantProRights: true }, 'test');
-  ok('充值类兑换码拒收且不消耗；权益类兑换码照常');
 }
 
 console.log('\n[9] 通道关回去：恢复原样');
@@ -301,10 +244,8 @@ console.log('\n[9] 通道关回去：恢复原样');
   assert.ok(m.updateBqtSettings({ tunnelEnabled: false }, 'test').ok);
   assert.equal(acct.billingLine(U), 'standard');
   assert.equal(subscriptionSnapshot(U).active, false);
-  const r = await payPOST(bearer('/api/payment/create', { amount: 1000, kind: 'recharge' }));
-  assert.notEqual((await r.json()).code, 'bqt_recharge_via_bqt');
   assert.ok(ensureBqtMonthlyQingtianGrant(U, new Date(Date.now() + 40 * 86400000))?.granted);
-  ok('通道关：standard、无包晴天 Pro、可充值、晴天币恢复');
+  ok('通道关：standard、无包晴天 Pro、晴天币恢复');
 }
 
 m.setBqtFetchForTest(null);

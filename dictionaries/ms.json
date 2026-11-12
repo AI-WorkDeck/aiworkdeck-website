@@ -1453,11 +1453,10 @@
       "points": "{points} mata",
       "credits": "bernilai {amount}",
       "outstanding": "Belum ditolak: {amount}",
-      "failed": "{count} potongan mata tidak berjaya. Tambah mata dalam aplikasi Baoqingtian; perbelanjaan baharu dihentikan sehingga diselesaikan.",
-      "aiClosed": "Keahlian anda tidak termasuk AI workbench, jadi tidak boleh digunakan untuk berbelanja di sini.",
+      "failed": "{count} potongan mata tidak berjaya. Sehingga diselesaikan, penggunaan DeepSeek dibayar daripada baki akaun anda.",
+      "aiClosed": "Keahlian anda tidak termasuk AI workbench, jadi penggunaan DeepSeek dibayar daripada baki akaun anda.",
       "proRights": "Termasuk faedah Pro (storan awan 3 GB) semasa keahlian aktif.",
-      "rechargeHint": "Tambah mata atau perbaharui keahlian dalam aplikasi Baoqingtian. Laman ini tidak menerima bayaran terus untuk akaun Baoqingtian.",
-      "unavailable": "Maklumat keahlian tidak tersedia buat sementara. Cuba lagi kemudian.",
+      "priorityHint": "Penggunaan DeepSeek dibayar dahulu dengan mata Baoqingtian anda; apabila mata habis, baki akaun digunakan secara automatik. Model dan perkhidmatan lain menggunakan baki akaun.",
       "fetchedAt": "Dikemas kini {time}"
     }
   },
@@ -1477,9 +1476,7 @@
     "failed": "Pembayaran gagal",
     "retry": "Cuba lagi",
     "creating": "Mencipta pesanan…",
-    "amountLabel": "Jumlah",
-    "bqtConfirm": "Bayar {amount} dengan mata Baoqingtian?",
-    "bqtPay": "Bayar dengan mata"
+    "amountLabel": "Jumlah"
   },
   "supportDialog": {
     "orderUnavailable": "Sumbangan ini tidak dapat dijumpai. Semak pautan pengembalian atau kembali ke peranti tempat anda memulakan pembayaran.",

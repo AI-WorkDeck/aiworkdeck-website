@@ -6,7 +6,7 @@ import { getAiConfig } from './ai-config';
 import { getBalance, getBalanceBreakdown, grantCredits } from './credits';
 import { captureServiceFunding, subscriptionFundingBudget } from './subscription';
 import { findUserById, isDeletedUser, mapDisplayNamesByIds, mapUsernamesByIds, updateProfile } from './users';
-import { bqtChargeTarget } from './bqt-member';
+import { bqtLinkedLawyer } from './bqt-member';
 
 export const CIRCLE_DEEPSEEK_SOURCE_KIND = 'circle_deepseek_grant';
 
@@ -215,7 +215,7 @@ export function bindCircleFirm(
 ): BindCircleFirmResult {
   const res = withTransaction((db) => {
     // 包晴天律师（通道开着）计费走包晴天，不能再挂联盟律所线。
-    if (bqtChargeTarget(userId, db)) return { ok: false as const, error: 'bqt_member' as const };
+    if (bqtLinkedLawyer(userId, db)) return { ok: false as const, error: 'bqt_member' as const };
     const check = validateCircleFirmCode(rawCode, userId, nowIso);
     if (!check.ok) return check;
     const { firm } = check;

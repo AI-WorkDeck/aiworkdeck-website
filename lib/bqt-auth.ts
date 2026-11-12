@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import { getDb, withTransaction } from './db';
 import { getAiConfig } from './ai-config';
 import { grantCredits } from './credits';
-import { bqtChargeTarget } from './bqt-member';
+import { bqtLinkedLawyer } from './bqt-member';
 import { createExternalIdentityUser, findOrCreateByPhone, findUserById, isDefaultDisplayName, isDeletedUser, updateProfile, type User } from './users';
 
 export const BQT_QINGTIAN_SOURCE_KIND = 'bqt_qingtian';
@@ -123,7 +123,7 @@ export function ensureBqtMonthlyQingtianGrant(
     .get(userId) as { userId: string; bqtUserId: string } | undefined;
   if (!binding) return null;
   // 包晴天积分通道开着时不再发本站晴天币：花费一律扣包晴天积分。
-  if (bqtChargeTarget(userId, db)) return null;
+  if (bqtLinkedLawyer(userId, db)) return null;
 
   const monthKey = currentShanghaiMonthKey(now);
   const existing = db
@@ -210,7 +210,7 @@ export function getBqtQingtianStatus(userId: string, now = new Date()): BqtQingt
     | undefined;
   if (!binding) return null;
   // 通道开着时晴天币一节整体由包晴天会员（bqtMember）取代。
-  if (bqtChargeTarget(userId, db)) return null;
+  if (bqtLinkedLawyer(userId, db)) return null;
 
   const grantInfo = ensureBqtMonthlyQingtianGrant(userId, now);
   const monthKey = grantInfo?.monthKey ?? currentShanghaiMonthKey(now);

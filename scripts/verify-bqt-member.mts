@@ -63,8 +63,8 @@ assert.equal(m.bqtMarginMultiplier(), 1.2);
 const userId = crypto.randomUUID();
 db.prepare(`INSERT INTO bqt_user_binding (userId, bqtUserId, mobile, userName, userType, boundAt, updatedAt) VALUES (?, '10001', NULL, 'L', 'lawyer', ?, ?)`)
   .run(userId, new Date().toISOString(), new Date().toISOString());
-assert.deepEqual(m.bqtChargeTarget(userId), { lawyerId: '10001' });
-assert.equal(m.bqtChargeTarget('nobody'), null);
+assert.deepEqual(m.bqtLinkedLawyer(userId), { lawyerId: '10001' });
+assert.equal(m.bqtLinkedLawyer('nobody'), null);
 
 // ── 假包晴天 ──
 let points = 1200_00;            // 百分之一积分
@@ -159,7 +159,7 @@ assert.equal((await m.bqtPreflight(userId, '10001', 1) as any).reason, 'member_i
 
 // 通道关 → 走原线路
 assert.ok(m.updateBqtSettings({ tunnelEnabled: false }, 't').ok);
-assert.equal(m.bqtChargeTarget(userId), null);
+assert.equal(m.bqtLinkedLawyer(userId), null);
 console.log('verify-bqt-member: offline OK');
 
 if (live) {

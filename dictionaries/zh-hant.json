@@ -360,11 +360,10 @@
       "points": "{points} 積分",
       "credits": "折合 {amount}",
       "outstanding": "尚未扣成：{amount}",
-      "failed": "有 {count} 筆積分扣減未成功。請在包晴天 App 補足積分，處理完成前暫停新的花費。",
-      "aiClosed": "目前會員未開通 AI 工作台權益，暫不能在本站消費。",
+      "failed": "有 {count} 筆積分扣減未成功，處理完成前 DeepSeek 用量改用帳戶餘額。",
+      "aiClosed": "目前會員未開通 AI 工作台權益，DeepSeek 用量將使用帳戶餘額。",
       "proRights": "會員有效期內享有個人 Pro 權益（含 3GB 雲端空間）。",
-      "rechargeHint": "積分儲值與會員續費請在包晴天 App 內完成，本站不直接收款。",
-      "unavailable": "暫時無法取得會員資訊，請稍後再試。",
+      "priorityHint": "DeepSeek 模型的用量優先扣包晴天積分，積分不夠時自動改用帳戶餘額；其他模型和服務使用帳戶餘額。",
       "fetchedAt": "更新於 {time}"
     }
   },
@@ -1729,9 +1728,7 @@
     "successHint": "權益已發放到你的賬戶，桌面端連接賬戶後即可使用。",
     "timeout": "支付超時，請重新發起",
     "title": "掃碼購買",
-    "titleRedirect": "確認支付",
-    "bqtConfirm": "確認用包晴天積分支付 {amount}？",
-    "bqtPay": "用積分支付"
+    "titleRedirect": "確認支付"
   },
   "quizPage": {
     "bridge": {

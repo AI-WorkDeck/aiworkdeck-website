@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { resolveKeyUser } from '@/lib/account-auth';
 import { monthlyUsageByService } from '@/lib/gateway/usage';
 import { getBalance } from '@/lib/credits';
-import { accountBillingFields, bqtDisplayBalanceCents } from '@/lib/bqt-account';
+import { accountBillingFields } from '@/lib/bqt-account';
 import { pendingHoldCents } from '@/lib/gateway/spend';
 
 export const dynamic = 'force-dynamic';
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
         ...usage,
         // 顺带回余额与占用中的预扣：面板要在同一屏里回答「本月花了多少 / 还剩多少 /
         // 有多少正被一项没出结果的任务占着」，分三个端点问会拿到三个时刻的快照。
-        balanceCents: bqtDisplayBalanceCents(user.id) ?? getBalance(user.id),
+        balanceCents: getBalance(user.id),
         pendingHoldCents: pendingHoldCents(user.id),
         ...accountBillingFields(user.id),
     });

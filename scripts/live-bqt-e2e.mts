@@ -44,7 +44,8 @@ console.log('points before', m.formatPoints(before));
 const me = await (await meGET(new NextRequest('https://www.aiworkdeck.com/api/account/me', { headers: { Authorization: `Bearer ${key}` } }))).json();
 const meBody = me.user ?? me;
 console.log('me.billingLine', meBody.billingLine ?? me.billingLine, 'bqtMember', JSON.stringify(meBody.bqtMember ?? me.bqtMember));
-assert.equal(meBody.billingLine ?? me.billingLine, 'bqt');
+assert.equal(meBody.billingLine ?? me.billingLine, 'standard');
+assert.ok((meBody.bqtMember ?? me.bqtMember)?.points, '积分另报在 bqtMember');
 
 // Pro 权益
 const sub = subscriptionSnapshot(id) as any;
@@ -52,13 +53,13 @@ console.log('subscription', sub.active, sub.source, sub.endsAt ?? sub.expiresAt)
 assert.equal(sub.active, true);
 assert.ok(hasEntitlement(id, 'cloud.storage.3gb'));
 
-// AI：预检 → 预留（不动本站钱包）→ 结算 → 真实扣积分
+// AI：DeepSeek 预检 → 预留（不动本站钱包）→ 结算 → 真实扣积分
 const req = randomUUID();
-await billing.authorizeCostCny(id, req, 0.05);
-// 只能用 DeepSeek
+await billing.authorizeCostCny(id, req, 0.05, 'deepseek-v4.1-flash-1017');
+// 非 DeepSeek 走本站钱包（这个测试账号钱包为 0 → 余额不足，积分不动）
 const q = randomUUID();
-await billing.authorizeCostCny(id, q, 0.05);
-assert.throws(() => billing.reserveCostCny(id, q, { e2e: true }, 'qwen3.8-max', 0.05, {}), /bqt_model_not_allowed/);
+await billing.authorizeCostCny(id, q, 0.05, 'qwen3.8-max');
+assert.throws(() => billing.reserveCostCny(id, q, { e2e: true }, 'qwen3.8-max', 0.05, {}), /Credits|insufficient/i);
 billing.reserveCostCny(id, req, { e2e: true }, 'deepseek-v4.1-flash-1017', 0.05, { e2e: true });
 assert.equal(getBalance(id), 0, '本站钱包不应被动用');
 billing.submitted(id, req);

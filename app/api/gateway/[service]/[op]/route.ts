@@ -1,7 +1,6 @@
 import type { ServiceFunding } from '@/lib/subscription';
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveKeyUser } from '@/lib/account-auth';
-import { refreshBqtSnapshot } from '@/lib/bqt-account';
 import { gatewayErrorResponse as errorResponse } from '@/lib/gateway/errors';
 import { requireEnabledPricing, creditsFor, assertUnitsWithinCap } from '@/lib/gateway/pricing';
 import { assertBalanceFor, chargeAfterSuccess, refundCharge } from '@/lib/gateway/spend';
@@ -42,9 +41,6 @@ export async function POST(
     if (!user) {
         return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
-    // 包晴天律师：放行前按 5 秒内的实时权益判断（等同 bqtPreflight 的口径，见 lib/gateway/spend.ts）
-    await refreshBqtSnapshot(user.id, 5_000);
-
     let idempotencyKey: string;
     let funding: ServiceFunding;
     let body: Record<string, unknown>;

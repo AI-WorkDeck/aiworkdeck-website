@@ -11,8 +11,7 @@ import { grantCredits, spendCredits, getBalance, InsufficientCreditsError } from
 import { createOrder } from './orders';
 import { randomUUID } from 'crypto';
 import type { Order } from './orders';
-import { getOrder } from './orders';
-import { bqtPreflight, bqtProRightsUntil, consumeRow, dispatchConsume, enqueueConsume, bqtRequestNo, waiveConsume, type BqtDenial } from './bqt-member';
+import { bqtProRightsUntil } from './bqt-member';
 
 /**
  * 购买闭环（PR-W3）：SKU 解析、履约（purchases + entitlements + creator_earnings）、
@@ -498,93 +497,3 @@ export function purchaseWithCredits(
 }
 
 class AlreadyOwnedError extends Error {}
-
-// ---------------------------------------------------------------------------
-// 包晴天律师用积分购买（通道开着时 /api/account/purchase 走这里）
-// ---------------------------------------------------------------------------
-
-export type BqtPurchaseError =
-  | 'invalid_sku'
-  | 'not_purchasable'
-  | 'already_owned'
-  | `bqt_${Exclude<BqtDenial, 'bqt_unavailable'>}`
-  | 'bqt_unavailable'
-  | 'bqt_consume_failed'
-  | 'bqt_consume_pending';
-
-export interface BqtPurchaseResult extends CreditsPurchaseResult {
-  paidWith: 'bqt';
-  requestNo: string;
-}
-
-/**
- * 包晴天没有冻结也没有退款，所以顺序是：预检 → 登记扣减 → 发出 → **只有 succeeded 才交付**。
- * - rejected（如 INSUFFICIENT_POINTS）：没交付，这笔不是欠账，立即放弃（waive），不挂到用户身上；
- * - 超时/繁忙（仍 pending）：不交付，返回 bqt_consume_pending；同一 SKU 再次购买会复用原单号
- *   （包晴天按 requestNo 幂等），确认成功后才交付——不会因为重试扣两次。
- * refId = `<skuId>|<outTradeNo>`，交付时 outTradeNo 即订单号，据此判断是否已交付。
- */
-export async function purchaseWithBqt(
-  userId: string,
-  lawyerId: string,
-  skuId: unknown
-): Promise<BqtPurchaseResult | { error: BqtPurchaseError }> {
-  const sku = typeof skuId === 'string' ? resolveSku(skuId) : null;
-  if (!sku) return { error: 'invalid_sku' };
-  if (sku.priceCents <= 0) return { error: 'not_purchasable' };
-  if (hasEntitlement(userId, sku.feature)) return { error: 'already_owned' };
-
-  // 先找这件商品上次没交付完的扣减（已成功未交付 / 仍在途）
-  const open = (getDb()
-    .prepare(`SELECT requestNo, refId FROM bqt_consume WHERE userId = ? AND service = 'purchase' AND substr(refId, 1, ?) = ?
-                AND state IN ('pending','sending','succeeded') ORDER BY createdAt`)
-    .all(userId, sku.skuId.length + 1, `${sku.skuId}|`) as Array<{ requestNo: string; refId: string }>)
-    .find(r => !getOrder(r.refId.slice(sku.skuId.length + 1)));
-
-  let requestNo: string;
-  if (open) {
-    requestNo = open.requestNo;
-  } else {
-    const pre = await bqtPreflight(userId, lawyerId, sku.priceCents);
-    if (!pre.ok) return { error: pre.reason === 'bqt_unavailable' ? 'bqt_unavailable' : `bqt_${pre.reason}` };
-    const outTradeNo = `BQT-${randomUUID()}`;
-    const refId = `${sku.skuId}|${outTradeNo}`;
-    requestNo = withTransaction(d => enqueueConsume(d, { userId, lawyerId, cents: sku.priceCents, service: 'purchase', refId, requestNo: bqtRequestNo('purchase', outTradeNo) }).requestNo);
-  }
-
-  const row = await dispatchConsume(requestNo);
-  if (row.state === 'failed') {
-    waiveConsume(requestNo, 'system:purchase_not_delivered');
-    return { error: 'bqt_consume_failed' };
-  }
-  if (row.state !== 'succeeded') return { error: 'bqt_consume_pending' };
-
-  const outTradeNo = row.refId!.slice(sku.skuId.length + 1);
-  const delivered = withTransaction(db => {
-    const existing = getOrder(outTradeNo);
-    if (existing) return existing;
-    const order = createOrder({
-      id: outTradeNo,
-      outTradeNo,
-      userId,
-      kind: 'purchase',
-      skuId: sku.skuId,
-      description: `包晴天积分购买 ${sku.itemName}`,
-      amount: row.cents,
-      status: 'paid',
-      channel: 'bqt',
-    });
-    // 积分已扣成：即便并发另一笔先发了权益也照常落 purchases（fulfillPurchase 记 duplicate 审计待人工处理）
-    fulfillPurchase(db, order);
-    return order;
-  });
-  return {
-    ok: true,
-    feature: sku.feature,
-    priceCents: row.cents,
-    balanceCents: 0,
-    orderId: delivered.id,
-    paidWith: 'bqt',
-    requestNo: consumeRow(requestNo)!.requestNo,
-  };
-}

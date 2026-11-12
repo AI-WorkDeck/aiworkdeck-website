@@ -1453,11 +1453,10 @@
       "points": "{points} Punkte",
       "credits": "entspricht {amount}",
       "outstanding": "Noch nicht abgebucht: {amount}",
-      "failed": "{count} Punkteabbuchung(en) sind fehlgeschlagen. Laden Sie Punkte in der Baoqingtian-App auf; neue Ausgaben sind bis zur Klärung gesperrt.",
-      "aiClosed": "Ihre Mitgliedschaft umfasst die AI-Workbench nicht und kann hier nicht zum Bezahlen genutzt werden.",
+      "failed": "{count} Punkteabbuchung(en) sind nicht durchgegangen. Bis zur Klärung wird DeepSeek-Nutzung aus Ihrem Kontoguthaben bezahlt.",
+      "aiClosed": "Ihre Mitgliedschaft umfasst die AI-Workbench nicht, daher wird DeepSeek-Nutzung aus Ihrem Kontoguthaben bezahlt.",
       "proRights": "Enthält Pro-Vorteile (3 GB Cloud-Speicher), solange die Mitgliedschaft aktiv ist.",
-      "rechargeHint": "Punkte aufladen oder Mitgliedschaft verlängern bitte in der Baoqingtian-App. Diese Website nimmt für Baoqingtian-Konten keine Direktzahlungen an.",
-      "unavailable": "Mitgliedsdaten sind vorübergehend nicht verfügbar. Bitte später erneut versuchen.",
+      "priorityHint": "DeepSeek-Nutzung wird zuerst mit Ihren Baoqingtian-Punkten bezahlt; reichen die Punkte nicht, wird automatisch Ihr Kontoguthaben verwendet. Andere Modelle und Dienste nutzen Ihr Kontoguthaben.",
       "fetchedAt": "Aktualisiert {time}"
     }
   },
@@ -1477,9 +1476,7 @@
     "failed": "Zahlung fehlgeschlagen",
     "retry": "Erneut versuchen",
     "creating": "Bestellung wird erstellt…",
-    "amountLabel": "Betrag",
-    "bqtConfirm": "{amount} mit Baoqingtian-Punkten bezahlen?",
-    "bqtPay": "Mit Punkten bezahlen"
+    "amountLabel": "Betrag"
   },
   "supportDialog": {
     "orderUnavailable": "Diese Spende konnte nicht gefunden werden. Prüfen Sie den Rückkehr-Link oder kehren Sie zum Gerät zurück, auf dem Sie den Bezahlvorgang gestartet haben.",

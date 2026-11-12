@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveKeyUser } from '@/lib/account-auth';
 import { getBalance } from '@/lib/credits';
-import { bqtDisplayBalanceCents, refreshBqtSnapshot } from '@/lib/bqt-account';
 import { gatewayErrorResponse } from '@/lib/gateway/errors';
 import { requireEnabledPricing, assertUnitsWithinCap, creditsFor } from '@/lib/gateway/pricing';
 import { assertBalanceFor, needsUserConfirm } from '@/lib/gateway/spend';
@@ -38,9 +37,6 @@ export async function POST(request: NextRequest) {
     if (!user) {
         return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
-    // 包晴天律师：放行前按 5 秒内的实时权益判断（等同 bqtPreflight 的口径，见 lib/gateway/spend.ts）
-    await refreshBqtSnapshot(user.id, 5_000);
-
     try {
         const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
         const durationSec = assertValidDuration(body.durationSec);
@@ -69,7 +65,7 @@ export async function POST(request: NextRequest) {
             maxUploadBytes: maxUploadBytesFor(durationSec),
             estimatedCredits,
             unit: pricing.unit,
-            balanceCents: bqtDisplayBalanceCents(user.id) ?? getBalance(user.id),
+            balanceCents: getBalance(user.id),
             // 超过用户确认阈值时，桌面端在提交前显示「本次约需 N Credits」
             needsConfirm: needsUserConfirm(estimatedCredits),
         });

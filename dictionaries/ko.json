@@ -1453,11 +1453,10 @@
       "points": "{points} 포인트",
       "credits": "{amount} 상당",
       "outstanding": "미차감: {amount}",
-      "failed": "포인트 차감 {count}건이 완료되지 않았습니다. Baoqingtian 앱에서 포인트를 충전하세요. 해결될 때까지 새 사용이 중지됩니다.",
-      "aiClosed": "현재 멤버십에 AI 워크벤치가 포함되어 있지 않아 이 사이트에서 사용할 수 없습니다.",
+      "failed": "포인트 차감 {count}건이 완료되지 않았습니다. 해결될 때까지 DeepSeek 사용량은 계정 잔액으로 결제됩니다.",
+      "aiClosed": "현재 멤버십에 AI 워크벤치가 포함되어 있지 않아 DeepSeek 사용량은 계정 잔액으로 결제됩니다.",
       "proRights": "멤버십 기간 동안 개인 Pro 혜택(3GB 클라우드 공간)을 이용할 수 있습니다.",
-      "rechargeHint": "포인트 충전과 멤버십 갱신은 Baoqingtian 앱에서 해 주세요. 이 사이트는 직접 결제를 받지 않습니다.",
-      "unavailable": "멤버십 정보를 일시적으로 가져올 수 없습니다. 잠시 후 다시 시도하세요.",
+      "priorityHint": "DeepSeek 모델 사용량은 바오칭톈 포인트에서 먼저 차감되며, 포인트가 부족하면 자동으로 계정 잔액을 사용합니다. 다른 모델과 서비스는 계정 잔액을 사용합니다.",
       "fetchedAt": "{time} 업데이트"
     }
   },
@@ -1477,9 +1476,7 @@
     "failed": "결제 실패",
     "retry": "재시도",
     "creating": "주문 생성 중…",
-    "amountLabel": "금액",
-    "bqtConfirm": "Baoqingtian 포인트로 {amount}을(를) 결제할까요?",
-    "bqtPay": "포인트로 결제"
+    "amountLabel": "금액"
   },
   "supportDialog": {
     "orderUnavailable": "해당 기부를 찾을 수 없습니다. 돌아가기 링크를 확인하거나 결제를 시작한 기기로 돌아가 주세요.",

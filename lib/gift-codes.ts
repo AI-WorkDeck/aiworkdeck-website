@@ -5,7 +5,6 @@ import { getFeatureProduct } from './products';
 import { getSkill } from './skills-store';
 import { getPlugin } from './plugins-store';
 import { mapUsernamesByIds } from './users';
-import { bqtChargeTarget } from './bqt-member';
 
 /**
  * 兑换码（PR-W4）。
@@ -189,8 +188,7 @@ export type RedeemError =
   | 'not_found'
   | 'already_redeemed'
   | 'revoked'
-  | 'already_owned'
-  | 'bqt_recharge_via_bqt';
+  | 'already_owned';
 
 export interface RedeemSuccess {
   ok: true;
@@ -218,9 +216,6 @@ export function redeemGiftCode(userId: string, rawCode: unknown): RedeemSuccess 
     if (!row) return { error: 'not_found' as const };
     if (row.revokedAt) return { error: 'revoked' as const };
     if (row.redeemedByUserId) return { error: 'already_redeemed' as const };
-    // 包晴天律师（通道开着）的花费只扣包晴天积分，充值类码入账的本站 Credits 花不出去：
-    // 拒绝且不消耗码。权益类码照常可兑。
-    if (row.kind === 'recharge' && bqtChargeTarget(userId, db)) return { error: 'bqt_recharge_via_bqt' as const };
 
     const payload = JSON.parse(row.payloadJson) as { amountCents?: number; feature?: string };
     // payload 形状校验。生成端有白名单，这里兜的是手工/迁移/导入产生的坏行。

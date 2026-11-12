@@ -12,8 +12,8 @@ import * as mgmt from '../openrouter-mgmt';
 import { bailianConfigured, deepseekConfigured, isDeepSeekModelId } from './config';
 import { usageCostCny, type PlatformModel } from './catalog';
 import { CIRCLE_DEEPSEEK_SOURCE_KIND, getUserMarginMultiplier } from '../circle-firms';
-import { bqtChargeTarget, bqtMarginMultiplier, enqueueConsume } from '../bqt-member';
-import { assertBqtModel, bqtAiCreditsCents, bqtAuthorize, bqtFunding, bqtFundingJson, bqtHasActiveRequest, bqtReserveLedgerId, bqtTakeApproval, dispatchBqtConsume } from '../bqt-ai';
+import { bqtLinkedLawyer, bqtMarginMultiplier, enqueueConsume } from '../bqt-member';
+import { isBqtEligibleModel, bqtAiCreditsCents, bqtAuthorize, bqtFunding, bqtFundingJson, bqtHasActiveRequest, bqtReserveLedgerId, bqtTakeApproval, dispatchBqtConsume } from '../bqt-ai';
 export interface PlatformRequest {
   userId:string; requestId:string; payloadHash:string; state:string; model:string;
   reserveCents:number; reserveLedgerId:number; fundingJson:string; priceJson:string; thinking:number;
@@ -68,27 +68,31 @@ function maxCostCnyFor(model:PlatformModel,inputTokens:number,outputTokens:numbe
 export function reserve(userId:string,id:string,payload:unknown,model:PlatformModel,inputTokens:number,outputTokens:number,thinking:boolean) {
   return reserveCostCny(userId,id,payload,model.id,maxCostCnyFor(model,inputTokens,outputTokens,thinking),model,thinking);
 }
-/** BQT lawyers use the BQT margin; everyone else keeps their existing (Circle/global) margin. */
-function reserveTerms(userId:string,maxCostCny:number) {
-  const bqt=bqtChargeTarget(userId);
-  const margin=bqt?bqtMarginMultiplier():getUserMarginMultiplier(userId), exchangeRate=getExchangeRateInfo().rate;
+/** Points-funded requests use the BQT margin; wallet-funded ones keep the user's (Circle/global) margin. */
+function reserveTerms(userId:string,maxCostCny:number,bqtLine:boolean) {
+  const margin=bqtLine?bqtMarginMultiplier():getUserMarginMultiplier(userId), exchangeRate=getExchangeRateInfo().rate;
   if(!Number.isFinite(maxCostCny)||maxCostCny<0)throw new Error('invalid_request');
   const cents=Math.max(1,Math.ceil(maxCostCny*margin*100));
   if(!Number.isSafeInteger(cents)||cents>100000||!(margin>0)||!(exchangeRate>0))throw new Error('invalid_request');
-  return {bqt,margin,exchangeRate,cents};
+  return {margin,exchangeRate,cents};
 }
-/** Must be awaited before reserveCostCny: BQT lawyers are checked for membership and points (no-op for others). */
-export async function authorizeCostCny(userId:string,id:string,maxCostCny:number) {
-  const {bqt,cents}=reserveTerms(userId,maxCostCny);
-  if(bqt)await bqtAuthorize(userId,`platform_ai:${id}`,cents);
+/**
+ * Await before reserveCostCny. For a linked BQT lawyer on a DeepSeek model this tries BQT points first;
+ * any BQT problem just means this request is paid from the wallet. No-op for everyone else.
+ */
+export async function authorizeCostCny(userId:string,id:string,maxCostCny:number,modelId:string) {
+  if(!bqtLinkedLawyer(userId)||!isBqtEligibleModel(modelId))return;
+  await bqtAuthorize(userId,`platform_ai:${id}`,reserveTerms(userId,maxCostCny,true).cents,modelId);
 }
 export function authorizeReserve(userId:string,id:string,model:PlatformModel,inputTokens:number,outputTokens:number,thinking:boolean) {
-  return authorizeCostCny(userId,id,maxCostCnyFor(model,inputTokens,outputTokens,thinking));
+  return authorizeCostCny(userId,id,maxCostCnyFor(model,inputTokens,outputTokens,thinking),model.id);
 }
 export function reserveCostCny(userId:string,id:string,payload:unknown,modelId:string,maxCostCny:number,priceSnapshot:unknown,thinking=false) {
   const hash=createHash('sha256').update(JSON.stringify(payload)).digest('hex');
-  const {bqt,margin,exchangeRate,cents}=reserveTerms(userId,maxCostCny);
-  if(bqt){assertBqtModel(modelId);bqtTakeApproval(userId,`platform_ai:${id}`,cents);}
+  const linked=isBqtEligibleModel(modelId)?bqtLinkedLawyer(userId):null;
+  const bqtTerms=linked?reserveTerms(userId,maxCostCny,true):null;
+  const bqt=linked&&bqtTakeApproval(userId,`platform_ai:${id}`,bqtTerms!.cents)?linked:null;
+  const walletTerms=reserveTerms(userId,maxCostCny,false);
   recoverPending();
   return withTransaction(db=>{
     const previous=requestRow(userId,id);
@@ -97,14 +101,14 @@ export function reserveCostCny(userId:string,id:string,payload:unknown,modelId:s
     const active=db.prepare("SELECT COUNT(*) n FROM platform_ai_request WHERE state IN ('reserved','submitted','usage_pending')").get() as {n:number};
     const own=db.prepare("SELECT COUNT(*) n FROM platform_ai_request WHERE userId=? AND state IN ('reserved','submitted','usage_pending')").get(userId) as {n:number};
     if(active.n>=32||own.n>=4)throw new Error('busy');
-    if(bqt) {
-      // One in-flight request per BQT lawyer narrows the check-then-deduct race. The wallet is never touched.
-      if(bqtHasActiveRequest(db,userId))throw new Error('busy');
-      const now=new Date().toISOString();
+    // Points first. A second concurrent points request (check-then-deduct race) goes to the wallet instead.
+    if(bqt&&!bqtHasActiveRequest(db,userId)) {
+      const {cents,margin,exchangeRate}=bqtTerms!, now=new Date().toISOString();
       db.prepare(`INSERT INTO platform_ai_request(userId,requestId,payloadHash,state,model,reserveCents,reserveLedgerId,fundingJson,priceJson,thinking,exchangeRate,margin,createdAt,updatedAt)
         VALUES (?,?,?,'reserved',?,?,?,?,?,?,?,?,?,?)`).run(userId,id,hash,modelId,cents,bqtReserveLedgerId(db),bqtFundingJson(bqt.lawyerId),JSON.stringify(priceSnapshot),thinking?1:0,exchangeRate,margin,now,now);
       return requestRow(userId,id)!;
     }
+    const {cents,margin,exchangeRate}=walletTerms;
     const now=new Date().toISOString(), funding=captureAiFunding(userId);
     const excludeSourceKinds=isDeepSeekModelId(modelId)?undefined:[CIRCLE_DEEPSEEK_SOURCE_KIND];
     const ledger=spendCredits(db,{userId,amountCents:cents,funding,ledgerKind:'ai_alloc',nowIso:now,excludeSourceKinds,
@@ -163,13 +167,15 @@ export function settleCostCny(userId:string,id:string,cost:number,usage:Record<s
   dispatchBqtConsume(requestNo);
   return settled;
 }
-/** BQT lawyers see their BQT points (snapshot; refresh with refreshBqtSnapshot first) instead of local credits. */
+/** Wallet credits plus, for a linked BQT lawyer, their BQT points (snapshot; refresh with refreshBqtSnapshot first). */
 export function domesticQuota(userId:string) {
   recoverPending();
-  const bqt=bqtChargeTarget(userId);
-  const creditsCents=bqt?bqtAiCreditsCents(userId,bqt.lawyerId):getSpendableBalance(userId,new Date().toISOString(),captureAiFunding(userId));
+  const bqt=bqtLinkedLawyer(userId), rate=getExchangeRateInfo().rate;
+  const walletCents=getSpendableBalance(userId,new Date().toISOString(),captureAiFunding(userId));
+  const pointsCents=bqt?bqtAiCreditsCents(userId,bqt.lawyerId):0;
+  const creditsCents=walletCents+pointsCents;
   const row=getDb().prepare("SELECT COALESCE(SUM(costUsd),0) total FROM platform_ai_request WHERE userId=? AND state='settled'").get(userId) as {total:number};
-  const remainingUsd=usdFromCents(creditsCents,getExchangeRateInfo().rate,bqt?bqtMarginMultiplier():getUserMarginMultiplier(userId));
+  const remainingUsd=usdFromCents(walletCents,rate,getUserMarginMultiplier(userId))+(pointsCents?usdFromCents(pointsCents,rate,bqtMarginMultiplier()):0);
   const configured=bailianConfigured()||deepseekConfigured();
   return {configured,provider:'bailian',hasKey:configured,creditsCents,usageUsd:row.total,remainingUsd,limitUsd:row.total+remainingUsd,disabled:false};
 }

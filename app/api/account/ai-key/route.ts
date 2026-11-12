@@ -15,8 +15,8 @@ import { getSpendableBalance } from '@/lib/credits';
 import { trialBlockReason } from '@/lib/trial';
 import { pickLangText, resolveRequestLocale } from '@/lib/api-locale';
 import { canCircleUserCallOverseasModel, getUserCircleFirm } from '@/lib/circle-firms';
-import { bqtChargeTarget, bqtPreflight } from '@/lib/bqt-member';
-import { BQT_ERROR_STATUS, bqtErrorCode, bqtErrorMessage } from '@/lib/bqt-ai';
+import { bqtLinkedLawyer } from '@/lib/bqt-member';
+import { refreshBqtSnapshot } from '@/lib/bqt-ai';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,8 +40,8 @@ export async function POST(request: NextRequest) {
     if (!user) {
         return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
-    // 包晴天律师（通道开）：只走积分，不受本站试用约束；签发前先查会员与积分，拒绝用约定错误码。
-    const bqt = bqtChargeTarget(user.id);
+    // 绑定了包晴天的律师不受本站试用约束（DeepSeek 用量优先扣包晴天积分，其余走钱包）。
+    const bqt = bqtLinkedLawyer(user.id);
     if (platformProvider() === 'bailian') {
         const responseHeaders = { 'Cache-Control': 'no-store' };
         if (!bqt && trialBlockReason(user.id)) return NextResponse.json({ error: trialBlockReason(user.id) }, { status: 409, headers: responseHeaders });
@@ -49,15 +49,9 @@ export async function POST(request: NextRequest) {
             message: t('国内平台 AI 已迁移至百炼，请更新客户端后使用', 'China platform AI has moved to Bailian. Update your client to continue.') }, { status: 409, headers: responseHeaders });
         if (!bailianConfigured()) return NextResponse.json({ error: 'not_configured' }, { status: 503, headers: responseHeaders });
         try {
-            if (bqt) {
-                const pre = await bqtPreflight(user.id, bqt.lawyerId, 1);
-                if (!pre.ok) {
-                    const code = bqtErrorCode(pre.reason);
-                    return NextResponse.json({ error: code, message: bqtErrorMessage(code, lang) }, { status: BQT_ERROR_STATUS[code], headers: responseHeaders });
-                }
-            }
             const apiKey = issueRuntimeToken(user.id, request);
             await retireOpenRouter(user.id);
+            if (bqt) await refreshBqtSnapshot(user.id);
             const quota = domesticQuota(user.id);
             if (quota.creditsCents <= 0) return NextResponse.json({ error: 'no_credits' }, { status: 409, headers: responseHeaders });
             const models = await platformModels();
@@ -105,11 +99,6 @@ export async function POST(request: NextRequest) {
                 message: t('平台 AI 配置暂时不可用，请稍后重试', 'Platform AI configuration is temporarily unavailable. Try again later.'),
             }, { status: 503, headers: responseHeaders });
         }
-    }
-
-    // 海外 OpenRouter 直连 key 只能由本站钱包供额，包晴天律师一律拒绝（不从钱包收他们的钱）。
-    if (bqt) {
-        return NextResponse.json({ error: 'bqt_overseas_unsupported', message: bqtErrorMessage('bqt_overseas_unsupported', lang) }, { status: 403 });
     }
 
     if (!isEncryptionConfigured()) {

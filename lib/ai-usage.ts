@@ -3,7 +3,6 @@ import { withTransaction } from '@/lib/db';
 import { getBalance, spendCredits, InsufficientCreditsError } from '@/lib/credits';
 import { getAiConfig, getExchangeRateInfo } from '@/lib/ai-config';
 import { getUserMarginMultiplier } from '@/lib/circle-firms';
-import { bqtBalanceView, bqtChargeTarget } from '@/lib/bqt-member';
 
 /**
  * 官网 AI 生成（Skill 帮写 / 对话式创建）的按量记账。
@@ -57,11 +56,6 @@ export function settleAiUsage(input: AiUsageSettleInput): AiUsageSettleResult {
   if (costCents <= 0) {
     return { costCents: 0, charged: false, balanceCents: getBalance(input.userId) };
   }
-
-  // 包晴天律师：本站钱包不收他们的钱；这笔免费限流的生成也不扣积分（扣不动会挂欠账、拦住付费 AI），
-  // 按「扣不动」口径由平台承担、照样亮账，余额展示包晴天积分折分。
-  const bqt = bqtChargeTarget(input.userId);
-  if (bqt) return { costCents, charged: false, balanceCents: bqtBalanceView(input.userId, bqt.lawyerId)?.cents ?? 0 };
 
   try {
     withTransaction(db => {

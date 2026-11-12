@@ -17,8 +17,6 @@ import { siteConfig } from '@/lib/site-config';
 import { getDb } from '@/lib/db';
 import { toBaseLocale } from '@/i18n-config';
 import { pickLangText, resolveRequestLocale } from '@/lib/api-locale';
-import { bqtChargeTarget } from '@/lib/bqt-member';
-import { BQT_RECHARGE_ERROR, bqtRechargeMessage } from '@/lib/bqt-account';
 
 const VALID_KINDS: OrderKind[] = ['recharge', 'purchase', 'support', 'subscription'];
 const ANON_SUPPORT_MAX_CENTS = 50000; // 匿名打赏上限 500 本站货币单位；登录用户打赏不设上限（dev-board#761）
@@ -77,12 +75,6 @@ export async function POST(request: NextRequest) {
         { error: t(`单笔金额不能超过 ${ORDER_MAX_CENTS / 100} 元`, `Single order amount cannot exceed ${ORDER_MAX_CENTS / 100}`) },
         { status: 400 }
       );
-    }
-
-    // 包晴天律师（积分通道开着）只能经包晴天付费：不收充值、不卖 Pro、广场条目改用积分购买（/api/account/purchase）。
-    // 打赏（support）不是对本账户的计费，照常放行。
-    if (user && kind !== 'support' && bqtChargeTarget(user.id)) {
-      return NextResponse.json({ error: bqtRechargeMessage(lang), code: BQT_RECHARGE_ERROR }, { status: 409 });
     }
 
     // Pro 购买开关（PRO_PURCHASE_ENABLED，默认见 lib/pro-purchase-flag.ts）+ monthly-only。

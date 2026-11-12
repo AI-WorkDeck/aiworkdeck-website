@@ -1453,11 +1453,10 @@
       "points": "{points} punten",
       "credits": "ter waarde van {amount}",
       "outstanding": "Nog niet afgeschreven: {amount}",
-      "failed": "{count} puntenafschrijving(en) zijn mislukt. Vul punten aan in de Baoqingtian-app; nieuwe uitgaven zijn gepauzeerd tot dit is opgelost.",
-      "aiClosed": "Je lidmaatschap bevat de AI-workbench niet en kan hier dus niet worden gebruikt om te betalen.",
+      "failed": "{count} puntenafschrijving(en) zijn niet gelukt. Tot dit is opgelost, wordt DeepSeek-gebruik betaald uit je accountsaldo.",
+      "aiClosed": "Je lidmaatschap bevat de AI-werkbank niet, dus DeepSeek-gebruik wordt betaald uit je accountsaldo.",
       "proRights": "Inclusief Pro-voordelen (3 GB cloudopslag) zolang het lidmaatschap actief is.",
-      "rechargeHint": "Punten opwaarderen of lidmaatschap verlengen doe je in de Baoqingtian-app. Deze site neemt geen directe betalingen aan voor Baoqingtian-accounts.",
-      "unavailable": "Lidmaatschapsgegevens zijn tijdelijk niet beschikbaar. Probeer het later opnieuw.",
+      "priorityHint": "DeepSeek-gebruik wordt eerst betaald met je Baoqingtian-punten; zijn die op, dan wordt automatisch je accountsaldo gebruikt. Andere modellen en diensten gebruiken je accountsaldo.",
       "fetchedAt": "Bijgewerkt {time}"
     }
   },
@@ -1477,9 +1476,7 @@
     "failed": "Betaling mislukt",
     "retry": "Opnieuw proberen",
     "creating": "Order wordt aangemaakt…",
-    "amountLabel": "Bedrag",
-    "bqtConfirm": "{amount} betalen met Baoqingtian-punten?",
-    "bqtPay": "Betalen met punten"
+    "amountLabel": "Bedrag"
   },
   "supportDialog": {
     "orderUnavailable": "Deze donatie kon niet worden gevonden. Controleer de retourlink of ga terug naar het apparaat waarop je de checkout bent gestart.",

@@ -18,7 +18,6 @@ import { OFFICIAL_PLUGINS, type OfficialPlugin } from '@/lib/official-plugins';
 import { listFeatureProducts } from '@/lib/products';
 import { hasEntitlement } from '@/lib/purchases';
 import { getSessionUser } from '@/lib/sessions';
-import { bqtChargeTarget } from '@/lib/bqt-member';
 import { Reveal } from '@/components/motion/Reveal';
 import { Button } from '@/components/ui/button';
 import { BuyButton } from '@/components/purchase/BuyButton';
@@ -71,7 +70,6 @@ export default async function MarketplacePluginsPage({ params }: { params: Promi
     const en = toBaseLocale(lang) === 'en';
     const me = await getSessionUser();
     // 包晴天律师（积分通道开着）：购买按钮改为扣包晴天积分
-    const bqtPoints = !!me && !!bqtChargeTarget(me.id);
     const featureProducts = listFeatureProducts().map(p => ({
         ...p,
         owned: !!me && hasEntitlement(me.id, p.key),
@@ -255,7 +253,6 @@ export default async function MarketplacePluginsPage({ params }: { params: Promi
                                                 itemName={p.name}
                                                 owned={!!me && hasEntitlement(me.id, `plugin:${p.id}`)}
                                                 loggedIn={!!me}
-                                                bqtPoints={bqtPoints}
                                                 compact
                                             />
                                         </div>
@@ -301,7 +298,6 @@ export default async function MarketplacePluginsPage({ params }: { params: Promi
                                         itemName={en ? p.nameEn : p.name}
                                         owned={p.owned}
                                         loggedIn={!!me}
-                                        bqtPoints={bqtPoints}
                                         compact
                                     />
                                 </div>

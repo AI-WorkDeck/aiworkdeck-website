@@ -1453,11 +1453,10 @@
       "points": "{points} puan",
       "credits": "{amount} değerinde",
       "outstanding": "Henüz düşülmedi: {amount}",
-      "failed": "{count} puan düşümü başarısız oldu. Baoqingtian uygulamasında puan yükleyin; çözülene kadar yeni harcamalar durduruldu.",
-      "aiClosed": "Üyeliğiniz AI workbench içermediği için burada ödeme yapmak için kullanılamaz.",
+      "failed": "{count} puan kesintisi tamamlanmadı. Çözülene kadar DeepSeek kullanımı hesap bakiyenizden ödenir.",
+      "aiClosed": "Üyeliğiniz AI çalışma alanını içermiyor, bu yüzden DeepSeek kullanımı hesap bakiyenizden ödenir.",
       "proRights": "Üyelik etkin olduğu sürece Pro avantajlarını (3 GB bulut depolama) içerir.",
-      "rechargeHint": "Puan yüklemek veya üyeliği yenilemek için Baoqingtian uygulamasını kullanın. Bu site Baoqingtian hesaplarından doğrudan ödeme almaz.",
-      "unavailable": "Üyelik bilgisi geçici olarak alınamıyor. Daha sonra tekrar deneyin.",
+      "priorityHint": "DeepSeek kullanımı önce Baoqingtian puanlarınızdan ödenir; puanlar bitince otomatik olarak hesap bakiyeniz kullanılır. Diğer modeller ve hizmetler hesap bakiyenizi kullanır.",
       "fetchedAt": "{time} güncellendi"
     }
   },
@@ -1477,9 +1476,7 @@
     "failed": "Ödeme başarısız oldu",
     "retry": "Tekrar dene",
     "creating": "Sipariş oluşturuluyor…",
-    "amountLabel": "Tutar",
-    "bqtConfirm": "{amount} tutarını Baoqingtian puanıyla ödemek ister misiniz?",
-    "bqtPay": "Puanla öde"
+    "amountLabel": "Tutar"
   },
   "supportDialog": {
     "orderUnavailable": "Bu bağış bulunamadı. Dönüş bağlantısını kontrol edin veya ödemeye başladığınız cihaza geri dönün.",

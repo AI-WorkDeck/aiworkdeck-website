@@ -1453,11 +1453,10 @@
       "points": "{points} điểm",
       "credits": "tương đương {amount}",
       "outstanding": "Chưa trừ: {amount}",
-      "failed": "{count} lần trừ điểm chưa thành công. Hãy nạp thêm điểm trong ứng dụng Baoqingtian; chi tiêu mới tạm dừng cho đến khi xử lý xong.",
-      "aiClosed": "Gói hội viên của bạn không gồm AI workbench nên không thể chi tiêu tại đây.",
+      "failed": "Có {count} lần trừ điểm chưa thành công. Cho đến khi xử lý xong, mức sử dụng DeepSeek được trả bằng số dư tài khoản.",
+      "aiClosed": "Gói hội viên của bạn không bao gồm AI workbench, nên mức sử dụng DeepSeek được trả bằng số dư tài khoản.",
       "proRights": "Bao gồm quyền lợi Pro (3 GB lưu trữ đám mây) khi hội viên còn hiệu lực.",
-      "rechargeHint": "Nạp điểm hoặc gia hạn hội viên trong ứng dụng Baoqingtian. Trang này không nhận thanh toán trực tiếp cho tài khoản Baoqingtian.",
-      "unavailable": "Tạm thời không lấy được thông tin hội viên. Vui lòng thử lại sau.",
+      "priorityHint": "Mức sử dụng DeepSeek được trừ trước vào điểm Baoqingtian của bạn; khi hết điểm sẽ tự động dùng số dư tài khoản. Các mô hình và dịch vụ khác dùng số dư tài khoản.",
       "fetchedAt": "Cập nhật {time}"
     }
   },
@@ -1477,9 +1476,7 @@
     "failed": "Thanh toán thất bại",
     "retry": "Thử lại",
     "creating": "Đang tạo đơn hàng…",
-    "amountLabel": "Số tiền",
-    "bqtConfirm": "Thanh toán {amount} bằng điểm Baoqingtian?",
-    "bqtPay": "Thanh toán bằng điểm"
+    "amountLabel": "Số tiền"
   },
   "supportDialog": {
     "orderUnavailable": "Không tìm thấy khoản ủng hộ này. Hãy kiểm tra đường dẫn quay lại hoặc quay lại thiết bị nơi bạn bắt đầu thanh toán.",

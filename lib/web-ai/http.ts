@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserByToken, SESSION_COOKIE } from '@/lib/sessions';
 import { siteOrigins } from '@/lib/site-config';
 import { errorBody, LIMITS, WebError } from './contract';
-import { BqtDenialError } from '@/lib/bqt-ai';
 export const languageOf = (request: NextRequest) => request.nextUrl.searchParams.get('lang') === 'en' ? 'en' as const : 'zh' as const;
 export function authorize(request: NextRequest, mutation = false) {
   const origin=request.headers.get('origin'), host=request.headers.get('host') ?? request.nextUrl.host;
@@ -29,6 +28,6 @@ export async function readBody(request: NextRequest, maxBytes: number = LIMITS.b
 }
 export function json(value: unknown,status=200){return NextResponse.json(value,{status,headers:{'Cache-Control':'no-store','Vary':'Cookie'}});}
 export function failure(error:unknown,lang:'zh'|'en') {
-  const e=error instanceof WebError?error:error instanceof BqtDenialError?new WebError(error.code,error.status):new WebError('upstream_failed',503);
+  const e=error instanceof WebError?error:new WebError('upstream_failed',503);
   return json(errorBody(e.code,lang),e.status);
 }

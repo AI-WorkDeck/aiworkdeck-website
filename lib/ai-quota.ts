@@ -12,7 +12,6 @@ import {
     type OrKeyRow,
 } from './openrouter-keys';
 import * as mgmt from './openrouter-mgmt';
-import { bqtChargeTarget } from './bqt-member';
 import { refreshBqtSnapshot } from './bqt-ai';
 
 /**
@@ -184,10 +183,7 @@ async function syncAiQuotaOnce(userId: string): Promise<QuotaState> {
         await refreshBqtSnapshot(userId);
         return domesticQuota(userId);
     }
-    // BQT lawyers are never funded from the wallet: no new OpenRouter key, no postpaid wallet slice,
-    // and an existing key is shrunk to its used amount (its residual usage still settles below).
-    const bqt = bqtChargeTarget(userId);
-    if(!bqt&&postpaidPolicy(userId)?.version===POSTPAID_VERSION) {
+    if(postpaidPolicy(userId)?.version===POSTPAID_VERSION) {
         const {syncPostpaidOpenRouter}=await import('./postpaid-openrouter');
         return syncPostpaidOpenRouter(userId);
     }
@@ -197,7 +193,7 @@ async function syncAiQuotaOnce(userId: string): Promise<QuotaState> {
     const creditsCents = getSpendableBalance(userId, new Date().toISOString(), funding);
     const circleFirm = getUserCircleFirm(userId);
     const circleDeepseekCents = circleFirm ? getCircleDeepseekBalanceCents(userId) : 0;
-    const orEligibleCents = bqt ? 0 : circleFirm
+    const orEligibleCents = circleFirm
         ? (canCircleUserCallOverseasModel(userId) ? Math.max(0, creditsCents - circleDeepseekCents) : 0)
         : creditsCents;
     const base: QuotaState = {
@@ -251,7 +247,7 @@ async function syncAiQuotaOnce(userId: string): Promise<QuotaState> {
     const nextFunding = captureAiFunding(userId);
     const balanceAfter = getSpendableBalance(userId, new Date().toISOString(), nextFunding);
     const dsAfterCents = circleFirm ? getCircleDeepseekBalanceCents(userId) : 0;
-    const orAfterCents = bqt ? 0 : circleFirm
+    const orAfterCents = circleFirm
         ? (canCircleUserCallOverseasModel(userId) ? Math.max(0, balanceAfter - dsAfterCents) : 0)
         : balanceAfter;
 

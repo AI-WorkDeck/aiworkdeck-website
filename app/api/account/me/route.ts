@@ -7,7 +7,7 @@ import { isDefaultDisplayName } from '@/lib/users';
 import { getBalance, getPlan } from '@/lib/wallet';
 import { getUserCircleFirm } from '@/lib/circle-firms';
 import { getBqtQingtianStatus } from '@/lib/bqt-auth';
-import { accountBillingFields, bqtDisplayBalanceCents, refreshBqtSnapshot } from '@/lib/bqt-account';
+import { accountBillingFields, refreshBqtSnapshot } from '@/lib/bqt-account';
 
 /**
  * 桌面端账户概要（Bearer awdk_ 鉴权）。契约见总 Spec §9。
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     displayNameIsDefault: isDefaultDisplayName(user),
     ...cloudState(user.id),
     // 包晴天线报积分折算后的余额（分），旧客户端也能显示个合理的数
-    balanceCents: bqtDisplayBalanceCents(user.id) ?? getBalance(user.id),
+    balanceCents: getBalance(user.id),
         subscription: accountSubscriptionView(user.id),
     plan: getPlan(user.id),
     createdAt: user.createdAt,

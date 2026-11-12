@@ -23,7 +23,6 @@ const ERRORS: Record<RedeemError, { status: number; message: string; messageEn: 
   already_redeemed: { status: 409, message: '该兑换码已被使用', messageEn: 'This gift code has already been redeemed' },
   revoked: { status: 409, message: '该兑换码已作废', messageEn: 'This gift code has been revoked' },
   already_owned: { status: 409, message: '你已拥有该权益，兑换码未被消耗', messageEn: 'You already own this entitlement; the gift code was not consumed' },
-  bqt_recharge_via_bqt: { status: 409, message: '包晴天律师账户的花费从包晴天积分扣除，充值类兑换码不适用，兑换码未被消耗', messageEn: 'Baoqingtian lawyer accounts are charged in Baoqingtian points, so credit gift codes do not apply; the code was not consumed' },
 };
 
 const CIRCLE_ERRORS: Record<CircleBindError, { status: number; message: string; messageEn: string }> = {

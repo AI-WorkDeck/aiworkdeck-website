@@ -1453,11 +1453,10 @@
       "points": "{points} poin",
       "credits": "senilai {amount}",
       "outstanding": "Belum terpotong: {amount}",
-      "failed": "{count} pemotongan poin tidak berhasil. Isi ulang poin di aplikasi Baoqingtian; pengeluaran baru dihentikan sampai selesai.",
-      "aiClosed": "Keanggotaan Anda tidak mencakup AI workbench, jadi tidak dapat dipakai untuk belanja di sini.",
+      "failed": "{count} pemotongan poin belum berhasil. Sampai diselesaikan, penggunaan DeepSeek dibayar dari saldo akun Anda.",
+      "aiClosed": "Keanggotaan Anda tidak mencakup AI workbench, jadi penggunaan DeepSeek dibayar dari saldo akun Anda.",
       "proRights": "Termasuk manfaat Pro (penyimpanan cloud 3 GB) selama keanggotaan aktif.",
-      "rechargeHint": "Isi ulang poin atau perpanjang keanggotaan di aplikasi Baoqingtian. Situs ini tidak menerima pembayaran langsung untuk akun Baoqingtian.",
-      "unavailable": "Info keanggotaan sementara tidak tersedia. Coba lagi nanti.",
+      "priorityHint": "Penggunaan DeepSeek dibayar lebih dulu dengan poin Baoqingtian Anda; jika poin habis, saldo akun otomatis digunakan. Model dan layanan lain menggunakan saldo akun.",
       "fetchedAt": "Diperbarui {time}"
     }
   },
@@ -1477,9 +1476,7 @@
     "failed": "Pembayaran gagal",
     "retry": "Coba lagi",
     "creating": "Membuat pesanan…",
-    "amountLabel": "Jumlah",
-    "bqtConfirm": "Bayar {amount} dengan poin Baoqingtian?",
-    "bqtPay": "Bayar dengan poin"
+    "amountLabel": "Jumlah"
   },
   "supportDialog": {
     "orderUnavailable": "Donasi ini tidak dapat ditemukan. Periksa tautan kembali atau kembali ke perangkat tempat Anda memulai pembayaran.",
