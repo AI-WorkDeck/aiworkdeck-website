@@ -101,7 +101,7 @@ test('wrong run, file, or tool result fails and does not start another generatio
 
 test('partial edit failure stops the run immediately', async () => {
   let streams = 0;
-  const stream = async (payload, opts) => { streams++; await streamFor(p => settledEvents(p, { kind: 'tool', call: { name: 'doc_apply_edits', args: { edits: [{ type: 'replace_text', targetId: 'target-1', newText: 'updated' }] } } }))(payload, opts); };
+  const stream = async (payload, opts) => { streams++; await streamFor(p => settledEvents(p, { kind: 'tool', call: { name: 'doc_apply_edits', args: { edits: [{ type: 'replace_text', targetId: 'target-1', originalText: 'source', newText: 'updated' }] } } }))(payload, opts); };
   const record = await run({ stream, execute: async () => resultFor('doc_apply_edits', { ok: false, partial: true, verification: 'failed', saved: true, error: 'PARTIAL_WRITE' }) });
   assert.equal(streams, 1); assert.equal(record.status, 'failed'); assert.equal(record.steps[0].status, 'failed');
 });
@@ -130,7 +130,7 @@ test('enforces 4 generations and 24 edit calls per run', async t => {
   });
   await t.test('24 edit maximum', async () => {
     let streams = 0, executions = 0;
-    const stream = async (payload, opts) => { streams++; const edits = Array.from({ length: payload.agentStep < 2 ? 12 : 1 }, (_, i) => ({ type: 'replace_text', targetId: `target-${i}`, newText: `v${i}` })); await streamFor(p => settledEvents(p, { kind: 'tool', call: { id: `call-${p.agentStep}`, name: 'doc_apply_edits', args: { edits } } }))(payload, opts); };
+    const stream = async (payload, opts) => { streams++; const edits = Array.from({ length: payload.agentStep < 2 ? 12 : 1 }, (_, i) => ({ type: 'replace_text', targetId: `target-${i}`, originalText: 'source', newText: `v${i}` })); await streamFor(p => settledEvents(p, { kind: 'tool', call: { id: `call-${p.agentStep}`, name: 'doc_apply_edits', args: { edits } } }))(payload, opts); };
     const record = await run({ stream, execute: async () => { executions++; return resultFor('doc_apply_edits', { saved: true }); } });
     assert.equal(streams, 3); assert.equal(executions, 2); assert.equal(record.status, 'failed'); assert.equal(record.error.code, 'AGENT_EDIT_LIMIT');
   });
@@ -186,7 +186,7 @@ test('automatically retries recoverable stream errors and pre-mutation tool erro
         await streamFor(p => settledEvents(p, {
           kind: 'tool',
           chargedCents: 2,
-          call: { id: `call-${streams}`, name: 'doc_apply_edits', args: { edits: [{ type: 'replace_text', targetId: 'target-1', newText: 'updated' }] } },
+          call: { id: `call-${streams}`, name: 'doc_apply_edits', args: { edits: [{ type: 'replace_text', targetId: 'target-1', originalText: 'source', newText: 'updated' }] } },
         }))(payload, opts);
       } else {
         await streamFor(p => settledEvents(p, { chargedCents: 2 }))(payload, opts);
@@ -210,7 +210,7 @@ test('automatically retries recoverable stream errors and pre-mutation tool erro
   await t.test('a redundant call that fails cleanly after saved edits is retried instead of failing the run', async () => {
     // The real editor reports saved:true for a failure that wrote nothing (the document has no unsaved changes).
     let streams = 0, executions = 0;
-    const edit = id => ({ kind: 'tool', chargedCents: 2, call: { id, name: 'doc_apply_edits', args: { edits: [{ type: 'replace_text', targetId: 'target-1', newText: 'updated' }] } } });
+    const edit = id => ({ kind: 'tool', chargedCents: 2, call: { id, name: 'doc_apply_edits', args: { edits: [{ type: 'replace_text', targetId: 'target-1', originalText: 'source', newText: 'updated' }] } } });
     const stream = async (payload, opts) => {
       streams++;
       await streamFor(p => settledEvents(p, streams <= 2 ? edit(`call-${streams}`) : { chargedCents: 2 }))(payload, opts);
@@ -232,9 +232,9 @@ test('automatically retries recoverable stream errors and pre-mutation tool erro
       streams++;
       const stepTools = [
         { id: 'c1', name: 'doc_find_text', args: { queries: [{ text: 'source' }] } },
-        { id: 'c2', name: 'doc_apply_edits', args: { edits: [{ type: 'replace_text', targetId: 'target-1', newText: 'v1' }] } },
+        { id: 'c2', name: 'doc_apply_edits', args: { edits: [{ type: 'replace_text', targetId: 'target-1', originalText: 'source', newText: 'v1' }] } },
         { id: 'c3', name: 'doc_find_text', args: { queries: [{ text: 'v1' }] } },
-        { id: 'c4', name: 'doc_apply_edits', args: { edits: [{ type: 'replace_text', targetId: 'target-1', newText: 'v2' }] } },
+        { id: 'c4', name: 'doc_apply_edits', args: { edits: [{ type: 'replace_text', targetId: 'target-1', originalText: 'source', newText: 'v2' }] } },
       ];
       if (streams <= stepTools.length) {
         await streamFor(p => settledEvents(p, { kind: 'tool', chargedCents: 2, call: stepTools[streams - 1] }))(payload, opts);
@@ -261,7 +261,7 @@ test('automatically retries recoverable stream errors and pre-mutation tool erro
         await streamFor(p => settledEvents(p, {
           kind: 'tool',
           chargedCents: 2,
-          call: { id: 'c1', name: 'doc_apply_edits', args: { edits: [{ type: 'replace_text', targetId: 'target-1', newText: 'v1' }] } },
+          call: { id: 'c1', name: 'doc_apply_edits', args: { edits: [{ type: 'replace_text', targetId: 'target-1', originalText: 'source', newText: 'v1' }] } },
         }))(payload, opts);
         return;
       }

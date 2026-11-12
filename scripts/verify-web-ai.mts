@@ -431,7 +431,9 @@ try {
     const edited = [found[0], { ...found[1], content: JSON.stringify({ ...result, tool: 'doc_apply_edits', result: { edits: [] } }) }] as NonNullable<WebInput['agentHistory']>;
     const tail = (history: NonNullable<WebInput['agentHistory']>, agentStep = 1) => messagesFor({ ...b, agentStep, agentHistory: history }).at(-1)!;
     assert.equal(tail(edited).role, 'user'); assert.match(String(tail(edited).content), /make NO tool call/);
-    assert.equal(tail(found).role, 'tool'); assert.equal(tail(edited, 3).role, 'tool'); assert.equal(messagesFor(b).at(-1)!.role, 'user'); assert.equal(messagesFor(b).length, 2);
+    assert.equal(tail(found).role, 'tool'); assert.equal(tail(edited, 3).role, 'tool');
+    // A read-only call after the edit must not re-open it: the reminder stays for the rest of the run.
+    assert.equal(tail([...edited, ...pair(b, 'call-read')], 2).role, 'user'); assert.equal(messagesFor(b).at(-1)!.role, 'user'); assert.equal(messagesFor(b).length, 2);
   });
   function primeAgentSteps(userId: string, b: WebInput, steps: number) {
     for (let step = 0; step < steps; step++) {
@@ -442,8 +444,8 @@ try {
   await check('Shared edit allowlist accepts text/format/table primitives and rejects executable or ambiguous edits', () => {
     for (const text of ['汉字rn', 'back\\slash', '']) validateToolCall('doc_apply_edits', { edits: [{ type: 'set_table_cell', targetId: 'target', text }] });
     for (const text of ['a\nb', 'a\rb']) assert.throws(() => validateToolCall('doc_apply_edits', { edits: [{ type: 'set_table_cell', targetId: 'target', text }] }));
-    validateToolCall('doc_apply_edits', { edits: [{ type: 'replace_text', targetId: 'target', newText: '' }, { type: 'insert_text', targetId: 'target', position: 'after', text: '\nNew paragraph' }, { type: 'format_text', targetId: 'target', format: { bold: false, fontSize: 12 } }, { type: 'format_paragraph', targetId: 'target', format: { headingLevel: 0 } }, { type: 'create_table', targetId: 'target', position: 'after', rows: [['A', 'B'], ['C', 'D']] }] });
-    for (const edits of [[{ type: 'format_text', targetId: 'target', format: {} }], [{ type: 'create_table', targetId: 'target', position: 'after', rows: [['a'], ['b', 'c']] }], [{ type: 'replace_text', targetId: 'target', newText: 'x', action: 'eval' }], Array.from({ length: 13 }, () => ({ type: 'replace_text', targetId: 'target', newText: '' }))]) assert.throws(() => validateToolCall('doc_apply_edits', { edits }));
+    validateToolCall('doc_apply_edits', { edits: [{ type: 'replace_text', targetId: 'target', originalText: 'old', newText: '' }, { type: 'insert_text', targetId: 'target', position: 'after', text: '\nNew paragraph' }, { type: 'format_text', targetId: 'target', format: { bold: false, fontSize: 12 } }, { type: 'format_paragraph', targetId: 'target', format: { headingLevel: 0 } }, { type: 'create_table', targetId: 'target', position: 'after', rows: [['A', 'B'], ['C', 'D']] }] });
+    for (const edits of [[{ type: 'format_text', targetId: 'target', format: {} }], [{ type: 'create_table', targetId: 'target', position: 'after', rows: [['a'], ['b', 'c']] }], [{ type: 'replace_text', targetId: 'target', originalText: 'old', newText: 'x', action: 'eval' }], [{ type: 'replace_text', targetId: 'target', newText: 'x' }], Array.from({ length: 13 }, () => ({ type: 'replace_text', targetId: 'target', originalText: 'old', newText: '' }))]) assert.throws(() => validateToolCall('doc_apply_edits', { edits }));
     const b = agentInput(), r = JSON.parse((pair(b)[1] as {content: string}).content);
     assert.throws(() => validateToolResult({ ...r, partial: true })); assert.throws(() => validateToolResult({ ...r, verification: 'unknown' }));
   });
