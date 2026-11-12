@@ -70,26 +70,40 @@ test("user A's projects, files and chat are invisible to user B and to guests", 
   assert.deepEqual((await listScopes({ indexedDB })).sort(), [a, b, "guest"].sort());
 });
 
-test("logout: after the session changes, the previous store can be backed up then deleted, and is gone", async () => {
+test("self-clear: backup is read-only, and deleting removes only the current scope", async () => {
   const indexedDB = new IDBFactory();
-  const a = await scopeForUser({ id: 1 });
+  const a = await scopeForUser({ id: 1 }), b = await scopeForUser({ id: 2 });
   const wa = await openWorkspace({ indexedDB, scope: a });
   const project = await wa.createProject("P");
   await wa.createFile({ projectId: project.id, name: "a.docx", bytes: bytes(5, 6) });
   await wa.createFile({ projectId: project.id, name: "a.docx", bytes: bytes(7) });
   wa.close();
-  assert.equal(await countScopeFiles(a, { indexedDB }), 2);
+  const wb = await openWorkspace({ indexedDB, scope: b });
+  const pb = await wb.createProject("B's");
+  await wb.createFile({ projectId: pb.id, name: "b.docx", bytes: bytes(1) });
+  wb.close();
   const { count, bytes: zip } = await exportScopeZip(a, { indexedDB });
   assert.equal(count, 2);
   const JSZip = (await import("jszip")).default;
   assert.deepEqual(Object.keys((await JSZip.loadAsync(zip)).files).sort(), ["P/", "P/2-a.docx", "P/a.docx"]);
-  // Export is read-only: nothing was deleted until the user explicitly confirms.
-  assert.equal(await countScopeFiles(a, { indexedDB }), 2);
+  assert.equal(await countScopeFiles(a, { indexedDB }), 2, "backup must not delete");
   await deleteScope(a, { indexedDB });
-  assert.deepEqual(await listScopes({ indexedDB }), []);
+  assert.deepEqual(await listScopes({ indexedDB }), [b]);
+  assert.equal(await countScopeFiles(b, { indexedDB }), 1, "other account untouched");
   const fresh = await openWorkspace({ indexedDB, scope: a });
   assert.deepEqual(await fresh.listProjects(), []);
   fresh.close();
+});
+
+test("the UI exposes no cross-account access: only the current scope is ever opened", async () => {
+  const fs = await import("node:fs");
+  const main = fs.readFileSync(new URL("../src/main.js", import.meta.url), "utf8");
+  assert.equal(/offerForeignCleanup/.test(main), false);
+  // Every export/delete in the UI targets state.scope, except silent removal of EMPTY stores.
+  for (const m of main.matchAll(/exportScopeZip\(([^)]*)\)/g)) if (!m[0].includes("import")) assert.equal(m[1], "state.scope");
+  assert.match(main, /clear-local/);
+  assert.match(main, /deleteScope\(state\.scope\)/);
+  assert.match(main, /if\(!await countScopeFiles\(scope\)\)await deleteScope\(scope\)/);
 });
 
 test("migration: first account adopts the legacy shared database, which is then removed", async () => {
