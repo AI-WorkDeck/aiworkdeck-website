@@ -6,7 +6,7 @@ import { createHash } from 'crypto';
 import { getDb, withTransaction } from '@/lib/db';
 import { spendCredits, refundSpend, InsufficientCreditsError } from '@/lib/credits';
 import { captureServiceFunding, type ServiceFunding } from '@/lib/subscription';
-import { WebError, WEB_MODEL, reserveUsdFor, type WebInput } from './contract';
+import { WebError, WEB_MODEL, PRICE_CAP, reserveUsdFor, type WebInput, type WebPrice } from './contract';
 export interface WebRequestRow {
   userId: string; requestId: string; payloadHash: string; state: 'reserved' | 'submitted' | 'usage_pending' | 'settled' | 'released' | 'refunded_pending';
   model: string; reserveCents: number; reserveLedgerId: number; fundingJson: string; exchangeRate: number; margin: number;
@@ -43,10 +43,10 @@ function stopAgentRun(userId: string, requestId: string) {
 }
 export const payloadHash = (input: WebInput) => createHash('sha256').update(JSON.stringify(input)).digest('hex');
 export function getRequest(userId: string, requestId: string) { return getDb().prepare('SELECT * FROM web_ai_request WHERE userId=? AND requestId=?').get(userId, requestId) as WebRequestRow | undefined; }
-export const webReserveCents = (input: WebInput, exchangeRate: number, margin: number) => Math.ceil(reserveUsdFor(input) * exchangeRate * margin * 100);
-export function reserveRequest(userId: string, input: WebInput, exchangeRate: number, margin: number, now = new Date().toISOString()): WebRequestRow {
+export const webReserveCents = (input: WebInput, exchangeRate: number, margin: number, price: WebPrice = PRICE_CAP) => Math.ceil(reserveUsdFor(input, price) * exchangeRate * margin * 100);
+export function reserveRequest(userId: string, input: WebInput, exchangeRate: number, margin: number, now = new Date().toISOString(), price: WebPrice = PRICE_CAP): WebRequestRow {
   if (![exchangeRate, margin].every(n => Number.isFinite(n) && n > 0)) throw new WebError('ai_unavailable', 503);
-  const reserveCents = webReserveCents(input, exchangeRate, margin), hash = payloadHash(input);
+  const reserveCents = webReserveCents(input, exchangeRate, margin, price), hash = payloadHash(input);
   if (!Number.isSafeInteger(reserveCents) || reserveCents < 1 || reserveCents > 10000) throw new WebError('ai_unavailable', 503);
   if (input.mode === 'agent' && (!input.agentBudget || input.agentBudget.currency !== siteConfig.currency || reserveCents > input.agentBudget.perGenerationMaxChargeCents || (input.agentStep === 0 && reserveCents !== input.agentBudget.perGenerationMaxChargeCents))) throw new WebError('price_changed', 409);
   return withTransaction(db => {
@@ -94,7 +94,8 @@ export function releaseRequest(userId: string, requestId: string, code: string, 
     return getRequest(userId,requestId)!;
   });
 }
-export function settleRequest(userId: string, requestId: string, costUsd: number) {
+/** `waive` records the supplier cost but charges nothing: the generation delivered no usable output. */
+export function settleRequest(userId: string, requestId: string, costUsd: number, waive = false) {
   if (!Number.isFinite(costUsd) || costUsd < 0) throw new WebError('usage_pending',503);
   return withTransaction(db => {
     const row = getRequest(userId,requestId)!;
@@ -108,11 +109,12 @@ export function settleRequest(userId: string, requestId: string, costUsd: number
     }
     const settledAt = new Date().toISOString();
     refundSpend(db,row.reserveLedgerId,{ meta: { service: 'web_ai',phase: 'unreserve',requestId } });
-    const ledger = cents > 0 ? spendCredits(db,{ userId,amountCents:cents,funding:JSON.parse(row.fundingJson) as ServiceFunding,ledgerKind:'service_spend',
+    const charge = waive ? 0 : cents;
+    const ledger = charge > 0 ? spendCredits(db,{ userId,amountCents:charge,funding:JSON.parse(row.fundingJson) as ServiceFunding,ledgerKind:'service_spend',
       // Re-debit at original authorization time, including lots that expired during generation.
       // Transaction contains both operations; other spends never see the released funds.
       nowIso:row.createdAt,meta:{service:'web_ai',phase:'settle',requestId,model:row.model,costUsd,exchangeRate:row.exchangeRate,margin:row.margin,settledAt} }) : null;
-    db.prepare("UPDATE web_ai_request SET state='settled',costUsd=?,chargedCents=?,chargeLedgerId=?,errorCode=NULL,updatedAt=? WHERE userId=? AND requestId=?").run(costUsd,cents,ledger?.id ?? null,settledAt,userId,requestId);
+    db.prepare("UPDATE web_ai_request SET state='settled',costUsd=?,chargedCents=?,chargeLedgerId=?,errorCode=NULL,updatedAt=? WHERE userId=? AND requestId=?").run(costUsd,charge,ledger?.id ?? null,settledAt,userId,requestId);
     return getRequest(userId,requestId)!;
   });
 }

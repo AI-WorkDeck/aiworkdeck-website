@@ -50,9 +50,12 @@ export function responseStream(userId:string,input:WebInput,apiKey:string) {
           let cost=result.cost;
           if(cost===undefined && generationId){const verified=await generationCost(apiKey,generationId);if(verified!==null)cost=verified;}
           let row:WebRequestRow;
-          if(cost===undefined){markPending(userId,input.requestId);row=getRequest(userId,input.requestId)!;}else row=settleRequest(userId,input.requestId,cost);
+          // An unusable agent tool call delivers nothing: agent mode streams no text and the tool_calls event below is never sent.
+          // Only that case is free. Chat text already streamed to the user stays billed.
+          const waived=result.invalidTools&&input.mode==='agent';
+          if(cost===undefined){markPending(userId,input.requestId);row=getRequest(userId,input.requestId)!;}else row=settleRequest(userId,input.requestId,cost,waived);
           if(row.state==='settled')send('usage',{...receipt(row),currency:siteConfig.currency});
-          if(result.invalidTools)throw new WebError('invalid_tool_call',502);
+          if(result.invalidTools)throw new WebError(!waived?'upstream_failed':row.state==='settled'?'invalid_tool_call':'usage_pending',502);
           if(!result.complete || (!result.text.trim() && !result.toolCalls.length))throw new WebError('upstream_failed',502);
           if(input.mode==='rewrite')send('proposal',parseProposal(result.text,input));
           if(row.state!=='settled')throw new WebError('usage_pending',503);

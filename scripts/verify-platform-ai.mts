@@ -145,6 +145,33 @@ await check('domestic Web chat uses Bailian and its original prepaid ledger',asy
   const request=new NextRequest('https://www.aiworkdeck.com/api/web/chat',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://www.aiworkdeck.com',Cookie:`${SESSION_COOKIE}=${createSession(b.id).token}`},body:JSON.stringify({requestId:id,language:'en',mode:'chat',message:'Hi',history:[],document:{id:randomUUID(),version:1,name:'test.docx',text:'test'}})});
   const response=await webChat(request);assert.equal(response.status,200);const text=await response.text();assert.ok(text.includes('Hi'));assert.equal(getRequest(b.id,id)?.state,'settled');assert.equal(lastBody.model,'qwen3.8-flash');assert.equal(lastBody.provider,undefined);globalThis.fetch=originalCatalogFetch;clearCatalogCache();
 });
+await check('recorded Qwen tool-call streams (empty id on continuation chunks) reach the workbench as one valid doc_apply_edits call',async()=>{
+  const {createSession,SESSION_COOKIE}=await import('@/lib/sessions');const {POST:webChat}=await import('@/app/api/web/chat/route');const {getRequest,webReserveCents}=await import('@/lib/web-ai/store');const {validateToolCall}=await import('@/web-workbench/src/agent-contract.js');
+  const recorded=JSON.parse(fs.readFileSync(new URL('./fixtures/web-agent-qwen-tool-calls.json',import.meta.url),'utf8'));
+  fs.writeFileSync('authorized.json',JSON.stringify({workspaceId:'ws-test',models:[model.id,'qwen3.8-flash']}));fs.writeFileSync('available.json',JSON.stringify({workspaceId:'ws-test',models:[model.id,'qwen3.8-flash']}));
+  const originalCatalogFetch=globalThis.fetch;globalThis.fetch=async(resource,init)=>String(resource).includes('/api/v1/models')?Response.json({success:true,output:{total:2,models:[rawModel,{...rawModel,model:'qwen3.8-flash'}]}}):originalCatalogFetch(resource,init);clearCatalogCache();
+  process.env.WEB_AI_ENABLED='1';
+  try{for(const [label,edits] of [['single-clause',1],['three-issues',3]] as const){
+    const fixture=recorded.cases.find((c:any)=>c.label===label);assert.ok(fixture.sse.includes('"id":""'),'fixture keeps the supplier quirk');
+    const b=user(),id=randomUUID(),body:any={requestId:id,language:'zh',mode:'agent',message:fixture.instruction,history:[],document:fixture.document,agentStep:0,agentHistory:[],agentContext:fixture.agentContext};
+    // The hold is priced at the model's dearest catalog tier (3/6 CNY per million here), not the generic USD cap,
+    // and still covers the largest request the route accepts together with the full max_tokens it sends.
+    const {reservePrice}=await import('@/lib/web-ai/provider');const {LIMITS:webLimits}=await import('@/lib/web-ai/contract');const {AGENT_LIMITS}=await import('@/web-workbench/src/agent-contract.js');
+    const price=await reservePrice(10),hold=webReserveCents(body,10,1,price),flash=parseBailianModel({...rawModel,model:'qwen3.8-flash'})!;
+    assert.deepEqual(price,{prompt:0.3,completion:0.6});assert.equal(hold,33);assert.ok(hold<webReserveCents(body,10,1));
+    assert.ok(usageCostCny(flash,{prompt_tokens:AGENT_LIMITS.contextBytes+4096,completion_tokens:webLimits.agentOutputTokens},false)*100<=hold,'hold is never below the true maximum');
+    body.agentBudget={currency:'CNY',perGenerationMaxChargeCents:hold};
+    providerReply=async()=>new Response(fixture.sse);
+    const response=await webChat(new NextRequest('https://www.aiworkdeck.com/api/web/chat',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://www.aiworkdeck.com',Cookie:`${SESSION_COOKIE}=${createSession(b.id).token}`},body:JSON.stringify(body)}));
+    assert.equal(response.status,200);const text=await response.text();
+    assert.ok(!text.includes('event: error'),`${label}: ${text.slice(0,400)}`);
+    const frame=text.split('\n\n').find(f=>f.startsWith('event: tool_calls'));assert.ok(frame,label);
+    const data=JSON.parse(frame!.slice(frame!.indexOf('data: ')+6));assert.equal(data.calls.length,1);assert.equal(data.calls[0].function.name,'doc_apply_edits');
+    const args=validateToolCall('doc_apply_edits',data.calls[0].function.arguments);assert.equal(args.edits.length,edits);
+    const known=new Set(fixture.agentContext.targets.map((t:any)=>t.targetId));assert.ok(args.edits.every((e:any)=>known.has(e.targetId)));
+    assert.equal(lastBody.model,'qwen3.8-flash');assert.equal(lastBody.max_tokens,webLimits.agentOutputTokens);assert.equal(getRequest(b.id,id)?.state,'settled');assert.equal(getRequest(b.id,id)?.reserveCents,hold);
+  }}finally{globalThis.fetch=originalCatalogFetch;clearCatalogCache();}
+});
 await check('Skill stays free at zero balance, survives disconnect, and never double charges',async()=>{
   const {connectOpenRouter}=await import('@/lib/ai-stream');const b=user(0);
   providerReply=async()=>new Response('data: {"choices":[{"delta":{"content":"Hi"}}],"usage":{"prompt_tokens":100,"completion_tokens":10}}\n\ndata: [DONE]\n\n');

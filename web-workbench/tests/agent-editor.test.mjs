@@ -68,7 +68,8 @@ function fixture(t,text=['甲方30日付款。','删除此段','尾段']){
   if(action==='table_set_cell'){const table=engine.tables.find(v=>v.table===p.tableName);table.cells[Number(p.cell.slice(1))-1][p.cell.charCodeAt(0)-65]=p.text;engine.revision++;return success({})}
   return success({});
  }};
- return {s,engine,begin:()=>s.beginAgent(),execute:(ctx,edits,callId='call')=>s.executeAgentTool(ctx.runId,callId,'doc_apply_edits',{edits})};
+ return {s,engine,begin:()=>s.beginAgent(),// Tests that are not about the originalText guard quote the target's current text, as a correct model call does.
+  execute:(ctx,edits,callId='call')=>s.executeAgentTool(ctx.runId,callId,'doc_apply_edits',{edits:edits.map(e=>e.type==='replace_text'&&e.originalText===undefined?{type:e.type,targetId:e.targetId,originalText:s.agent.current?.targets.get(e.targetId)?.text??'',newText:e.newText}:e)})};
 }
 const paragraph=(ctx,index)=>ctx.targets.find(t=>t.kind==='paragraph'&&t.paragraphIndex===index).targetId;
 
@@ -113,6 +114,34 @@ test('native table create/read and multiple exact cell writes use explicit ident
  assert.equal((await f.execute(ctx,[{type:'set_table_cell',targetId:table.result.tables[0].cells[1][1].targetId,text:''},{type:'set_table_cell',targetId:table.result.tables[0].cells[0][0].targetId,text:'改'}],'cells')).ok,true);
  assert.deepEqual(f.engine.tables[0].cells,[['改','乙'],['1','']]);
  await f.s.restoreAgent(ctx.runId);assert.deepEqual(f.engine.tables,[]);
+});
+test('reading tables of a document without tables is a verified empty result, not a failed run',async t=>{
+ const f=fixture(t),ctx=await f.begin();
+ const result=await f.s.executeAgentTool(ctx.runId,'probe','doc_read_tables',{tables:[{tableIndex:0}]});validateToolResult(result);
+ assert.equal(result.ok,true);assert.deepEqual(result.result,{tables:[],tableCount:0});
+});
+test('a stale target fails before any write and reports the document as still saved',async t=>{
+ const f=fixture(t),ctx=await f.begin(),stale=paragraph(ctx,0);
+ assert.equal((await f.execute(ctx,[{type:'replace_text',targetId:stale,newText:'甲方45日付款。'}])).ok,true);
+ const again=await f.execute(ctx,[{type:'replace_text',targetId:stale,newText:'甲方45日付款。'}],'again');validateToolResult(again);
+ assert.equal(again.error.code,'STALE_TARGET');assert.equal(again.partial,false);assert.equal(again.verification,'failed');assert.equal(again.saved,true);
+ assert.equal(f.engine.paragraphs[0],'甲方45日付款。');
+});
+test('replace_text is refused before any write when originalText is not what the target contains',async t=>{
+ // Seen on staging: asked to change 第二条, the model took paragraphIndex 2 (第一条) and overwrote it with 第二条 text; the write read back fine.
+ const f=fixture(t,['合同','第一条 服务内容。','第二条 三十日内付款。']),ctx=await f.begin(),before=f.engine.commands.length;
+ const wrong=await f.execute(ctx,[{type:'replace_text',targetId:paragraph(ctx,0),originalText:'合同',newText:'服务合同'},{type:'replace_text',targetId:paragraph(ctx,1),originalText:'第二条 三十日内付款。',newText:'第二条 四十五日内付款。'}]);validateToolResult(wrong);
+ assert.equal(wrong.ok,false);assert.equal(wrong.error.code,'ORIGINAL_TEXT_MISMATCH');assert.equal(wrong.partial,false);assert.equal(wrong.verification,'failed');
+ assert.deepEqual(f.engine.paragraphs,['合同','第一条 服务内容。','第二条 三十日内付款。']);
+ assert.ok(!f.engine.commands.slice(before).some(c=>c.action==='replace_selection'),'the valid first edit of the batch is not written either');
+ const right=await f.execute(ctx,[{type:'replace_text',targetId:paragraph(ctx,2),originalText:' 第二条 三十日内付款。\n',newText:'第二条 四十五日内付款。'}],'right');
+ assert.equal(right.ok,true);assert.deepEqual(f.engine.paragraphs,['合同','第一条 服务内容。','第二条 四十五日内付款。']);
+});
+test('re-sending the text a target already has writes nothing',async t=>{
+ const f=fixture(t),ctx=await f.begin(),before=f.engine.commands.length,revision=f.engine.revision;
+ const result=await f.execute(ctx,[{type:'replace_text',targetId:paragraph(ctx,0),newText:'甲方30日付款。'}]);validateToolResult(result);
+ assert.equal(result.ok,true);assert.equal(result.result.edits[0].status,'unchanged');assert.equal(f.engine.revision,revision);
+ assert.ok(!f.engine.commands.slice(before).some(c=>c.action==='replace_selection'));
 });
 test('merged table read never mints writable cell handles',async t=>{
  const f=fixture(t);f.engine.tables=[{table:'合并',cells:[['a']],note:'merged'}];const ctx=await f.begin();

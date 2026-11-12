@@ -8,6 +8,7 @@ const id=()=>globalThis.crypto.randomUUID();
 const cellName=(column,row)=>String.fromCharCode(65+column)+(row+1);
 const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 const mutatesText=edit=>['replace_text','insert_text','create_table'].includes(edit.type);
+const sameText=(a,b)=>a.replace(/\s+/g,'')===b.replace(/\s+/g,'');
 
 /** Host-only leases and native dispatch. Model arguments never contain native actions. */
 export class AgentEditor{
@@ -125,7 +126,7 @@ export class AgentEditor{
       try{
        this.active(run);await this.resolve(run,edit);
        const readback=await this.applyOne(run,edit,()=>{attemptedWrite=true;run.editCount++});
-       edits.push({index:i,type:edit.type,status:'applied',readback});
+       edits.push({index:i,type:edit.type,status:readback.unchanged?'unchanged':'applied',readback});
       }catch(error){
        edits.push({index:i,type:edit.type,status:'failed'});
        for(let j=i+1;j<parameters.edits.length;j++)edits.push({index:j,type:parameters.edits[j].type,status:'not_run'});
@@ -191,7 +192,14 @@ export class AgentEditor{
   const result={tables:[]};
   for(const requested of tables){
    this.active(run);
-   const table=await this.native(run,'table_read',{tableIndex:requested.tableIndex,maxRows:requested.maxRows??20,maxCols:requested.maxCols??10});
+   let table;
+   try{table=await this.native(run,'table_read',{tableIndex:requested.tableIndex,maxRows:requested.maxRows??20,maxCols:requested.maxCols??10})}
+   catch(error){
+    // A document with no tables is a truthful empty read. Failing it aborts a
+    // run whose edits already verified when the model merely probes for tables.
+    if(/^表格序号越界: \d+（文档共 0 张表，/.test(error.message)){result.tableCount=0;break}
+    throw error;
+   }
    const row={tableIndex:table.tableIndex,name:table.table,rows:table.rows,cols:table.cols,truncated:!!table.truncated,cells:[]};
    if(table.note)row.note=table.note;
    result.tables.push(row);
@@ -221,6 +229,9 @@ export class AgentEditor{
    return {target,table};
   }
   if(target.kind==='cell')throw fail('INVALID_TARGET_KIND');
+  // The model names what it believes it is replacing. A targetId that points at some other
+  // text (e.g. paragraphIndex 2 taken for 第二条) is refused here, before any write.
+  if(edit.type==='replace_text'&&!sameText(edit.originalText,target.text))throw fail('ORIGINAL_TEXT_MISMATCH');
   if(edit.type==='format_text'&&!target.text)throw fail('EMPTY_FORMAT_TARGET');
   if(target.kind==='boundary'){
    if(!['insert_text','create_table'].includes(edit.type))throw fail('INVALID_TARGET_KIND');
@@ -321,6 +332,8 @@ export class AgentEditor{
    if((await this.body(run)).text!==before.text)throw fail('BODY_VERIFICATION_FAILED');
    target.invalid=true;return {cell:cellName(target.column,target.row),text:edit.text.slice(0,300),length:edit.text.length,truncated:edit.text.length>300};
   }
+  // Re-sending the text a target already has is not an edit: writing it would only add tracked-change noise.
+  if(edit.type==='replace_text'&&edit.newText===target.text)return {text:target.text.slice(0,300),length:target.text.length,truncated:target.text.length>300,unchanged:true};
   await this.select(run,target);
   if(edit.type==='insert_text'||edit.type==='create_table')if(target.kind!=='boundary')await this.native(run,'collapse_selection',{to:edit.position==='before'?'start':'end'});
   this.active(run);onWrite();

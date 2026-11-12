@@ -4,13 +4,25 @@ import { withBailianCost } from '../platform-ai/usage-stream';
 import { getExchangeRateInfo } from '../ai-config';
 // SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { LIMITS, PRICE_CAP, WEB_MODEL, WebError, messagesFor, validateAgentCall, type AgentToolCall, type WebInput } from './contract';
+import { LIMITS, PRICE_CAP, WEB_MODEL, WebError, messagesFor, validateAgentCall, type AgentToolCall, type WebInput, type WebPrice } from './contract';
 import { AGENT_LIMITS, AGENT_TOOLS } from '../../web-workbench/src/agent-contract.js';
 const API = 'https://openrouter.ai/api/v1';
 /** Dependency injection exists only for isolated tests; never selected by request/env URL. */
 export interface ProviderHooks { onId(id: string): void; onDelta(text: string): void }
 export class ProviderRejected extends Error {
   constructor(readonly status:number) { super('Provider request rejected'); this.name='ProviderRejected'; }
+}
+/** Price the reservation is computed at. Bailian bills its catalog price, so the hold uses the model's dearest tier
+ * instead of the generic cap; OpenRouter may route to any provider under PRICE_CAP, so the cap stays.
+ * An unknown or over-cap model keeps the cap: the request itself is rejected before any spend. */
+export async function reservePrice(exchangeRate: number, fetcher: typeof fetch = fetch): Promise<WebPrice> {
+  if (platformProvider() !== 'bailian') return PRICE_CAP;
+  try {
+    const model = (await platformModels(fetcher, true)).find(m => m.id === WEB_MODEL);
+    if (!model) return PRICE_CAP;
+    const price = { prompt: Math.max(...model.priceTiers.map(t => t.input)) / exchangeRate, completion: Math.max(...model.priceTiers.map(t => t.output)) / exchangeRate };
+    return price.prompt > 0 && price.completion > 0 && price.prompt <= PRICE_CAP.prompt && price.completion <= PRICE_CAP.completion ? price : PRICE_CAP;
+  } catch { return PRICE_CAP; }
 }
 export async function streamCompletion(apiKey: string, input: WebInput, hooks: ProviderHooks, fetcher: typeof fetch = fetch, exchangeRate = getExchangeRateInfo().rate) {
   // One fixed-model request; OpenRouter may use another eligible provider under the same caps.
@@ -50,7 +62,8 @@ export async function streamCompletion(apiKey: string, input: WebInput, hooks: P
         if (toolBytes > 64_000) throw new WebError('upstream_failed', 502);
         if (!delta || !Number.isInteger(delta.index) || delta.index !== 0) { invalidTools = true; continue; }
         const part = toolParts.get(delta.index) ?? { id: '', type: '', function: { name: '', arguments: '' } };
-        if (delta.id !== undefined) { if (typeof delta.id !== 'string' || (part.id && part.id !== delta.id)) invalidTools = true; else part.id = delta.id; }
+        // Bailian Qwen repeats `"id":""` on every continuation chunk; an empty id carries nothing and is no conflict.
+        if (delta.id !== undefined && delta.id !== '') { if (typeof delta.id !== 'string' || (part.id && part.id !== delta.id)) invalidTools = true; else part.id = delta.id; }
         if (delta.type !== undefined) { if (typeof delta.type !== 'string' || (part.type && part.type !== delta.type)) invalidTools = true; else part.type = delta.type; }
         if (delta.function !== undefined) {
           if (!delta.function || typeof delta.function !== 'object') invalidTools = true;
@@ -75,6 +88,9 @@ export async function streamCompletion(apiKey: string, input: WebInput, hooks: P
     if (finishReason === 'tool_calls' && (toolCalls.length !== 1 || input.agentStep === 3)) invalidTools = true;
     if (finishReason !== 'tool_calls' && toolParts.size) invalidTools = true;
   }
+  // A flash model sometimes writes its tool call out as prose ("[Tool intent] ... targetId = ...") instead of calling the tool.
+  // Opaque target ids and tool-protocol words are never a user-facing answer: treat it as an unusable call, never as a completed run.
+  if (input.mode === 'agent' && !toolParts.size && (/targetId|doc_apply_edits|doc_find_text|doc_read_tables|\[(Thinking|Tool intent)\]/i.test(text) || (input.agentContext!.targets as { targetId: string }[]).some(t => text.includes(t.targetId)))) invalidTools = true;
   const plainTextComplete = input.mode === 'agent' && !toolParts.size && !!text.trim() && (finishReason === 'stop' || finishReason === 'length');
   return { text, cost: finished ? cost : undefined, complete: finished && (finishReason === 'stop' || plainTextComplete || (input.mode === 'agent' && finishReason === 'tool_calls')), toolCalls, invalidTools, finishReason };
 }

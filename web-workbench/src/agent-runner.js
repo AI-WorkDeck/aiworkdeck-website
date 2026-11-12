@@ -131,7 +131,7 @@ export async function runDocumentAgent({initial,instruction,language,history=[],
     if(result.runId!==activeRunId||result.document.id!==record.fileId||result.tool!==call.function.name)throw invalid();
     operation.result=result;operation.status=result.ok?'verified':result.verification==='unknown'?'unknown':'failed';
    }catch(e){operation.status='unknown';operation.error=e.code||e.message;throw e}
-   if(!result.ok&&!result.partial&&result.verification==='failed'&&!result.saved&&RETRYABLE_TOOL_CODES.has(result.error?.code)&&retries<maxRetries&&runChargeCents+budget.perGenerationMaxChargeCents<=runMaxChargeCents){
+   if(!result.ok&&!result.partial&&result.verification==='failed'&&RETRYABLE_TOOL_CODES.has(result.error?.code)&&retries<maxRetries&&runChargeCents+budget.perGenerationMaxChargeCents<=runMaxChargeCents){
     retries++;editCount-=changes;record.steps.pop();
     await onUpdate(record);
     await pause(retryDelayMs*retries,signal,deadline);

@@ -41,7 +41,7 @@ const { grantCredits, getBalance, expireCredits } = await import('@/lib/credits'
 const { createSession, SESSION_COOKIE, getUserByToken } = await import('@/lib/sessions');
 const { deleteAccount, findDeletionBlocker, tombstoneUserId } = await import('@/lib/account-deletion');
 const { __setFetchForTests: setMgmtFetch } = await import('@/lib/openrouter-mgmt');
-const { LIMITS, WEB_MODEL, PRICE_CAP, AGENT_RESERVE_USD, validateInput, WebError } = await import('@/lib/web-ai/contract');
+const { LIMITS, WEB_MODEL, PRICE_CAP, AGENT_RESERVE_USD, validateInput, messagesFor, WebError } = await import('@/lib/web-ai/contract');
 const { reserveRequest, getRequest, markSubmitted, markPending, settleRequest, releaseRequest, refundUnverified, RECONCILIATION_DEADLINE_MS } = await import('@/lib/web-ai/store');
 const { validateToolCall, validateToolResult } = await import('@/web-workbench/src/agent-contract.js');
 const { streamCompletion, generationCost, ProviderRejected } = await import('@/lib/web-ai/provider');
@@ -194,6 +194,8 @@ try {
     const stored = JSON.stringify(getRequest(a.id, b.requestId));
     assert.ok(!stored.includes('clear passage') && !stored.includes(b.document.text));
   });
+  // Deliberately still billed: the charge waiver covers only unusable agent tool calls (invalid_tool_call).
+  // Rewrite billing was not part of that decision; its error text keeps saying usage is charged.
   await check('Invalid proposal never emits an applyable proposal but actual generation is billed', async () => {
     const a = user(100), b = input({ mode: 'rewrite', selection: { text: 'unique passage' } });
     providerReply = async () => sse('{"replacement":"unsafe","explanation":"x","command":"execute"}');
@@ -424,6 +426,15 @@ try {
     { role: 'assistant', content: null, tool_calls: [{ ...nativeCall(), id }] },
     { role: 'tool', tool_call_id: id, content: JSON.stringify({ ok: true, tool: 'doc_find_text', runId: b.agentContext!.runId, document: { id: b.document.id, name: b.document.name, version: b.document.version }, revision: 0, saved: true, partial: false, verification: 'verified', result: { queries: [] } }) },
   ] as NonNullable<WebInput['agentHistory']>;
+  await check('A verified edit batch is followed by a stop reminder; read-only results and the tool-less final step are not', () => {
+    const b = agentInput(), found = pair(b), result = JSON.parse((found[1] as { content: string }).content);
+    const edited = [found[0], { ...found[1], content: JSON.stringify({ ...result, tool: 'doc_apply_edits', result: { edits: [] } }) }] as NonNullable<WebInput['agentHistory']>;
+    const tail = (history: NonNullable<WebInput['agentHistory']>, agentStep = 1) => messagesFor({ ...b, agentStep, agentHistory: history }).at(-1)!;
+    assert.equal(tail(edited).role, 'user'); assert.match(String(tail(edited).content), /make NO tool call/);
+    assert.equal(tail(found).role, 'tool'); assert.equal(tail(edited, 3).role, 'tool');
+    // A read-only call after the edit must not re-open it: the reminder stays for the rest of the run.
+    assert.equal(tail([...edited, ...pair(b, 'call-read')], 2).role, 'user'); assert.equal(messagesFor(b).at(-1)!.role, 'user'); assert.equal(messagesFor(b).length, 2);
+  });
   function primeAgentSteps(userId: string, b: WebInput, steps: number) {
     for (let step = 0; step < steps; step++) {
       const previous = { ...b, agentStep: step, requestId: randomUUID() };
@@ -433,8 +444,8 @@ try {
   await check('Shared edit allowlist accepts text/format/table primitives and rejects executable or ambiguous edits', () => {
     for (const text of ['汉字rn', 'back\\slash', '']) validateToolCall('doc_apply_edits', { edits: [{ type: 'set_table_cell', targetId: 'target', text }] });
     for (const text of ['a\nb', 'a\rb']) assert.throws(() => validateToolCall('doc_apply_edits', { edits: [{ type: 'set_table_cell', targetId: 'target', text }] }));
-    validateToolCall('doc_apply_edits', { edits: [{ type: 'replace_text', targetId: 'target', newText: '' }, { type: 'insert_text', targetId: 'target', position: 'after', text: '\nNew paragraph' }, { type: 'format_text', targetId: 'target', format: { bold: false, fontSize: 12 } }, { type: 'format_paragraph', targetId: 'target', format: { headingLevel: 0 } }, { type: 'create_table', targetId: 'target', position: 'after', rows: [['A', 'B'], ['C', 'D']] }] });
-    for (const edits of [[{ type: 'format_text', targetId: 'target', format: {} }], [{ type: 'create_table', targetId: 'target', position: 'after', rows: [['a'], ['b', 'c']] }], [{ type: 'replace_text', targetId: 'target', newText: 'x', action: 'eval' }], Array.from({ length: 13 }, () => ({ type: 'replace_text', targetId: 'target', newText: '' }))]) assert.throws(() => validateToolCall('doc_apply_edits', { edits }));
+    validateToolCall('doc_apply_edits', { edits: [{ type: 'replace_text', targetId: 'target', originalText: 'old', newText: '' }, { type: 'insert_text', targetId: 'target', position: 'after', text: '\nNew paragraph' }, { type: 'format_text', targetId: 'target', format: { bold: false, fontSize: 12 } }, { type: 'format_paragraph', targetId: 'target', format: { headingLevel: 0 } }, { type: 'create_table', targetId: 'target', position: 'after', rows: [['A', 'B'], ['C', 'D']] }] });
+    for (const edits of [[{ type: 'format_text', targetId: 'target', format: {} }], [{ type: 'create_table', targetId: 'target', position: 'after', rows: [['a'], ['b', 'c']] }], [{ type: 'replace_text', targetId: 'target', originalText: 'old', newText: 'x', action: 'eval' }], [{ type: 'replace_text', targetId: 'target', newText: 'x' }], Array.from({ length: 13 }, () => ({ type: 'replace_text', targetId: 'target', originalText: 'old', newText: '' }))]) assert.throws(() => validateToolCall('doc_apply_edits', { edits }));
     const b = agentInput(), r = JSON.parse((pair(b)[1] as {content: string}).content);
     assert.throws(() => validateToolResult({ ...r, partial: true })); assert.throws(() => validateToolResult({ ...r, verification: 'unknown' }));
   });
@@ -465,7 +476,9 @@ try {
     assert.equal(lastProviderBody.tool_choice, 'none'); assert.equal((lastProviderBody.messages as unknown[]).length, 8);
     assert.ok(frames.some(e => e.event === 'delta')); assert.ok(!frames.some(e => e.event === 'tool_calls'));
   });
-  await check('Invalid, parallel, final-step and truncated tool output is never executable but verified generation remains billed', async () => {
+  // An unusable agent tool call delivers nothing to the user (no text is streamed in agent mode, no tool_calls event is sent),
+  // so the generation is settled at zero while the supplier cost stays on record. Delivered output is still billed below.
+  await check('Invalid, parallel, final-step and truncated tool output is never executable and is not charged', async () => {
     for (const kind of ['unknown', 'extra_key', 'parallel', 'truncated', 'eof', 'final']) {
       const a = user(100), b = agentInput();
       if (kind === 'final') { b.agentStep = 3; b.agentHistory = [...pair(b, 'c1'), ...pair(b, 'c2'), ...pair(b, 'c3')]; primeAgentSteps(a.id, b, 3); }
@@ -473,8 +486,37 @@ try {
       if (kind === 'eof') generationReply = id => new Response(JSON.stringify({ data: { id, total_cost: 0.01 } }));
       const frames = await events(await POST(request(b, a)));
       assert.ok(!frames.some(e => e.event === 'tool_calls'), kind); assert.ok(frames.some(e => e.event === 'error'), kind);
-      assert.equal(getRequest(a.id, b.requestId)!.state, 'settled'); assert.equal(getBalance(a.id), kind === 'final' ? 96 : 99);
+      // A stream cut before [DONE] carried a well-formed call: that is an incomplete supplier reply (upstream_failed), billed as before.
+      const waived = kind !== 'eof', row = getRequest(a.id, b.requestId)!;
+      assert.equal(frames.find(e => e.event === 'error')?.data.code, waived ? 'invalid_tool_call' : 'upstream_failed', kind); assert.equal(frames.find(e => e.event === 'usage')?.data.chargedCents, waived ? 0 : 1, kind);
+      assert.equal(row.state, 'settled'); assert.equal(row.chargedCents, waived ? 0 : 1); assert.equal(row.costUsd, 0.01, 'supplier cost stays on record');
+      assert.equal(getBalance(a.id), kind === 'final' ? 97 : waived ? 100 : 99);
     }
+  });
+  await check('A tool call written out as prose (reasoning, tool intent, internal target ids) is never shown as the answer', async () => {
+    // Seen on staging: "[Thinking] ... For edit 2 (第二条): targetId = ... [Tool intent] Replace text" was displayed and the run labelled finished.
+    const targetId = randomUUID();
+    for (const leaked of ['[Thinking] The user wants three fixes.\n[Tool intent] Replace text in paragraph 2', `I will now replace paragraph ${targetId} with the new wording.`, 'Calling doc_apply_edits with the edits.']) {
+      const a = user(100), b = agentInput({ agentContext: { runId: randomUUID(), targets: [{ targetId, kind: 'paragraph', text: 'A unique passage for testing.', paragraphIndex: 0 }] } });
+      providerReply = async () => sse(leaked);
+      const frames = await events(await POST(request(b, a)));
+      assert.ok(!frames.some(e => e.event === 'delta' || e.event === 'tool_calls'), leaked);
+      assert.equal(frames.find(e => e.event === 'error')?.data.code, 'invalid_tool_call'); assert.ok(!JSON.stringify(frames).includes(leaked.slice(0, 20)));
+      assert.equal(getBalance(a.id), 100, 'nothing was delivered, so nothing is charged');
+    }
+  });
+  await check('The waiver cannot yield free output: valid tool calls, agent answers and non-agent replies stay billed', async () => {
+    const a = user(100), b = agentInput();
+    providerReply = async () => toolSse();
+    assert.ok((await events(await POST(request(b, a)))).some(e => e.event === 'tool_calls')); assert.equal(getBalance(a.id), 99);
+    const c = user(100), d = agentInput();
+    providerReply = async () => sse('Nothing to change.');
+    assert.ok((await events(await POST(request(d, c)))).some(e => e.event === 'delta')); assert.equal(getBalance(c.id), 99);
+    // Chat text is streamed as it arrives, so a stray tool call there never makes the generation free.
+    const e = user(100), f = input();
+    providerReply = async () => toolSse();
+    const frames = await events(await POST(request(f, e)));
+    assert.equal(frames.find(v => v.event === 'error')?.data.code, 'upstream_failed'); assert.equal(frames.find(v => v.event === 'usage')?.data.chargedCents, 1); assert.equal(getBalance(e.id), 99);
   });
   await check('Unknown agent usage withholds tools until receipt reconciliation without replaying generation', async () => {
     const a = user(100), b = agentInput(), before = providerCalls;

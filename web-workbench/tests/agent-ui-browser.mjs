@@ -40,7 +40,7 @@ try{
   window.agentUiEditor??=createIframeEditorExecutor(frame);
   const body=await window.agentUiEditor.executeCommand('get_document_text',{__agent:true});return body.paragraphs.map(p=>p.text).join('\n');
  });
- const stored=()=>page.evaluate(()=>new Promise((resolve,reject)=>{const open=indexedDB.open('ai-workdeck-web-workbench');open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,request=db.transaction('files').objectStore('files').getAll();request.onsuccess=()=>{resolve(request.result.map(file=>({id:file.id,name:file.name,version:file.version,bytes:Array.from(file.bytes)})));db.close()};request.onerror=()=>{reject(request.error);db.close()}}}));
+ const stored=()=>page.evaluate(()=>new Promise((resolve,reject)=>{const open=indexedDB.open('ai-workdeck-web-workbench:guest');open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,request=db.transaction('files').objectStore('files').getAll();request.onsuccess=()=>{resolve(request.result.map(file=>({id:file.id,name:file.name,version:file.version,bytes:Array.from(file.bytes)})));db.close()};request.onerror=()=>{reject(request.error);db.close()}}}));
  const inspectDocx=async()=>{const files=await stored(),file=files.find(f=>f.name.includes('示例'));assert.ok(file,'sample document remains in workspace');const zip=await JSZip.loadAsync(Uint8Array.from(file.bytes));return {file,xml:await zip.file('word/document.xml').async('string')}};
  await page.goto(origin+'/web/?lang=zh',{waitUntil:'domcontentloaded'});await waitReady();
  assert.equal(await page.evaluate(()=>crossOriginIsolated),true);assert.match(await text(),/甲方应在交付后30日内支付全部服务费用/);

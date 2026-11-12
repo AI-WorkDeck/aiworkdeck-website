@@ -79,7 +79,7 @@ try{
   const body=()=>page.evaluate(()=>fixture.session.readText());
   let ctx=await begin();assert.equal(ctx.document.text,lines.join('\n'));pass('stable full body and opaque targets without manual selection');
   const found=await tool(ctx.runId,'find','doc_find_text',{queries:[{text:'30',matchCase:true},{text:'删除本句。',matchCase:true}]});evidence.find=found;assert.equal(found.ok,true);
-  const edits=found.result.queries[0].matches.map(m=>({type:'replace_text',targetId:m.targetId,newText:'45'}));edits.push({type:'replace_text',targetId:found.result.queries[1].matches[0].targetId,newText:''});
+  const edits=found.result.queries[0].matches.map(m=>({type:'replace_text',targetId:m.targetId,originalText:m.text,newText:'45'}));edits.push({type:'replace_text',targetId:found.result.queries[1].matches[0].targetId,originalText:found.result.queries[1].matches[0].text,newText:''});
   const changed=await tool(ctx.runId,'batch','doc_apply_edits',{edits});evidence.batch=changed;assert.equal(changed.ok,true);assert.match(await body(),/甲方45日付款。\n乙方45日付款。\n\n格式正文。/);pass('multiple native tracked replacements and empty deletion saved');
   ctx=await context(ctx.runId);
   const format=await tool(ctx.runId,'format','doc_apply_edits',{edits:[
@@ -103,7 +103,7 @@ try{
   const noTable=await page.evaluate(()=>fixture.session.exec('table_read',{tableIndex:0}).then(()=>false,e=>e.message));assert.match(noTable,/文档共 0 张表/);pass('whole-run DOCX checkpoint restores text, formatting source and removes inserted table');
   await page.evaluate(async()=>{const s=fixture.session,file=await fixture.store.getFile(s.file.id);await s.show(null);await s.show(file)});assert.equal(await body(),lines.join('\n'));pass('restored DOCX reopens through native load and persisted IDB');
   ctx=await begin();await page.evaluate(()=>{fixture.session.agent.invalidate();fixture.session.generation++});
-  const stale=await tool(ctx.runId,'stale','doc_apply_edits',{edits:[{type:'replace_text',targetId:ctx.targets.find(t=>t.text==='甲方30日付款。').targetId,newText:'不应发生'}]});assert.equal(stale.ok,false);assert.equal(stale.partial,false);assert.equal(await body(),lines.join('\n'));pass('stale user edit lease rejected before content dispatch');
+  const stale=await tool(ctx.runId,'stale','doc_apply_edits',{edits:[{type:'replace_text',targetId:ctx.targets.find(t=>t.text==='甲方30日付款。').targetId,originalText:'甲方30日付款。',newText:'不应发生'}]});assert.equal(stale.ok,false);assert.equal(stale.partial,false);assert.equal(await body(),lines.join('\n'));pass('stale user edit lease rejected before content dispatch');
   evidence.commands=await page.evaluate(()=>fixture.commands);
   assert.deepEqual(evidence.errors,[]);
  };

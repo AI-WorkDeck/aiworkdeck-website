@@ -14,6 +14,8 @@ export function createPreviewServer({mockAI=false,testSupport=false}={}){
   res.setHeader('Cross-Origin-Opener-Policy','same-origin');res.setHeader('Cross-Origin-Embedder-Policy','require-corp');res.setHeader('Cache-Control','no-store');
   try{
    const url=new URL(req.url,'http://localhost');
+   // The workbench refuses to open local documents until the session is known; the preview has no accounts, so it is a guest.
+   if(url.pathname==='/api/auth/me'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({user:null}));return}
    if(url.pathname==='/api/web/capabilities'&&mockAI){const anonymous=url.searchParams.get('testAnonymous')==='1';res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({authenticated:!anonymous,aiEnabled:!anonymous,reason:anonymous?'unauthorized':null,agentEnabled:!anonymous,agentReason:anonymous?'unauthorized':null,agent:{maxChargeCents:25,maxRunChargeCents:100,maxGenerations:4},currency:'TEST',maxChargeCents:100,webTrialSupported:false,loginUrl:`/${url.searchParams.get('lang')||'zh'}/account?next=%2Fweb%2F`}));return}
    if(url.pathname.startsWith('/api/web/requests/')&&mockAI){const receipt=receipts.get(url.pathname.split('/').at(-1));res.writeHead(receipt?200:404,{'Content-Type':'application/json'});res.end(JSON.stringify(receipt||{error:{code:'not_found',message:'TEST: Request not recorded; charge unverified'}}));return}
    if(url.pathname==='/api/web/chat'&&mockAI&&req.method==='POST'){
@@ -32,7 +34,7 @@ export function createPreviewServer({mockAI=false,testSupport=false}={}){
       const target=data.agentContext?.targets?.find(t=>t.kind==='paragraph'&&t.text===needle);
       if(!target){event('error',{code:'TEST_TARGET_MISSING',message:'Synthetic document target missing'});event('done',{requestId:data.requestId});res.end();return}
       const name=data.agentStep===0?'doc_find_text':'doc_apply_edits';
-      const args=data.agentStep===0?{queries:[{text:'交付后30日内支付全部服务费用',matchCase:true}]}:{edits:[{type:'replace_text',targetId:target.targetId,newText:'甲方应在交付后45日内支付全部服务费用。'}]};
+      const args=data.agentStep===0?{queries:[{text:'交付后30日内支付全部服务费用',matchCase:true}]}:{edits:[{type:'replace_text',targetId:target.targetId,originalText:target.text,newText:'甲方应在交付后45日内支付全部服务费用。'}]};
       const id=`test-call-${data.agentStep}`,raw=JSON.stringify(args);
       event('tool_calls',{requestId:data.requestId,fileId:data.document.id,version:data.document.version,calls:[{id,type:'function',function:{name,arguments:args}}],assistant:{role:'assistant',content:null,tool_calls:[{id,type:'function',function:{name,arguments:raw}}]}});
      }else event('delta',{text:'已将付款期限改为45日，并保存了文档。'});
