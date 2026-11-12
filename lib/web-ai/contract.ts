@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { AGENT_LIMITS, AGENT_TOOLS, validateAgentContext, validateToolCall, validateToolResult } from '../../web-workbench/src/agent-contract.js';
 /** Legacy suggestions and bounded native document tools share per-generation accounting. */
-export const WEB_MODEL = process.env.NEXT_PUBLIC_AWD_SITE === 'intl' ? 'qwen/qwen3-235b-a22b-2507' : 'qwen3.8-flash';
+// WEB_AI_MODEL (server env, read at start) selects another model for this deployment. On the cn site it must be one the catalog grants: see platformModels().
+export const WEB_MODEL = process.env.WEB_AI_MODEL?.trim() || (process.env.NEXT_PUBLIC_AWD_SITE === 'intl' ? 'qwen/qwen3-235b-a22b-2507' : 'qwen3.8-flash');
 export const LIMITS = { bodyBytes: 96_000, contextBytes: 48_000, messageChars: 4000, selectionChars: 6000, history: 10, outputTokens: 2048, outputChars: 16000, agentOutputTokens: 4096, agentOutputChars: 32000, timeoutMs: 120_000 } as const;
 export const PRICE_CAP = { prompt: 1, completion: 2, request: 0 } as const;
 // UTF-8 bytes bound byte-level tokenization; ample fixed allowance covers framing.
