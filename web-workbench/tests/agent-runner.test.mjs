@@ -207,6 +207,25 @@ test('automatically retries recoverable stream errors and pre-mutation tool erro
     assert.equal(record.steps[0].status, 'verified');
   });
 
+  await t.test('a redundant call that fails cleanly after saved edits is retried instead of failing the run', async () => {
+    // The real editor reports saved:true for a failure that wrote nothing (the document has no unsaved changes).
+    let streams = 0, executions = 0;
+    const edit = id => ({ kind: 'tool', chargedCents: 2, call: { id, name: 'doc_apply_edits', args: { edits: [{ type: 'replace_text', targetId: 'target-1', newText: 'updated' }] } } });
+    const stream = async (payload, opts) => {
+      streams++;
+      await streamFor(p => settledEvents(p, streams <= 2 ? edit(`call-${streams}`) : { chargedCents: 2 }))(payload, opts);
+    };
+    const record = await run({
+      retryDelayMs: 0,
+      stream,
+      execute: async () => ++executions === 1 ? resultFor('doc_apply_edits', { saved: true }) : resultFor('doc_apply_edits', { ok: false, partial: false, verification: 'failed', saved: true, error: 'STALE_TARGET' }),
+    });
+    assert.equal(streams, 3); assert.equal(executions, 2);
+    assert.equal(record.status, 'completed');
+    assert.deepEqual(record.steps.map(s => s.status), ['verified']);
+    assert.equal(record.chargedCents, 6);
+  });
+
   await t.test('continues automatically when step 2 calls doc_find_text after an edit', async () => {
     let streams = 0;
     const stream = async (payload, opts) => {

@@ -119,6 +119,13 @@ test('reading tables of a document without tables is a verified empty result, no
  const result=await f.s.executeAgentTool(ctx.runId,'probe','doc_read_tables',{tables:[{tableIndex:0}]});validateToolResult(result);
  assert.equal(result.ok,true);assert.deepEqual(result.result,{tables:[],tableCount:0});
 });
+test('a stale target fails before any write and reports the document as still saved',async t=>{
+ const f=fixture(t),ctx=await f.begin(),stale=paragraph(ctx,0);
+ assert.equal((await f.execute(ctx,[{type:'replace_text',targetId:stale,newText:'甲方45日付款。'}])).ok,true);
+ const again=await f.execute(ctx,[{type:'replace_text',targetId:stale,newText:'甲方45日付款。'}],'again');validateToolResult(again);
+ assert.equal(again.error.code,'STALE_TARGET');assert.equal(again.partial,false);assert.equal(again.verification,'failed');assert.equal(again.saved,true);
+ assert.equal(f.engine.paragraphs[0],'甲方45日付款。');
+});
 test('merged table read never mints writable cell handles',async t=>{
  const f=fixture(t);f.engine.tables=[{table:'合并',cells:[['a']],note:'merged'}];const ctx=await f.begin();
  const result=await f.s.executeAgentTool(ctx.runId,'read','doc_read_tables',{tables:[{tableIndex:0}]});assert.equal(result.result.tables[0].cells[0][0].targetId,undefined);
