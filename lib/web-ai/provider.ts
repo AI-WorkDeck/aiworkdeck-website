@@ -50,7 +50,8 @@ export async function streamCompletion(apiKey: string, input: WebInput, hooks: P
         if (toolBytes > 64_000) throw new WebError('upstream_failed', 502);
         if (!delta || !Number.isInteger(delta.index) || delta.index !== 0) { invalidTools = true; continue; }
         const part = toolParts.get(delta.index) ?? { id: '', type: '', function: { name: '', arguments: '' } };
-        if (delta.id !== undefined) { if (typeof delta.id !== 'string' || (part.id && part.id !== delta.id)) invalidTools = true; else part.id = delta.id; }
+        // Bailian Qwen repeats `"id":""` on every continuation chunk; an empty id carries nothing and is no conflict.
+        if (delta.id !== undefined && delta.id !== '') { if (typeof delta.id !== 'string' || (part.id && part.id !== delta.id)) invalidTools = true; else part.id = delta.id; }
         if (delta.type !== undefined) { if (typeof delta.type !== 'string' || (part.type && part.type !== delta.type)) invalidTools = true; else part.type = delta.type; }
         if (delta.function !== undefined) {
           if (!delta.function || typeof delta.function !== 'object') invalidTools = true;
