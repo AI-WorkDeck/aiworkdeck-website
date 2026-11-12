@@ -76,6 +76,9 @@ export async function streamCompletion(apiKey: string, input: WebInput, hooks: P
     if (finishReason === 'tool_calls' && (toolCalls.length !== 1 || input.agentStep === 3)) invalidTools = true;
     if (finishReason !== 'tool_calls' && toolParts.size) invalidTools = true;
   }
+  // A flash model sometimes writes its tool call out as prose ("[Tool intent] ... targetId = ...") instead of calling the tool.
+  // Opaque target ids and tool-protocol words are never a user-facing answer: treat it as an unusable call, never as a completed run.
+  if (input.mode === 'agent' && !toolParts.size && (/targetId|doc_apply_edits|doc_find_text|doc_read_tables|\[(Thinking|Tool intent)\]/i.test(text) || (input.agentContext!.targets as { targetId: string }[]).some(t => text.includes(t.targetId)))) invalidTools = true;
   const plainTextComplete = input.mode === 'agent' && !toolParts.size && !!text.trim() && (finishReason === 'stop' || finishReason === 'length');
   return { text, cost: finished ? cost : undefined, complete: finished && (finishReason === 'stop' || plainTextComplete || (input.mode === 'agent' && finishReason === 'tool_calls')), toolCalls, invalidTools, finishReason };
 }

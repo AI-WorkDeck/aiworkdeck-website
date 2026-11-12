@@ -493,6 +493,18 @@ try {
       assert.equal(getBalance(a.id), kind === 'final' ? 97 : waived ? 100 : 99);
     }
   });
+  await check('A tool call written out as prose (reasoning, tool intent, internal target ids) is never shown as the answer', async () => {
+    // Seen on staging: "[Thinking] ... For edit 2 (第二条): targetId = ... [Tool intent] Replace text" was displayed and the run labelled finished.
+    const targetId = randomUUID();
+    for (const leaked of ['[Thinking] The user wants three fixes.\n[Tool intent] Replace text in paragraph 2', `I will now replace paragraph ${targetId} with the new wording.`, 'Calling doc_apply_edits with the edits.']) {
+      const a = user(100), b = agentInput({ agentContext: { runId: randomUUID(), targets: [{ targetId, kind: 'paragraph', text: 'A unique passage for testing.', paragraphIndex: 0 }] } });
+      providerReply = async () => sse(leaked);
+      const frames = await events(await POST(request(b, a)));
+      assert.ok(!frames.some(e => e.event === 'delta' || e.event === 'tool_calls'), leaked);
+      assert.equal(frames.find(e => e.event === 'error')?.data.code, 'invalid_tool_call'); assert.ok(!JSON.stringify(frames).includes(leaked.slice(0, 20)));
+      assert.equal(getBalance(a.id), 100, 'nothing was delivered, so nothing is charged');
+    }
+  });
   await check('The waiver cannot yield free output: valid tool calls, agent answers and non-agent replies stay billed', async () => {
     const a = user(100), b = agentInput();
     providerReply = async () => toolSse();
