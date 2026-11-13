@@ -422,6 +422,25 @@ WXPAY_PUBLIC_KEY_PATH=./wxpay/pub_key.pem   # 默认值，文件从商户平台�
 公钥 ID 就是微信回调/应答 `Wechatpay-Serial` 头里的值；配错或不配，回调一律按验签失败拒绝（fail closed），
 表现为「收到钱但订单永远不置为已支付」。
 
+**微信支付 APP 支付（安卓 `com.aiworkdeck.mobile.cn`，dev-board#428，仅国内站）**：
+
+```bash
+# 不设 = APP 支付通道不存在：手机端内部口 create-recharge(channel='wxpay-app') 回 503 channel_unavailable，
+# 不建单、不调微信。Native 扫码 / Stripe / App Store / 小程序虚拟支付都不受影响。
+WXPAY_APP_APPID=<开放平台「移动应用」的 AppID，wx 开头；不是上面 WXPAY_APPID 那个>
+```
+
+- 商户号、商户私钥、APIv3 key、验签公钥全部与 Native 共用，不需要另配。国际站（USD）即使配了也不开放。
+- 回调地址是 `${NEXT_PUBLIC_BASE_URL}/api/payment/notify/app`（下单时随单下发，商户平台不用配）。
+- 商户侧前置（缺一项都会在下单或调起时失败）：
+  1. 微信开放平台已认证开发者账号下创建「移动应用」，Android 包名 `com.aiworkdeck.mobile.cn`，
+     应用签名填正式签名证书 MD5 **去冒号小写** `dfea3ae5537b22e1f0c0878352360ded`
+     （即 `df:ea:3a:e5:53:7b:22:e1:f0:c0:87:83:52:36:0d:ed`）；审核通过后拿到的 AppID 就是 `WXPAY_APP_APPID`。
+  2. 商户平台【产品中心 → APP 支付】已开通，并在【产品中心 → AppID 账号管理】把上面那个 AppID 与本商户号**关联并确认**。
+  3. 签名与包名任何一项和安装包不符，SDK 调起会直接回 errCode=-1，服务端看不到任何日志——先核这两项。
+- 开启后先用真机做一笔小额真实支付，确认 `/api/payment/notify/app` 回调入账、`query` 回 paid，再放开安卓端入口。
+  验证脚本：`npm run test:wxpay-app`（不联网，cn/intl 两站在 CI 都跑）。
+
 改动 `.env.local` 后需 `pm2 restart aiworkdeck-website --update-env` 生效。
 
 #### 个人 Pro 购买开关 `PRO_PURCHASE_ENABLED`（仅国内站）

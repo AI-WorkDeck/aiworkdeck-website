@@ -41,6 +41,7 @@ import {
   settleFromChannel,
   settlementFromTransaction,
   verifyTransaction,
+  wxpayAppAdapter,
   wxvpAdapter,
 } from '@/lib/payments';
 import { deleteAccount } from '@/lib/account-deletion';
@@ -378,12 +379,21 @@ async function handleCreateRecharge(
     rawChannel !== undefined &&
     rawChannel !== null &&
     rawChannel !== 'wxvp' &&
-    rawChannel !== 'appstore'
+    rawChannel !== 'appstore' &&
+    rawChannel !== 'wxpay-app'
   ) {
     return fail(400, 'unsupported_channel');
   }
   const isWxvp = rawChannel === 'wxvp';
   const isAppstore = rawChannel === 'appstore';
+  const isWxpayApp = rawChannel === 'wxpay-app';
+
+  // 安卓微信支付 APP 支付（dev-board#428）。金额口径与默认通道（Native 扫码）完全相同：
+  // 上面那道正整数分 + 单笔上限，不设档位表。**未配 WXPAY_APP_APPID（或不是人民币站）
+  // = 本通道不存在**：在查幂等键、建单之前就回 503 channel_unavailable，库里一行都不写。
+  if (isWxpayApp && !wxpayAppAdapter.isConfigured()) {
+    return fail(503, 'channel_unavailable');
+  }
 
   let productId = '';
   let wxCode = '';
@@ -412,7 +422,13 @@ async function handleCreateRecharge(
     if (!wxCode || wxCode.length > 128) return fail(400, 'wx_code_required');
   }
 
-  const adapter = isWxvp ? wxvpAdapter : isAppstore ? appstoreAdapter : getPaymentAdapter();
+  const adapter = isWxvp
+    ? wxvpAdapter
+    : isAppstore
+      ? appstoreAdapter
+      : isWxpayApp
+        ? wxpayAppAdapter
+        : getPaymentAdapter();
 
   const existing = findOrderByIdempotencyKey(userId, idempotencyKey);
   if (existing) {
@@ -511,6 +527,17 @@ async function handleCreateRecharge(
       amountCents,
       // iOS 端原样传给 `Product.PurchaseOption.appAccountToken(_:)`
       appAccountToken: charge.appAccountToken,
+    });
+  }
+
+  if (charge.channel === 'wxpay-app') {
+    // 七个字段原样填进安卓 OpenSDK 的 PayReq。SDK 回调的 errCode 不作数：
+    // 端上收到回调后必须走 action=query（云后端 /recharge/status）确认到账。
+    return NextResponse.json({
+      present: 'app',
+      outTradeNo,
+      amountCents,
+      ...charge.appPay,
     });
   }
 

@@ -135,6 +135,74 @@ export async function createNativeOrder(params: CreateOrderParams) {
   return response.data;
 }
 
+// ---------------------------------------------------------------------------
+// APP 支付（安卓 OpenSDK 调起）
+//
+// appid 用开放平台「移动应用」的 AppID（WXPAY_APP_APPID），与 Native 的 WXPAY_APPID
+// 不是同一个；商户号、商户私钥、APIv3 key、回调验签全部与 Native 共用。
+// ---------------------------------------------------------------------------
+
+/** APP 下单（POST /v3/pay/transactions/app），返回 prepay_id（有效期 2 小时）。 */
+export async function createAppOrder(params: CreateOrderParams): Promise<string> {
+  const axios = getWxPayAxios();
+
+  const payload = {
+    appid: process.env.WXPAY_APP_APPID || '',
+    mchid: wxpayConfig.mchid,
+    description: params.description,
+    out_trade_no: params.outTradeNo,
+    notify_url: params.notifyUrl,
+    amount: {
+      total: params.amount,
+      currency: 'CNY',
+    },
+  };
+
+  const response = await axios.post('/v3/pay/transactions/app', payload);
+  const prepayId = response.data?.prepay_id;
+  if (typeof prepayId !== 'string' || !prepayId) {
+    throw new Error('微信支付 APP 下单未返回 prepay_id');
+  }
+  return prepayId;
+}
+
+/**
+ * 安卓 OpenSDK `PayReq` 的字段，名字与 PayReq 成员一一对应，端上原样赋值即可。
+ * partnerId 是商户号；packageValue 固定 `Sign=WXPay`。
+ */
+export interface AppPayParams {
+  appId: string;
+  partnerId: string;
+  prepayId: string;
+  packageValue: 'Sign=WXPay';
+  nonceStr: string;
+  timeStamp: string;
+  sign: string;
+}
+
+/**
+ * APP 调起支付的签名（APIv3）：对 `appid\ntimestamp\nnoncestr\nprepay_id\n`
+ * 用商户私钥做 SHA256withRSA，base64。nonceStr / timeStamp / privateKey 可注入，仅供测试。
+ */
+export function buildAppPayParams(
+  prepayId: string,
+  opts: { nonceStr?: string; timeStamp?: string; privateKey?: string } = {}
+): AppPayParams {
+  const appId = process.env.WXPAY_APP_APPID || '';
+  const nonceStr = opts.nonceStr ?? crypto.randomBytes(16).toString('hex');
+  const timeStamp = opts.timeStamp ?? Math.floor(Date.now() / 1000).toString();
+  const message = `${appId}\n${timeStamp}\n${nonceStr}\n${prepayId}\n`;
+  return {
+    appId,
+    partnerId: wxpayConfig.mchid,
+    prepayId,
+    packageValue: 'Sign=WXPay',
+    nonceStr,
+    timeStamp,
+    sign: sign(message, opts.privateKey ?? loadPrivateKey()),
+  };
+}
+
 /**
  * 回查订单。响应签名必须通过验签（公钥模式或平台证书模式），否则抛错（fail closed）——
  * 这条路径也会把订单置 paid，同样不能信任未验签的数据。

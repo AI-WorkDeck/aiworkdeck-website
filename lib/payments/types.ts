@@ -10,7 +10,9 @@
  * 「用哪把密钥验签、按哪个币种结算」交给攻击者可控的输入。
  */
 
-export type PaymentChannelId = 'wxpay' | 'stripe' | 'wxvp' | 'appstore';
+import type { AppPayParams } from '../wxpay';
+
+export type PaymentChannelId = 'wxpay' | 'stripe' | 'wxvp' | 'appstore' | 'wxpay-app';
 export type CurrencyCode = 'CNY' | 'USD';
 
 export interface CreateChargeInput {
@@ -66,6 +68,12 @@ export type CreateChargeResult =
        * 要发给 iOS 的、而不是从通道拿回来的。
        */
       appAccountToken: string;
+    }
+  | {
+      /** 微信支付 APP 支付（安卓 OpenSDK）：appPay 原样填进 `PayReq`。SDK 回调不作数，到账以服务端查单为准。 */
+      channel: 'wxpay-app';
+      present: 'app';
+      appPay: AppPayParams;
     };
 
 /**

@@ -211,6 +211,9 @@ ok('公钥内容读一次后缓存');
     amount: 100,
     status: 'pending',
     kind: 'support',
+    // 显式钉成微信单：不写会落站点默认通道，国际站是 stripe → 回调 channel_mismatch
+    channel: 'wxpay',
+    currency: 'CNY',
   });
 
   // 按微信回调的真实形状造报文：resource 是 AES-256-GCM 密文（APIv3 key 解密）
