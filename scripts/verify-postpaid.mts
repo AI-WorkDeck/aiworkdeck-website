@@ -213,7 +213,7 @@ db.exec('DROP TABLE bqt_settings; DROP TABLE bqt_settings_audit; DROP TABLE bqt_
 db.prepare('DELETE FROM schema_version WHERE version>=47').run();
 const {closeDb}=await import('../lib/db');closeDb();
 const migrated=getDb();
-assert.equal((migrated.prepare('SELECT MAX(version) v FROM schema_version').get() as {v:number}).v,50);
+assert.equal((migrated.prepare('SELECT MAX(version) v FROM schema_version').get() as {v:number}).v,51);
 assert.equal(receiptRow('notice-legacy').cleanupState,'review');assert.equal(receiptRow('notice-legacy').firstAckAt,null);
 acknowledgeNotification('notice-legacy',unknown.id,'retry',noticeTime(unknown,3600000));
 assert.equal(receiptRow('notice-legacy').firstAckAt,null,'a retry cannot invent historical first-ACK evidence');
