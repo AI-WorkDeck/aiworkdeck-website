@@ -93,7 +93,7 @@ function handleApiCors(request: NextRequest): NextResponse {
  * 被 locale 重定向补成 `/zh/captcha-embed` 会落进 `[lang]` 路由 404，
  * 而且 iframe 里跟随的每一跳都是桌面端登录页上的一次白屏。
  */
-const LOCALE_FREE_PAGES = ['/captcha-embed', '/mobile-account', '/web'];
+const LOCALE_FREE_PAGES = ['/captcha-embed', '/mobile-account', '/web', '/app'];
 
 /** 跨站链接带的参数：?site=<id>。命中即种 cookie；手机公开页面保留参数。 */
 const SITE_COOKIE = 'awd_site';

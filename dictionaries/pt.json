@@ -1621,10 +1621,13 @@
       "text": "Não consegue instalar programas (por exemplo, num computador de trabalho bloqueado)? Use a versão web no navegador: o primeiro carregamento tem cerca de 100 MB, e os recursos de IA exigem login.",
       "link": "Abrir a versão web →"
     },
-    "androidDownload": {
-      "title": "Aplicação Android para a China",
-      "body": "Para Android 10 ou posterior. Ligue a sua conta da região China para tirar fotografias, gravar áudio e aceder a ficheiros de projetos.",
-      "button": "Transferir APK Android",
+    "mobileApp": {
+      "title": "Aplicativo móvel",
+      "body": "Use no iPhone, iPad ou Android: tire fotos, grave áudio e acesse os arquivos do projeto. Entre com a conta da mesma região do seu computador.",
+      "scan": "Escaneie com o celular para abrir automaticamente a loja de aplicativos correta.",
+      "wechatHint": "Toque no menu ··· no canto superior direito, escolha \"Abrir no navegador\" e siga para a loja de aplicativos.",
+      "tencentMyApp": "Tencent MyApp",
+      "apkLink": "Transferir APK Android",
       "details": "Versão {version} · {size} MB",
       "checksum": "Ver soma de verificação"
     },

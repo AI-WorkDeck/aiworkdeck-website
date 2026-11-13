@@ -1621,10 +1621,13 @@
       "text": "Tidak dapat memasang perisian (contohnya komputer pejabat yang dihadkan)? Gunakan versi web dalam pelayar: muatan pertama kira-kira 100 MB, dan ciri AI memerlukan log masuk.",
       "link": "Buka versi web →"
     },
-    "androidDownload": {
-      "title": "Aplikasi Android untuk China",
-      "body": "Untuk Android 10 atau lebih baharu. Sambungkan akaun wilayah China untuk mengambil foto, merakam audio dan mengakses fail projek.",
-      "button": "Muat turun APK Android",
+    "mobileApp": {
+      "title": "Aplikasi mudah alih",
+      "body": "Gunakan pada iPhone, iPad atau Android: ambil foto, rakam audio dan akses fail projek. Log masuk dengan akaun daripada rantau yang sama dengan komputer anda.",
+      "scan": "Imbas dengan telefon anda untuk membuka kedai aplikasi yang sesuai secara automatik.",
+      "wechatHint": "Ketik menu ··· di penjuru kanan atas dan pilih \"Buka dalam pelayar\", kemudian teruskan ke kedai aplikasi.",
+      "tencentMyApp": "Tencent MyApp",
+      "apkLink": "Muat turun APK Android",
       "details": "Versi {version} · {size} MB",
       "checksum": "Lihat checksum fail"
     },

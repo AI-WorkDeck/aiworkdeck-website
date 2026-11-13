@@ -11,6 +11,7 @@
     "check:locales": "node scripts/check-locales.mjs",
     "check": "npm run typecheck && npm run check:locales",
     "seed": "node scripts/seed.mjs",
+    "test:app-link": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && npx --yes tsx --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-app-link.mts\"'",
     "test:team": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && npx --yes tsx --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-team.mts\"'",
     "test:skill-submit": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && NODE_OPTIONS=--conditions=react-server npx --yes tsx --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-skill-submit.mts\"'",
     "test:collab-directory": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && npx --yes tsx --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-collab-directory.mts\"'",

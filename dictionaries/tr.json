@@ -1621,10 +1621,13 @@
       "text": "Yazılım yükleyemiyor musunuz (örneğin kısıtlı bir iş bilgisayarında)? Tarayıcıdaki web sürümünü kullanın: ilk açılışta yaklaşık 100 MB indirilir ve AI özellikleri için giriş yapmanız gerekir.",
       "link": "Web sürümünü aç →"
     },
-    "androidDownload": {
-      "title": "Çin bölgesi Android uygulaması",
-      "body": "Android 10 veya sonrası için. Fotoğraf, ses kaydı ve proje dosyaları için Çin bölgesi hesabınızı bağlayın.",
-      "button": "Android APK indir",
+    "mobileApp": {
+      "title": "Mobil uygulama",
+      "body": "iPhone, iPad veya Android'de kullanın: fotoğraf çekin, ses kaydedin ve proje dosyalarına erişin. Bilgisayarınızla aynı bölgedeki hesapla giriş yapın.",
+      "scan": "Telefonunuzla tarayın; uygun uygulama mağazası otomatik açılır.",
+      "wechatHint": "Sağ üstteki ··· menüsüne dokunup \"Tarayıcıda aç\" seçeneğini seçin, ardından uygulama mağazasına geçin.",
+      "tencentMyApp": "Tencent MyApp",
+      "apkLink": "Android APK indir",
       "details": "Sürüm {version} · {size} MB",
       "checksum": "Dosya sağlama toplamını göster"
     },

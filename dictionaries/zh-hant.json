@@ -1941,10 +1941,13 @@
       "text": "無法安裝軟體（例如公司電腦有限制）？可以先用瀏覽器裡的網頁版：首次開啟約需下載 100 MB，AI 功能需登入。",
       "link": "開啟網頁版 →"
     },
-    "androidDownload": {
-      "title": "中國區 Android 應用程式",
-      "body": "適用於 Android 10 及以上，連接中國區帳戶，拍照、錄音並存取專案檔案。",
-      "button": "下載 Android 安裝包",
+    "mobileApp": {
+      "title": "手機 App",
+      "body": "在 iPhone、iPad 或 Android 手機上使用：拍照、錄音，並存取專案檔案。請使用與電腦相同區域的帳戶登入。",
+      "scan": "用手機掃碼，自動開啟對應的應用程式商店",
+      "wechatHint": "請點右上角「···」，選擇「在瀏覽器開啟」，再前往應用程式商店下載。",
+      "tencentMyApp": "應用寶",
+      "apkLink": "直接下載安裝包（APK）",
       "details": "版本 {version} · {size} MB",
       "checksum": "查看檔案校驗值"
     },

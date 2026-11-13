@@ -1621,10 +1621,13 @@
       "text": "Không cài được phần mềm (ví dụ máy tính cơ quan bị hạn chế)? Hãy dùng bản web trên trình duyệt: lần mở đầu tiên tải khoảng 100 MB, tính năng AI cần đăng nhập.",
       "link": "Mở bản web →"
     },
-    "androidDownload": {
-      "title": "Ứng dụng Android cho Trung Quốc",
-      "body": "Dành cho Android 10 trở lên. Kết nối tài khoản khu vực Trung Quốc để chụp ảnh, ghi âm và truy cập tệp dự án.",
-      "button": "Tải APK Android",
+    "mobileApp": {
+      "title": "Ứng dụng di động",
+      "body": "Dùng trên iPhone, iPad hoặc Android: chụp ảnh, ghi âm và truy cập tệp dự án. Hãy đăng nhập bằng tài khoản cùng khu vực với máy tính của bạn.",
+      "scan": "Quét bằng điện thoại để tự động mở đúng cửa hàng ứng dụng.",
+      "wechatHint": "Chạm vào menu ··· ở góc trên bên phải, chọn \"Mở trong trình duyệt\", rồi tiếp tục đến cửa hàng ứng dụng.",
+      "tencentMyApp": "Tencent MyApp",
+      "apkLink": "Tải APK Android",
       "details": "Phiên bản {version} · {size} MB",
       "checksum": "Xem mã kiểm tra tệp"
     },

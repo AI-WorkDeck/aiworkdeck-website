@@ -1621,10 +1621,13 @@
       "text": "Tidak bisa memasang perangkat lunak (misalnya komputer kantor yang dibatasi)? Gunakan versi web di peramban: pemuatan pertama sekitar 100 MB, dan fitur AI perlu masuk akun.",
       "link": "Buka versi web →"
     },
-    "androidDownload": {
-      "title": "Aplikasi Android untuk Tiongkok",
-      "body": "Untuk Android 10 atau lebih baru. Hubungkan akun wilayah Tiongkok untuk mengambil foto, merekam audio dan mengakses berkas proyek.",
-      "button": "Unduh APK Android",
+    "mobileApp": {
+      "title": "Aplikasi seluler",
+      "body": "Gunakan di iPhone, iPad, atau Android: ambil foto, rekam audio, dan akses file proyek. Masuk dengan akun dari wilayah yang sama dengan komputer Anda.",
+      "scan": "Pindai dengan ponsel Anda untuk membuka toko aplikasi yang sesuai secara otomatis.",
+      "wechatHint": "Ketuk menu ··· di kanan atas dan pilih \"Buka di browser\", lalu lanjutkan ke toko aplikasi.",
+      "tencentMyApp": "Tencent MyApp",
+      "apkLink": "Unduh APK Android",
       "details": "Versi {version} · {size} MB",
       "checksum": "Lihat checksum berkas"
     },

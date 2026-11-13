@@ -1621,10 +1621,13 @@
       "text": "소프트웨어를 설치할 수 없나요(회사 PC 제한 등)? 브라우저용 웹 버전을 사용하세요. 처음 열 때 약 100MB를 내려받으며, AI 기능은 로그인이 필요합니다.",
       "link": "웹 버전 열기 →"
     },
-    "androidDownload": {
-      "title": "중국 지역 Android 앱",
-      "body": "Android 10 이상 지원. 중국 지역 계정을 연결하여 사진 촬영, 녹음 및 프로젝트 파일에 접근합니다.",
-      "button": "Android APK 다운로드",
+    "mobileApp": {
+      "title": "모바일 앱",
+      "body": "iPhone, iPad, Android에서 사용할 수 있습니다. 사진 촬영, 녹음, 프로젝트 파일 접근이 가능합니다. 컴퓨터와 같은 지역의 계정으로 로그인하세요.",
+      "scan": "휴대폰으로 스캔하면 해당 앱 스토어가 자동으로 열립니다.",
+      "wechatHint": "오른쪽 위 ··· 메뉴를 눌러 '브라우저에서 열기'를 선택한 뒤 앱 스토어로 이동하세요.",
+      "tencentMyApp": "Tencent MyApp",
+      "apkLink": "Android APK 다운로드",
       "details": "버전 {version} · {size} MB",
       "checksum": "파일 체크섬 보기"
     },
