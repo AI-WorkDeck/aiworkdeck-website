@@ -10,7 +10,7 @@ import {
 import { getSessionUser } from '@/lib/sessions';
 import { resolveKeyUser } from '@/lib/account-auth';
 import { validatePurchaseSku } from '@/lib/purchases';
-import { isProSku, validateProPurchase } from '@/lib/pro-products';
+import { getProIntroQuote, isProSku, validateProPurchase } from '@/lib/pro-products';
 import { checkProPurchaseGate, normalizeLegacyProSku } from '@/lib/pro-purchase-flag';
 import { getPaymentAdapter } from '@/lib/payments';
 import { siteConfig } from '@/lib/site-config';
@@ -112,6 +112,15 @@ export async function POST(request: NextRequest) {
           '你已有有效的 Apple Pro 订阅，请在 Apple 订阅设置中管理，当前无需重复购买。',
           'You already have an active Apple Pro subscription. Manage it in Apple subscription settings; another purchase is not needed.'
         ) }, { status: 409 });
+      }
+      if (skuId === 'pro_monthly_intro') {
+        const intro = getProIntroQuote(getDb(), user!.id);
+        if (!intro.eligible) {
+          return NextResponse.json({ code: 'intro_quota_exhausted', error: t(
+            '首 3 个月特惠名额已用完，请按标准月付（¥149/月）续订。',
+            'Your 3-month introductory offer has been used. Please renew at the standard ¥149/month rate.'
+          ) }, { status: 409 });
+        }
       }
       description = (toBaseLocale(lang) === 'en' ? checked.product.nameEn || checked.product.name : checked.product.name).slice(0, 127);
     } else if (kind === 'purchase') {

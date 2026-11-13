@@ -211,7 +211,8 @@
       "teaser": {
         "line": "Yapay zekâ kotası, pano, hazırlık alanı ve 3GB bulut depolama için ayda 149 CNY.",
         "primary": "Pro avantajlarını keşfedin",
-        "secondary": "Ücretsiz başlayın"
+        "secondary": "Ücretsiz başlayın",
+        "introOffer": "Tanıtım fiyatı: İlk {months} ay {intro}/ay (normal {standard}/ay), ardından standart tarife, otomatik çekim yok."
       },
       "internal": {
         "badge": "Önerilen",
@@ -1406,7 +1407,8 @@
       "details": "Planı ve avantajları görüntüle",
       "unavailable": "Personal Pro satın alımları uluslararası sitede henüz mevcut değil. Hesaplar, anakara Çin sitesinden ayrıdır.",
       "bqtSource": "Baoqingtian üyeliğinizle sağlanır",
-      "bqtRenewHint": "Pro avantajları Baoqingtian üyeliğine dahildir. Üyeliği Baoqingtian uygulamasında yenileyin."
+      "bqtRenewHint": "Pro avantajları Baoqingtian üyeliğine dahildir. Üyeliği Baoqingtian uygulamasında yenileyin.",
+      "introEligible": "Başlangıç fiyatı geçerli ({remaining}/{total} ay kaldı)"
     },
     "rechargeOrderDesc": "Cüzdan bakiyesi yükleme",
     "quotaSyncFailed": "Kota senkronizasyonu tamamlanmadı. Lütfen kısa süre içinde yenileyin.",
@@ -1459,7 +1461,9 @@
       "proRights": "Üyelik etkin olduğu sürece Pro avantajlarını (3 GB bulut depolama) içerir.",
       "priorityHint": "DeepSeek kullanımı önce Baoqingtian puanlarınızdan ödenir; puanlar bitince otomatik olarak hesap bakiyeniz kullanılır. Diğer modeller ve hizmetler hesap bakiyenizi kullanır.",
       "fetchedAt": "{time} güncellendi"
-    }
+    },
+    "rechargeProTip": "İpucu: Personal Pro şu an ayda {intro} (normal {monthly}/ay) olup 30 günde {monthlyCredits} Credits ve 3GB bulut içerir.",
+    "rechargeProTipCta": "¥9.9 ile Personal Pro Al ->"
   },
   "purchase": {
     "buy": "Satın al",
@@ -2069,8 +2073,14 @@
         "successDownload": "Projelere dön / İndir",
         "successPending": "Ödeme onaylanıyor…",
         "successUnknown": "Henüz ödeme sonucu yok. Ücret tahsil edildiyse kısa süre içinde hesap sayfanızı kontrol edin.",
-        "bqtRenewHint": "Pro avantajları Baoqingtian üyeliğine dahildir. Üyeliği Baoqingtian uygulamasında yenileyin."
-      }
+        "bqtRenewHint": "Pro avantajları Baoqingtian üyeliğine dahildir. Üyeliği Baoqingtian uygulamasında yenileyin.",
+        "introSummary": "İlk {months} ay {intro}/ay tanıtım fiyatı (normal {standard}/ay), otomatik yenileme yok.",
+        "valueSummary": "30 günde {monthlyCredits} Credits (7 günde maks. {weeklyCredits}) + 3GB bulut yedekleme + sınırsız pano"
+      },
+      "introBadge": "İlk 3 Ay Fırsatı",
+      "introNote": "İlk {months} ay {intro}/ay, 4. aydan itibaren {standard}/ay (otomatik yenileme yok)",
+      "intlNote": "Personal Pro satışı şu an Çin Anakara (CNY) sitesinde açıktır; burada kullandıkça öde bakiye yüklemesi yapabilirsiniz.",
+      "ctaIntro": "{price} ile Pro Başlat"
     },
     "team": {
       "title": "Ayrılmış dağıtım",
@@ -2130,6 +2140,10 @@
       "storage": {
         "q": "Aktarım depolaması ile bulut depolaması arasındaki fark nedir?",
         "a": "200MB geçici bir yer işgalidir, aylık trafik değildir. Teslimden sonra serbest bırakılır; teslim edilmeyen öğeler 30 gün sonra sona erer. Pro ayrı olarak 3GB kalıcı depolama içerir. Masaüstünüzdeki dosyalar, o masaüstünün çevrimiçi olmasını gerektirir. Süre sona erdikten sonra mevcut bulut dosyaları indirilebilir veya silinebilir, ancak yeni yüklemeler engellenir."
+      },
+      "intro": {
+        "q": "İlk {months} ay {intro}/ay kampanyası nasıl işler? Otomatik yenilenir mi?",
+        "a": "Hesabınızın ilk {months} aylık satın alımı (her biri 30 gün) {intro}/ay fiyatlıdır; 4. aydan itibaren {standard}/ay uygulanır. Tüm ödemeler tek seferliktir, otomatik yenilenmez."
       }
     },
     "deploymentBanner": {
@@ -2137,7 +2151,8 @@
       "title": "Kendi sunucularınızda ve ağınızda dağıtım mı?",
       "body": "Sunucuları, personeli ve ilk yıl bütçesini ekip büyüklüğüne, model moduna ve isteğe bağlı hizmetlere göre tahmin edin.",
       "cta": "Dağıtım planlayıcısını aç"
-    }
+    },
+    "heroSubtitleIntro": "Ücretsiz açık kaynak masaüstü çalışma alanı. Personal Pro ilk {months} ay {intro}/ay (normal {standard}/ay); Credits, 3GB bulut alanı ve sınırsız pano içerir. 30 günlük tek seferlik satın alım."
   },
   "notFoundPage": {
     "code": "404",
@@ -2272,7 +2287,8 @@
         "videoAria": "AI WorkDeck tanıtım filmi",
         "videoLoading": "Video yükleniyor…",
         "videoError": "Video şu anda oynatılamıyor; bağlantı yavaş olabilir ya da bağlantının süresi dolmuş olabilir.",
-        "videoRetry": "Tekrar dene"
+        "videoRetry": "Tekrar dene",
+        "introOffer": "Başlangıç fırsatı: Personal Pro ilk {months} ay ayda {intro} (normal {standard}/ay, otomatik yenileme yok) ->"
       },
       "facts": {
         "license": "açık kaynak lisansı",
@@ -2528,32 +2544,32 @@
       }
     }
   },
-    "adminSites": {
+  "adminSites": {
     "lastLoginAt": "Son giriş",
     "lastLoginUnknown": "Kayıt yok",
     "lastLoginHint": "Web sitesine veya istemciye başarılı giriş; önceki kaydedilmemiş girişler kurtarılamaz.",
     "bailianManaged": "Çin platformu Bailian kullanır. Anahtar ve varsayılan model sunucuda yönetilir ve burada salt okunurdur. Bakiyeyi Bailian konsolundan kontrol edin.",
-        "manage": "Siteyi yönet",
-        "choose": "Site seç",
-        "cn": "Çin sitesi",
-        "intl": "Uluslararası site",
-        "notice": "Yönetilen: {site} · {currency}. Geçiş, seçilen sitenin verilerini gösterir ve kaydedilmemiş değişiklikleri siler.",
-        "notConnected": "Bu site bağlı değil. Sunucudaki yönetici bağlantısı kurulumunu tamamlayın.",
-        "unavailable": "Bu site geçici olarak kullanılamıyor. Daha sonra tekrar deneyin veya site değiştirin.",
-        "networkError": "Bağlanılamıyor. Ağınızı kontrol edip tekrar deneyin.",
-        "retry": "Yeniden bağlan",
-        "loginHint": "Bu giriş sayfasının yönetici parolasını girin. Giriş yaptıktan sonra Çin sitesi ile uluslararası site arasında geçiş yapabilirsiniz.",
-        "priceRange": "Fiyat 0.01 ile 1999 {unit} arasında olmalıdır.",
-        "giftRange": "Değer 0.01 ile 10000 {unit} arasında olmalıdır.",
-        "conversion": "AI kredisi dönüşümü: USD kredisi = {currency} cinsinden tutar / döviz kuru / marj çarpanı; 2 ondalık basamağa aşağı yuvarlanır.",
-        "productDescription": "Masaüstü yerel özellik kilidi açma SKU fiyatı ({unit}). Değişiklikler hemen uygulanır; tutarları artık eşleşmeyen ödenmemiş siparişler reddedilir.",
-        "giftLabel": "Değer ({unit})",
-        "bqt": "Baoqingtian",
-        "circle": "Circle büroları",
-        "bqtNotice": "Baoqingtian avukat puan kanalı yalnızca Çin sitesinde çalışır; bu sekme her zaman Çin sitesi verilerini yönetir.",
-        "circleNotice": "{site} üzerindeki Circle büroları yönetiliyor. Bürolar ve bağlantılar her sitede ayrıdır.",
-        "circleSite": "Büro sitesi"
-    },
+    "manage": "Siteyi yönet",
+    "choose": "Site seç",
+    "cn": "Çin sitesi",
+    "intl": "Uluslararası site",
+    "notice": "Yönetilen: {site} · {currency}. Geçiş, seçilen sitenin verilerini gösterir ve kaydedilmemiş değişiklikleri siler.",
+    "notConnected": "Bu site bağlı değil. Sunucudaki yönetici bağlantısı kurulumunu tamamlayın.",
+    "unavailable": "Bu site geçici olarak kullanılamıyor. Daha sonra tekrar deneyin veya site değiştirin.",
+    "networkError": "Bağlanılamıyor. Ağınızı kontrol edip tekrar deneyin.",
+    "retry": "Yeniden bağlan",
+    "loginHint": "Bu giriş sayfasının yönetici parolasını girin. Giriş yaptıktan sonra Çin sitesi ile uluslararası site arasında geçiş yapabilirsiniz.",
+    "priceRange": "Fiyat 0.01 ile 1999 {unit} arasında olmalıdır.",
+    "giftRange": "Değer 0.01 ile 10000 {unit} arasında olmalıdır.",
+    "conversion": "AI kredisi dönüşümü: USD kredisi = {currency} cinsinden tutar / döviz kuru / marj çarpanı; 2 ondalık basamağa aşağı yuvarlanır.",
+    "productDescription": "Masaüstü yerel özellik kilidi açma SKU fiyatı ({unit}). Değişiklikler hemen uygulanır; tutarları artık eşleşmeyen ödenmemiş siparişler reddedilir.",
+    "giftLabel": "Değer ({unit})",
+    "bqt": "Baoqingtian",
+    "circle": "Circle büroları",
+    "bqtNotice": "Baoqingtian avukat puan kanalı yalnızca Çin sitesinde çalışır; bu sekme her zaman Çin sitesi verilerini yönetir.",
+    "circleNotice": "{site} üzerindeki Circle büroları yönetiliyor. Bürolar ve bağlantılar her sitede ayrıdır.",
+    "circleSite": "Büro sitesi"
+  },
   "mcpPage": {
     "title": "MCP",
     "setup": "Masaüstü uygulamasında Ayarlar → MCP bağlantıları bölümüne bir Streamable HTTP hizmeti veya yerel stdio komutu ekleyin. HTTP; kimlik doğrulamasız erişim, Bearer veya OAuth destekler. Yetkilendirmeyi tamamlayın, bağlantıyı test edin ve etkinleştirin.",

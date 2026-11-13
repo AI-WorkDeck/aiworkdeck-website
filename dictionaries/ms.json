@@ -211,7 +211,8 @@
       "teaser": {
         "line": "CNY 149/bulan untuk elaun AI, papan keratan, pementasan dan storan awan 3GB.",
         "primary": "Terokai faedah Pro",
-        "secondary": "Mulakan secara percuma"
+        "secondary": "Mulakan secara percuma",
+        "introOffer": "Harga pengenalan: {intro}/bln untuk {months} bulan pertama (biasa {standard}/bln), tiada potongan automatik."
       },
       "internal": {
         "badge": "Disyorkan",
@@ -1406,7 +1407,8 @@
       "details": "Lihat pelan dan faedah",
       "unavailable": "Pembelian Personal Pro belum lagi tersedia di laman antarabangsa. Akaun berasingan daripada laman tanah besar China.",
       "bqtSource": "disediakan oleh keahlian Baoqingtian",
-      "bqtRenewHint": "Faedah Pro disertakan dengan keahlian Baoqingtian. Perbaharui dalam aplikasi Baoqingtian."
+      "bqtRenewHint": "Faedah Pro disertakan dengan keahlian Baoqingtian. Perbaharui dalam aplikasi Baoqingtian.",
+      "introEligible": "Tawaran pengenalan tersedia ({remaining} daripada {total} bulan berbaki)"
     },
     "rechargeOrderDesc": "Tambahan baki dompet",
     "quotaSyncFailed": "Penyegerakan kuota tidak lengkap. Sila muat semula sebentar lagi.",
@@ -1459,7 +1461,9 @@
       "proRights": "Termasuk faedah Pro (storan awan 3 GB) semasa keahlian aktif.",
       "priorityHint": "Penggunaan DeepSeek dibayar dahulu dengan mata Baoqingtian anda; apabila mata habis, baki akaun digunakan secara automatik. Model dan perkhidmatan lain menggunakan baki akaun.",
       "fetchedAt": "Dikemas kini {time}"
-    }
+    },
+    "rechargeProTip": "Tip: Personal Pro kini {intro}/bln (biasa {monthly}/bln) termasuk {monthlyCredits} Credits setiap 30 hari dan storan awan 3GB.",
+    "rechargeProTipCta": "Dapatkan Personal Pro dengan ¥9.9 ->"
   },
   "purchase": {
     "buy": "Beli",
@@ -2069,8 +2073,14 @@
         "successDownload": "Kembali ke projek / Muat turun",
         "successPending": "Sedang mengesahkan pembayaran…",
         "successUnknown": "Tiada hasil pembayaran lagi. Jika anda telah dikenakan caj, semak halaman akaun anda sebentar lagi.",
-        "bqtRenewHint": "Faedah Pro disertakan dengan keahlian Baoqingtian. Perbaharui dalam aplikasi Baoqingtian."
-      }
+        "bqtRenewHint": "Faedah Pro disertakan dengan keahlian Baoqingtian. Perbaharui dalam aplikasi Baoqingtian.",
+        "introSummary": "Kadar pengenalan: {intro}/bln untuk {months} bulan pertama (biasa {standard}/bln), tiada pembaharuan automatik.",
+        "valueSummary": "Termasuk {monthlyCredits} Credits / 30 hari (had {weeklyCredits} / 7 hari) + sandaran awan 3GB + papan keratan tanpa had"
+      },
+      "introBadge": "Promo 3 Bln",
+      "introNote": "{intro}/bln bagi {months} bulan pertama, kemudian {standard}/bln (bayaran sekali, tiada pembaharuan automatik)",
+      "intlNote": "Langganan Personal Pro kini dibuka di laman Tanah Besar China (CNY); tambah nilai ikut penggunaan tersedia di sini.",
+      "ctaIntro": "Langgan Pro {price}"
     },
     "team": {
       "title": "Pelaksanaan berdedikasi",
@@ -2130,6 +2140,10 @@
       "storage": {
         "q": "Bagaimanakah penyimpanan relay dan penyimpanan awan berbeza?",
         "a": "200MB ialah penggunaan sementara, bukan trafik bulanan. Ia dibebaskan selepas diterima; item yang tidak dikutip tamat tempoh selepas 30 hari. Pro turut termasuk 3GB penyimpanan berterusan. Fail di desktop anda memerlukan desktop tersebut berada dalam talian. Selepas tamat tempoh, fail awan sedia ada kekal boleh dimuat turun atau dipadam, tetapi muat naik baharu disekat."
+      },
+      "intro": {
+        "q": "Bagaimanakah tawaran {intro}/bln untuk {months} bulan berfungsi? Adakah ia diperbaharui secara automatik?",
+        "a": "{months} pembelian bulanan pertama akaun anda (30 hari setiap satu) ialah {intro}/bln; bermula pembelian ke-4 kadar {standard}/bln terpakai. Tiada pembaharuan automatik."
       }
     },
     "deploymentBanner": {
@@ -2137,7 +2151,8 @@
       "title": "Melancarkan pada pelayan dan rangkaian anda sendiri?",
       "body": "Anggarkan pelayan, kakitangan dan bajet tahun pertama mengikut saiz pasukan, mod model dan perkhidmatan pilihan.",
       "cta": "Buka perancang pelancaran"
-    }
+    },
+    "heroSubtitleIntro": "Ruang kerja desktop sumber terbuka percuma. Personal Pro hanya {intro}/bln bagi {months} bulan pertama (biasa {standard}/bln) termasuk Credits, storan awan 3GB dan papan keratan tanpa had untuk 30 hari."
   },
   "notFoundPage": {
     "code": "404",
@@ -2272,7 +2287,8 @@
         "videoAria": "Filem AI WorkDeck",
         "videoLoading": "Memuatkan video…",
         "videoError": "Video tidak dapat dimainkan sekarang — sambungan mungkin perlahan atau pautan telah tamat tempoh.",
-        "videoRetry": "Cuba lagi"
+        "videoRetry": "Cuba lagi",
+        "introOffer": "Tawaran pengenalan: Personal Pro {intro}/bln untuk {months} bulan pertama (biasa {standard}/bln, tiada pembaharuan automatik) ->"
       },
       "facts": {
         "license": "lesen sumber terbuka",
@@ -2528,32 +2544,32 @@
       }
     }
   },
-    "adminSites": {
+  "adminSites": {
     "lastLoginAt": "Log masuk terakhir",
     "lastLoginUnknown": "Tiada rekod",
     "lastLoginHint": "Log masuk berjaya ke laman web atau klien; log masuk terdahulu yang tidak direkodkan tidak dapat dipulihkan.",
     "bailianManaged": "Platform China menggunakan Bailian. Kunci dan model lalai diurus pada pelayan dan hanya boleh dibaca di sini. Semak baki dalam konsol Bailian.",
-        "manage": "Urus laman",
-        "choose": "Pilih laman",
-        "cn": "Laman China",
-        "intl": "Laman antarabangsa",
-        "notice": "Mengurus: {site} · {currency}. Penukaran memaparkan data laman yang dipilih dan memadam perubahan yang belum disimpan.",
-        "notConnected": "Laman ini belum disambungkan. Lengkapkan tetapan sambungan pentadbir pada pelayan.",
-        "unavailable": "Laman ini tidak tersedia buat sementara waktu. Cuba lagi kemudian atau tukar laman.",
-        "networkError": "Tidak dapat menyambung. Semak rangkaian anda dan cuba lagi.",
-        "retry": "Cuba sambung semula",
-        "loginHint": "Masukkan kata laluan pentadbir bagi halaman log masuk ini. Selepas log masuk, anda boleh bertukar antara laman China dan antarabangsa.",
-        "priceRange": "Harga mestilah antara 0.01 hingga 1999 {unit}.",
-        "giftRange": "Nilai mestilah antara 0.01 hingga 10000 {unit}.",
-        "conversion": "Penukaran kredit AI: kredit USD = amaun dalam {currency} / kadar pertukaran / pengganda margin, dibundarkan ke bawah kepada 2 tempat perpuluhan.",
-        "productDescription": "Harga SKU untuk membuka ciri setempat desktop ({unit}). Perubahan berkuat kuasa serta-merta; pesanan belum dibayar akan ditolak jika amaunnya tidak lagi sepadan.",
-        "giftLabel": "Nilai ({unit})",
-        "bqt": "Baoqingtian",
-        "circle": "Firma Circle",
-        "bqtNotice": "Saluran mata peguam Baoqingtian hanya berjalan di laman China; tab ini sentiasa mengurus data laman China.",
-        "circleNotice": "Mengurus firma Circle di {site}. Firma dan pautan adalah berasingan bagi setiap laman.",
-        "circleSite": "Laman firma"
-    },
+    "manage": "Urus laman",
+    "choose": "Pilih laman",
+    "cn": "Laman China",
+    "intl": "Laman antarabangsa",
+    "notice": "Mengurus: {site} · {currency}. Penukaran memaparkan data laman yang dipilih dan memadam perubahan yang belum disimpan.",
+    "notConnected": "Laman ini belum disambungkan. Lengkapkan tetapan sambungan pentadbir pada pelayan.",
+    "unavailable": "Laman ini tidak tersedia buat sementara waktu. Cuba lagi kemudian atau tukar laman.",
+    "networkError": "Tidak dapat menyambung. Semak rangkaian anda dan cuba lagi.",
+    "retry": "Cuba sambung semula",
+    "loginHint": "Masukkan kata laluan pentadbir bagi halaman log masuk ini. Selepas log masuk, anda boleh bertukar antara laman China dan antarabangsa.",
+    "priceRange": "Harga mestilah antara 0.01 hingga 1999 {unit}.",
+    "giftRange": "Nilai mestilah antara 0.01 hingga 10000 {unit}.",
+    "conversion": "Penukaran kredit AI: kredit USD = amaun dalam {currency} / kadar pertukaran / pengganda margin, dibundarkan ke bawah kepada 2 tempat perpuluhan.",
+    "productDescription": "Harga SKU untuk membuka ciri setempat desktop ({unit}). Perubahan berkuat kuasa serta-merta; pesanan belum dibayar akan ditolak jika amaunnya tidak lagi sepadan.",
+    "giftLabel": "Nilai ({unit})",
+    "bqt": "Baoqingtian",
+    "circle": "Firma Circle",
+    "bqtNotice": "Saluran mata peguam Baoqingtian hanya berjalan di laman China; tab ini sentiasa mengurus data laman China.",
+    "circleNotice": "Mengurus firma Circle di {site}. Firma dan pautan adalah berasingan bagi setiap laman.",
+    "circleSite": "Laman firma"
+  },
   "mcpPage": {
     "title": "MCP",
     "setup": "Dalam Tetapan → Sambungan MCP pada aplikasi desktop, tambah perkhidmatan Streamable HTTP atau arahan stdio setempat. HTTP menyokong tanpa pengesahan, Bearer atau OAuth. Lengkapkan kebenaran, uji sambungan, kemudian aktifkannya.",

@@ -65,14 +65,15 @@ console.log('\n[1] 开关解析 + 闸门');
   for (const v of ['true', 'TRUE', '1', 'on', 'yes']) {
     assert.strictEqual(flag.isProPurchaseEnabled({ PRO_PURCHASE_ENABLED: v }), true, `"${v}" 应为开启`);
   }
-  for (const [sku, plan] of [['pro_monthly', 'monthly'], ['pro:monthly', 'monthly'], ['pro_yearly', 'yearly'], ['pro:yearly', 'yearly'], ['skill:x', null], [undefined, null]] as const) {
+  for (const [sku, plan] of [['pro_monthly', 'monthly'], ['pro_monthly_intro', 'monthly'], ['pro:monthly', 'monthly'], ['pro_yearly', 'yearly'], ['pro:yearly', 'yearly'], ['skill:x', null], [undefined, null]] as const) {
     assert.strictEqual(flag.parseProSkuPlan(sku), plan);
   }
   const off = { PRO_PURCHASE_ENABLED: 'false' }; const on = { PRO_PURCHASE_ENABLED: 'true' };
-  for (const sku of ['pro_monthly', 'pro_yearly', 'pro:monthly', 'pro:yearly']) {
+  for (const sku of ['pro_monthly', 'pro_monthly_intro', 'pro_yearly', 'pro:monthly', 'pro:yearly']) {
     assert.strictEqual(flag.checkProPurchaseGate(sku, off)?.code, 'pro_purchase_disabled', sku);
   }
   assert.strictEqual(flag.checkProPurchaseGate('pro_monthly', on), null);
+  assert.strictEqual(flag.checkProPurchaseGate('pro_monthly_intro', on), null);
   assert.strictEqual(flag.checkProPurchaseGate('pro:monthly', on), null);
   assert.strictEqual(flag.checkProPurchaseGate('pro_yearly', on)?.code, 'not_purchasable');
   assert.strictEqual(flag.checkProPurchaseGate('pro:yearly', on)?.code, 'not_purchasable');
@@ -211,6 +212,32 @@ try {
     db.prepare("UPDATE entitlements SET expiresAt=? WHERE userId=? AND feature='pro.appstore'").run(new Date(Date.now()-1000).toISOString(),userId);
     assert.equal((await create({amount:14900,kind:'subscription',skuId:'pro_monthly',idempotencyKey:'apple:expired'})).status,200);
     ok('active Apple blocks new/current+legacy Pro sales without charge; recharge/support/paid settlement remain; expired Apple allows purchase');
+
+    // 首 3 月 ¥9.9 (pro_monthly_intro) 建单与满 3 次后 409 intro_quota_exhausted
+    const introUid = crypto.randomUUID();
+    const usersPath = path.join(cwd, 'data', 'users.json');
+    const uList = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
+    uList.push({ id: introUid, username: 'intro-flag', email: 'intro-flag@test.local', passwordHash: 'x:y', displayName: 'IntroFlag', createdAt: new Date().toISOString() });
+    fs.writeFileSync(usersPath, JSON.stringify(uList));
+    const introAuth = `Bearer ${generateApiKey(introUid).key!.plaintextKey}`;
+    const createAs = (uidAuth: string, body: Record<string, unknown>) =>
+      workAsyncStorage.run({ url: { pathname: '/api/payment/create', search: '' }, page: '/api/payment/create', fallbackRouteParams: null, afterCbs: [] }, () =>
+        createPayment(new NextRequest('http://localhost/api/payment/create', {
+          method: 'POST',
+          headers: { authorization: uidAuth, 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+        })));
+    for (let i = 1; i <= 3; i++) {
+      const r = await createAs(introAuth, { amount: 990, kind: 'subscription', skuId: 'pro_monthly_intro', idempotencyKey: `intro:${i}` });
+      assert.equal(r.status, 200);
+      const body = await r.json();
+      settleFromChannel({ channel: 'wxpay', currency: 'CNY', outTradeNo: body.outTradeNo, paid: true, amountMinor: 990 });
+    }
+    const r409 = await createAs(introAuth, { amount: 990, kind: 'subscription', skuId: 'pro_monthly_intro', idempotencyKey: 'intro:4' });
+    assert.equal(r409.status, 409);
+    assert.equal((await r409.json()).code, 'intro_quota_exhausted');
+    assert.equal((await createAs(introAuth, { amount: 14900, kind: 'subscription', skuId: 'pro_monthly', idempotencyKey: 'intro:4std' })).status, 200);
+    ok('pro_monthly_intro: 3 cycles at 990 fen -> 4th returns 409 intro_quota_exhausted -> pro_monthly 14900 succeeds');
   }
 
   delete process.env.PRO_PURCHASE_ENABLED;

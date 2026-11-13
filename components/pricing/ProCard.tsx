@@ -4,34 +4,56 @@ import { Locale } from '@/i18n-config';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { PerkList } from '@/components/pricing/PerkList';
-import { SAAS_PRICING } from '@/lib/saas-pricing';
+import { PRO_INTRO_MONTHS, SAAS_PRICING, SUBSCRIPTION_LIMITS } from '@/lib/saas-pricing';
 import { ProCheckout } from '@/components/pricing/ProCheckout';
-import { SUBSCRIPTION_LIMITS } from '@/lib/saas-pricing';
 import { isProPurchaseEnabled } from '@/lib/pro-purchase-flag';
+import { siteConfig } from '@/lib/site-config';
 
 /**
- * 个人 Pro 主推卡（定稿卡片 B）。
- * 价格来自 SAAS_PRICING；不上「年付省 ¥298」。
- * 「开始试用」指向 /start；「直接升级 Pro」在国内站打开 ProCheckout（仅月付 → 微信扫码；PRO_PURCHASE_ENABLED=false 时显示暂未开放），
- * 国际站 Pro 不开售，仍指向 /account。
+ * 个人 Pro 主推卡。
+ * 国内站突出首 3 月 ¥9.9/月 体验价 + 正价 ¥149/月 划线；国际站保持不可购并说明中国区人民币可购。
  */
 export function ProCard({ lang, p }: { lang: Locale; /** dict.pricingPage.pro */ p: any }) {
-    // monthly-only：只渲染月付价；年付常量保留在 SAAS_PRICING 但不上卡
+    const isWxpay = siteConfig.paymentChannel === 'wxpay';
     const allowance = p.perk1.replace('{monthlyCredits}', String(SUBSCRIPTION_LIMITS.monthlyCents / 100))
         .replace('{weeklyCredits}', String(SUBSCRIPTION_LIMITS.weeklyCents / 100));
-    const priceLine = p.price.replace('{monthly}', SAAS_PRICING.proMonthly);
+    const introPriceLine = p.price.replace('{monthly}', SAAS_PRICING.proIntroMonthly);
+    const standardPriceLine = p.price.replace('{monthly}', SAAS_PRICING.proMonthly);
+    const introNote = p.introNote
+        ?.replace('{months}', String(PRO_INTRO_MONTHS))
+        .replace('{intro}', SAAS_PRICING.proIntroMonthly)
+        .replace('{standard}', SAAS_PRICING.proMonthly);
+    const badgeLabel = isWxpay && p.introBadge ? p.introBadge : p.badge;
+    const ctaLabel = isWxpay && p.ctaIntro
+        ? p.ctaIntro.replace('{price}', SAAS_PRICING.proIntroMonthly)
+        : p.ctaSecondary;
 
     return (
         <Card className="relative flex flex-col overflow-hidden rounded-2xl border-2 border-king-forest bg-white shadow-[0_24px_52px_-20px_rgba(32,63,56,0.3)]">
             <span className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-king-forest via-king-mint to-king-forest" />
-            {p.badge && (
+            {badgeLabel && (
                 <div className="absolute right-0 top-1.5 rounded-bl-lg bg-king-forest px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white">
-                    {p.badge}
+                    {badgeLabel}
                 </div>
             )}
             <CardHeader className="border-b border-neutral-gray-light/70 pb-5">
                 <CardTitle className="text-lg font-bold text-king-forest">{p.title}</CardTitle>
-                <div className="mt-2.5 font-display text-3xl font-bold tracking-tight text-neutral-dark-bg">{priceLine}</div>
+                <div className="mt-2.5 flex flex-wrap items-baseline gap-2.5">
+                    <span className="font-display text-3xl font-bold tracking-tight text-neutral-dark-bg">
+                        {isWxpay ? introPriceLine : standardPriceLine}
+                    </span>
+                    {isWxpay && (
+                        <span className="text-base font-medium text-neutral-gray-medium line-through">
+                            {standardPriceLine}
+                        </span>
+                    )}
+                </div>
+                {isWxpay && introNote && (
+                    <p className="mt-1.5 text-xs font-medium text-king-forest">{introNote}</p>
+                )}
+                {!isWxpay && p.intlNote && (
+                    <p className="mt-1.5 text-xs text-neutral-gray-medium">{p.intlNote}</p>
+                )}
                 {/* data-legal-pending: 试用协议措辞待 Zewei/counsel */}
                 <p className="mt-1.5 text-[13.5px] leading-relaxed text-neutral-gray-medium" data-legal-pending="zewei-counsel">
                     {p.trial}
@@ -44,7 +66,7 @@ export function ProCard({ lang, p }: { lang: Locale; /** dict.pricingPage.pro */
             <CardFooter className="flex flex-col gap-2.5 pt-2">
                 <ProCheckout
                     lang={lang}
-                    ctaLabel={p.ctaSecondary}
+                    ctaLabel={ctaLabel}
                     labels={p.checkout}
                     purchaseEnabled={isProPurchaseEnabled()}
                 />

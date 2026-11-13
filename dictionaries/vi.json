@@ -211,7 +211,8 @@
       "teaser": {
         "line": "149 NDT/tháng cho hạn mức AI, clipboard, staging và 3GB dung lượng lưu trữ đám mây.",
         "primary": "Khám phá quyền lợi Pro",
-        "secondary": "Bắt đầu miễn phí"
+        "secondary": "Bắt đầu miễn phí",
+        "introOffer": "Giá trải nghiệm: {intro}/tháng cho {months} tháng đầu (giá gốc {standard}/tháng), không tự động trừ tiền."
       },
       "internal": {
         "badge": "Đề xuất",
@@ -1406,7 +1407,8 @@
       "details": "Xem gói và quyền lợi",
       "unavailable": "Mua Personal Pro hiện chưa khả dụng trên trang web quốc tế. Tài khoản tách riêng khỏi trang web Trung Quốc đại lục.",
       "bqtSource": "do hội viên Baoqingtian cung cấp",
-      "bqtRenewHint": "Quyền lợi Pro đi kèm hội viên Baoqingtian. Hãy gia hạn trong ứng dụng Baoqingtian."
+      "bqtRenewHint": "Quyền lợi Pro đi kèm hội viên Baoqingtian. Hãy gia hạn trong ứng dụng Baoqingtian.",
+      "introEligible": "Đang có ưu đãi mở đầu (còn {remaining}/{total} tháng)"
     },
     "rechargeOrderDesc": "Nạp tiền vào ví",
     "quotaSyncFailed": "Đồng bộ hạn mức chưa hoàn tất. Vui lòng làm mới sau ít phút.",
@@ -1459,7 +1461,9 @@
       "proRights": "Bao gồm quyền lợi Pro (3 GB lưu trữ đám mây) khi hội viên còn hiệu lực.",
       "priorityHint": "Mức sử dụng DeepSeek được trừ trước vào điểm Baoqingtian của bạn; khi hết điểm sẽ tự động dùng số dư tài khoản. Các mô hình và dịch vụ khác dùng số dư tài khoản.",
       "fetchedAt": "Cập nhật {time}"
-    }
+    },
+    "rechargeProTip": "Mẹo: Personal Pro hiện chỉ {intro}/tháng (giá gốc {monthly}/tháng), có {monthlyCredits} Credits/30 ngày và 3GB đám mây.",
+    "rechargeProTipCta": "Chọn Personal Pro với ¥9.9 ->"
   },
   "purchase": {
     "buy": "Mua",
@@ -2069,8 +2073,14 @@
         "successDownload": "Quay lại dự án / Tải xuống",
         "successPending": "Đang xác nhận thanh toán…",
         "successUnknown": "Chưa có kết quả thanh toán. Nếu bạn đã bị trừ tiền, vui lòng kiểm tra trang tài khoản của bạn trong ít phút nữa.",
-        "bqtRenewHint": "Quyền lợi Pro đi kèm hội viên Baoqingtian. Hãy gia hạn trong ứng dụng Baoqingtian."
-      }
+        "bqtRenewHint": "Quyền lợi Pro đi kèm hội viên Baoqingtian. Hãy gia hạn trong ứng dụng Baoqingtian.",
+        "introSummary": "Giá trải nghiệm {intro}/tháng trong {months} tháng đầu (giá gốc {standard}/tháng), không tự gia hạn.",
+        "valueSummary": "Gồm {monthlyCredits} Credits / 30 ngày (tối đa {weeklyCredits} / 7 ngày) + 3GB đám mây + clipboard không giới hạn"
+      },
+      "introBadge": "Ưu đãi 3 tháng",
+      "introNote": "{intro}/tháng trong {months} tháng đầu, từ tháng thứ 4 trở về {standard}/tháng (không tự gia hạn)",
+      "intlNote": "Gói Personal Pro hiện mở bán tại trang Trung Quốc đại lục (CNY); tại đây hỗ trợ nạp ví trả theo mức dùng.",
+      "ctaIntro": "Mở Pro chỉ {price}"
     },
     "team": {
       "title": "Triển khai riêng biệt",
@@ -2130,6 +2140,10 @@
       "storage": {
         "q": "Kho lưu trữ chuyển tiếp và lưu trữ đám mây khác nhau như thế nào?",
         "a": "200MB là dung lượng tạm thời, không phải lưu lượng hàng tháng. Dung lượng được giải phóng sau khi nhận; các mục chưa được nhận sẽ hết hạn sau 30 ngày. Gói Pro riêng đã bao gồm 3GB lưu trữ lâu dài. Tệp trên máy tính để bàn của bạn yêu cầu máy đó phải trực tuyến. Sau khi hết hạn, các tệp đám mây hiện có vẫn có thể tải xuống hoặc xóa, nhưng không thể tải lên tệp mới."
+      },
+      "intro": {
+        "q": "Ưu đãi {intro}/tháng trong {months} tháng đầu hoạt động thế nào? Có tự gia hạn không?",
+        "a": "Mỗi tài khoản được áp dụng giá {intro}/tháng cho {months} lần mua gói tháng đầu tiên (mỗi lần 30 ngày); từ lần thứ 4 áp dụng giá {standard}/tháng. Thanh toán một lần, không tự gia hạn."
       }
     },
     "deploymentBanner": {
@@ -2137,7 +2151,8 @@
       "title": "Triển khai trên máy chủ và mạng của riêng bạn?",
       "body": "Ước tính máy chủ, nhân sự và ngân sách năm đầu theo quy mô nhóm, chế độ mô hình và các dịch vụ tùy chọn.",
       "cta": "Mở công cụ lập kế hoạch triển khai"
-    }
+    },
+    "heroSubtitleIntro": "Không gian làm việc máy tính mã nguồn mở miễn phí. Personal Pro chỉ {intro}/tháng trong {months} tháng đầu (giá gốc {standard}/tháng), gồm Credits, 3GB lưu trữ đám mây và khay nhớ tạm không giới hạn cho 30 ngày."
   },
   "notFoundPage": {
     "code": "404",
@@ -2272,7 +2287,8 @@
         "videoAria": "Phim giới thiệu AI WorkDeck",
         "videoLoading": "Đang tải video…",
         "videoError": "Hiện chưa phát được video — mạng có thể chậm hoặc liên kết đã hết hạn.",
-        "videoRetry": "Thử lại"
+        "videoRetry": "Thử lại",
+        "introOffer": "Ưu đãi mới: Personal Pro chỉ {intro}/tháng trong {months} tháng đầu (giá gốc {standard}/tháng, không tự gia hạn) ->"
       },
       "facts": {
         "license": "giấy phép mã nguồn mở",
@@ -2528,32 +2544,32 @@
       }
     }
   },
-    "adminSites": {
+  "adminSites": {
     "lastLoginAt": "Đăng nhập gần nhất",
     "lastLoginUnknown": "Chưa ghi nhận",
     "lastLoginHint": "Đăng nhập thành công vào trang web hoặc ứng dụng; không thể khôi phục các lần đăng nhập trước chưa được ghi nhận.",
     "bailianManaged": "Nền tảng Trung Quốc dùng Bailian. Khóa và mô hình mặc định được quản lý trên máy chủ và chỉ có thể đọc tại đây. Xem số dư trong bảng điều khiển Bailian.",
-        "manage": "Quản lý trang",
-        "choose": "Chọn trang",
-        "cn": "Trang Trung Quốc",
-        "intl": "Trang quốc tế",
-        "notice": "Đang quản lý: {site} · {currency}. Khi chuyển, dữ liệu của trang đã chọn sẽ hiển thị và các thay đổi chưa lưu sẽ bị xóa.",
-        "notConnected": "Trang này chưa được kết nối. Hãy hoàn tất thiết lập kết nối quản trị trên máy chủ.",
-        "unavailable": "Trang này tạm thời không khả dụng. Hãy thử lại sau hoặc chuyển trang.",
-        "networkError": "Không thể kết nối. Hãy kiểm tra mạng và thử lại.",
-        "retry": "Thử kết nối lại",
-        "loginHint": "Nhập mật khẩu quản trị của trang đăng nhập này. Sau khi đăng nhập, bạn có thể chuyển giữa trang Trung Quốc và trang quốc tế.",
-        "priceRange": "Giá phải từ 0.01 đến 1999 {unit}.",
-        "giftRange": "Mệnh giá phải từ 0.01 đến 10000 {unit}.",
-        "conversion": "Quy đổi tín dụng AI: tín dụng USD = số tiền bằng {currency} / tỷ giá / hệ số biên lợi nhuận, làm tròn xuống 2 chữ số thập phân.",
-        "productDescription": "Giá SKU mở khóa tính năng cục bộ trên máy tính ({unit}). Thay đổi có hiệu lực ngay; đơn chưa thanh toán sẽ bị từ chối nếu số tiền không còn khớp.",
-        "giftLabel": "Mệnh giá ({unit})",
-        "bqt": "Baoqingtian",
-        "circle": "Hãng luật Circle",
-        "bqtNotice": "Kênh điểm luật sư Baoqingtian chỉ chạy trên trang Trung Quốc; thẻ này luôn quản lý dữ liệu trang Trung Quốc.",
-        "circleNotice": "Đang quản lý hãng luật Circle trên {site}. Hãng luật và liên kết độc lập theo từng trang.",
-        "circleSite": "Trang của hãng"
-    },
+    "manage": "Quản lý trang",
+    "choose": "Chọn trang",
+    "cn": "Trang Trung Quốc",
+    "intl": "Trang quốc tế",
+    "notice": "Đang quản lý: {site} · {currency}. Khi chuyển, dữ liệu của trang đã chọn sẽ hiển thị và các thay đổi chưa lưu sẽ bị xóa.",
+    "notConnected": "Trang này chưa được kết nối. Hãy hoàn tất thiết lập kết nối quản trị trên máy chủ.",
+    "unavailable": "Trang này tạm thời không khả dụng. Hãy thử lại sau hoặc chuyển trang.",
+    "networkError": "Không thể kết nối. Hãy kiểm tra mạng và thử lại.",
+    "retry": "Thử kết nối lại",
+    "loginHint": "Nhập mật khẩu quản trị của trang đăng nhập này. Sau khi đăng nhập, bạn có thể chuyển giữa trang Trung Quốc và trang quốc tế.",
+    "priceRange": "Giá phải từ 0.01 đến 1999 {unit}.",
+    "giftRange": "Mệnh giá phải từ 0.01 đến 10000 {unit}.",
+    "conversion": "Quy đổi tín dụng AI: tín dụng USD = số tiền bằng {currency} / tỷ giá / hệ số biên lợi nhuận, làm tròn xuống 2 chữ số thập phân.",
+    "productDescription": "Giá SKU mở khóa tính năng cục bộ trên máy tính ({unit}). Thay đổi có hiệu lực ngay; đơn chưa thanh toán sẽ bị từ chối nếu số tiền không còn khớp.",
+    "giftLabel": "Mệnh giá ({unit})",
+    "bqt": "Baoqingtian",
+    "circle": "Hãng luật Circle",
+    "bqtNotice": "Kênh điểm luật sư Baoqingtian chỉ chạy trên trang Trung Quốc; thẻ này luôn quản lý dữ liệu trang Trung Quốc.",
+    "circleNotice": "Đang quản lý hãng luật Circle trên {site}. Hãng luật và liên kết độc lập theo từng trang.",
+    "circleSite": "Trang của hãng"
+  },
   "mcpPage": {
     "title": "MCP",
     "setup": "Trong Cài đặt → Kết nối MCP của ứng dụng máy tính, thêm dịch vụ Streamable HTTP hoặc lệnh stdio cục bộ. HTTP hỗ trợ không xác thực, Bearer hoặc OAuth. Hoàn tất cấp quyền, kiểm tra rồi bật kết nối.",

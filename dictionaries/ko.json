@@ -211,7 +211,8 @@
       "teaser": {
         "line": "월 149위안에 AI 사용량, 클립보드, 스테이징 및 3GB 클라우드 스토리지 제공.",
         "primary": "Pro 혜택 살펴보기",
-        "secondary": "무료로 시작하기"
+        "secondary": "무료로 시작하기",
+        "introOffer": "한정 혜택: 첫 {months}개월 {intro}/월 (정상가 {standard}/월), 4개월 차부터 정상가 적용, 자동 갱신 없음."
       },
       "internal": {
         "badge": "추천",
@@ -1406,7 +1407,8 @@
       "details": "플랜 및 혜택 보기",
       "unavailable": "Personal Pro 구매는 아직 국제 사이트에서 이용할 수 없습니다. 계정은 중국 본토 사이트와 별개입니다.",
       "bqtSource": "Baoqingtian 멤버십 제공",
-      "bqtRenewHint": "개인 Pro 혜택은 Baoqingtian 멤버십에 포함됩니다. Baoqingtian 앱에서 갱신하세요."
+      "bqtRenewHint": "개인 Pro 혜택은 Baoqingtian 멤버십에 포함됩니다. Baoqingtian 앱에서 갱신하세요.",
+      "introEligible": "첫 3개월 특가 적용 가능 (남은 횟수 {remaining}/{total}개월)"
     },
     "rechargeOrderDesc": "지갑 충전",
     "quotaSyncFailed": "할당량 동기화가 완료되지 않았습니다. 잠시 후 새로고침해 주세요.",
@@ -1459,7 +1461,9 @@
       "proRights": "멤버십 기간 동안 개인 Pro 혜택(3GB 클라우드 공간)을 이용할 수 있습니다.",
       "priorityHint": "DeepSeek 모델 사용량은 바오칭톈 포인트에서 먼저 차감되며, 포인트가 부족하면 자동으로 계정 잔액을 사용합니다. 다른 모델과 서비스는 계정 잔액을 사용합니다.",
       "fetchedAt": "{time} 업데이트"
-    }
+    },
+    "rechargeProTip": "팁: Personal Pro는 지금 월 {intro}(정상가 {monthly}/월)로 30일 {monthlyCredits} Credits와 3GB 클라우드를 포함합니다.",
+    "rechargeProTipCta": "¥9.9로 Personal Pro 시작하기 ->"
   },
   "purchase": {
     "buy": "구매",
@@ -2069,8 +2073,14 @@
         "successDownload": "프로젝트로 돌아가기 / 다운로드",
         "successPending": "결제 확인 중…",
         "successUnknown": "아직 결제 결과가 없습니다. 결제가 완료되었다면 잠시 후 계정 페이지를 확인해 주세요.",
-        "bqtRenewHint": "개인 Pro 혜택은 Baoqingtian 멤버십에 포함됩니다. Baoqingtian 앱에서 갱신하세요."
-      }
+        "bqtRenewHint": "개인 Pro 혜택은 Baoqingtian 멤버십에 포함됩니다. Baoqingtian 앱에서 갱신하세요.",
+        "introSummary": "첫 {months}개월 월 {intro} (정상가 {standard}/월), 자동 갱신 없음.",
+        "valueSummary": "30일당 {monthlyCredits} Credits (7일 최대 {weeklyCredits}) + 3GB 클라우드 백업 + 무제한 클립보드"
+      },
+      "introBadge": "첫 3개월 특가",
+      "introNote": "첫 {months}개월 월 {intro} (4개월 차부터 {standard}/월, 자동 결제 없음)",
+      "intlNote": "Personal Pro 결제는 현재 중국 본토(CNY) 사이트에서 제공되며, 이곳에서는 충전식 크레딧을 바로 이용할 수 있습니다.",
+      "ctaIntro": "{price}로 Pro 시작하기"
     },
     "team": {
       "title": "전용 배포",
@@ -2130,6 +2140,10 @@
       "storage": {
         "q": "중계 저장소와 클라우드 저장소는 어떻게 다른가요?",
         "a": "200MB는 월 트래픽이 아닌 임시 점유 용량입니다. 수령 후 해제되며, 수령하지 않은 항목은 30일 후 만료됩니다. Pro는 별도로 3GB의 영구 저장소를 제공합니다. 데스크톱의 파일은 해당 데스크톱이 온라인 상태여야 합니다. 만료 후 기존 클라우드 파일은 다운로드하거나 삭제할 수 있지만 새 업로드는 차단됩니다."
+      },
+      "intro": {
+        "q": "첫 {months}개월 월 {intro} 혜택은 어떻게 적용되며 자동 갱신되나요?",
+        "a": "계정당 최초 {months}회의 월간 구매(각 30일)에 {intro}/월이 적용되며, 4회차부터 {standard}/월 정상가가 적용됩니다. 모두 일회성 결제로 자동 갱신되지 않습니다."
       }
     },
     "deploymentBanner": {
@@ -2137,7 +2151,8 @@
       "title": "자체 서버와 네트워크에 배포하시나요?",
       "body": "팀 규모, 모델 모드, 선택적 서비스에 따라 서버, 인력 및 첫해 예산을 추정해 보세요.",
       "cta": "배포 플래너 열기"
-    }
+    },
+    "heroSubtitleIntro": "무료 오픈소스 데스크톱 워크스페이스. Personal Pro는 첫 {months}개월 동안 {intro}/월(정상가 {standard}/월)로 Credits, 3GB 클라우드, 무제한 클립보드를 제공하며 30일 일회성 결제입니다."
   },
   "notFoundPage": {
     "code": "404",
@@ -2272,7 +2287,8 @@
         "videoAria": "AI WorkDeck 소개 영상",
         "videoLoading": "동영상을 불러오는 중…",
         "videoError": "지금은 동영상을 재생할 수 없습니다. 연결이 느리거나 링크가 만료되었을 수 있습니다.",
-        "videoRetry": "다시 시도"
+        "videoRetry": "다시 시도",
+        "introOffer": "신규 혜택: Personal Pro 첫 {months}개월 월 {intro} (정상가 {standard}/월, 자동 결제 없음) ->"
       },
       "facts": {
         "license": "오픈소스 라이선스",
@@ -2528,32 +2544,32 @@
       }
     }
   },
-    "adminSites": {
+  "adminSites": {
     "lastLoginAt": "마지막 로그인",
     "lastLoginUnknown": "기록 없음",
     "lastLoginHint": "웹사이트 또는 클라이언트 로그인 성공 시간입니다. 기록되지 않은 이전 로그인은 복원할 수 없습니다.",
     "bailianManaged": "중국 플랫폼 AI는 Bailian을 사용합니다. 키와 기본 모델은 서버에서 관리하며 여기서는 읽기 전용입니다. 잔액은 Bailian 콘솔에서 확인하세요.",
-        "manage": "사이트 관리",
-        "choose": "사이트 선택",
-        "cn": "중국 사이트",
-        "intl": "국제 사이트",
-        "notice": "관리 중: {site} · {currency}. 사이트를 전환하면 해당 사이트 데이터가 표시되며 저장하지 않은 변경 사항은 삭제됩니다.",
-        "notConnected": "연결되지 않은 사이트입니다. 서버 측 관리 연결 설정을 완료하세요.",
-        "unavailable": "일시적으로 연결할 수 없습니다. 나중에 다시 시도하거나 사이트를 전환하세요.",
-        "networkError": "연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.",
-        "retry": "다시 연결",
-        "loginHint": "현재 로그인 페이지의 관리자 비밀번호를 입력하세요. 로그인 후 중국 사이트와 국제 사이트를 전환할 수 있습니다.",
-        "priceRange": "가격은 0.01~1999 {unit}이어야 합니다.",
-        "giftRange": "금액은 0.01~10000 {unit}이어야 합니다.",
-        "conversion": "AI 크레딧 환산: USD 크레딧 = {currency} 금액 / 환율 / 마진 배수. 소수점 둘째 자리까지 버림합니다.",
-        "productDescription": "데스크톱 로컬 기능 잠금 해제 SKU 가격({unit}). 변경 즉시 적용되며 금액이 일치하지 않는 기존 미결제 주문은 거부됩니다.",
-        "giftLabel": "금액({unit})",
-        "bqt": "Baoqingtian",
-        "circle": "Circle 로펌",
-        "bqtNotice": "Baoqingtian 변호사 포인트 채널은 중국 사이트에서만 운영되며, 이 탭은 항상 중국 사이트 데이터를 관리합니다.",
-        "circleNotice": "{site}의 Circle 로펌을 관리 중입니다. 로펌과 연결은 사이트별로 독립적입니다.",
-        "circleSite": "로펌 사이트"
-    },
+    "manage": "사이트 관리",
+    "choose": "사이트 선택",
+    "cn": "중국 사이트",
+    "intl": "국제 사이트",
+    "notice": "관리 중: {site} · {currency}. 사이트를 전환하면 해당 사이트 데이터가 표시되며 저장하지 않은 변경 사항은 삭제됩니다.",
+    "notConnected": "연결되지 않은 사이트입니다. 서버 측 관리 연결 설정을 완료하세요.",
+    "unavailable": "일시적으로 연결할 수 없습니다. 나중에 다시 시도하거나 사이트를 전환하세요.",
+    "networkError": "연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.",
+    "retry": "다시 연결",
+    "loginHint": "현재 로그인 페이지의 관리자 비밀번호를 입력하세요. 로그인 후 중국 사이트와 국제 사이트를 전환할 수 있습니다.",
+    "priceRange": "가격은 0.01~1999 {unit}이어야 합니다.",
+    "giftRange": "금액은 0.01~10000 {unit}이어야 합니다.",
+    "conversion": "AI 크레딧 환산: USD 크레딧 = {currency} 금액 / 환율 / 마진 배수. 소수점 둘째 자리까지 버림합니다.",
+    "productDescription": "데스크톱 로컬 기능 잠금 해제 SKU 가격({unit}). 변경 즉시 적용되며 금액이 일치하지 않는 기존 미결제 주문은 거부됩니다.",
+    "giftLabel": "금액({unit})",
+    "bqt": "Baoqingtian",
+    "circle": "Circle 로펌",
+    "bqtNotice": "Baoqingtian 변호사 포인트 채널은 중국 사이트에서만 운영되며, 이 탭은 항상 중국 사이트 데이터를 관리합니다.",
+    "circleNotice": "{site}의 Circle 로펌을 관리 중입니다. 로펌과 연결은 사이트별로 독립적입니다.",
+    "circleSite": "로펌 사이트"
+  },
   "mcpPage": {
     "title": "MCP",
     "setup": "데스크톱 설정 → MCP 연결에서 Streamable HTTP 서비스나 로컬 stdio 명령을 추가하세요. HTTP는 인증 없음, Bearer, OAuth를 지원합니다. 인증을 완료하고 연결을 테스트한 뒤 활성화하세요.",

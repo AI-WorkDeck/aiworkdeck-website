@@ -16,10 +16,16 @@ const fresh = render();
 assert.match(fresh, /id="subscription"/);
 assert.match(fresh, /尚未开通/);
 assert.match(fresh, /<button[^>]*>开通个人 Pro<\/button>/);
+assert.match(fresh, /¥9\.9/);
 assert.match(fresh, /¥149/);
 assert.match(fresh, /3GB/);
 assert.match(fresh, /微信扫码支付/);
 assert.match(fresh, /30 天；不自动扣款/);
+const exhausted = render({
+    introOffer: { eligible: false, priceCents: 990, standardPriceCents: 14900, totalMonths: 3, usedMonths: 3, remainingMonths: 0 },
+});
+assert.match(exhausted, /¥149/);
+assert.doesNotMatch(exhausted, /¥9\.9/);
 const active = render({ entitlement });
 assert.match(active, /续订个人 Pro/);
 assert.match(active, /有效期至 2099年1月15日/);

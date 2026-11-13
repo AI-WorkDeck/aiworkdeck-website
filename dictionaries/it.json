@@ -211,7 +211,8 @@
       "teaser": {
         "line": "149 CNY/mese per franchigia AI, appunti, area di staging e 3GB di archiviazione cloud.",
         "primary": "Scopri i vantaggi Pro",
-        "secondary": "Inizia gratis"
+        "secondary": "Inizia gratis",
+        "introOffer": "Prezzo lancio: {intro}/mese per i primi {months} mesi (anziché {standard}/mese), senza rinnovo automatico."
       },
       "internal": {
         "badge": "Consigliato",
@@ -1406,7 +1407,8 @@
       "details": "Vedi piano e vantaggi",
       "unavailable": "Gli acquisti Personal Pro non sono ancora disponibili sul sito internazionale. Gli account sono separati da quelli del sito della Cina continentale.",
       "bqtSource": "incluso nel tuo abbonamento Baoqingtian",
-      "bqtRenewHint": "I vantaggi Pro sono inclusi nell’abbonamento Baoqingtian. Rinnovalo nell’app Baoqingtian."
+      "bqtRenewHint": "I vantaggi Pro sono inclusi nell’abbonamento Baoqingtian. Rinnovalo nell’app Baoqingtian.",
+      "introEligible": "Offerta lancio disponibile ({remaining} su {total} mesi rimanenti)"
     },
     "rechargeOrderDesc": "Ricarica del portafoglio",
     "quotaSyncFailed": "Sincronizzazione della quota incompleta. Aggiorna a breve.",
@@ -1459,7 +1461,9 @@
       "proRights": "Include i vantaggi Pro (3 GB di spazio cloud) finché l’abbonamento è attivo.",
       "priorityHint": "L'uso di DeepSeek viene pagato prima con i tuoi punti Baoqingtian; quando finiscono si usa automaticamente il saldo del conto. Gli altri modelli e servizi usano il saldo del conto.",
       "fetchedAt": "Aggiornato {time}"
-    }
+    },
+    "rechargeProTip": "Consiglio: Personal Pro ora costa {intro}/mese (anziché {monthly}/mese) e include {monthlyCredits} Credits ogni 30 giorni e 3 GB cloud.",
+    "rechargeProTipCta": "Attiva Personal Pro a ¥9.9 ->"
   },
   "purchase": {
     "buy": "Acquista",
@@ -2069,8 +2073,14 @@
         "successDownload": "Torna ai progetti / Scarica",
         "successPending": "Verifica del pagamento…",
         "successUnknown": "Ancora nessun esito del pagamento. Se sei stato addebitato, controlla presto la pagina del tuo account.",
-        "bqtRenewHint": "I vantaggi Pro sono inclusi nell’abbonamento Baoqingtian. Rinnovalo nell’app Baoqingtian."
-      }
+        "bqtRenewHint": "I vantaggi Pro sono inclusi nell’abbonamento Baoqingtian. Rinnovalo nell’app Baoqingtian.",
+        "introSummary": "Tariffa lancio: {intro}/mese per {months} mesi (anziché {standard}/mese), senza rinnovo automatico.",
+        "valueSummary": "Include {monthlyCredits} Credits / 30 giorni (fino a {weeklyCredits} / 7 giorni) + 3 GB cloud + appunti illimitati"
+      },
+      "introBadge": "Offerta 3 mesi",
+      "introNote": "{intro}/mese per i primi {months} mesi, poi {standard}/mese (nessun rinnovo automatico)",
+      "intlNote": "L’acquisto di Personal Pro è disponibile sul sito Cina continentale (CNY); qui restano attive le ricariche a consumo.",
+      "ctaIntro": "Attiva Pro a {price}"
     },
     "team": {
       "title": "Distribuzione dedicata",
@@ -2130,6 +2140,10 @@
       "storage": {
         "q": "Qual è la differenza tra storage di inoltro e storage cloud?",
         "a": "200MB sono un'occupazione temporanea, non traffico mensile. Vengono liberati dopo la ricezione; gli elementi non ritirati scadono dopo 30 giorni. Pro include separatamente 3GB di storage persistente. I file sul tuo desktop richiedono che quel desktop sia online. Dopo la scadenza, i file cloud esistenti restano scaricabili o eliminabili, ma i nuovi caricamenti sono bloccati."
+      },
+      "intro": {
+        "q": "Come funziona l’offerta {intro}/mese per {months} mesi? Si rinnova automaticamente?",
+        "a": "I primi {months} acquisti mensili (da 30 giorni) costano {intro}/mese; dal 4° mese si applica {standard}/mese. Ogni acquisto è una tantum senza rinnovo automatico."
       }
     },
     "deploymentBanner": {
@@ -2137,7 +2151,8 @@
       "title": "Deployment sui tuoi server e sulla tua rete?",
       "body": "Stima server, personale e budget del primo anno in base alla dimensione del team, alla modalità modello e ai servizi opzionali.",
       "cta": "Apri il pianificatore di deployment"
-    }
+    },
+    "heroSubtitleIntro": "Desktop open source gratuito. Personal Pro a {intro}/mese per i primi {months} mesi (poi {standard}/mese) con Credits, 3 GB cloud e appunti illimitati. Pass singolo di 30 giorni senza rinnovo automatico."
   },
   "notFoundPage": {
     "code": "404",
@@ -2272,7 +2287,8 @@
         "videoAria": "Video di AI WorkDeck",
         "videoLoading": "Caricamento del video…",
         "videoError": "Al momento il video non può essere riprodotto: la connessione potrebbe essere lenta o il link scaduto.",
-        "videoRetry": "Riprova"
+        "videoRetry": "Riprova",
+        "introOffer": "Offerta lancio: Personal Pro a {intro}/mese per i primi {months} mesi (poi {standard}/mese, nessun rinnovo automatico) ->"
       },
       "facts": {
         "license": "licenza open source",
@@ -2528,32 +2544,32 @@
       }
     }
   },
-    "adminSites": {
+  "adminSites": {
     "lastLoginAt": "Ultimo accesso",
     "lastLoginUnknown": "Non registrato",
     "lastLoginHint": "Accesso riuscito al sito o al client; gli accessi precedenti non registrati non possono essere recuperati.",
     "bailianManaged": "La piattaforma cinese usa Bailian. La chiave e il modello predefinito sono gestiti sul server e qui sono di sola lettura. Consulta il saldo nella console Bailian.",
-        "manage": "Gestisci sito",
-        "choose": "Seleziona sito",
-        "cn": "Sito Cina",
-        "intl": "Sito internazionale",
-        "notice": "Gestione: {site} · {currency}. Il cambio mostra i dati del sito selezionato e cancella le modifiche non salvate.",
-        "notConnected": "Questo sito non è connesso. Configura la connessione amministrativa sul server.",
-        "unavailable": "Questo sito è temporaneamente non disponibile. Riprova più tardi o cambia sito.",
-        "networkError": "Impossibile connettersi. Controlla la rete e riprova.",
-        "retry": "Riprova connessione",
-        "loginHint": "Inserisci la password amministratore di questa pagina di accesso. Dopo potrai passare dal sito Cina al sito internazionale.",
-        "priceRange": "Il prezzo deve essere compreso tra 0.01 e 1999 {unit}.",
-        "giftRange": "Il valore deve essere compreso tra 0.01 e 10000 {unit}.",
-        "conversion": "Conversione crediti IA: credito USD = importo in {currency} / tasso di cambio / moltiplicatore del margine, arrotondato per difetto a 2 decimali.",
-        "productDescription": "Prezzo degli SKU di sblocco delle funzioni locali desktop ({unit}). Le modifiche sono immediate; gli ordini non pagati saranno rifiutati se gli importi non corrispondono più.",
-        "giftLabel": "Valore ({unit})",
-        "bqt": "Baoqingtian",
-        "circle": "Studi Circle",
-        "bqtNotice": "Il canale punti avvocati Baoqingtian funziona solo sul sito Cina; questa scheda gestisce sempre i dati del sito Cina.",
-        "circleNotice": "Gestione degli studi Circle su {site}. Studi e collegamenti sono separati per ciascun sito.",
-        "circleSite": "Sito dello studio"
-    },
+    "manage": "Gestisci sito",
+    "choose": "Seleziona sito",
+    "cn": "Sito Cina",
+    "intl": "Sito internazionale",
+    "notice": "Gestione: {site} · {currency}. Il cambio mostra i dati del sito selezionato e cancella le modifiche non salvate.",
+    "notConnected": "Questo sito non è connesso. Configura la connessione amministrativa sul server.",
+    "unavailable": "Questo sito è temporaneamente non disponibile. Riprova più tardi o cambia sito.",
+    "networkError": "Impossibile connettersi. Controlla la rete e riprova.",
+    "retry": "Riprova connessione",
+    "loginHint": "Inserisci la password amministratore di questa pagina di accesso. Dopo potrai passare dal sito Cina al sito internazionale.",
+    "priceRange": "Il prezzo deve essere compreso tra 0.01 e 1999 {unit}.",
+    "giftRange": "Il valore deve essere compreso tra 0.01 e 10000 {unit}.",
+    "conversion": "Conversione crediti IA: credito USD = importo in {currency} / tasso di cambio / moltiplicatore del margine, arrotondato per difetto a 2 decimali.",
+    "productDescription": "Prezzo degli SKU di sblocco delle funzioni locali desktop ({unit}). Le modifiche sono immediate; gli ordini non pagati saranno rifiutati se gli importi non corrispondono più.",
+    "giftLabel": "Valore ({unit})",
+    "bqt": "Baoqingtian",
+    "circle": "Studi Circle",
+    "bqtNotice": "Il canale punti avvocati Baoqingtian funziona solo sul sito Cina; questa scheda gestisce sempre i dati del sito Cina.",
+    "circleNotice": "Gestione degli studi Circle su {site}. Studi e collegamenti sono separati per ciascun sito.",
+    "circleSite": "Sito dello studio"
+  },
   "mcpPage": {
     "title": "MCP",
     "setup": "Nelle Impostazioni → Connessioni MCP dell’app desktop, aggiungi un servizio Streamable HTTP o un comando stdio locale. HTTP supporta accesso senza autenticazione, Bearer o OAuth. Autorizza, verifica e attiva la connessione.",

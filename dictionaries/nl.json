@@ -211,7 +211,8 @@
       "teaser": {
         "line": "CNY 149/maand voor AI-toelage, klembord, staging en 3GB cloudopslag.",
         "primary": "Ontdek de voordelen van Pro",
-        "secondary": "Gratis aan de slag"
+        "secondary": "Gratis aan de slag",
+        "introOffer": "Introductietarief: {intro}/mnd voor de eerste {months} maanden (normaal {standard}/mnd), zonder automatische incasso."
       },
       "internal": {
         "badge": "Aanbevolen",
@@ -1406,7 +1407,8 @@
       "details": "Abonnement en voordelen bekijken",
       "unavailable": "Personal Pro-aankopen zijn nog niet beschikbaar op de internationale site. Accounts zijn gescheiden van die op de site voor het Chinese vasteland.",
       "bqtSource": "via je Baoqingtian-lidmaatschap",
-      "bqtRenewHint": "Pro-voordelen horen bij je Baoqingtian-lidmaatschap. Verleng het in de Baoqingtian-app."
+      "bqtRenewHint": "Pro-voordelen horen bij je Baoqingtian-lidmaatschap. Verleng het in de Baoqingtian-app.",
+      "introEligible": "Introductieaanbod beschikbaar (nog {remaining} van {total} maanden)"
     },
     "rechargeOrderDesc": "Portemonnee opwaarderen",
     "quotaSyncFailed": "Quotasynchronisatie onvolledig. Vernieuw binnenkort.",
@@ -1459,7 +1461,9 @@
       "proRights": "Inclusief Pro-voordelen (3 GB cloudopslag) zolang het lidmaatschap actief is.",
       "priorityHint": "DeepSeek-gebruik wordt eerst betaald met je Baoqingtian-punten; zijn die op, dan wordt automatisch je accountsaldo gebruikt. Andere modellen en diensten gebruiken je accountsaldo.",
       "fetchedAt": "Bijgewerkt {time}"
-    }
+    },
+    "rechargeProTip": "Tip: Personal Pro is nu {intro}/mnd (normaal {monthly}/mnd) en bevat {monthlyCredits} Credits per 30 dagen en 3GB cloud.",
+    "rechargeProTipCta": "Kies Personal Pro voor ¥9.9 ->"
   },
   "purchase": {
     "buy": "Kopen",
@@ -2069,8 +2073,14 @@
         "successDownload": "Terug naar projecten / Downloaden",
         "successPending": "Betaling wordt bevestigd…",
         "successUnknown": "Nog geen betalingsresultaat. Als je bent afgeschreven, controleer dan binnenkort je accountpagina.",
-        "bqtRenewHint": "Pro-voordelen horen bij je Baoqingtian-lidmaatschap. Verleng het in de Baoqingtian-app."
-      }
+        "bqtRenewHint": "Pro-voordelen horen bij je Baoqingtian-lidmaatschap. Verleng het in de Baoqingtian-app.",
+        "introSummary": "Introductietarief: {intro}/mnd voor {months} maanden (normaal {standard}/mnd), geen automatische verlenging.",
+        "valueSummary": "Inclusief {monthlyCredits} Credits / 30 dagen (tot {weeklyCredits} / 7 dagen) + 3GB cloudback-up + onbeperkt klembord"
+      },
+      "introBadge": "3 mnd intro",
+      "introNote": "{intro}/mnd voor de eerste {months} maanden, daarna {standard}/mnd (geen automatische verlenging)",
+      "intlNote": "Personal Pro is momenteel verkrijgbaar op de Chinese website (CNY); hier kun je flexibel tegoed opwaarderen.",
+      "ctaIntro": "Neem Pro voor {price}"
     },
     "team": {
       "title": "Toegewijde implementatie",
@@ -2130,6 +2140,10 @@
       "storage": {
         "q": "Wat is het verschil tussen relay-opslag en cloudopslag?",
         "a": "200MB is tijdelijke bezetting, geen maandelijks dataverkeer. Het wordt vrijgegeven na ontvangst; niet-opgehaalde items vervallen na 30 dagen. Pro bevat apart 3GB permanente opslag. Bestanden op uw desktop vereisen dat die desktop online is. Na afloop blijven bestaande cloudbestanden downloadbaar of verwijderbaar, maar nieuwe uploads worden geblokkeerd."
+      },
+      "intro": {
+        "q": "Hoe werkt de actie van {intro}/mnd voor {months} maanden? Verlengt het automatisch?",
+        "a": "De eerste {months} maandelijkse aankopen (elk 30 dagen) kosten {intro}/mnd. Vanaf maand 4 geldt {standard}/mnd. Elke betaling is eenmalig zonder automatische verlenging."
       }
     },
     "deploymentBanner": {
@@ -2137,7 +2151,8 @@
       "title": "Implementeren op uw eigen servers en netwerk?",
       "body": "Bereken servers, personeel en first-year budget op basis van teamgrootte, modelmodus en optionele diensten.",
       "cta": "Implementatieplanner openen"
-    }
+    },
+    "heroSubtitleIntro": "Gratis open-source desktopwerkplek. Personal Pro kost de eerste {months} maanden {intro}/mnd (normaal {standard}/mnd) incl. Credits, 3GB cloudopslag en onbeperkt klembord – eenmalige pas voor 30 dagen."
   },
   "notFoundPage": {
     "code": "404",
@@ -2272,7 +2287,8 @@
         "videoAria": "Film over AI WorkDeck",
         "videoLoading": "Video laden…",
         "videoError": "De video kan nu niet worden afgespeeld — de verbinding is mogelijk traag of de link is verlopen.",
-        "videoRetry": "Opnieuw proberen"
+        "videoRetry": "Opnieuw proberen",
+        "introOffer": "Introductieaanbod: Personal Pro de eerste {months} maanden voor {intro}/mnd (normaal {standard}/mnd, zonder automatische verlenging) ->"
       },
       "facts": {
         "license": "opensourcelicentie",
@@ -2528,32 +2544,32 @@
       }
     }
   },
-    "adminSites": {
+  "adminSites": {
     "lastLoginAt": "Laatste aanmelding",
     "lastLoginUnknown": "Niet vastgelegd",
     "lastLoginHint": "Geslaagde aanmelding op de website of in de client; eerdere niet vastgelegde aanmeldingen kunnen niet worden hersteld.",
     "bailianManaged": "Het Chinese platform gebruikt Bailian. De sleutel en het standaardmodel worden op de server beheerd en zijn hier alleen-lezen. Bekijk het saldo in de Bailian-console.",
-        "manage": "Website beheren",
-        "choose": "Website selecteren",
-        "cn": "Chinese website",
-        "intl": "Internationale website",
-        "notice": "Beheren: {site} · {currency}. Bij wisselen verschijnen de gegevens van de gekozen website en worden niet-opgeslagen wijzigingen gewist.",
-        "notConnected": "Deze website is niet verbonden. Stel de beheerdersverbinding op de server in.",
-        "unavailable": "Deze website is tijdelijk niet beschikbaar. Probeer het later opnieuw of wissel van website.",
-        "networkError": "Verbinding mislukt. Controleer uw netwerk en probeer het opnieuw.",
-        "retry": "Opnieuw verbinden",
-        "loginHint": "Voer het beheerderswachtwoord van deze inlogpagina in. Daarna kunt u wisselen tussen de Chinese en internationale website.",
-        "priceRange": "De prijs moet tussen 0.01 en 1999 {unit} liggen.",
-        "giftRange": "De waarde moet tussen 0.01 en 10000 {unit} liggen.",
-        "conversion": "Omrekening AI-tegoed: USD-tegoed = bedrag in {currency} / wisselkoers / margemultiplier, naar beneden afgerond op 2 decimalen.",
-        "productDescription": "Prijs van SKU’s voor het ontgrendelen van lokale desktopfuncties ({unit}). Wijzigingen gelden direct; bestaande onbetaalde orders worden geweigerd als de bedragen niet meer overeenkomen.",
-        "giftLabel": "Waarde ({unit})",
-        "bqt": "Baoqingtian",
-        "circle": "Circle-kantoren",
-        "bqtNotice": "Het Baoqingtian-puntenkanaal voor advocaten draait alleen op de China-site; dit tabblad beheert altijd gegevens van de China-site.",
-        "circleNotice": "Circle-kantoren op {site} beheren. Kantoren en koppelingen zijn per site gescheiden.",
-        "circleSite": "Site van kantoor"
-    },
+    "manage": "Website beheren",
+    "choose": "Website selecteren",
+    "cn": "Chinese website",
+    "intl": "Internationale website",
+    "notice": "Beheren: {site} · {currency}. Bij wisselen verschijnen de gegevens van de gekozen website en worden niet-opgeslagen wijzigingen gewist.",
+    "notConnected": "Deze website is niet verbonden. Stel de beheerdersverbinding op de server in.",
+    "unavailable": "Deze website is tijdelijk niet beschikbaar. Probeer het later opnieuw of wissel van website.",
+    "networkError": "Verbinding mislukt. Controleer uw netwerk en probeer het opnieuw.",
+    "retry": "Opnieuw verbinden",
+    "loginHint": "Voer het beheerderswachtwoord van deze inlogpagina in. Daarna kunt u wisselen tussen de Chinese en internationale website.",
+    "priceRange": "De prijs moet tussen 0.01 en 1999 {unit} liggen.",
+    "giftRange": "De waarde moet tussen 0.01 en 10000 {unit} liggen.",
+    "conversion": "Omrekening AI-tegoed: USD-tegoed = bedrag in {currency} / wisselkoers / margemultiplier, naar beneden afgerond op 2 decimalen.",
+    "productDescription": "Prijs van SKU’s voor het ontgrendelen van lokale desktopfuncties ({unit}). Wijzigingen gelden direct; bestaande onbetaalde orders worden geweigerd als de bedragen niet meer overeenkomen.",
+    "giftLabel": "Waarde ({unit})",
+    "bqt": "Baoqingtian",
+    "circle": "Circle-kantoren",
+    "bqtNotice": "Het Baoqingtian-puntenkanaal voor advocaten draait alleen op de China-site; dit tabblad beheert altijd gegevens van de China-site.",
+    "circleNotice": "Circle-kantoren op {site} beheren. Kantoren en koppelingen zijn per site gescheiden.",
+    "circleSite": "Site van kantoor"
+  },
   "mcpPage": {
     "title": "MCP",
     "setup": "Voeg in Instellingen → MCP-verbindingen van de desktopapp een Streamable HTTP-dienst of lokale stdio-opdracht toe. Kies bij HTTP voor toegang zonder authenticatie, Bearer of OAuth. Autoriseer, test en activeer de verbinding.",

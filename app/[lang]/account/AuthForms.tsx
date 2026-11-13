@@ -76,6 +76,12 @@ export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false
         return () => clearTimeout(timer);
     }, [cooldown]);
 
+    const targetAfterAuth = (data?: any) => {
+        const candidate = next && next.startsWith('/') && !/[\\\x00-\x20]/.test(next) ? new URL(next, window.location.origin) : null;
+        const safeNext = candidate?.origin === window.location.origin ? candidate.pathname + candidate.search + candidate.hash : `/${lang}/account`;
+        return legacyEmail ? `/${lang}/account?legacyEmail=1` : data?.mustBindPhone ? `/${lang}/account` : safeNext;
+    };
+
     const changeMode = (value: Mode) => {
         setMode(value); setError(''); setNotice(''); setPassword(''); setConfirmPassword(''); setCode(''); setSetupToken('');
     };
@@ -110,9 +116,7 @@ export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false
                 if (d?.status === 'confirmed') {
                     clearInterval(timer);
                     if (mobileHandoff) { setMobileComplete(true); return; }
-                    const candidate = next && next.startsWith('/') && !/[\\\x00-\x20]/.test(next) ? new URL(next, window.location.origin) : null;
-                    const safeNext = candidate?.origin === window.location.origin ? candidate.pathname + candidate.search + candidate.hash : `/${lang}/account`;
-                    window.location.assign(safeNext);
+                    window.location.assign(targetAfterAuth());
                 } else if (d?.status === 'expired') {
                     setBqtExpired(true);
                 } else if (d?.status === 'rejected') {
@@ -171,7 +175,7 @@ export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false
                     ...(trimmedInvite ? { inviteCode: trimmedInvite } : {}),
                 });
                 if (!response.ok) { fail(data); return; }
-                if (mode === 'review' && data.user) { if (mobileHandoff) setMobileComplete(true); else window.location.assign(`/${lang}/account`); return; }
+                if (mode === 'review' && data.user) { if (mobileHandoff) setMobileComplete(true); else window.location.assign(targetAfterAuth(data)); return; }
                 if (!data.passwordSetupRequired || !data.setupToken || !data.account) { setError(t.errors.generic); return; }
                 setSetupToken(data.setupToken); setAccount(data.account); setMode('setup'); setCode('');
                 return;
@@ -186,6 +190,19 @@ export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false
                 );
                 if (!response.ok) { fail(data); return; }
                 if (mobileHandoff && !legacyEmail) { setMobileComplete(true); setSetupToken(''); setCode(''); setPassword(''); setConfirmPassword(''); return; }
+                if (mode === 'setup' && !mobileHandoff) {
+                    const login = await post('/api/auth/login', {
+                        account,
+                        password,
+                        rememberMe: remember,
+                        ...(trimmedInvite ? { inviteCode: trimmedInvite } : {}),
+                    });
+                    if (login.response.ok) {
+                        setSetupToken(''); setCode(''); setPassword(''); setConfirmPassword('');
+                        window.location.assign(targetAfterAuth(login.data));
+                        return;
+                    }
+                }
                 if (mode === 'reset') setAccount(contact);
                 setMode('password'); setSetupToken(''); setCode(''); setPassword(''); setConfirmPassword('');
                 setNotice(legacyEmail ? t.legacyPhonePasswordSaved : t.passwordSaved);
@@ -204,9 +221,7 @@ export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false
                 else { setMobileComplete(true); setPassword(''); }
                 return;
             }
-            const candidate = next && next.startsWith('/') && !/[\\\x00-\x20]/.test(next) ? new URL(next, window.location.origin) : null;
-            const safeNext = candidate?.origin === window.location.origin ? candidate.pathname + candidate.search + candidate.hash : `/${lang}/account`;
-            window.location.assign(legacyEmail ? `/${lang}/account?legacyEmail=1` : data.mustBindPhone ? `/${lang}/account` : safeNext);
+            window.location.assign(targetAfterAuth(data));
         } catch { setError(t.errors.account_network_failed); }
         finally { setBusy(false); }
     }
@@ -318,7 +333,7 @@ export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false
                 {mode === 'password' && <label className="flex items-center gap-2 text-sm text-neutral-gray-medium"><input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} className="accent-king-forest" />{t.rememberMe}</label>}
                 <Button type="submit" disabled={busy || sending || challengeLoading || (showCode && mode !== 'review' && !codeChannelReady)}>{busy ? t.submitting : mode === 'password' || mode === 'review' ? t.loginBtn : mode === 'register' ? t.verifyContinue : t.savePassword}</Button>
                 <div className="flex flex-wrap justify-between gap-3 text-sm text-king-forest">
-                    {mode === 'password' ? <><button type="button" onClick={() => changeMode('register')} disabled={busy || sending || challengeLoading}>{t.firstTime}</button>{phoneSite && bqtEnabled && <button type="button" onClick={() => changeMode('bqt-scan')} disabled={busy || sending || challengeLoading}>{t.bqtScanTab}</button>}<button type="button" onClick={() => changeMode('reset')} disabled={busy || sending || challengeLoading}>{t.forgotPassword}</button></> : <button type="button" onClick={() => changeMode('password')} disabled={busy || sending || challengeLoading}>{t.backToPassword}</button>}
+                    {mode === 'password' ? <><button type="button" className="font-medium underline underline-offset-4" onClick={() => changeMode('register')} disabled={busy || sending || challengeLoading}>{t.firstTime}</button>{phoneSite && bqtEnabled && <button type="button" onClick={() => changeMode('bqt-scan')} disabled={busy || sending || challengeLoading}>{t.bqtScanTab}</button>}<button type="button" onClick={() => changeMode('reset')} disabled={busy || sending || challengeLoading}>{t.forgotPassword}</button></> : <button type="button" onClick={() => changeMode('password')} disabled={busy || sending || challengeLoading}>{t.backToPassword}</button>}
                 </div>
             </form>
             )}

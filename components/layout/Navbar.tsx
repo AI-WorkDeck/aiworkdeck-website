@@ -201,7 +201,7 @@ function NavbarContent({ lang, dict, githubStars, pathname }: NavbarProps & { pa
                     {communityLabel}
                 </span>
 
-                <nav aria-label={nav.mainNavAria} className="ms-auto hidden items-center gap-1 min-[1366px]:flex">
+                <nav aria-label={nav.mainNavAria} className="ms-auto hidden items-center gap-1 xl:flex">
                     {navLinks.map(link => (
                         <Link key={link.href} href={link.href} onClick={closeMenus} className={cn(linkStyle, 'whitespace-nowrap')} aria-current={pathname === link.href ? 'page' : undefined}>
                             {link.label}
@@ -226,8 +226,8 @@ function NavbarContent({ lang, dict, githubStars, pathname }: NavbarProps & { pa
                     </div>
                 </nav>
 
-                <div className="ms-auto flex shrink-0 items-center gap-1 min-[1366px]:ms-0 min-[1366px]:gap-2">
-                    {showSupport && <button type="button" className={cn(linkStyle, 'hidden gap-2 min-[1366px]:inline-flex')} onClick={openSupport}><Heart aria-hidden className="h-4 w-4" />{nav.donate}</button>}
+                <div className="ms-auto flex shrink-0 items-center gap-1 xl:ms-0 xl:gap-2">
+                    {showSupport && <button type="button" className={cn(linkStyle, 'hidden gap-2 xl:inline-flex')} onClick={openSupport}><Heart aria-hidden className="h-4 w-4" />{nav.donate}</button>}
                     <div
                         ref={langContainer}
                         className="relative"
@@ -318,7 +318,7 @@ function NavbarContent({ lang, dict, githubStars, pathname }: NavbarProps & { pa
                             </div>
                         )}
                     </div>
-                    <div className="hidden min-[1366px]:block [&_a]:min-h-11 [&_a]:min-w-11 [&_a]:justify-center [&_a]:rounded-md [&_a]:focus-visible:outline-none [&_a]:focus-visible:ring-2 [&_a]:focus-visible:ring-king-forest"><NavAuth lang={lang} onDark={false} signInLabel={nav.signIn} /></div>
+                    <div className="hidden xl:block [&_a]:min-h-11 [&_a]:min-w-11 [&_a]:justify-center [&_a]:rounded-md [&_a]:focus-visible:outline-none [&_a]:focus-visible:ring-2 [&_a]:focus-visible:ring-king-forest"><NavAuth lang={lang} onDark={false} signInLabel={nav.signIn} /></div>
                 </div>
 
                 <div className="hidden shrink-0 items-center gap-2 md:flex">
@@ -332,15 +332,15 @@ function NavbarContent({ lang, dict, githubStars, pathname }: NavbarProps & { pa
                     <Button asChild size="sm"><Link href={`/${lang}/start`}>{nav.download}</Link></Button>
                 </div>
 
-                {showSupport && <button type="button" onClick={openSupport} aria-label={nav.donateAria} title={nav.donateAria} className={cn(linkStyle, 'hidden min-w-11 shrink-0 justify-center gap-2 md:max-[1365px]:inline-flex')}><Heart aria-hidden className="h-4 w-4" /><span className="hidden min-[360px]:inline">{nav.donate}</span></button>}
+                {showSupport && <button type="button" onClick={openSupport} aria-label={nav.donateAria} title={nav.donateAria} className={cn(linkStyle, 'hidden min-w-11 shrink-0 justify-center gap-2 md:max-xl:inline-flex')}><Heart aria-hidden className="h-4 w-4" /><span className="hidden min-[360px]:inline">{nav.donate}</span></button>}
                 <Button asChild size="sm" className="shrink-0 md:hidden"><Link href={`/${lang}/start`}>{nav.download}</Link></Button>
-                <button ref={mobileToggle} type="button" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-king-forest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-king-forest min-[1366px]:hidden" aria-label={isMobileMenuOpen ? nav.closeNavAria : nav.openNavAria} aria-expanded={isMobileMenuOpen} aria-controls="mobile-navigation" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+                <button ref={mobileToggle} type="button" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-king-forest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-king-forest xl:hidden" aria-label={isMobileMenuOpen ? nav.closeNavAria : nav.openNavAria} aria-expanded={isMobileMenuOpen} aria-controls="mobile-navigation" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
                     {isMobileMenuOpen ? <X aria-hidden /> : <Menu aria-hidden />}
                 </button>
             </div>
 
             {isMobileMenuOpen && (
-                <nav id="mobile-navigation" aria-label={nav.mobileNavAria} className="absolute inset-x-0 top-18 max-h-[calc(100dvh-4.5rem)] overflow-y-auto border-b border-king-forest/10 bg-white px-4 pb-6 pt-2 shadow-lg shadow-king-forest/5 min-[1366px]:hidden">
+                <nav id="mobile-navigation" aria-label={nav.mobileNavAria} className="absolute inset-x-0 top-18 max-h-[calc(100dvh-4.5rem)] overflow-y-auto border-b border-king-forest/10 bg-white px-4 pb-6 pt-2 shadow-lg shadow-king-forest/5 xl:hidden">
                     {/* 网页版降为 /start 页的次要选项（首次加载约 100MB、AI 需登录，不适合作为首印象入口） */}
                     <div className="mb-3 border-b border-king-forest/10 pb-4">
                         <Button asChild className="w-full"><Link href={`/${lang}/start`} onClick={closeMenus}>{dict.common.webWorkbench.download}</Link></Button>

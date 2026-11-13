@@ -7,15 +7,20 @@ import { PerkList } from '@/components/pricing/PerkList';
 import { LICENSE_URL } from '@/lib/structured-data';
 import { COMMERCIAL_LICENSE_URL } from '@/lib/saas-pricing';
 import { formatSiteAmount } from '@/lib/site-config';
+import { signupGrantDisplay, signupGrantLine } from '@/lib/signup-grant-display';
 
 /** 按需使用方案：本地免费起步、充值和功能解锁，保留开源许可入口。 */
-export function OpenSourceCard({ lang, p }: { lang: Locale; /** dict.pricingPage.openSource */ p: any }) {
+export function OpenSourceCard({ lang, p, grantLabels }: { lang: Locale; /** dict.pricingPage.openSource */ p: any; grantLabels?: any }) {
+    const grant = signupGrantDisplay(lang);
+    const grantLine = grant && grantLabels ? signupGrantLine(grant, grantLabels) : null;
+
     return (
         <Card className="flex flex-col rounded-2xl border border-[#dce2de] bg-white transition-all duration-300 hover:-translate-y-0.5 hover:border-king-forest/35 hover:shadow-[0_20px_44px_-20px_rgba(32,63,56,0.2)]">
             <CardHeader className="border-b border-neutral-gray-light/70 pb-5">
                 <CardTitle className="text-lg font-bold text-neutral-dark-bg">{p.title}</CardTitle>
                 <div className="mt-2.5 font-display text-3xl font-bold tracking-tight text-neutral-dark-bg">{p.price}</div>
                 <p className="mt-1.5 text-[13.5px] leading-relaxed text-neutral-gray-medium">{p.desc}</p>
+                {grantLine && <p className="mt-2 text-xs font-medium text-king-forest">{grantLine}</p>}
             </CardHeader>
             <CardContent className="flex-1 space-y-5 pt-6">
                 <PerkList perks={[p.perk1, p.perk2.replace('{topup}', formatSiteAmount(10000)), p.perk3, p.perk4]} />

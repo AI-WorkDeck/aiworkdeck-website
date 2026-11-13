@@ -26,10 +26,12 @@ export function isProPurchaseEnabled(env: Record<string, string | undefined> = p
   return PRO_PURCHASE_ENABLED_DEFAULT;
 }
 
-/** 识别 Pro SKU：现行 pro_monthly / pro_yearly，以及 #228 旧写法 pro:monthly / pro:yearly。 */
+/** 识别 Pro SKU：现行 pro_monthly_intro / pro_monthly / pro_yearly，以及 #228 旧写法 pro:monthly / pro:yearly。 */
 export function parseProSkuPlan(skuId: unknown): 'monthly' | 'yearly' | null {
   if (typeof skuId !== 'string') return null;
-  const m = /^pro[_:](monthly|yearly)$/.exec(skuId.trim().toLowerCase());
+  const normalized = skuId.trim().toLowerCase();
+  if (normalized === 'pro_monthly_intro' || normalized === 'pro:monthly:intro') return 'monthly';
+  const m = /^pro[_:](monthly|yearly)$/.exec(normalized);
   return m ? (m[1] as 'monthly' | 'yearly') : null;
 }
 

@@ -328,4 +328,59 @@ console.log('\n[10] 成功页到期日：支付成功起算 +30/+365 + 词典 {d
   ok('zh/en successBody/{date}；pending 兜底无空日期；successAccount=Pro 权益/plan');
 }
 
+console.log('\n[11] pro_monthly_intro 首 3 月 ¥9.9 体验价限次与第 4 月回落');
+{
+  const introUser = crypto.randomUUID();
+  const q0 = pro.getProIntroQuote(db, introUser);
+  assert.strictEqual(q0.eligible, true);
+  assert.strictEqual(q0.priceCents, 990);
+  assert.strictEqual(q0.standardPriceCents, 14900);
+  assert.strictEqual(q0.totalMonths, 3);
+  assert.strictEqual(q0.usedMonths, 0);
+  assert.strictEqual(q0.remainingMonths, 3);
+  assert.strictEqual(q0.recommendedSkuId, 'pro_monthly_intro');
+  assert.strictEqual(q0.recommendedAmountCents, 990);
+  assert.strictEqual(SAAS_PRICE_FEN.proIntroMonthly, 990);
+  assert.strictEqual(pro.getProProduct('pro_monthly_intro')!.priceCents, 990);
+
+  for (let i = 1; i <= 3; i++) {
+    const outNo = `PRO-INTRO-${i}`;
+    createOrder({
+      id: outNo,
+      outTradeNo: outNo,
+      description: 'Pro intro',
+      amount: 990,
+      status: 'pending',
+      userId: introUser,
+      kind: 'subscription',
+      skuId: 'pro_monthly_intro',
+      channel: siteConfig.paymentChannel,
+      currency: siteConfig.currency,
+    });
+    assert.deepStrictEqual(settleFromChannel({
+      channel: siteConfig.paymentChannel,
+      currency: siteConfig.currency,
+      outTradeNo: outNo,
+      paid: true,
+      amountMinor: 990,
+    }), { ok: true, alreadyPaid: false });
+    const q = pro.getProIntroQuote(db, introUser);
+    assert.strictEqual(q.usedMonths, i);
+    assert.strictEqual(q.remainingMonths, 3 - i);
+    assert.strictEqual(q.eligible, i < 3);
+    if (i === 3) {
+      assert.strictEqual(q.recommendedSkuId, 'pro_monthly');
+      assert.strictEqual(q.recommendedAmountCents, 14900);
+    }
+  }
+
+  const ent = db.prepare(`SELECT expiresAt FROM entitlements WHERE userId = ? AND feature = 'pro'`).get(introUser) as { expiresAt: string };
+  const days = (new Date(ent.expiresAt).getTime() - Date.now()) / 86400000;
+  assert.ok(days > 89 && days < 91, `3 个周期应顺延约 90 天，实得 ${days}`);
+
+  db.prepare(`UPDATE entitlements SET expiresAt = '2020-02-01T00:00:00.000Z' WHERE userId = ? AND feature = 'pro'`).run(introUser);
+  assert.strictEqual(getPlan(introUser), 'expired', 'pro_monthly_intro 到期后 → expired');
+  ok('pro_monthly_intro 前 3 次 990 分顺延约 90 天 → 第 4 次 eligible=false 回落 14900 → 到期 expired');
+}
+
 console.log(`\n全部通过：${checked} 项`);
