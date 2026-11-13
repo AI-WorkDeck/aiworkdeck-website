@@ -211,7 +211,8 @@
       "teaser": {
         "line": "CNY 149/bulan untuk jatah AI, clipboard, staging, dan penyimpanan awan 3GB.",
         "primary": "Jelajahi manfaat Pro",
-        "secondary": "Mulai gratis"
+        "secondary": "Mulai gratis",
+        "introOffer": "Harga perkenalan: {intro}/bln untuk {months} bulan pertama (normal {standard}/bln), tanpa auto-debet."
       },
       "internal": {
         "badge": "Direkomendasikan",
@@ -1406,7 +1407,8 @@
       "details": "Lihat paket dan manfaat",
       "unavailable": "Pembelian Personal Pro belum tersedia di situs internasional. Akun terpisah dari situs Tiongkok daratan.",
       "bqtSource": "disediakan oleh keanggotaan Baoqingtian",
-      "bqtRenewHint": "Manfaat Pro disertakan dalam keanggotaan Baoqingtian. Perpanjang di aplikasi Baoqingtian."
+      "bqtRenewHint": "Manfaat Pro disertakan dalam keanggotaan Baoqingtian. Perpanjang di aplikasi Baoqingtian.",
+      "introEligible": "Harga promo tersedia ({remaining} dari {total} bulan tersisa)"
     },
     "rechargeOrderDesc": "Isi ulang dompet",
     "quotaSyncFailed": "Sinkronisasi kuota belum selesai. Silakan muat ulang sebentar lagi.",
@@ -1459,7 +1461,9 @@
       "proRights": "Termasuk manfaat Pro (penyimpanan cloud 3 GB) selama keanggotaan aktif.",
       "priorityHint": "Penggunaan DeepSeek dibayar lebih dulu dengan poin Baoqingtian Anda; jika poin habis, saldo akun otomatis digunakan. Model dan layanan lain menggunakan saldo akun.",
       "fetchedAt": "Diperbarui {time}"
-    }
+    },
+    "rechargeProTip": "Tips: Personal Pro saat ini hanya {intro}/bln (normal {monthly}/bln) dengan {monthlyCredits} Credits/30 hari dan cloud 3GB.",
+    "rechargeProTipCta": "Pilih Personal Pro ¥9.9 saja ->"
   },
   "purchase": {
     "buy": "Beli",
@@ -2069,8 +2073,14 @@
         "successDownload": "Kembali ke proyek / Unduh",
         "successPending": "Mengonfirmasi pembayaran…",
         "successUnknown": "Belum ada hasil pembayaran. Jika Anda telah ditagih, periksa halaman akun Anda sebentar lagi.",
-        "bqtRenewHint": "Manfaat Pro disertakan dalam keanggotaan Baoqingtian. Perpanjang di aplikasi Baoqingtian."
-      }
+        "bqtRenewHint": "Manfaat Pro disertakan dalam keanggotaan Baoqingtian. Perpanjang di aplikasi Baoqingtian.",
+        "introSummary": "Tarif promo: {intro}/bln untuk {months} bulan pertama (normal {standard}/bln), tanpa perpanjangan otomatis.",
+        "valueSummary": "Termasuk {monthlyCredits} Credits / 30 hari (maks. {weeklyCredits} / 7 hari) + cloud 3GB + papan klip tanpa batas"
+      },
+      "introBadge": "Promo 3 Bln",
+      "introNote": "{intro}/bln untuk {months} bulan pertama, lalu {standard}/bln (sekali bayar, tanpa perpanjangan otomatis)",
+      "intlNote": "Pembelian Personal Pro saat ini tersedia di situs Tiongkok Daratan (CNY); isi ulang saldo sesuai pemakaian tetap terbuka di sini.",
+      "ctaIntro": "Aktifkan Pro {price}"
     },
     "team": {
       "title": "Deployment khusus",
@@ -2130,6 +2140,10 @@
       "storage": {
         "q": "Apa perbedaan antara penyimpanan relai dan penyimpanan awan?",
         "a": "200MB adalah penggunaan sementara, bukan trafik bulanan. Ruang dibebaskan setelah diterima; berkas yang tidak diambil kedaluwarsa setelah 30 hari. Pro juga mencakup 3GB penyimpanan permanen secara terpisah. Berkas di desktop Anda mengharuskan desktop tersebut daring. Setelah kedaluwarsa, berkas awan yang sudah ada tetap dapat diunduh atau dihapus, tetapi unggahan baru diblokir."
+      },
+      "intro": {
+        "q": "Bagaimana cara kerja promo {intro}/bln untuk {months} bulan? Apakah otomatis diperpanjang?",
+        "a": "{months} pembelian bulanan pertama (masing-masing 30 hari) mendapat harga {intro}/bln, lalu mulai bulan ke-4 berlaku {standard}/bln. Pembayaran satu kali tanpa perpanjangan otomatis."
       }
     },
     "deploymentBanner": {
@@ -2137,7 +2151,8 @@
       "title": "Menyebarkan di server dan jaringan Anda sendiri?",
       "body": "Perkirakan server, personel, dan anggaran tahun pertama berdasarkan ukuran tim, mode model, dan layanan opsional.",
       "cta": "Buka perencana penerapan"
-    }
+    },
+    "heroSubtitleIntro": "Aplikasi desktop sumber terbuka gratis. Personal Pro cukup {intro}/bln selama {months} bulan pertama (normal {standard}/bln) termasuk Credits, penyimpanan cloud 3GB, dan papan klip tanpa batas untuk 30 hari."
   },
   "notFoundPage": {
     "code": "404",
@@ -2272,7 +2287,8 @@
         "videoAria": "Film AI WorkDeck",
         "videoLoading": "Memuat video…",
         "videoError": "Video belum bisa diputar — koneksi mungkin lambat atau tautan sudah kedaluwarsa.",
-        "videoRetry": "Coba lagi"
+        "videoRetry": "Coba lagi",
+        "introOffer": "Promo awal: Personal Pro {intro}/bln untuk {months} bulan pertama (normal {standard}/bln, tanpa perpanjangan otomatis) ->"
       },
       "facts": {
         "license": "lisensi sumber terbuka",
@@ -2528,32 +2544,32 @@
       }
     }
   },
-    "adminSites": {
+  "adminSites": {
     "lastLoginAt": "Login terakhir",
     "lastLoginUnknown": "Tidak tercatat",
     "lastLoginHint": "Login berhasil ke situs atau klien; login sebelumnya yang tidak tercatat tidak dapat dipulihkan.",
     "bailianManaged": "Platform Tiongkok menggunakan Bailian. Kunci dan model default dikelola di server dan hanya dapat dibaca di sini. Periksa saldo di konsol Bailian.",
-        "manage": "Kelola situs",
-        "choose": "Pilih situs",
-        "cn": "Situs Tiongkok",
-        "intl": "Situs internasional",
-        "notice": "Mengelola: {site} · {currency}. Beralih akan menampilkan data situs yang dipilih dan menghapus perubahan yang belum disimpan.",
-        "notConnected": "Situs ini belum terhubung. Selesaikan pengaturan koneksi admin di server.",
-        "unavailable": "Situs ini sementara tidak tersedia. Coba lagi nanti atau beralih situs.",
-        "networkError": "Tidak dapat terhubung. Periksa jaringan Anda dan coba lagi.",
-        "retry": "Coba hubungkan lagi",
-        "loginHint": "Masukkan kata sandi admin untuk halaman masuk ini. Setelah masuk, Anda dapat beralih antara situs Tiongkok dan internasional.",
-        "priceRange": "Harga harus antara 0.01 dan 1999 {unit}.",
-        "giftRange": "Nilai harus antara 0.01 dan 10000 {unit}.",
-        "conversion": "Konversi kredit AI: kredit USD = jumlah dalam {currency} / kurs / pengali margin, dibulatkan ke bawah hingga 2 desimal.",
-        "productDescription": "Harga SKU pembuka fitur lokal desktop ({unit}). Perubahan langsung berlaku; pesanan yang belum dibayar akan ditolak jika jumlahnya tidak lagi sesuai.",
-        "giftLabel": "Nilai ({unit})",
-        "bqt": "Baoqingtian",
-        "circle": "Firma Circle",
-        "bqtNotice": "Kanal poin pengacara Baoqingtian hanya berjalan di situs China; tab ini selalu mengelola data situs China.",
-        "circleNotice": "Mengelola firma Circle di {site}. Firma dan pengikatan terpisah di setiap situs.",
-        "circleSite": "Situs firma"
-    },
+    "manage": "Kelola situs",
+    "choose": "Pilih situs",
+    "cn": "Situs Tiongkok",
+    "intl": "Situs internasional",
+    "notice": "Mengelola: {site} · {currency}. Beralih akan menampilkan data situs yang dipilih dan menghapus perubahan yang belum disimpan.",
+    "notConnected": "Situs ini belum terhubung. Selesaikan pengaturan koneksi admin di server.",
+    "unavailable": "Situs ini sementara tidak tersedia. Coba lagi nanti atau beralih situs.",
+    "networkError": "Tidak dapat terhubung. Periksa jaringan Anda dan coba lagi.",
+    "retry": "Coba hubungkan lagi",
+    "loginHint": "Masukkan kata sandi admin untuk halaman masuk ini. Setelah masuk, Anda dapat beralih antara situs Tiongkok dan internasional.",
+    "priceRange": "Harga harus antara 0.01 dan 1999 {unit}.",
+    "giftRange": "Nilai harus antara 0.01 dan 10000 {unit}.",
+    "conversion": "Konversi kredit AI: kredit USD = jumlah dalam {currency} / kurs / pengali margin, dibulatkan ke bawah hingga 2 desimal.",
+    "productDescription": "Harga SKU pembuka fitur lokal desktop ({unit}). Perubahan langsung berlaku; pesanan yang belum dibayar akan ditolak jika jumlahnya tidak lagi sesuai.",
+    "giftLabel": "Nilai ({unit})",
+    "bqt": "Baoqingtian",
+    "circle": "Firma Circle",
+    "bqtNotice": "Kanal poin pengacara Baoqingtian hanya berjalan di situs China; tab ini selalu mengelola data situs China.",
+    "circleNotice": "Mengelola firma Circle di {site}. Firma dan pengikatan terpisah di setiap situs.",
+    "circleSite": "Situs firma"
+  },
   "mcpPage": {
     "title": "MCP",
     "setup": "Di Pengaturan → Koneksi MCP pada aplikasi desktop, tambahkan layanan Streamable HTTP atau perintah stdio lokal. HTTP mendukung tanpa autentikasi, Bearer, atau OAuth. Selesaikan otorisasi, uji koneksi, lalu aktifkan.",

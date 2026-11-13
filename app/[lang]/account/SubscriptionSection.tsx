@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import { LOCALE_META, type Locale } from '@/i18n-config';
 import type { EntitlementRow } from '@/lib/purchases';
-import { SAAS_PRICING } from '@/lib/saas-pricing';
-import { ProCheckout } from '@/components/pricing/ProCheckout';
+import { SAAS_PRICING, PRO_INTRO_MONTHS } from '@/lib/saas-pricing';
+import { ProCheckout, type ProIntroOfferState } from '@/components/pricing/ProCheckout';
 
 /** The desktop subscription link lands here; keep purchase separate from wallet top-ups. */
-export function SubscriptionSection({ lang, dict, entitlement, paymentChannel, purchaseEnabled, bqtMember = false }: {
+export function SubscriptionSection({ lang, dict, entitlement, paymentChannel, purchaseEnabled, bqtMember = false, introOffer }: {
     lang: Locale;
     dict: any;
     entitlement: EntitlementRow | null;
@@ -15,9 +15,13 @@ export function SubscriptionSection({ lang, dict, entitlement, paymentChannel, p
     purchaseEnabled: boolean;
     /** 包晴天律师（积分通道开着）：Pro 随包晴天会员，本站不卖 */
     bqtMember?: boolean;
+    introOffer?: ProIntroOfferState;
 }) {
     const t = dict.accountPage.subscription;
     const p = dict.pricingPage.pro;
+    const introEligible = introOffer ? introOffer.eligible : true;
+    const remaining = introOffer?.remainingMonths ?? PRO_INTRO_MONTHS;
+    const total = introOffer?.totalMonths ?? PRO_INTRO_MONTHS;
     const expiry = entitlement?.expiresAt
         ? new Date(entitlement.expiresAt).toLocaleDateString(LOCALE_META[lang].bcp47, {
             year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Shanghai',
@@ -43,8 +47,28 @@ export function SubscriptionSection({ lang, dict, entitlement, paymentChannel, p
                 <div className="w-full shrink-0 space-y-3 md:w-64">
                     {bqtMember ? <ProCheckout lang={lang} ctaLabel={t.renew} labels={{ ...p.checkout, bqtRenewHint: t.bqtRenewHint }} bqtMember />
                     : paymentChannel === 'wxpay' ? <>
-                        <p className="text-xl font-semibold text-neutral-dark-bg">{p.price.replace('{monthly}', SAAS_PRICING.proMonthly)}</p>
-                        <ProCheckout lang={lang} ctaLabel={entitlement ? t.renew : p.ctaSecondary} labels={p.checkout} purchaseEnabled={purchaseEnabled} />
+                        <div className="flex flex-wrap items-baseline gap-2">
+                            <p className="text-xl font-semibold text-neutral-dark-bg">
+                                {p.price.replace('{monthly}', introEligible ? SAAS_PRICING.proIntroMonthly : SAAS_PRICING.proMonthly)}
+                            </p>
+                            {introEligible && (
+                                <span className="text-sm text-neutral-gray-medium line-through">
+                                    {p.price.replace('{monthly}', SAAS_PRICING.proMonthly)}
+                                </span>
+                            )}
+                        </div>
+                        {introEligible && t.introEligible && (
+                            <p className="text-xs font-medium text-king-forest">
+                                {t.introEligible.replace('{remaining}', String(remaining)).replace('{total}', String(total))}
+                            </p>
+                        )}
+                        <ProCheckout
+                            lang={lang}
+                            ctaLabel={entitlement ? t.renew : p.ctaSecondary}
+                            labels={p.checkout}
+                            purchaseEnabled={purchaseEnabled}
+                            introOffer={introOffer}
+                        />
                         {purchaseEnabled && <p className="text-sm text-neutral-gray-medium">{t.payment}</p>}
                     </> : <p className="text-sm leading-relaxed text-neutral-gray-medium">{t.unavailable}</p>}
                     <Link href={`/${lang}/pricing`} className="inline-block text-sm font-medium text-king-forest hover:underline">{t.details}</Link>

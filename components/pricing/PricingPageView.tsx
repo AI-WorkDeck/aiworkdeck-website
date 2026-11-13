@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { SAAS_PRICING, SUBSCRIPTION_LIMITS } from '@/lib/saas-pricing';
+import { PRO_INTRO_MONTHS, SAAS_PRICING, SUBSCRIPTION_LIMITS } from '@/lib/saas-pricing';
+import { siteConfig } from '@/lib/site-config';
 import { ArrowUpRight } from 'lucide-react';
 import { Locale } from '@/i18n-config';
 import { PageHero } from '@/components/layout/PageHero';
@@ -18,14 +19,23 @@ import { PricingClickTracker } from '@/components/pricing/PricingClickTracker';
 export function PricingPageView({
     lang,
     t,
+    grantLabels,
 }: {
     lang: Locale;
     /** dict.pricingPage */
     t: any;
+    grantLabels?: any;
 }) {
+    const isWxpay = siteConfig.paymentChannel === 'wxpay';
+    const heroPrice = isWxpay ? SAAS_PRICING.proIntroMonthly : SAAS_PRICING.proMonthly;
     const formatAllowance = (text: string) => text.replace('{monthlyCredits}', String(SUBSCRIPTION_LIMITS.monthlyCents / 100))
         .replace('{weeklyCredits}', String(SUBSCRIPTION_LIMITS.weeklyCents / 100));
+    const formatIntro = (text: string) => text
+        .replace('{months}', String(PRO_INTRO_MONTHS))
+        .replace('{intro}', SAAS_PRICING.proIntroMonthly)
+        .replace('{standard}', SAAS_PRICING.proMonthly);
     const faqItems: PricingFaqItem[] = [
+        ...(t.saasFaq.intro ? [{ id: 'intro', q: formatIntro(t.saasFaq.intro.q), a: formatIntro(t.saasFaq.intro.a) }] : []),
         { id: 'allowance', q: t.saasFaq.allowance.q, a: formatAllowance(t.saasFaq.allowance.a) },
         { id: 'storage', q: t.saasFaq.storage.q, a: t.saasFaq.storage.a },
         { id: 'trial', q: t.saasFaq.trial.q, a: t.saasFaq.trial.a, legalPending: true },
@@ -40,15 +50,15 @@ export function PricingPageView({
             <PricingClickTracker lang={lang} />
             <PageHero
                 eyebrow={t.eyebrow}
-                title={t.heroTitle.replace('{price}', SAAS_PRICING.proMonthly)}
-                subtitle={t.heroSubtitle}
+                title={t.heroTitle.replace('{price}', heroPrice)}
+                subtitle={isWxpay && t.heroSubtitleIntro ? formatIntro(t.heroSubtitleIntro) : t.heroSubtitle}
                 size="compact"
                 width="6xl"
             />
 
             <div className="container mx-auto max-w-6xl px-4 md:px-8">
                 <section className="mt-9 grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3" aria-label={t.cardsAria}>
-                    <div className="order-2 flex lg:order-1 [&>*]:w-full"><OpenSourceCard lang={lang} p={t.openSource} /></div>
+                    <div className="order-2 flex lg:order-1 [&>*]:w-full"><OpenSourceCard lang={lang} p={t.openSource} grantLabels={grantLabels} /></div>
                     <div className="order-1 flex lg:order-2 [&>*]:w-full"><ProCard lang={lang} p={t.pro} /></div>
                     <div className="order-3 flex [&>*]:w-full"><TeamCard lang={lang} p={t.team} /></div>
                 </section>

@@ -211,7 +211,8 @@
       "teaser": {
         "line": "149 元/月，把 AI 额度、剪贴板、暂存区与 3GB 云空间一起带走。",
         "primary": "查看 Pro 订阅权益",
-        "secondary": "免费开始使用"
+        "secondary": "免费开始使用",
+        "introOffer": "限时体验价：前 {months} 个月 {intro}/月（原价 {standard}/月），第 4 个月起恢复正价，不自动扣款。"
       },
       "internal": {
         "badge": "推荐",
@@ -1408,7 +1409,8 @@
       "details": "查看方案与权益",
       "unavailable": "国际站暂未开放个人 Pro 订阅购买。本站账户与中国大陆站独立。",
       "bqtSource": "由包晴天会员提供",
-      "bqtRenewHint": "个人 Pro 权益随包晴天会员提供，请在包晴天 App 内续费会员。"
+      "bqtRenewHint": "个人 Pro 权益随包晴天会员提供，请在包晴天 App 内续费会员。",
+      "introEligible": "当前可享首 3 月特惠价（剩余 {remaining} / {total} 个月）"
     },
     "rechargeOrderDesc": "钱包充值",
     "quotaSyncFailed": "额度同步未完成，请稍后刷新。",
@@ -1461,7 +1463,9 @@
       "proRights": "会员有效期内享有个人 Pro 权益（含 3GB 云空间）。",
       "priorityHint": "DeepSeek 模型的用量优先扣包晴天积分，积分不够时自动改用账户余额；其他模型和服务使用账户余额。",
       "fetchedAt": "更新于 {time}"
-    }
+    },
+    "rechargeProTip": "小贴士：当前个人 Pro 首月仅 {intro}（原价 {monthly}/月），即享每 30 天 {monthlyCredits} Credits、3GB 云空间及不限量剪贴板，比单充更划算。",
+    "rechargeProTipCta": "改为 ¥9.9 开通个人 Pro →"
   },
   "purchase": {
     "buy": "购买",
@@ -2071,8 +2075,14 @@
         "successDownload": "回到项目 / 下载桌面端",
         "successPending": "正在确认支付结果…",
         "successUnknown": "暂未查到支付结果，如已扣款请稍后在账户页查看。",
-        "bqtRenewHint": "个人 Pro 权益随包晴天会员提供，请在包晴天 App 内续费会员。"
-      }
+        "bqtRenewHint": "个人 Pro 权益随包晴天会员提供，请在包晴天 App 内续费会员。",
+        "introSummary": "体验价限前 {months} 个月每月 {intro}（原价 {standard}/月），第 4 个月起恢复正价，不自动扣款。",
+        "valueSummary": "含 {monthlyCredits} Credits / 30 天（每周可用 {weeklyCredits}）+ 3GB 云备份 + 不限量剪贴板与暂存区"
+      },
+      "introBadge": "首 3 月 ¥9.9 / 月",
+      "introNote": "前 {months} 个月仅 {intro}/月（第 4 个月起恢复 {standard}/月，一次性购买不自动扣款）",
+      "intlNote": "国际站暂不直接售卖个人 Pro；中国大陆人民币站可享首 3 月 ¥9.9/月体验价。",
+      "ctaIntro": "立即 {price} 开通 Pro"
     },
     "team": {
       "title": "独立部署",
@@ -2132,6 +2142,10 @@
       "storage": {
         "q": "200MB 中转与 3GB 云空间如何计算？",
         "a": "200MB 是同时暂存在云端的文件总量，并非每月流量；取件确认后释放，未取件文件最多暂存 30 天。Pro 另含 3GB 持久云空间。文件保留在桌面时，桌面须在线才能按需转取。订阅到期后停止新增持久文件，已有文件仍可下载或删除。"
+      },
+      "intro": {
+        "q": "首 {months} 个月 {intro}/月体验价怎么算？到期会自动扣款吗？",
+        "a": "每个账号前 {months} 次按月购买个人 Pro 均享 {intro}/月体验价（每次 30 天），第 4 次起恢复正价 {standard}/月。微信扫码为一次性付款，到期前不会自动扣款。"
       }
     },
     "deploymentBanner": {
@@ -2139,7 +2153,8 @@
       "title": "需要部署在您自己的服务器与网络？",
       "body": "按人数、模型部署方式和配套服务，在线测算服务器、人员与首年投入。",
       "cta": "打开部署计算器"
-    }
+    },
+    "heroSubtitleIntro": "桌面软件开源免费、文件在本机。个人 Pro 前 {months} 个月享 {intro}/月体验价（原价 {standard}/月），含周期 Credits、3GB 云空间与不限量剪贴板，一次买 30 天，不自动扣款。"
   },
   "notFoundPage": {
     "code": "404",
@@ -2274,7 +2289,8 @@
         "videoAria": "AI WorkDeck 宣传片",
         "videoLoading": "正在加载视频…",
         "videoError": "视频暂时无法播放，可能是网络较慢或链接已过期。",
-        "videoRetry": "重试"
+        "videoRetry": "重试",
+        "introOffer": "新用户专享：个人 Pro 首 {months} 个月 {intro}/月（原价 {standard}/月，不自动扣款） →"
       },
       "facts": {
         "license": "开源协议",
@@ -2530,32 +2546,32 @@
       }
     }
   },
-    "adminSites": {
+  "adminSites": {
     "lastLoginAt": "最后登录时间",
     "lastLoginUnknown": "暂无记录",
     "lastLoginHint": "记录官网或客户端成功登录的时间；历史未记录的登录无法还原。",
     "bailianManaged": "国内平台使用百炼。密钥与默认模型由服务器配置，此处只读；余额请到百炼控制台查看。",
-        "manage": "管理站点",
-        "choose": "选择站点",
-        "cn": "国内站",
-        "intl": "国际站",
-        "notice": "当前管理：{site} · {currency}。切换后显示所选站点的数据，未保存的修改会清空。",
-        "notConnected": "该站点尚未连接，请完成服务器端后台连接配置。",
-        "unavailable": "该站点暂时无法连接，请稍后重试或切换站点。",
-        "networkError": "该站点暂时无法连接，请检查网络后重试。",
-        "retry": "重试连接",
-        "loginHint": "输入当前登录入口的管理口令，登录后可切换国内站与国际站。",
-        "priceRange": "价格需在 0.01 到 1999 {unit}之间",
-        "giftRange": "面额需在 0.01 到 10000 {unit}之间",
-        "conversion": "AI 额度折算公式：美元额度 = {currency}金额 / 汇率 / 毛利乘数，保留 2 位小数向下取整。",
-        "productDescription": "桌面端本地小功能解锁 SKU 的售价（{unit}）。改价即时生效，已创建未支付的订单会因金额不符被拒绝。",
-        "giftLabel": "面额（{unit}）",
-        "bqt": "包晴天",
-        "circle": "Circle 律所",
-        "bqtNotice": "包晴天律师积分通道只在国内站运行，此处始终管理国内站数据。",
-        "circleNotice": "当前管理 {site} 的 Circle 律所。两站的律所与绑定各自独立。",
-        "circleSite": "律所所在站点"
-    },
+    "manage": "管理站点",
+    "choose": "选择站点",
+    "cn": "国内站",
+    "intl": "国际站",
+    "notice": "当前管理：{site} · {currency}。切换后显示所选站点的数据，未保存的修改会清空。",
+    "notConnected": "该站点尚未连接，请完成服务器端后台连接配置。",
+    "unavailable": "该站点暂时无法连接，请稍后重试或切换站点。",
+    "networkError": "该站点暂时无法连接，请检查网络后重试。",
+    "retry": "重试连接",
+    "loginHint": "输入当前登录入口的管理口令，登录后可切换国内站与国际站。",
+    "priceRange": "价格需在 0.01 到 1999 {unit}之间",
+    "giftRange": "面额需在 0.01 到 10000 {unit}之间",
+    "conversion": "AI 额度折算公式：美元额度 = {currency}金额 / 汇率 / 毛利乘数，保留 2 位小数向下取整。",
+    "productDescription": "桌面端本地小功能解锁 SKU 的售价（{unit}）。改价即时生效，已创建未支付的订单会因金额不符被拒绝。",
+    "giftLabel": "面额（{unit}）",
+    "bqt": "包晴天",
+    "circle": "Circle 律所",
+    "bqtNotice": "包晴天律师积分通道只在国内站运行，此处始终管理国内站数据。",
+    "circleNotice": "当前管理 {site} 的 Circle 律所。两站的律所与绑定各自独立。",
+    "circleSite": "律所所在站点"
+  },
   "mcpPage": {
     "title": "MCP",
     "setup": "在桌面端「设置 → MCP 连接」添加 Streamable HTTP 服务或本地 stdio 命令。HTTP 可选无需认证、Bearer 或 OAuth；完成授权、测试连接后再启用。",

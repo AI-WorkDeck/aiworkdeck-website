@@ -6,6 +6,9 @@ import type { getDictionary } from '@/get-dictionary';
 import { RELEASES } from '@/content/releases';
 import { REPO_URL } from '@/lib/structured-data';
 import { getGithubStars } from '@/lib/github-stars';
+import { PRO_INTRO_MONTHS, SAAS_PRICING } from '@/lib/saas-pricing';
+import { siteConfig } from '@/lib/site-config';
+import { signupGrantDisplay, signupGrantLine } from '@/lib/signup-grant-display';
 import {
     EPISODES,
     FEATURED_EPISODE_IDS,
@@ -108,6 +111,23 @@ export function IdeHome({ lang, dict }: { lang: Locale; dict: Dict }) {
                             {stars !== null && <span className="ide-btn-count">{stars.toLocaleString(bcp47)}</span>}
                         </a>
                     </div>
+                    {(siteConfig.paymentChannel === 'wxpay' || signupGrantDisplay(lang)) && (() => {
+                        const grant = signupGrantDisplay(lang);
+                        const grantLine = grant && dict.common?.grant ? signupGrantLine(grant, dict.common.grant) : null;
+                        if (siteConfig.paymentChannel === 'wxpay' && t.hero.introOffer) {
+                            return (
+                                <p className="mt-3 text-sm font-medium text-king-forest">
+                                    <Link href={`/${lang}/pricing?checkout=pro`} className="underline-offset-4 hover:underline">
+                                        {t.hero.introOffer
+                                            .replace('{intro}', SAAS_PRICING.proIntroMonthly)
+                                            .replace('{standard}', SAAS_PRICING.proMonthly)
+                                            .replace('{months}', String(PRO_INTRO_MONTHS))}
+                                    </Link>
+                                </p>
+                            );
+                        }
+                        return grantLine ? <p className="mt-3 text-sm font-medium text-king-forest">{grantLine}</p> : null;
+                    })()}
                     <p className="ide-meta">
                         {t.hero.meta.replace('{count}', String(localeCount))}
                     </p>

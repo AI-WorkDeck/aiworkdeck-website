@@ -23,6 +23,8 @@ import { ProfileCard } from './ProfileCard';
 import { WalletSection } from './WalletSection';
 import { SubscriptionSection } from './SubscriptionSection';
 import { listEntitlements } from '@/lib/purchases';
+import { getDb } from '@/lib/db';
+import { getProIntroQuote } from '@/lib/pro-products';
 import { isProPurchaseEnabled } from '@/lib/pro-purchase-flag';
 import { siteConfig } from '@/lib/site-config';
 import { MembershipSection } from './MembershipSection';
@@ -119,6 +121,9 @@ export default async function AccountPage({
     // 期限后 `blocked` 的账号根本登不进来（login 路由拦在建会话之前），所以这里
     // 只会遇到 must_bind——但仍按 gate 判而不是判 `!user.phone`，免得两处口径漂。
     const mustBindPhone = gateForUser(user) === 'must_bind';
+    const postpaid = cloudState(user.id);
+    const postpaidNeedsAttention = postpaid.cloudAccess.frozen || postpaid.billing.debtCents > 0 || postpaid.billing.accepted;
+    const introOffer = getProIntroQuote(getDb(), user.id);
 
     return (
         <div className="min-h-screen bg-neutral-gray-pale pt-28 pb-24">
@@ -141,7 +146,7 @@ export default async function AccountPage({
                     }}
                 />
 
-                <PostpaidSection lang={lang} dict={dict} initial={cloudState(user.id)} />
+                {postpaidNeedsAttention && <PostpaidSection lang={lang} dict={dict} initial={postpaid} />}
 
                 <SubscriptionSection
                     lang={lang}
@@ -150,6 +155,7 @@ export default async function AccountPage({
                     paymentChannel={siteConfig.paymentChannel}
                     purchaseEnabled={isProPurchaseEnabled()}
                     bqtMember={bqtMember}
+                    introOffer={introOffer}
                 />
 
                 {/* 桌面连接（AWD Key）：新用户登录后唯一必须做的事，排在最前，
@@ -175,6 +181,7 @@ export default async function AccountPage({
                 <MembershipSection lang={lang} dict={dict} />
                 {/* 已购与创作者收益（PR-W3） */}
                 <PurchasesSection lang={lang} dict={dict} />
+                {!postpaidNeedsAttention && <PostpaidSection lang={lang} dict={dict} initial={postpaid} />}
 
                 <GroupHeading>{ta.groupCreate}</GroupHeading>
                 <div className="mb-6 rounded-xl border border-neutral-gray-light bg-white p-5">

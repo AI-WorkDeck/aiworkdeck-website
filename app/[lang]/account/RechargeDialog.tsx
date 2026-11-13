@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, CheckCircle, XCircle, Info } from 'lucide-react';
 import { siteConfig, formatSiteAmount } from '@/lib/site-config';
+import { SAAS_PRICING, SUBSCRIPTION_LIMITS } from '@/lib/saas-pricing';
 
 /**
  * 钱包充值。两站两种支付形态，同一个订单接口：
@@ -251,6 +252,28 @@ export function RechargeDialog({ open, onOpenChange, dict, onPaid }: RechargeDia
                         <p className="text-center text-sm text-neutral-gray-medium">
                             {isRedirectChannel ? t.rechargeHintRedirect : t.rechargeHint}
                         </p>
+
+                        {!isRedirectChannel && t.rechargeProTip && (
+                            <div className="rounded-lg border border-king-forest/25 bg-king-mint-lightest/50 p-3.5 text-xs leading-relaxed text-neutral-dark-bg">
+                                <p className="font-medium text-king-forest">
+                                    {t.rechargeProTip
+                                        .replace('{intro}', SAAS_PRICING.proIntroMonthly)
+                                        .replace('{monthly}', SAAS_PRICING.proMonthly)
+                                        .replace('{monthlyCredits}', String(SUBSCRIPTION_LIMITS.monthlyCents / 100))}
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        handleClose();
+                                        document.getElementById('subscription')?.scrollIntoView({ behavior: 'smooth' });
+                                        window.dispatchEvent(new CustomEvent('awd:open-pro-checkout'));
+                                    }}
+                                    className="mt-1.5 font-semibold text-king-forest underline underline-offset-4 hover:text-king-forest/80"
+                                >
+                                    {t.rechargeProTipCta}
+                                </button>
+                            </div>
+                        )}
 
                         <div className="flex flex-wrap gap-2 justify-center">
                             {PRESET_UNITS.map(preset => (

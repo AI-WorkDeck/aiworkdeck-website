@@ -211,7 +211,8 @@
       "teaser": {
         "line": "月額149元でAI利用枠、クリップボード、ステージング、3GBのクラウドストレージをご利用いただけます。",
         "primary": "Pro特典を見る",
-        "secondary": "無料で始める"
+        "secondary": "無料で始める",
+        "introOffer": "期間限定：最初の {months} ヶ月は {intro}/月（通常 {standard}/月）、4ヶ月目から通常料金・自動更新なし。"
       },
       "internal": {
         "badge": "おすすめ",
@@ -1406,7 +1407,8 @@
       "details": "プランと特典を表示",
       "unavailable": "Personal Pro の購入はまだ国際サイトでは利用できません。アカウントは中国本土サイトとは別です。",
       "bqtSource": "Baoqingtian 会員による提供",
-      "bqtRenewHint": "個人 Pro の特典は Baoqingtian 会員に含まれます。Baoqingtian アプリで会員を更新してください。"
+      "bqtRenewHint": "個人 Pro の特典は Baoqingtian 会員に含まれます。Baoqingtian アプリで会員を更新してください。",
+      "introEligible": "初回特典を利用可能（残り {remaining} / {total} ヶ月）"
     },
     "rechargeOrderDesc": "ウォレットへのチャージ",
     "quotaSyncFailed": "クォータの同期が未完了です。しばらくしてから更新してください。",
@@ -1459,7 +1461,9 @@
       "proRights": "会員期間中は個人 Pro の特典（3GB クラウド容量）が利用できます。",
       "priorityHint": "DeepSeek モデルの利用は包晴天ポイントから優先して差し引かれ、ポイントが不足すると自動的にアカウント残高を使います。その他のモデルとサービスはアカウント残高を使います。",
       "fetchedAt": "{time} 更新"
-    }
+    },
+    "rechargeProTip": "ヒント：Personal Pro は今だけ初月 {intro}（通常 {monthly}/月）で、30日 {monthlyCredits} Credits と 3GB クラウドが付きます。",
+    "rechargeProTipCta": "¥9.9 で Personal Pro を開始 →"
   },
   "purchase": {
     "buy": "購入",
@@ -2069,8 +2073,14 @@
         "successDownload": "プロジェクトに戻る / ダウンロード",
         "successPending": "支払いを確認中…",
         "successUnknown": "支払い結果はまだありません。請求が発生している場合は、まもなくアカウントページをご確認ください。",
-        "bqtRenewHint": "個人 Pro の特典は Baoqingtian 会員に含まれます。Baoqingtian アプリで会員を更新してください。"
-      }
+        "bqtRenewHint": "個人 Pro の特典は Baoqingtian 会員に含まれます。Baoqingtian アプリで会員を更新してください。",
+        "introSummary": "初回 {months} ヶ月は月額 {intro}（通常 {standard}/月）・都度払いで自動更新はありません。",
+        "valueSummary": "30日ごとに {monthlyCredits} Credits（週上限 {weeklyCredits}）+ 3GB クラウド + 無制限クリップボード"
+      },
+      "introBadge": "初回3ヶ月特典",
+      "introNote": "最初の {months} ヶ月は {intro}/月（4ヶ月目から {standard}/月・自動更新なし）",
+      "intlNote": "現在 Personal Pro の購入は中国本土（CNY）サイトで提供中です。こちらでは従量課金チャージをご利用いただけます。",
+      "ctaIntro": "{price} で Pro を開始"
     },
     "team": {
       "title": "専用導入",
@@ -2130,6 +2140,10 @@
       "storage": {
         "q": "中継ストレージとクラウドストレージの違いは?",
         "a": "200MBは一時的な占有容量であり、月間トラフィックではありません。受取後に解放されます。未受取のアイテムは30日後に失効します。Proには別途、永続ストレージ3GBが含まれます。デスクトップ上のファイルには、そのデスクトップがオンラインである必要があります。期限切れ後も既存のクラウドファイルはダウンロードまたは削除できますが、新規アップロードはブロックされます。"
+      },
+      "intro": {
+        "q": "最初の {months} ヶ月 {intro}/月の特典はどのように適用されますか？自動更新されますか？",
+        "a": "各アカウントにつき最初の {months} 回の月間購入（各30日）が {intro}/月となり、4回目以降は通常価格 {standard}/月になります。すべて都度払いで自動課金はありません。"
       }
     },
     "deploymentBanner": {
@@ -2137,7 +2151,8 @@
       "title": "自社サーバーとネットワークへのデプロイ?",
       "body": "チーム規模、モデルモード、オプションサービスに基づいて、サーバー、人員、初年度予算を見積もります。",
       "cta": "デプロイプランナーを開く"
-    }
+    },
+    "heroSubtitleIntro": "デスクトップ版はオープンソースで無料。Personal Pro は最初の {months} ヶ月 {intro}/月（通常 {standard}/月）で Credits、3GB クラウド、無制限クリップボードを利用でき、30日ごとの都度購入で自動課金はありません。"
   },
   "notFoundPage": {
     "code": "404",
@@ -2272,7 +2287,8 @@
         "videoAria": "AI WorkDeck 紹介映像",
         "videoLoading": "動画を読み込んでいます…",
         "videoError": "動画を再生できません。通信が遅いか、リンクの有効期限が切れている可能性があります。",
-        "videoRetry": "再試行"
+        "videoRetry": "再試行",
+        "introOffer": "初回特典：Personal Pro 最初の {months} ヶ月は月額 {intro}（通常 {standard}/月・自動更新なし） →"
       },
       "facts": {
         "license": "オープンソースライセンス",
@@ -2528,32 +2544,32 @@
       }
     }
   },
-    "adminSites": {
+  "adminSites": {
     "lastLoginAt": "最終ログイン",
     "lastLoginUnknown": "記録なし",
     "lastLoginHint": "ウェブサイトまたはクライアントへのログイン成功時刻。未記録の過去のログインは復元できません。",
     "bailianManaged": "中国版AIはBailianを使用します。キーと既定モデルはサーバー管理のため、ここでは読み取り専用です。残高はBailianコンソールで確認してください。",
-        "manage": "管理サイト",
-        "choose": "サイトを選択",
-        "cn": "中国サイト",
-        "intl": "国際サイト",
-        "notice": "管理中：{site} · {currency}。切り替えると選択したサイトのデータが表示され、未保存の変更は消去されます。",
-        "notConnected": "このサイトは未接続です。サーバー側の管理接続設定を完了してください。",
-        "unavailable": "このサイトに一時的に接続できません。後でもう一度試すか、サイトを切り替えてください。",
-        "networkError": "接続できません。ネットワークを確認して再試行してください。",
-        "retry": "再接続",
-        "loginHint": "このログイン入口の管理パスワードを入力してください。ログイン後、中国サイトと国際サイトを切り替えられます。",
-        "priceRange": "価格は 0.01～1999 {unit}にしてください。",
-        "giftRange": "額面は 0.01～10000 {unit}にしてください。",
-        "conversion": "AI クレジット換算：米ドル枠 = {currency}の金額 / 為替レート / 利益倍率。小数点以下 2 桁で切り捨てます。",
-        "productDescription": "デスクトップのローカル機能解除 SKU の価格（{unit}）。変更は即時反映され、金額が一致しなくなった未払い注文は拒否されます。",
-        "giftLabel": "額面（{unit}）",
-        "bqt": "包晴天",
-        "circle": "Circle 法律事務所",
-        "bqtNotice": "包晴天の弁護士ポイント連携は中国サイトのみで稼働します。このタブは常に中国サイトのデータを管理します。",
-        "circleNotice": "{site} の Circle 法律事務所を管理中です。事務所と紐付けはサイトごとに独立しています。",
-        "circleSite": "事務所のサイト"
-    },
+    "manage": "管理サイト",
+    "choose": "サイトを選択",
+    "cn": "中国サイト",
+    "intl": "国際サイト",
+    "notice": "管理中：{site} · {currency}。切り替えると選択したサイトのデータが表示され、未保存の変更は消去されます。",
+    "notConnected": "このサイトは未接続です。サーバー側の管理接続設定を完了してください。",
+    "unavailable": "このサイトに一時的に接続できません。後でもう一度試すか、サイトを切り替えてください。",
+    "networkError": "接続できません。ネットワークを確認して再試行してください。",
+    "retry": "再接続",
+    "loginHint": "このログイン入口の管理パスワードを入力してください。ログイン後、中国サイトと国際サイトを切り替えられます。",
+    "priceRange": "価格は 0.01～1999 {unit}にしてください。",
+    "giftRange": "額面は 0.01～10000 {unit}にしてください。",
+    "conversion": "AI クレジット換算：米ドル枠 = {currency}の金額 / 為替レート / 利益倍率。小数点以下 2 桁で切り捨てます。",
+    "productDescription": "デスクトップのローカル機能解除 SKU の価格（{unit}）。変更は即時反映され、金額が一致しなくなった未払い注文は拒否されます。",
+    "giftLabel": "額面（{unit}）",
+    "bqt": "包晴天",
+    "circle": "Circle 法律事務所",
+    "bqtNotice": "包晴天の弁護士ポイント連携は中国サイトのみで稼働します。このタブは常に中国サイトのデータを管理します。",
+    "circleNotice": "{site} の Circle 法律事務所を管理中です。事務所と紐付けはサイトごとに独立しています。",
+    "circleSite": "事務所のサイト"
+  },
   "mcpPage": {
     "title": "MCP",
     "setup": "デスクトップの設定 → MCP 接続で Streamable HTTP サービスまたはローカル stdio コマンドを追加します。HTTP は認証なし、Bearer、OAuth に対応します。認証を完了し、接続をテストしてから有効化します。",

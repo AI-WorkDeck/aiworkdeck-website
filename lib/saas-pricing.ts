@@ -8,7 +8,13 @@
  * 商业授权询价档表（内部使用 / OEM / 人数年费）仍在 `lib/pricing.ts`，
  * 不在本页首屏渲染。
  */
+export const PRO_INTRO_MONTHS = 3 as const;
+
 export const SAAS_PRICING = {
+    /** 个人 Pro 首 3 个月特惠展示价 */
+    proIntroMonthly: '¥9.9',
+    /** 个人 Pro 首 3 个月周期数 */
+    proIntroMonths: PRO_INTRO_MONTHS,
     /** 个人 Pro 月付展示价 */
     proMonthly: '¥149',
     /** 个人 Pro 年付展示价 */
@@ -31,6 +37,7 @@ export type SaasPricing = typeof SAAS_PRICING;
  * 必须与上面的展示价一致——scripts/verify-pro-subscription.mts 会断言两者对得上。
  */
 export const SAAS_PRICE_FEN = {
+    proIntroMonthly: 990,
     proMonthly: 14900,
     proYearly: 149000,
 } as const;

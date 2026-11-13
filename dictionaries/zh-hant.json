@@ -217,7 +217,8 @@
       "title": "個人 Pro 訂閱",
       "unavailable": "國際站暫未開放個人 Pro 訂閱購買。本站賬戶與中國大陸站獨立。",
       "bqtSource": "由包晴天會員提供",
-      "bqtRenewHint": "個人 Pro 權益隨包晴天會員提供，請在包晴天 App 內續費會員。"
+      "bqtRenewHint": "個人 Pro 權益隨包晴天會員提供，請在包晴天 App 內續費會員。",
+      "introEligible": "目前可享首 3 月特惠價（剩餘 {remaining} / {total} 個月）"
     },
     "subscriptionAllowanceEntryLabel": "訂閱內含額度",
     "teamAcceptBtn": "接受邀請",
@@ -366,7 +367,9 @@
       "proRights": "會員有效期內享有個人 Pro 權益（含 3GB 雲端空間）。",
       "priorityHint": "DeepSeek 模型的用量優先扣包晴天積分，積分不夠時自動改用帳戶餘額；其他模型和服務使用帳戶餘額。",
       "fetchedAt": "更新於 {time}"
-    }
+    },
+    "rechargeProTip": "小提示：目前個人 Pro 首月僅 {intro}（原價 {monthly}/月），即享每 30 天 {monthlyCredits} Credits、3GB 雲空間及不限量剪貼簿，比單純儲值更划算。",
+    "rechargeProTipCta": "改為 ¥9.9 開通個人 Pro →"
   },
   "articlesPage": {
     "eyebrow": "文章 · 公眾號",
@@ -796,7 +799,8 @@
       "teaser": {
         "line": "149 元/月，把 AI 額度、剪貼板、暫存區與 3GB 雲空間一起帶走。",
         "primary": "查看 Pro 訂閱權益",
-        "secondary": "免費開始使用"
+        "secondary": "免費開始使用",
+        "introOffer": "限時體驗價：前 {months} 個月 {intro}/月（原價 {standard}/月），第 4 個月起恢復正價，不自動扣款。"
       },
       "tiers": {
         "colFee": "年費",
@@ -1221,7 +1225,8 @@
         "videoAria": "AI WorkDeck 形象影片",
         "videoLoading": "正在載入影片…",
         "videoError": "影片暫時無法播放，可能是網路較慢或連結已過期。",
-        "videoRetry": "重試"
+        "videoRetry": "重試",
+        "introOffer": "新用戶專享：個人 Pro 首 {months} 個月 {intro}/月（原價 {standard}/月，不自動扣款） →"
       },
       "facts": {
         "license": "開源授權",
@@ -1590,7 +1595,9 @@
         "successUnknown": "暫未查到支付結果，如已扣款請稍後在賬戶頁查看。",
         "terms": "一次性購買，不會自動扣款；退款與發票以協議為準。",
         "timeout": "支付確認超時，如已扣款請稍後在賬戶頁查看",
-        "bqtRenewHint": "個人 Pro 權益隨包晴天會員提供，請在包晴天 App 內續費會員。"
+        "bqtRenewHint": "個人 Pro 權益隨包晴天會員提供，請在包晴天 App 內續費會員。",
+        "introSummary": "體驗價限前 {months} 個月每月 {intro}（原價 {standard}/月），第 4 個月起恢復正價，不自動扣款。",
+        "valueSummary": "含 {monthlyCredits} Credits / 30 天（每週可用 {weeklyCredits}）+ 3GB 雲端備份 + 不限量剪貼簿與暫存區"
       },
       "ctaPrimary": "先試用，再訂閱",
       "ctaSecondary": "開通個人 Pro",
@@ -1602,7 +1609,11 @@
       "perk4": "週期用量、剩餘額度與重置時間清楚可查",
       "price": "{monthly} / 月",
       "title": "個人 Pro",
-      "trial": "一次購買，享用 30 天；不自動扣款。"
+      "trial": "一次購買，享用 30 天；不自動扣款。",
+      "introBadge": "首 3 月 ¥9.9 / 月",
+      "introNote": "前 {months} 個月僅 {intro}/月（第 4 個月起恢復 {standard}/月，一次性購買不自動扣款）",
+      "intlNote": "國際站暫不直接販售個人 Pro；中國大陸人民幣站可享首 3 月 ¥9.9/月體驗價。",
+      "ctaIntro": "立即 {price} 開通 Pro"
     },
     "saasFaq": {
       "agpl": {
@@ -1633,6 +1644,10 @@
       "trial": {
         "a": "新用戶試用為 14 天或 80 次 AI 調用，以先到者為準。進度在應用內可見；用盡或到期後可升級個人 Pro，或繼續使用不依賴雲 AI 的本地能力（以產品實際為準）。「1 次」= 一次用戶發起的 AI 回合且返回了可展示的助手結果（流式整段算 1 次）；失敗未出結果、純本地操作不計。細則以購買/試用協議與應用內說明為準。",
         "q": "試用規則是什麼？"
+      },
+      "intro": {
+        "q": "首 {months} 個月 {intro}/月體驗價怎麼算？到期會自動扣款嗎？",
+        "a": "每個帳號前 {months} 次按月購買個人 Pro 均享 {intro}/月體驗價（每次 30 天），第 4 次起恢復正價 {standard}/月。微信掃碼為一次性付款，到期前不會自動扣款。"
       }
     },
     "subscriptionCrossLinkLabel": "三檔方案：按需使用 / 個人 Pro / 獨立部署",
@@ -1711,7 +1726,8 @@
       ],
       "title": "既然是開源項目，為什麼還要收費？",
       "transparencyLine": "每半年在 GitHub 與官網公佈一次賬目與使用情況"
-    }
+    },
+    "heroSubtitleIntro": "桌面軟體開源免費、檔案在本機。個人 Pro 前 {months} 個月享 {intro}/月體驗價（原價 {standard}/月），含週期 Credits、3GB 雲空間與不限量剪貼簿，一次買 30 天，不自動扣款。"
   },
   "purchase": {
     "amountLabel": "金額",
@@ -2528,32 +2544,32 @@
     "viewCaptureAria": "查看{label}原始截圖",
     "visitMarketplace": "去 Marketplace 看看"
   },
-    "adminSites": {
+  "adminSites": {
     "lastLoginAt": "最後登入時間",
     "lastLoginUnknown": "暫無紀錄",
     "lastLoginHint": "記錄官網或用戶端成功登入的時間；歷史未記錄的登入無法還原。",
     "bailianManaged": "國內平台使用百煉。金鑰與預設模型由伺服器設定，此處唯讀；餘額請到百煉控制台查看。",
-        "manage": "管理網站",
-        "choose": "選擇網站",
-        "cn": "中國大陸站",
-        "intl": "國際站",
-        "notice": "目前管理：{site} · {currency}。切換後顯示所選網站的資料，未儲存的修改會清空。",
-        "notConnected": "此網站尚未連線，請完成伺服器端後台連線設定。",
-        "unavailable": "此網站暫時無法連線，請稍後重試或切換網站。",
-        "networkError": "此網站暫時無法連線，請檢查網路後重試。",
-        "retry": "重試連線",
-        "loginHint": "輸入目前登入入口的管理密碼，登入後可切換中國大陸站與國際站。",
-        "priceRange": "價格須介於 0.01 至 1999 {unit}之間",
-        "giftRange": "面額須介於 0.01 至 10000 {unit}之間",
-        "conversion": "AI 額度換算公式：美元額度 = {currency}金額 / 匯率 / 毛利乘數，小數點後保留 2 位並向下取整。",
-        "productDescription": "桌面端本機功能解鎖 SKU 的售價（{unit}）。改價立即生效，已建立未付款的訂單會因金額不符而遭拒。",
-        "giftLabel": "面額（{unit}）",
-        "bqt": "包晴天",
-        "circle": "Circle 律所",
-        "bqtNotice": "包晴天律師積分通道只在國內站運行，此處始終管理國內站資料。",
-        "circleNotice": "目前管理 {site} 的 Circle 律所。兩站的律所與綁定各自獨立。",
-        "circleSite": "律所所在站點"
-    },
+    "manage": "管理網站",
+    "choose": "選擇網站",
+    "cn": "中國大陸站",
+    "intl": "國際站",
+    "notice": "目前管理：{site} · {currency}。切換後顯示所選網站的資料，未儲存的修改會清空。",
+    "notConnected": "此網站尚未連線，請完成伺服器端後台連線設定。",
+    "unavailable": "此網站暫時無法連線，請稍後重試或切換網站。",
+    "networkError": "此網站暫時無法連線，請檢查網路後重試。",
+    "retry": "重試連線",
+    "loginHint": "輸入目前登入入口的管理密碼，登入後可切換中國大陸站與國際站。",
+    "priceRange": "價格須介於 0.01 至 1999 {unit}之間",
+    "giftRange": "面額須介於 0.01 至 10000 {unit}之間",
+    "conversion": "AI 額度換算公式：美元額度 = {currency}金額 / 匯率 / 毛利乘數，小數點後保留 2 位並向下取整。",
+    "productDescription": "桌面端本機功能解鎖 SKU 的售價（{unit}）。改價立即生效，已建立未付款的訂單會因金額不符而遭拒。",
+    "giftLabel": "面額（{unit}）",
+    "bqt": "包晴天",
+    "circle": "Circle 律所",
+    "bqtNotice": "包晴天律師積分通道只在國內站運行，此處始終管理國內站資料。",
+    "circleNotice": "目前管理 {site} 的 Circle 律所。兩站的律所與綁定各自獨立。",
+    "circleSite": "律所所在站點"
+  },
   "mcpPage": {
     "title": "MCP",
     "setup": "在桌面端「設定 → MCP 連線」新增 Streamable HTTP 服務或本機 stdio 命令。HTTP 可選無需驗證、Bearer 或 OAuth；完成授權、測試連線後再啟用。",

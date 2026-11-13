@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3';
-import { SAAS_PRICE_FEN } from './saas-pricing';
+import { PRO_INTRO_MONTHS, SAAS_PRICE_FEN } from './saas-pricing';
 import type { Order } from './orders';
 import { provisionSubscriptionPeriods } from './subscription';
 
@@ -25,7 +25,7 @@ import { provisionSubscriptionPeriods } from './subscription';
 export type ProPlan = 'monthly' | 'yearly';
 
 export interface ProProduct {
-  skuId: 'pro_monthly' | 'pro_yearly';
+  skuId: 'pro_monthly_intro' | 'pro_monthly' | 'pro_yearly';
   plan: ProPlan;
   name: string;
   nameEn: string;
@@ -39,6 +39,14 @@ export const SUBSCRIPTION_PAID_EVENT = 'subscription_paid';
 export const FIRST_PAYMENT_EVENT = 'first_payment';
 
 export const PRO_PRODUCTS: readonly ProProduct[] = [
+  {
+    skuId: 'pro_monthly_intro',
+    plan: 'monthly',
+    name: 'AI WorkDeck 个人 Pro（首 3 个月特惠）',
+    nameEn: 'AI WorkDeck Pro (first 3 months intro)',
+    priceCents: SAAS_PRICE_FEN.proIntroMonthly,
+    days: 30,
+  },
   {
     skuId: 'pro_monthly',
     plan: 'monthly',
@@ -56,6 +64,50 @@ export const PRO_PRODUCTS: readonly ProProduct[] = [
     days: 365,
   },
 ];
+
+export interface ProIntroQuote {
+  eligible: boolean;
+  priceCents: number;
+  standardPriceCents: number;
+  totalMonths: number;
+  usedMonths: number;
+  remainingMonths: number;
+  recommendedSkuId: 'pro_monthly_intro' | 'pro_monthly';
+  recommendedAmountCents: number;
+}
+
+/** Per-account introductory offer quote: first 3 Pro monthly cycles at ¥9.9/mo, then ¥149/mo. */
+export function getProIntroQuote(db: Database.Database, userId: string): ProIntroQuote {
+  const wechatRow = db
+    .prepare(
+      "SELECT COALESCE(SUM(CASE WHEN plan = 'yearly' THEN 12 ELSE 1 END), 0) AS n FROM pro_payment WHERE userId = ?"
+    )
+    .get(userId) as { n: number };
+  let appStoreCycles = 0;
+  const hasAppStoreTable = db
+    .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'appstore_subscription_transaction'")
+    .get();
+  if (hasAppStoreTable) {
+    const appleRow = db
+      .prepare('SELECT COALESCE(COUNT(*), 0) AS n FROM appstore_subscription_transaction WHERE userId = ? AND revokedAt IS NULL')
+      .get(userId) as { n: number };
+    appStoreCycles = Number(appleRow?.n ?? 0);
+  }
+  const paidCycles = Number(wechatRow?.n ?? 0) + appStoreCycles;
+  const usedMonths = Math.min(PRO_INTRO_MONTHS, Math.max(0, paidCycles));
+  const remainingMonths = Math.max(0, PRO_INTRO_MONTHS - usedMonths);
+  const eligible = remainingMonths > 0;
+  return {
+    eligible,
+    priceCents: SAAS_PRICE_FEN.proIntroMonthly,
+    standardPriceCents: SAAS_PRICE_FEN.proMonthly,
+    totalMonths: PRO_INTRO_MONTHS,
+    usedMonths,
+    remainingMonths,
+    recommendedSkuId: eligible ? 'pro_monthly_intro' : 'pro_monthly',
+    recommendedAmountCents: eligible ? SAAS_PRICE_FEN.proIntroMonthly : SAAS_PRICE_FEN.proMonthly,
+  };
+}
 
 export function isProSku(skuId: unknown): skuId is ProProduct['skuId'] {
   return typeof skuId === 'string' && PRO_PRODUCTS.some((p) => p.skuId === skuId);

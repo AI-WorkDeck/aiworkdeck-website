@@ -101,6 +101,20 @@ export function WalletSection({ lang, dict }: { lang: Locale; dict: any }) {
         load(page);
     }, [load, page]);
 
+    // Support ?recharge=1 deep links from client/CTA banners without keeping the flag in URL history.
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('recharge') !== '1') return;
+        params.delete('recharge');
+        const qs = params.toString();
+        window.history.replaceState(
+            null,
+            '',
+            window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash
+        );
+        setRechargeOpen(true);
+    }, []);
+
     // 兄弟卡片扣款后广播此事件，钱包余额与流水随之刷新
     useEffect(() => {
         const onChanged = () => {
@@ -291,10 +305,10 @@ export function WalletSection({ lang, dict }: { lang: Locale; dict: any }) {
             {data?.subscription?.active && data.subscription.source !== 'bqt' && (
                 <section className="mb-6 rounded-xl border border-king-forest/20 bg-king-forest/5 p-5" aria-label={t.proAllowanceTitle}>
                     <h3 className="font-semibold text-king-forest">{t.proAllowanceTitle}</h3>
-                    <p className="mt-2 text-sm">{t.proPeriodUsedLabel}: {credits(data.subscription.monthlyUsedCents)} / {credits(data.subscription.monthlyLimitCents)} Credits</p>
-                    <p className="mt-1 text-sm">{t.proWeekUsedLabel}: {credits(data.subscription.weeklyUsedCents)} / {credits(data.subscription.weeklyLimitCents)} Credits</p>
-                    <p className="mt-1 text-sm">{t.proAvailableNowLabel}: {credits(data.subscription.availableCents)} Credits</p>
-                    <p className="mt-2 text-xs text-neutral-gray-medium">{t.proNextWeeklyResetLabel}: {data.subscription.weeklyEnd ? new Date(data.subscription.weeklyEnd).toLocaleString(dateLocale) : '—'} · {t.proPeriodEndsLabel}: {data.subscription.periodEnd ? new Date(data.subscription.periodEnd).toLocaleString(dateLocale) : '—'}</p>
+                    <p className="mt-2 text-sm">{t.proPeriodUsedLabel.replace('{cap}', `${credits(data.subscription.monthlyLimitCents)} Credits`)}: {credits(data.subscription.monthlyUsedCents)} Credits</p>
+                    <p className="mt-1 text-sm">{t.proWeekUsedLabel.replace('{cap}', `${credits(data.subscription.weeklyLimitCents)} Credits`)}: {credits(data.subscription.weeklyUsedCents)} Credits</p>
+                    <p className="mt-1 text-sm">{t.proAvailableNowLabel.replace('{avail}', `${credits(data.subscription.availableCents)} Credits`)}</p>
+                    <p className="mt-2 text-xs text-neutral-gray-medium">{t.proNextWeeklyResetLabel.replace('{date}', data.subscription.weeklyEnd ? new Date(data.subscription.weeklyEnd).toLocaleString(dateLocale) : '—')} · {t.proPeriodEndsLabel.replace('{date}', data.subscription.periodEnd ? new Date(data.subscription.periodEnd).toLocaleString(dateLocale) : '—')}</p>
                     <p className="mt-2 text-xs text-neutral-gray-medium">{t.proAllowanceNote}</p>
 
                 </section>

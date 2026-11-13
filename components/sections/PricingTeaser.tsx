@@ -3,6 +3,8 @@ import { ArrowRight } from 'lucide-react';
 import { Locale } from '@/i18n-config';
 import { Reveal } from '@/components/motion/Reveal';
 import { signupGrantDisplay, signupGrantLine } from '@/lib/signup-grant-display';
+import { PRO_INTRO_MONTHS, SAAS_PRICING } from '@/lib/saas-pricing';
+import { siteConfig } from '@/lib/site-config';
 
 /**
  * 首页定价摘要（dev-board#509）。
@@ -14,6 +16,13 @@ export function PricingTeaser({ lang, dict }: { lang: Locale; dict: any }) {
     const p = dict.common.pricing;
     const grant = signupGrantDisplay(lang);
     const grantLine = grant ? signupGrantLine(grant, dict.common.grant) : null;
+    const isWxpay = siteConfig.paymentChannel === 'wxpay';
+    const introOfferLine = isWxpay && p.teaser.introOffer
+        ? p.teaser.introOffer
+            .replace('{intro}', SAAS_PRICING.proIntroMonthly)
+            .replace('{standard}', SAAS_PRICING.proMonthly)
+            .replace('{months}', String(PRO_INTRO_MONTHS))
+        : null;
 
     return (
         <section id="pricing" className="scroll-mt-20 bg-white py-16">
@@ -29,7 +38,8 @@ export function PricingTeaser({ lang, dict }: { lang: Locale; dict: any }) {
                             {p.title}
                         </h2>
                         <p className="mt-4 text-base text-neutral-gray-medium md:text-lg">{p.teaser.line}</p>
-                        {grantLine && <p className="mt-2 text-sm font-medium text-king-forest">{grantLine}</p>}
+                        {introOfferLine && <p className="mt-2 text-sm font-semibold text-king-forest">{introOfferLine}</p>}
+                        {grantLine && <p className="mt-1.5 text-sm font-medium text-king-forest">{grantLine}</p>}
 
                         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                             <Link href={`/${lang}/pricing`}>
