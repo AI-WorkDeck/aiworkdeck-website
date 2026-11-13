@@ -1812,6 +1812,15 @@ export const MIGRATIONS: Array<{ version: number; up: (d: Database.Database) => 
       if (owner) d.prepare('UPDATE openrouter_keys SET mgmtAccount = ? WHERE mgmtAccount IS NULL').run(owner);
     },
   },
+  {
+    // Google Play 内购交易号部分唯一索引（与 idx_orders_appstore_txn 同口径，防并发双 confirm 同一订单/购买重用）
+    version: 51,
+    up(d) {
+      d.exec(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_googleplay_txn ON orders (transactionId) WHERE transactionId IS NOT NULL AND channel = 'googleplay'"
+      );
+    },
+  },
 ];
 
 function migrate(d: Database.Database) {

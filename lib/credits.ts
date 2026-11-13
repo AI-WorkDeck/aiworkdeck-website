@@ -546,9 +546,10 @@ export function expireCredits(
  * 分辨这件事只能落在数据上——写一条「IAP 不退现」的条款挡不住 `getRefundableCents`。
  */
 export const APPSTORE_SOURCE_KIND = 'appstore';
+export const GOOGLEPLAY_SOURCE_KIND = 'googleplay';
 
 /**
- * 某用户可退现的部分（topup 批次，**扣掉 Apple 内购那些**）。注销退款用。
+ * 某用户可退现的部分（topup 批次，**扣掉 Apple / Google Play 商店内购那些**）。注销退款用。
  *
  * 不复用 `getBalanceBreakdown().topupCents`：那是**余额**口径（内购买来的
  * Credits 当然能花，要计进余额），这里是**可退现**口径，两者从这一版起分家。
@@ -562,9 +563,9 @@ export function getRefundableCents(userId: string, nowIso = new Date().toISOStri
                 AND pool = 'topup'
                 AND remainingCents > 0
                 AND (expiresAt IS NULL OR expiresAt > ?)
-                AND sourceKind <> ?`
+                AND sourceKind NOT IN (?, ?)`
         )
-        .get(userId, nowIso, APPSTORE_SOURCE_KIND) as { total: number };
+        .get(userId, nowIso, APPSTORE_SOURCE_KIND, GOOGLEPLAY_SOURCE_KIND) as { total: number };
     return row.total;
 }
 

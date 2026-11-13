@@ -1,5 +1,6 @@
 import { siteConfig } from '../site-config';
 import { appstoreAdapter } from './appstore-adapter';
+import { googleplayAdapter } from './googleplay-adapter';
 import { stripeAdapter } from './stripe-adapter';
 import { PaymentChannelAdapter, PaymentChannelId } from './types';
 import { wxpayAdapter } from './wxpay-adapter';
@@ -20,6 +21,19 @@ export {
   setAppleRootCertificates,
 } from './appstore-adapter';
 export { APPSTORE_PRODUCTS, APPSTORE_CURRENCY, appstoreFaceValue } from './appstore-catalog';
+export {
+  googleplayAdapter,
+  googleplayPackageName,
+  googleplayTransactionIdFrom,
+  verifyGooglePlayProductPurchase,
+  consumeGooglePlayProductPurchase,
+  listGooglePlayVoidedPurchases,
+  confirmGooglePlayPurchase,
+  GooglePlayVerificationError,
+  setGooglePlayFetchForTests,
+  resetGooglePlayCacheForTests,
+} from './googleplay-adapter';
+export { GOOGLEPLAY_CATALOG, googleplayFaceValue } from './googleplay-catalog';
 export { settleFromChannel, describeSettleFailure } from './settle';
 export type { SettleResult, SettleFailureReason } from './settle';
 
@@ -32,6 +46,7 @@ const ADAPTERS: Record<PaymentChannelId, PaymentChannelAdapter> = {
   // 内购同理不参与 getPaymentAdapter()：它不是任何站点的默认通道，
   // 但必须在表里——退款通知与订单回查按订单上记的 channel 取 adapter。
   appstore: appstoreAdapter,
+  googleplay: googleplayAdapter,
   // APP 支付同理：只由手机端内部建单口显式选用，回调/回查按订单上的 channel 取。
   'wxpay-app': wxpayAppAdapter,
 };
