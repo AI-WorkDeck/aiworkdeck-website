@@ -1621,10 +1621,13 @@
       "text": "Sie können keine Software installieren (etwa auf einem gesperrten Arbeitsrechner)? Nutzen Sie die Webversion im Browser: Der erste Start lädt etwa 100 MB, für die KI-Funktionen ist eine Anmeldung nötig.",
       "link": "Webversion öffnen →"
     },
-    "androidDownload": {
-      "title": "Android-App für China",
-      "body": "Für Android 10 oder neuer. Mit Ihrem Konto der Region China Fotos aufnehmen, Audio aufzeichnen und Projektdateien öffnen.",
-      "button": "Android-APK herunterladen",
+    "mobileApp": {
+      "title": "Mobile App",
+      "body": "Nutzbar auf iPhone, iPad und Android: Fotos aufnehmen, Audio aufzeichnen und auf Projektdateien zugreifen. Melden Sie sich mit dem Konto derselben Region wie auf Ihrem Computer an.",
+      "scan": "Mit dem Smartphone scannen, um automatisch den passenden App Store zu öffnen.",
+      "wechatHint": "Tippen Sie oben rechts auf das Menü ··· und wählen Sie „Im Browser öffnen“, dann weiter zum App Store.",
+      "tencentMyApp": "Tencent MyApp",
+      "apkLink": "Android-APK herunterladen",
       "details": "Version {version} · {size} MB",
       "checksum": "Dateiprüfsumme anzeigen"
     },

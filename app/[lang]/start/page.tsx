@@ -15,7 +15,7 @@ import { wxStartEnabled } from '@/lib/wx-mini';
 import { PageHero } from '@/components/layout/PageHero';
 import { StartFlow } from './StartFlow';
 import { MobileStart } from './MobileStart';
-import { CN_ANDROID_RELEASE } from '@/lib/mobile-release';
+import { MobileAppSection } from './MobileAppSection';
 import { pageAlternates } from '@/lib/page-metadata';
 
 /** 来源统计（dev-board#304）：作者主页 CTA 带 ref=u-<username>，落地记一笔评估转化 */
@@ -80,19 +80,8 @@ export default async function StartPage({
     // 移动端注册流程需要登录态与验证码/发码通道配置，服务端算好传给 MobileStart
     const user = await getSessionUser();
 
-    // 手机 UA 先看到安卓安装卡；桌面 UA 把它放在桌面下载流程之后
-    const androidCard = SITE_ID === 'cn' && (
-                    <section className="mb-5 rounded-xl border border-neutral-gray-light bg-white p-5">
-                        <h2 className="text-lg font-semibold text-neutral-dark-bg">{t.androidDownload.title}</h2>
-                        <p className="mt-2 text-sm text-neutral-gray-dark">{t.androidDownload.body}</p>
-                        <p className="mt-2 text-xs text-neutral-gray-medium">{t.androidDownload.details.replace('{version}', CN_ANDROID_RELEASE.version).replace('{size}', (CN_ANDROID_RELEASE.bytes / 1_000_000).toFixed(1))}</p>
-                        <a href="/api/download?target=android-cn" className="edition-button mt-4">{t.androidDownload.button}</a>
-                        <details className="mt-3 text-xs text-neutral-gray-medium">
-                            <summary className="cursor-pointer">{t.androidDownload.checksum}</summary>
-                            <code dir="ltr" className="mt-2 block break-all">SHA-256: {CN_ANDROID_RELEASE.sha256}</code>
-                        </details>
-                    </section>
-                );
+    // 手机 UA 先看到手机 App 区块；桌面 UA 把它放在桌面下载流程之后
+    const mobileApp = <MobileAppSection t={t.mobileApp} ua={ua} showQr={!isMobile} />;
 
     return (
         <div className="min-h-screen bg-neutral-gray-pale pb-24">
@@ -103,7 +92,7 @@ export default async function StartPage({
                 {/* 先确认该用哪个站，再走两步——精简为单行状态条，把首屏焦点彻底让给下载主按钮 */}
                 <SiteChoice t={t.siteChoice} currentHost={currentHost} setupPath={setupPath} />
 
-                {isMobile && androidCard}
+                {isMobile && mobileApp}
 
                 {isMobile ? (
                     <MobileStart
@@ -127,7 +116,7 @@ export default async function StartPage({
                     />
                 )}
 
-                {!isMobile && androidCard}
+                {!isMobile && mobileApp}
 
                 {/* 网页版：只在下载页作为「装不了软件」时的次要选项，并如实标出代价 */}
                 {!isMobile && (

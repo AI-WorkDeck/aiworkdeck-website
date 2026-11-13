@@ -1621,10 +1621,13 @@
       "text": "Kun je geen software installeren (bijvoorbeeld op een vergrendelde werkcomputer)? Gebruik dan de webversie in je browser: de eerste keer laden is ongeveer 100 MB, en voor de AI-functies moet je inloggen.",
       "link": "Webversie openen →"
     },
-    "androidDownload": {
-      "title": "Android-app voor China",
-      "body": "Voor Android 10 of hoger. Verbind uw account voor de regio China om foto’s te maken, audio op te nemen en projectbestanden te openen.",
-      "button": "Android-APK downloaden",
+    "mobileApp": {
+      "title": "Mobiele app",
+      "body": "Gebruik de app op iPhone, iPad of Android: maak foto's, neem audio op en open projectbestanden. Log in met het account van dezelfde regio als je computer.",
+      "scan": "Scan met je telefoon om automatisch de juiste app store te openen.",
+      "wechatHint": "Tik rechtsboven op het menu ··· en kies \"Openen in browser\", ga daarna verder naar de app store.",
+      "tencentMyApp": "Tencent MyApp",
+      "apkLink": "Android-APK downloaden",
       "details": "Versie {version} · {size} MB",
       "checksum": "Bestandschecksum bekijken"
     },

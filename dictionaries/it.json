@@ -1621,10 +1621,13 @@
       "text": "Non puoi installare software (ad esempio su un computer di lavoro bloccato)? Usa la versione web nel browser: il primo caricamento è di circa 100 MB e le funzioni AI richiedono l'accesso.",
       "link": "Apri la versione web →"
     },
-    "androidDownload": {
-      "title": "App Android per la Cina",
-      "body": "Per Android 10 o versioni successive. Collega il tuo account della regione Cina per foto, registrazioni audio e file di progetto.",
-      "button": "Scarica APK Android",
+    "mobileApp": {
+      "title": "App mobile",
+      "body": "Usala su iPhone, iPad o Android: scatta foto, registra audio e accedi ai file del progetto. Accedi con l'account della stessa regione del tuo computer.",
+      "scan": "Scansiona con il telefono per aprire automaticamente lo store giusto.",
+      "wechatHint": "Tocca il menu ··· in alto a destra, scegli \"Apri nel browser\" e prosegui verso lo store.",
+      "tencentMyApp": "Tencent MyApp",
+      "apkLink": "Scarica APK Android",
       "details": "Versione {version} · {size} MB",
       "checksum": "Mostra checksum del file"
     },

@@ -1623,10 +1623,13 @@
       "text": "装不了软件（比如单位电脑有限制）？可以先用浏览器里的网页版：首次打开约需下载 100 MB，AI 功能需登录。",
       "link": "打开网页版 →"
     },
-    "androidDownload": {
-      "title": "中国区 Android 应用",
-      "body": "适用于 Android 10 及以上，连接中国区账户，拍照、录音并访问项目文件。",
-      "button": "下载 Android 安装包",
+    "mobileApp": {
+      "title": "手机 App",
+      "body": "在 iPhone、iPad 或 Android 手机上使用：拍照、录音，并访问项目文件。请用与电脑相同区域的账户登录。",
+      "scan": "用手机扫码，自动打开对应的应用商店",
+      "wechatHint": "请点右上角「···」，选择「在浏览器打开」，再前往应用商店下载。",
+      "tencentMyApp": "应用宝",
+      "apkLink": "直接下载安装包（APK）",
       "details": "版本 {version} · {size} MB",
       "checksum": "查看文件校验值"
     },
