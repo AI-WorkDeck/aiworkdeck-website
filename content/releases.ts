@@ -31,7 +31,7 @@ export type ReleaseNote = LegacyReleaseNote | {
 export const RELEASES: ReleaseNote[] = [
     {
         version: '0.85.0',
-        date: '2026-11-13',
+        date: '2026-11-14',
         headline: {
             zh: '带密码的文件也能直接改，PPT 和 Excel 明显更快，团队与客户协作更安全',
             en: 'Edit password-protected files directly, with much faster PowerPoint and Excel and safer team and client collaboration',
