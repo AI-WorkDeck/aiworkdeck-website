@@ -30,6 +30,36 @@ export type ReleaseNote = LegacyReleaseNote | {
 
 export const RELEASES: ReleaseNote[] = [
     {
+        version: '0.85.0',
+        date: '2026-11-14',
+        headline: {
+            zh: '带密码的文件也能直接改，PPT 和 Excel 明显更快，团队与客户协作更安全',
+            en: 'Edit password-protected files directly, with much faster PowerPoint and Excel and safer team and client collaboration',
+        },
+        items: [
+            {
+                zh: '带打开密码的 Word、Excel、PPT 现在可以直接打开、编辑和保存：保存后仍是加密文件，密码不会被保存，每次打开都要重新输入。旧格式（.doc / .xls / .ppt）以只读方式打开，要改时另存为同密码保护的新格式副本。',
+                en: 'Password-protected Word, Excel and PowerPoint files can now be opened, edited and saved directly. They stay encrypted after saving, and the password is never stored, so it is asked for each time. Old formats (.doc / .xls / .ppt) open read-only; to edit, save a copy in the new format protected with the same password.',
+            },
+            {
+                zh: 'PPT、Excel 更快也更稳：保存耗时降到原来的一半到三分之一，输入、翻页的响应快了数倍，大文稿不再每停一下就卡几秒。Excel 冷启动时先显示第一屏内容；文件树里按空格预览演示文稿改由编辑器同一引擎渲染，旧的 .ppt 也能看。修复了一个会丢改动的问题：PPT 第一次自动保存之后，AI 做的单步修改可能没有保存。',
+                en: 'PowerPoint and Excel are faster and steadier: saving takes a half to a third of the time it did, typing and paging respond several times faster, and large decks no longer freeze for seconds at every pause. On a cold start Excel shows the first screen straight away. Space-bar preview of presentations is rendered by the same engine as the editor, and old .ppt files can be previewed too. One data-loss bug is fixed: after the first autosave of a presentation, a single-step AI edit could go unsaved.',
+            },
+            {
+                zh: 'AI 更靠谱、更像同行：没做却说「已添加」「已冻结」会被发现并纠正，仍没做就如实写明本轮没有修改。回答不再用表情符号，先说结论，少用加粗和标题。直接用平常的话问（如「所里哪些案子还有应收账款没收回」），AI 能找到已安装插件的工具和内置工作流，不再说「没有这个工具」。',
+                en: 'A more dependable, more professional AI: claiming "added" or "frozen" without doing it is caught and corrected, and if nothing was done the answer says so plainly. Answers drop emoji, lead with the conclusion and use bold and headings sparingly. Ask in plain words (for example "which matters still have unpaid receivables") and the AI finds the tools of installed plugins and the built-in workflows, where it used to say no such tool exists.',
+            },
+            {
+                zh: '请客户进群时，由你决定对方能不能看之前的消息：默认只能看到入群之后的内容，要分享此前的讨论需在邀请时明确选择，附件和聊天记录导出按同一规则；在消息中心生成邀请码也要先选「成员」还是「客户」。默认规则在服务器上线后即生效；邀请时的选项需要把项目沟通插件更新到 0.2.9（已上架）。',
+                en: 'When you invite a client into a conversation, you decide whether they can read earlier messages. By default they see only what is sent after they join; sharing earlier discussion is an explicit choice at invite time, and attachments and chat exports follow the same rule. Creating an invite code in the message center also asks whether it is for a member or a client. The default applies as soon as the servers are updated; the option at invite time needs Project Messaging plugin 0.2.9, now available in the plugin marketplace.',
+            },
+            {
+                zh: '团队版与云端更安全、更稳：客户访问码输错只锁输错的那一方；客户看不到项目成员名单；本机收费台账只在桌面端可用；单个账号的 AI 对话、上传、识别有每分钟上限，超出时提示稍后再试；云端单个文件上限 200MB（团队案件库 2GB）。多人同时在一个群里时消息面板不再互相排队，没有新消息时的后台查询减少约 85%。新账号第一次登录偶尔提示「AI 额度尚未就绪」的问题已修复。',
+                en: 'Safer, steadier team and cloud use: a mistyped client access code locks out only the party who mistyped it; clients cannot see the project member list; the local fee ledger is available only in the desktop app; each account has per-minute limits on AI chats, uploads and OCR, with a "try again shortly" message when exceeded; cloud uploads are capped at 200 MB per file (2 GB for the team case library). Message panels no longer queue behind each other in busy groups, and background queries drop by about 85% when there are no new messages. The "AI quota is not ready yet" message some new accounts saw at first sign-in is fixed.',
+            },
+        ],
+    },
+    {
         version: '0.84.2',
         date: '2026-11-12',
         headline: {
