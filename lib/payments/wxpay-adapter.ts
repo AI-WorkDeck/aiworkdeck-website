@@ -65,6 +65,12 @@ export const wxpayAdapter: PaymentChannelAdapter = {
     const { resource } = JSON.parse(rawBody);
     const data = decryptNotify(resource.nonce, resource.associated_data, resource.ciphertext);
 
+    // 验签之外再核一遍收款方：回调必须是本商户号、且是我们自己的 AppID（Native 用公众号/小程序 AppID，
+    // APP 用开放平台移动应用 AppID）。验签已能挡伪造，这里挡的是配置串号这类事故。
+    const allowedAppIds = [process.env.WXPAY_APPID, process.env.WXPAY_APP_APPID].filter(Boolean);
+    if (data.mchid !== process.env.WXPAY_MCHID || !allowedAppIds.includes(data.appid)) {
+      throw new WebhookVerificationError('微信支付回调收款方不符');
+    }
     if (data.trade_state !== 'SUCCESS') return null;
 
     return {

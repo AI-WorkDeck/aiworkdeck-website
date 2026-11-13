@@ -55,6 +55,8 @@ process.env.WXPAY_PUBLIC_KEY_ID = PUB_KEY_ID;
 // 保证本脚本不发任何网络请求、也不会误用本机真实凭据。
 process.env.WXPAY_PRIVATE_KEY_PATH = path.join(tmpDir, 'no-such-apiclient_key.pem');
 process.env.WXPAY_APIV3_KEY = '0'.repeat(32);
+process.env.WXPAY_MCHID = '1900000000';
+process.env.WXPAY_APPID = 'wxnativetest00001';
 
 const { verifyWechatpayMessage, isTimestampFresh, verifySignatureWithKey, __setPlatformCertsForTest } =
   await import('@/lib/wxpay');
@@ -242,6 +244,8 @@ ok('公钥内容读一次后缓存');
   }
 
   const notifyBody = buildNotifyBody({
+    appid: 'wxnativetest00001',
+    mchid: '1900000000',
     out_trade_no: outTradeNo,
     transaction_id: 'wx-txn-pubkey-1',
     trade_state: 'SUCCESS',
@@ -271,6 +275,16 @@ ok('公钥内容读一次后缓存');
   assert.strictEqual(bad.status, 401, '伪造 serial 的回调必须 401');
   assert.strictEqual(getOrder(outTradeNo)!.status, 'pending', '验签没过就不能改订单状态');
   ok('notify 路由：验签失败 → 401 且订单状态不动（fail closed 语义保留）');
+
+  // 验签通过但收款方不是本商户：同样 401、订单不动（防配置串号）
+  const wrongPayee = buildNotifyBody({
+    appid: 'wxnativetest00001', mchid: '1999999999', out_trade_no: outTradeNo, transaction_id: 'wx-txn-other',
+    trade_state: 'SUCCESS', amount: { total: 100, payer_total: 100, currency: 'CNY' }, payer: { openid: 'o-fake-openid' },
+  });
+  const other = await postNotify(wrongPayee, PUB_KEY_ID);
+  assert.strictEqual(other.status, 401, '非本商户号的回调必须 401');
+  assert.strictEqual(getOrder(outTradeNo)!.status, 'pending', '收款方不符不能改订单状态');
+  ok('notify 路由：收款商户号不符 → 401 且订单状态不动');
 
   const good = await postNotify(notifyBody, PUB_KEY_ID);
   assert.strictEqual(good.status, 200, '合法回调应 200');

@@ -202,12 +202,14 @@ const CHANNEL_FEE_HINT: Record<RevenueChannel, (grossCents: number, orders: numb
 function collectRevenue(from: string, to: string): RevenueLine[] {
     const rows = getDb()
         .prepare(
-            `SELECT channel, currency, SUM(amountCents) AS gross, COUNT(*) AS orders
+            // APP 支付与 Native 同一个微信商户、同一费率，收入并入 wxpay 一行
+            `SELECT CASE WHEN channel = 'wxpay-app' THEN 'wxpay' ELSE channel END AS channel,
+                    currency, SUM(amountCents) AS gross, COUNT(*) AS orders
                FROM orders
               WHERE status = 'paid'
                 AND paidAt >= ? AND paidAt < ?
                 AND refundedAt IS NULL
-              GROUP BY channel, currency`
+              GROUP BY 1, currency`
         )
         .all(from, to) as Array<{
         channel: string;
