@@ -111,7 +111,7 @@ export const legalDoc: LegalDocument = hydrate({
         },
         {
           "type": "p",
-          "text": "Uma chave de conta (uma sequência iniciada por awdk_) conecta o aplicativo de desktop e os suplementos do Office à sua conta do site. Armazenamos apenas seu hash, jamais o texto puro, portanto uma chave perdida não pode ser recuperada — apenas substituída. Cada conta pode ter no máximo três chaves ativas."
+          "text": "Uma chave de conta (uma sequência iniciada por awdk_) conecta o aplicativo de desktop e os suplementos do Office à sua conta do site. Armazenamos apenas seu hash, jamais o texto puro, portanto uma chave perdida não pode ser recuperada — apenas substituída. Cada conta pode ter no máximo dez chaves ativas."
         },
         {
           "type": "callout",

@@ -87,7 +87,7 @@ export const legalDoc: LegalDocument = hydrate({
         },
         {
           "type": "p",
-          "text": "Kunci akaun (rentetan yang bermula dengan awdk_) menghubungkan aplikasi desktop dengan akaun laman web anda. Kami hanya menyimpan cincangannya (hash), bukan teks asalnya, jadi kunci yang hilang tidak boleh dipulihkan — hanya boleh diganti. Setiap akaun boleh mempunyai paling banyak tiga kunci aktif."
+          "text": "Kunci akaun (rentetan yang bermula dengan awdk_) menghubungkan aplikasi desktop dengan akaun laman web anda. Kami hanya menyimpan cincangannya (hash), bukan teks asalnya, jadi kunci yang hilang tidak boleh dipulihkan — hanya boleh diganti. Setiap akaun boleh mempunyai paling banyak sepuluh kunci aktif."
         },
         {
           "type": "callout",
