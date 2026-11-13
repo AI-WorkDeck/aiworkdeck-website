@@ -3,10 +3,12 @@ import { appstoreAdapter } from './appstore-adapter';
 import { stripeAdapter } from './stripe-adapter';
 import { PaymentChannelAdapter, PaymentChannelId } from './types';
 import { wxpayAdapter } from './wxpay-adapter';
+import { wxpayAppAdapter } from './wxpay-app-adapter';
 import { wxvpAdapter } from './wxvp-adapter';
 
 export * from './types';
 export { wxvpAdapter } from './wxvp-adapter';
+export { wxpayAppAdapter } from './wxpay-app-adapter';
 export {
   appstoreAdapter,
   appstoreEnv,
@@ -30,6 +32,8 @@ const ADAPTERS: Record<PaymentChannelId, PaymentChannelAdapter> = {
   // 内购同理不参与 getPaymentAdapter()：它不是任何站点的默认通道，
   // 但必须在表里——退款通知与订单回查按订单上记的 channel 取 adapter。
   appstore: appstoreAdapter,
+  // APP 支付同理：只由手机端内部建单口显式选用，回调/回查按订单上的 channel 取。
+  'wxpay-app': wxpayAppAdapter,
 };
 
 /**
