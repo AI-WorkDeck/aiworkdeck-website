@@ -87,7 +87,7 @@ export const legalDoc: LegalDocument = hydrate({
         },
         {
           "type": "p",
-          "text": "Una clave de cuenta (una cadena que comienza por awdk_) conecta la aplicación de escritorio con su cuenta del sitio web. Solo almacenamos su hash, nunca el texto en claro, por lo que una clave perdida no puede recuperarse, solo reemplazarse. Cada cuenta puede tener como máximo tres claves activas."
+          "text": "Una clave de cuenta (una cadena que comienza por awdk_) conecta la aplicación de escritorio con su cuenta del sitio web. Solo almacenamos su hash, nunca el texto en claro, por lo que una clave perdida no puede recuperarse, solo reemplazarse. Cada cuenta puede tener como máximo diez claves activas."
         },
         {
           "type": "callout",

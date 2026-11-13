@@ -86,7 +86,7 @@ export const termsIntlZh: LegalDocument = {
                 },
                 {
                     type: 'p',
-                    text: '账户 Key（形如 awdk_ 开头的字符串）用于桌面端与 Office 插件连接你的网站账户。我们仅保存其哈希值，不保存明文，因此明文遗失后无法找回，只能重新生成。每个账户同时最多保留 3 把有效 Key。',
+                    text: '账户 Key（形如 awdk_ 开头的字符串）用于桌面端与 Office 插件连接你的网站账户。我们仅保存其哈希值，不保存明文，因此明文遗失后无法找回，只能重新生成。每个账户同时最多保留 10 把有效 Key。',
                 },
                 {
                     type: 'callout',

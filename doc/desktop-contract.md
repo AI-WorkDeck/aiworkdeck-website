@@ -81,7 +81,7 @@ vhost 里必须给 `^~ /api/` 与 `^~ /update/` 加优先级更高的 location �
 | 匿名 | 无 | `POST /api/license/verify-key`、免费条目的 registry 端点 |
 
 - 账户 Key 在官网账户页「桌面连接」生成，明文只显示一次，官网只存 SHA-256 哈希。
-- 每账户同时最多 3 把有效 Key，可随时吊销；吊销后该 Key 立即失效（401 / `valid:false`）。
+- 每账户同时最多 10 把有效 Key（登录换 key 超出时吊销最旧的一枚），可随时吊销；吊销后该 Key 立即失效（401 / `valid:false`）。
 - Bearer 无效或缺失，账户类端点一律 **401** `{ "error": "unauthorized" }`。
 
 ## 跨域（浏览器环境插件，如 Office 任务窗格）

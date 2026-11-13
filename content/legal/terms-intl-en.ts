@@ -83,7 +83,7 @@ export const termsIntlEn: LegalDocument = {
                 },
                 {
                     type: 'p',
-                    text: 'An account key (a string beginning with awdk_) connects the desktop application and the Office add-ins to your website account. We store only its hash, never the plaintext, so a lost key cannot be recovered — only replaced. Each account may hold at most three active keys.',
+                    text: 'An account key (a string beginning with awdk_) connects the desktop application and the Office add-ins to your website account. We store only its hash, never the plaintext, so a lost key cannot be recovered — only replaced. Each account may hold at most ten active keys.',
                 },
                 {
                     type: 'callout',

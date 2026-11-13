@@ -111,7 +111,7 @@ export const legalDoc: LegalDocument = hydrate({
         },
         {
           "type": "p",
-          "text": "Une clé de compte (une chaîne commençant par awdk_) relie l'application de bureau et les compléments Office à votre compte sur le site. Nous n'en stockons que l'empreinte (hash), jamais le texte en clair ; une clé perdue ne peut donc pas être récupérée — seulement remplacée. Chaque compte peut détenir au maximum trois clés actives."
+          "text": "Une clé de compte (une chaîne commençant par awdk_) relie l'application de bureau et les compléments Office à votre compte sur le site. Nous n'en stockons que l'empreinte (hash), jamais le texte en clair ; une clé perdue ne peut donc pas être récupérée — seulement remplacée. Chaque compte peut détenir au maximum dix clés actives."
         },
         {
           "type": "callout",

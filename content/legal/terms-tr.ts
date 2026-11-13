@@ -87,7 +87,7 @@ export const legalDoc: LegalDocument = hydrate({
         },
         {
           "type": "p",
-          "text": "Bir hesap anahtarı (awdk_ ile başlayan bir dize), masaüstü uygulamasını web sitesi hesabınıza bağlar. Yalnızca karma (hash) değerini saklarız, düz metnini asla; bu nedenle kaybolan anahtar kurtarılamaz — yalnızca yenisiyle değiştirilebilir. Her hesap en fazla üç etkin anahtar tutabilir."
+          "text": "Bir hesap anahtarı (awdk_ ile başlayan bir dize), masaüstü uygulamasını web sitesi hesabınıza bağlar. Yalnızca karma (hash) değerini saklarız, düz metnini asla; bu nedenle kaybolan anahtar kurtarılamaz — yalnızca yenisiyle değiştirilebilir. Her hesap en fazla on etkin anahtar tutabilir."
         },
         {
           "type": "callout",

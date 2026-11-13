@@ -8,11 +8,11 @@ import { findUserById, isDeletedUser, recordUserLogin, User } from './users';
  *
  * - 格式：`awdk_` + 32 字节 base64url（总长 48 字符）
  * - 官网只存 SHA-256 哈希 + 前 12 字符前缀（用于列表展示），明文仅生成时返回一次
- * - 每用户同时有效（未吊销）的 key 上限 3 个
+ * - 每用户同时有效（未吊销）的 key 上限 10 个（MAX_ACTIVE_KEYS）
  */
 
 export const API_KEY_PREFIX = 'awdk_';
-export const MAX_ACTIVE_KEYS = 3;
+export const MAX_ACTIVE_KEYS = 10;
 const DISPLAY_PREFIX_LEN = 12;
 
 export interface ApiKeyInfo {
@@ -79,12 +79,12 @@ export function generateApiKey(
 /**
  * 登录换 key：与 {@link generateApiKey} 的唯一差别是**达到上限不失败，而是吊销最旧的一枚**。
  *
- * `MAX_ACTIVE_KEYS = 3` 这条上限是给「人工在账户页生成 Key」设计的，那时每枚 key 都是
+ * `MAX_ACTIVE_KEYS` 这条上限是给「人工在账户页生成 Key」设计的，那时每枚 key 都是
  * 用户有意识的一次操作，撞上限让他去清理是合理的。桌面端改成账户登录之后语义变了：
  * **每次登录都要消耗一个 key 槽**，再沿用「达到上限就失败」等于第 4 次登录直接登不进去——
  * 那是把上限做成了锁门闩，是这份 spec 从头到尾在防的那类事故。
  *
- * 因此这里改成最旧淘汰（登录满 3 台设备后，第 4 台把第 1 台挤下线）。
+ * 因此这里改成最旧淘汰（登录满 MAX_ACTIVE_KEYS 台设备后，下一台把最早登录的一台挤下线；上限取 10，覆盖桌面、手机、Word 插件、网页工作台等多端并存）。
  * 这是可解释的策略，也是「最多 N 台设备」类产品的通行做法；**登录永远不因 key 数量失败**。
  */
 export function issueLoginKey(

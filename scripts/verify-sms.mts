@@ -228,6 +228,7 @@ console.log('--- 登录换 Key ---');
 const { issueLoginKey, listApiKeys, MAX_ACTIVE_KEYS, API_KEY_PREFIX } = await import('@/lib/api-keys');
 const keyUser = users.findOrCreateByPhone('13700137000').user;
 
+assert.strictEqual(MAX_ACTIVE_KEYS, 10, '每账户有效 key 上限应为 10（桌面+手机+Word 插件+网页工作台多端并存）');
 const issued: string[] = [];
 // 连登 MAX+2 次：**一次都不许失败**。上限是给人工生成 Key 设计的，
 // 桌面端改成账户登录后每次登录都消耗一个槽，沿用「达到上限就失败」= 第 4 次登不进去。
@@ -246,7 +247,10 @@ ok(`最旧淘汰：有效 key 稳定在 ${MAX_ACTIVE_KEYS} 枚`);
 const { findUserByApiKey } = await import('@/lib/api-keys');
 assert.strictEqual(findUserByApiKey(issued[0]), undefined, '被淘汰的 key 必须失效');
 assert.strictEqual(findUserByApiKey(issued[issued.length - 1])?.id, keyUser.id, '最新 key 必须可用');
-ok('被挤掉的 key 真的失效，最新的可用');
+// 恰好最旧的 2 枚被挤掉，其余 10 枚（含第 3 枚）仍可用——不能误伤仍在使用的端
+assert.strictEqual(findUserByApiKey(issued[1]), undefined, '第 2 枚也应被淘汰');
+for (const k of issued.slice(2)) assert.strictEqual(findUserByApiKey(k)?.id, keyUser.id, '较新的 key 不应被误吊销');
+ok('被挤掉的 key 真的失效，最新的可用；恰好淘汰最旧的 2 枚');
 
 // 端点：手机号 + 验证码
 const exchange = await import('@/app/api/auth/exchange-key/route');
