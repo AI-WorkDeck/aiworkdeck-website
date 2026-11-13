@@ -34,7 +34,7 @@ Local data is partitioned per website account. The workbench asks `/api/auth/me`
 
 ## Source and notices
 
-The build emits `source.zip` from an explicit allowlist and `source-manifest.json` with the upstream editor provenance. It never includes `.env`, `.cache`, `node_modules`, generated output, test results or the private website backend. Keep the public source download and notices available with deployments. The base editor snapshot and explicitly recorded backports are verified against their distributed file hashes before building.
+The build emits `source.zip` from an explicit allowlist and `source-manifest.json` with the upstream editor provenance. It never includes `.env`, `.cache`, `node_modules`, generated output, test results or the private website backend. Keep the public source download and notices available with deployments. The editor snapshot (main repository master, see `UPSTREAM.md`) is verified against its distributed file hashes before building. `src/editor-capabilities.json` exports the editor actions the vendored executor accepts; regenerate it with `node scripts/editor-capabilities.mjs` after a vendor update (`npm test` checks it).
 
 The shell's semantic tokens are in `src/tokens.css`, based on the website's approved palette. This release provides a light shell with responsive side panels; it does not claim a separately verified dark theme or full mobile Office feature parity.
 
@@ -54,7 +54,7 @@ Native edits are read back and saved through the IndexedDB version check. Stop p
 
 `node tests/agent-editor-browser.mjs` checks native tools against real LOWA with local assets and no model. `node tests/agent-ui-browser.mjs` exercises the full UI using explicitly synthetic SSE and real editing/storage. `node tests/agent-live-browser.mjs` defaults to a dry-run plan; opt-in live acceptance requires a dedicated account, explicit per-run spend limit and authorization flags. It makes no automatic retries and never treats fixture tests as evidence of real AI success.
 
-`node tests/ime-preedit-browser.mjs` checks the real built DOCX iframe using Chromium CDP composition: visible native preedit text/caret, selection and horizontal scrolling, Chinese text commit, save and reload. Requests are restricted to local read-only preview resources; it makes no AI calls. This verifies browser composition handling, not a physical operating-system IME. The selected upstream patch and base snapshot are recorded separately in `source-manifest.json` and `UPSTREAM.md`.
+`node tests/ime-preedit-browser.mjs` checks the real built DOCX iframe using Chromium CDP composition: visible native preedit text/caret, selection and horizontal scrolling, Chinese text commit, save and reload. Requests are restricted to local read-only preview resources; it makes no AI calls. This verifies browser composition handling, not a physical operating-system IME. The editor snapshot is recorded in `source-manifest.json` and `UPSTREAM.md`.
 
 ### Temporary project and local copies
 

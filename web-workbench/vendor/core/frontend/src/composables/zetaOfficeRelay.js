@@ -80,6 +80,7 @@ const ACTION_BUDGET_MS = {
   // 三方合并（合并比对稿）：与 libreofficeExecutorClient 同表。
   build_merge_draft: 180000,
   build_comparison_document: 180000,
+  compare_docx_files: 240000,
   // 读取类（dev-board#729 ③）：此前全部吃 30s 默认值。doc_open_file 是 fire-and-forget，
   // 「打开文档 → 立刻读」时那条读命令正撞在装载中（doc_open_file_sync 自己就给了 180s），
   // 30s 必然不够；超时后模型会再读一次，代价是一整个 LLM 往返（真机中位 80s）。
@@ -105,6 +106,7 @@ const ACTION_BUDGET_MS = {
   slide_set_layout: 120000, slide_add_text_box: 120000, slide_set_shape_text: 120000,
   slide_format_text: 120000, slide_format_shape: 120000, slide_add_shape: 120000,
   slide_delete_shape: 120000, slide_set_shape_geometry: 120000, slide_replace_text: 120000,
+  slide_add_image: 120000, slide_add_chart: 120000, slide_format_chart: 120000, slide_set_transition: 120000,
   slide_add_table: 120000, slide_table_set_cell: 120000, slide_table_set_style: 120000,
   slide_set_hyperlink: 120000, slide_write_notes: 120000,
 }
