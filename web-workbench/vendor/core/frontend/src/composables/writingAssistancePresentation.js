@@ -43,15 +43,53 @@ export const WRITING_ASSISTANCE_CSS = `
   color:var(--wa-muted); font-size:18px; line-height:24px;
 }
 .awd-writing-assistance .awd-wa-panel[data-mode="context"] { width:300px; }
+.awd-writing-assistance .awd-wa-actions:not(:empty) {
+  position:sticky; bottom:-7px; z-index:1; margin:6px -7px -7px; padding:6px 7px 7px;
+  display:flex; flex-wrap:wrap; gap:6px; background:var(--wa-surface); border-top:1px solid var(--wa-divider);
+}
 .awd-writing-assistance .awd-wa-panel[data-mode="context"] .awd-wa-heading strong {
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
+.awd-writing-assistance .awd-wa-legal-card {
+  margin-block:10px; padding:12px; border:1px solid var(--wa-border); border-inline-start:3px solid var(--wa-accent);
+  border-radius:6px; background:var(--wa-muted-surface); overflow-wrap:anywhere; text-align:start;
+}
+.awd-writing-assistance .awd-wa-legal-head { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.awd-writing-assistance .awd-wa-legal-head button { font-size:18px; padding:0 6px; flex:none; }
+.awd-writing-assistance .awd-wa-legal-kind { color:var(--wa-accent); font-size:11px; font-weight:600; }
+.awd-writing-assistance .awd-wa-legal-title { display:block; margin-block:7px; font-family:Georgia,"Songti SC",serif; font-size:16px; line-height:1.6; }
+.awd-writing-assistance .awd-wa-legal-card dl { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2fr); gap:5px 10px; font-size:12px; }
+.awd-writing-assistance .awd-wa-legal-card dt { color:var(--wa-muted); }
+.awd-writing-assistance .awd-wa-legal-card dd { margin:0; }
 .awd-writing-assistance .awd-wa-query { display:block; width:100%; margin-top:3px; }
 .awd-writing-assistance .awd-wa-query-primary { color:var(--wa-accent); font-weight:600; }
 .awd-writing-assistance .awd-wa-query-more { color:var(--wa-muted); }
 .awd-writing-assistance .awd-wa-query-more::after { content:'›'; float:right; }
 .awd-writing-assistance .awd-wa-query-more[aria-expanded="true"]::after { content:'⌄'; }
 .awd-writing-assistance .awd-wa-query-notice { padding:7px 10px 2px; }
+.awd-writing-assistance .awd-wa-revise-toggle {
+  display:block; width:100%; margin-top:4px; padding-top:7px;
+  border-top:1px solid var(--wa-divider); border-radius:0 0 5px 5px;
+  color:var(--wa-muted);
+}
+.awd-writing-assistance .awd-wa-revise-toggle::after { content:'›'; float:right; }
+.awd-writing-assistance .awd-wa-revise-toggle[aria-expanded="true"]::after { content:'⌄'; }
+.awd-writing-assistance .awd-wa-revise-form {
+  display:flex; align-items:center; gap:5px; margin-top:4px; padding:2px 2px 0;
+}
+.awd-writing-assistance .awd-wa-revise-input {
+  flex:1 1 auto; min-width:0; height:28px; padding:4px 8px;
+  border:1px solid var(--wa-border); border-radius:5px;
+  background:var(--wa-muted-surface); color:var(--wa-text);
+  font-size:12px; line-height:18px; outline:none;
+}
+.awd-writing-assistance .awd-wa-revise-input:focus { border-color:var(--wa-accent); }
+.awd-writing-assistance .awd-wa-revise-submit {
+  flex:none; height:28px; padding:0 10px;
+  border:1px solid var(--wa-border); border-radius:5px;
+  background:var(--wa-selected); color:var(--wa-accent);
+  font-size:12px; font-weight:600; line-height:26px; text-align:center;
+}
 .awd-writing-assistance .awd-wa-option { display:block; width:100%; overflow-wrap:anywhere; }
 .awd-writing-assistance small { display:block; color:var(--wa-muted); font-size:11px; }
 .awd-writing-assistance .awd-wa-copy { white-space:pre-wrap; overflow-wrap:anywhere; padding:8px; max-height:28vh; overflow:auto; }

@@ -11,6 +11,17 @@ export function mapFontRequests(code){
  for(const name of FONT_NAMES){const old=`'./${name}'`;if(code.split(old).length!==2)throw Error('Expected exactly one pinned font URL: '+name);code=code.replace(old,`'./compressed/${name}'`)}
  return code;
 }
+// Multilingual fallback fonts the desktop bakes (dev-board#1478) are not pinned or served by
+// the web workbench; drop their exact entries instead of requesting nine URLs that 404.
+export const OMITTED_FONT_NAMES=['cjk-kr.otf','cjk-kr-serif.otf','cjk-thai.ttf','cjk-thai-serif.ttf','cjk-khmer.ttf','cjk-lao.ttf','cjk-myanmar.ttf','cjk-arabic.ttf','cjk-devanagari.ttf'];
+export function omitUnservedFonts(code){
+ for(const name of OMITTED_FONT_NAMES){
+  const entry=new RegExp(`\\n {4}\\{ url: '\\./${name.replace(/[.-]/g,'\\$&')}', family: '[^'\\n]+', category: '[a-z-]+' \\},`,'g');
+  if((code.match(entry)||[]).length!==1)throw Error('Expected exactly one unserved font entry: '+name);
+  code=code.replace(entry,'');
+ }
+ return code;
+}
 export function mapFontFetching(code,transportModule){
  const original=`        const r = await fetch(f.url)
         if (!r.ok) { log('CJK font not found at ' + f.url + ' (skipping)'); return null }

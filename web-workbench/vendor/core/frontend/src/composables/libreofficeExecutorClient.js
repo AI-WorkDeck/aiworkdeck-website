@@ -29,7 +29,7 @@ export const EDITOR_ACTIONS = [
   // perceive (get_document_text/get_cursor_context), position visibly
   // (select_paragraph/collapse_selection), edit (delete_selection), format
   // (format_selection/set_paragraph_format), recover (undo/redo).
-  'get_document_text', 'get_cursor_context', 'get_clauses', 'select_paragraph', 'collapse_selection',
+  'get_document_text', 'get_cursor_context', 'get_ai_pointer', 'get_clauses', 'select_paragraph', 'collapse_selection',
   // 人工补全：内存快照校验后同步接受，不使用 AI 编辑通道。
   'get_completion_context', 'accept_completion', 'insert_completion_content',
   // Semantic writing keeps a separate revision-checked snapshot; literal suffix/selection only.
@@ -40,6 +40,7 @@ export const EDITOR_ACTIONS = [
   // [spike/IME] implemented by the worker since Phase B but never whitelisted
   // (found by the primitive self-test: "Unknown action: move_cursor").
   'move_cursor', 'delete_backward', 'delete_forward', 'insert_paragraph', 'get_cursor_rect',
+  'stash_selection_for_drag', 'complete_selection_drag',
   // [overlay Tab] 表格里跳格 / 正文里插制表符——判定在 worker（宿主不知道光标属于
   // 哪个 story）。宿主发起，不是 AI 管线。
   'tab_key',
@@ -70,6 +71,8 @@ export const EDITOR_ACTIONS = [
   // [Track E] export the current document as bytes (host-initiated save):
   // {name} -> storeToURL into MEMFS -> {bytes, size}; the host uploads them.
   'export_document',
+  // [0.81 秒开] 备胎空闲时导出+装回空白文档一次，付掉引擎首份文档的一次性初始化。
+  'warm_engine',
   // [dev-board#886] 导出 PDF 字节（宿主发起：原生「导出为 PDF」入口被 worker 拦下后
   // 经 export-pdf-request 请宿主执行，宿主拿字节走应用自己的下载链路）。
   'export_pdf',
@@ -110,6 +113,7 @@ export const EDITOR_ACTIONS = [
   // 「当前这一格 / 当前这一页」的取数原语（顶上那条版本身份小条 #672 起是文件级的，
   // 不再用它们；两条原语本身是引擎公开 API，lowa-e2e 组 34 有用例）。
   'build_merge_draft', 'merge_take_other', 'sheet_get_active_cell', 'slide_get_current',
+  'office_get_navigation', 'office_activate_item', 'slide_get_thumbnail',
   // [格式增强] 富格式原语：编号/表格/格式读取/全文标准格式化；insert_under_heading
   // 是后端一直在派发但从未接通的原语（本次补齐 worker 实现）。
   'set_numbering', 'format_table', 'insert_table', 'get_formatting', 'apply_house_style',
@@ -173,6 +177,7 @@ export const EDITOR_ACTIONS = [
   // 表格整体样式（表头加粗/边框/列宽，能做多少做多少）/ 超链接。设计依据同上 §4.2
   // （原语表 16-20；slide_format_shape/slide_table_set_style 不在原表里，是任务方
   // 直接点名要补的两项）。
+  'slide_show_control', 'slide_add_image', 'slide_add_chart', 'slide_format_chart', 'slide_set_transition',
   'slide_format_text', 'slide_format_shape', 'slide_add_table', 'slide_table_read',
   'slide_table_set_cell', 'slide_table_set_style', 'slide_set_hyperlink',
   // [诊断] 当前文档内核类型（writer/calc/impress/unknown）——审阅按钮等 UI 按 kind
@@ -205,6 +210,7 @@ export const ACTION_BUDGET_MS = {
   // 全在一条命令里；420 段 32 页的夹具实测约 22 秒，按 load_document 同量级给预算。
   build_merge_draft: 180000,
   build_comparison_document: 180000,
+  compare_docx_files: 240000,
   // 读取类（dev-board#729 ③）：此前全部吃 30s 默认值。doc_open_file 是 fire-and-forget，
   // 「打开文档 → 立刻读」时那条读命令正撞在装载中（doc_open_file_sync 自己就给了 180s），
   // 30s 必然不够；超时后模型会再读一次，代价是一整个 LLM 往返（真机中位 80s）。
@@ -231,6 +237,7 @@ export const ACTION_BUDGET_MS = {
   slide_set_layout: 120000, slide_add_text_box: 120000, slide_set_shape_text: 120000,
   slide_format_text: 120000, slide_format_shape: 120000, slide_add_shape: 120000,
   slide_delete_shape: 120000, slide_set_shape_geometry: 120000, slide_replace_text: 120000,
+  slide_add_image: 120000, slide_add_chart: 120000, slide_format_chart: 120000, slide_set_transition: 120000,
   slide_add_table: 120000, slide_table_set_cell: 120000, slide_table_set_style: 120000,
   slide_set_hyperlink: 120000, slide_write_notes: 120000,
 }
@@ -303,7 +310,20 @@ export function createLibreOfficeExecutor(opts = {}) {
       (action === 'build_comparison_document' || action === 'export_document')
     return new Promise((resolve, reject) => {
       const timer = waitForCompletion ? null : setTimeout(() => {
-        if (pending.has(reqId)) { pending.delete(reqId); reject(Object.assign(new Error('等待编辑器结果超时，操作可能仍在执行。请先检查文档和修订记录，确认结果前不要重复执行写入操作。 / Editor result timed out; the operation may still be running. Check the document and tracked changes before repeating any write.'), { code: 'EDITOR_RESULT_TIMEOUT' })) }
+        if (pending.has(reqId)) {
+          pending.delete(reqId)
+          let isEn = false
+          try {
+            const l = (typeof localStorage !== 'undefined' && localStorage.getItem('checkba_app_language'))
+              || (typeof document !== 'undefined' && document.documentElement?.lang)
+              || ''
+            if (l && !l.startsWith('zh')) isEn = true
+          } catch (_) { /* ignore */ }
+          const timeoutMsg = isEn
+            ? 'Editor result timed out; the operation may still be running. Check the document and tracked changes before repeating any write.'
+            : '等待编辑器结果超时，操作可能仍在执行。请先检查文档和修订记录，确认结果前不要重复执行写入操作。'
+          reject(Object.assign(new Error(timeoutMsg), { code: 'EDITOR_RESULT_TIMEOUT' }))
+        }
       }, budget)
       pending.set(reqId, { resolve, reject, timer, onProgress: callOpts && callOpts.onProgress })
       if (callOpts && callOpts.onIssued) { try { callOpts.onIssued(reqId) } catch (e) { /* ignore */ } }

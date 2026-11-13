@@ -10,7 +10,7 @@ const out=path.resolve(process.env.AWD_BROWSER_TEST_OUTPUT||'test-results/import
 const good=path.join(out,'local-contract.docx'),bad=path.join(out,'invalid.docx');await fs.writeFile(good,await createDocument(['Import regression','LOCAL IMPORT VERIFIED 1300']));await fs.writeFile(bad,'not a docx');
 const server=createPreviewServer({testSupport:true});await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin=process.env.AWD_PUBLIC_ORIGIN||'http://127.0.0.1:'+server.address().port;
 const profile=await fs.mkdtemp(path.join(os.tmpdir(),'awd-import-history-'));
-const browser=await puppeteer.launch({executablePath:'/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',headless:'new',userDataDir:profile,protocolTimeout:180000,args:['--disable-dev-shm-usage']});
+const browser=await puppeteer.launch({executablePath:process.env.PUPPETEER_EXECUTABLE_PATH||'/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',headless:'new',userDataDir:profile,protocolTimeout:180000,args:['--disable-dev-shm-usage']});
 const result={origin,realEngine:true,paidAI:false,steps:[]};const pass=s=>{result.steps.push(s);console.log('PASS',s)};
 try{
  const page=await browser.newPage();page.on('pageerror',e=>console.log('PAGE_ERROR',e.message));await page.setViewport({width:1440,height:1000});
@@ -29,7 +29,7 @@ try{
  const ready=()=>page.waitForFunction(()=>document.querySelector('#editor-cover')?.hidden&&document.querySelector('#save-button')?.dataset.status==='saved',{timeout:180000});
  const phase=p=>page.waitForFunction(p=>document.querySelector('#import-status')?.dataset.phase===p,{},p);
  const upload=async(file,button='[data-action="import"]')=>{const [chooser]=await Promise.all([page.waitForFileChooser(),page.click(button)]);await chooser.accept([file])};
- const files=()=>page.evaluate(()=>new Promise((resolve,reject)=>{const r=indexedDB.open('ai-workdeck-web-workbench');r.onsuccess=()=>{const db=r.result,q=db.transaction('files').objectStore('files').getAll();q.onsuccess=()=>{resolve(q.result.map(f=>({id:f.id,name:f.name,bytes:Array.from(f.bytes)})));db.close()};q.onerror=()=>reject(q.error)}}));
+ const files=()=>page.evaluate(()=>new Promise((resolve,reject)=>{const r=indexedDB.open('ai-workdeck-web-workbench:guest');r.onsuccess=()=>{const db=r.result,q=db.transaction('files').objectStore('files').getAll();q.onsuccess=()=>{resolve(q.result.map(f=>({id:f.id,name:f.name,bytes:Array.from(f.bytes)})));db.close()};q.onerror=()=>reject(q.error)}}));
  await page.goto(origin+'/web/?lang=en',{waitUntil:'domcontentloaded'});await ready();
  await page.click('.tab [role="tab"]',{button:'middle'});await page.waitForSelector('#empty-editor:not([hidden])');
  await page.evaluate(()=>window.holdFileRead=true);await upload(good,'#empty-editor [data-action="import"]');await phase('reading');
@@ -46,7 +46,7 @@ try{
   const text=await page.evaluate(async()=>{const {createIframeEditorExecutor}=await import('/test-support/useZetaOfficeWebview.js');const e=createIframeEditorExecutor(document.querySelector('#editor-container iframe'));try{return await e.executeCommand('get_document_text',{__agent:true})}finally{e.dispose()}});assert.match(JSON.stringify(text),/LOCAL IMPORT VERIFIED 1300/);pass('native engine text contains imported content');
  }
  // Seed pre-upgrade history only in this isolated browser, then exercise migration and all visible actions.
- await page.evaluate(()=>new Promise((resolve,reject)=>{const r=indexedDB.open('ai-workdeck-web-workbench');r.onsuccess=()=>{const db=r.result,tx=db.transaction(['settings','projects'],'readwrite');const q=tx.objectStore('projects').getAll();q.onsuccess=()=>{const id=q.result[0].id,s=tx.objectStore('settings');s.delete('conversations:'+id);s.put({key:'chat:'+id,value:[{role:'user',content:'Legacy payment review',fileName:'local-contract.docx',fileId:'historical-file'},{role:'assistant',content:'Historical answer retained.'}]})};tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)}}));
+ await page.evaluate(()=>new Promise((resolve,reject)=>{const r=indexedDB.open('ai-workdeck-web-workbench:guest');r.onsuccess=()=>{const db=r.result,tx=db.transaction(['settings','projects'],'readwrite');const q=tx.objectStore('projects').getAll();q.onsuccess=()=>{const id=q.result[0].id,s=tx.objectStore('settings');s.delete('conversations:'+id);s.put({key:'chat:'+id,value:[{role:'user',content:'Legacy payment review',fileName:'local-contract.docx',fileId:'historical-file'},{role:'assistant',content:'Historical answer retained.'}]})};tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)}}));
  await page.reload({waitUntil:'domcontentloaded'});await ready();assert.match(await page.$eval('#chat-messages',e=>e.textContent),/Historical answer retained/);
  await page.click('[data-action="history"]');assert.equal(await page.$$eval('.conversation-row',e=>e.length),1);
  await page.click('[data-action="clear-chat"]');await page.waitForFunction(()=>document.querySelectorAll('.conversation-row').length===2);assert.doesNotMatch(await page.$eval('#chat-messages',e=>e.textContent),/Historical answer/);

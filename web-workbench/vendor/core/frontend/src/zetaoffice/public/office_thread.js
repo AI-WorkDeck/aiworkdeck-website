@@ -113,6 +113,7 @@ function anchorBookmark(range) {
 // story 的书签（单元格锚点用正文 XText 照样摘得掉，table-retype 的锚点组守着）。
 function dropAiAnchors() {
   anchorTexts.clear();
+  pointerAnchorName = null;
   const bms = xModel.getBookmarks();
   const names = (bms.getElementNames && bms.getElementNames()) || [];
   const xText = xModel.getText();
@@ -129,6 +130,29 @@ function anchorRange(name) {
   if (!bms.hasByName(name)) return null;
   return bms.getByName(name).getAnchor(); // XTextRange
 }
+// 发送时给「指哪儿」挂的锚点（get_ai_pointer）。每条消息都会走一次，不能留下副作用：
+// 不标脏（否则每发一条消息都触发一次整篇导出+上传）、不进撤销栈（否则用户 Ctrl+Z
+// 先撤掉一个看不见的书签）；同时只保留最近一个，旧的先摘掉，不在文档里越积越多。
+let pointerAnchorName = null;
+function silentPointerAnchor(range) {
+  const undo = xModel.getUndoManager(), ownsUndoLock = !undo.isLocked();
+  if (ownsUndoLock) undo.lock();
+  try {
+    return withViewOnlyChange(function () {
+      if (pointerAnchorName) {
+        try {
+          const bms = xModel.getBookmarks();
+          if (bms.hasByName(pointerAnchorName)) xModel.getText().removeTextContent(bms.getByName(pointerAnchorName));
+        } catch (e) { /* 已随编辑消失 */ }
+        anchorTexts.delete(pointerAnchorName);
+        pointerAnchorName = null;
+      }
+      return (pointerAnchorName = anchorBookmark(range));
+    });
+  } finally {
+    if (ownsUndoLock) undo.unlock();
+  }
+}
 // Compare in the final-text view immediately before selecting/writing. Unrelated
 // edits may move a bookmark without invalidating its unchanged target text.
 function anchorEditError(name, range) {
@@ -137,6 +161,48 @@ function anchorEditError(name, range) {
     return '锚点原文已变化或失效，未执行编辑；请重新 doc_find_text 核对上下文后再试';
   }
   return null;
+}
+// 模型常把锚点之外的原文也写进 newText：锚点只覆盖「第三条」，newText 却是整段条文。
+// 替换照样成功，同段那几句原文就出现两遍，模型再 undo、重找、重替换，空转到 19 轮
+// （eval 2026-11-11 g16「删除第三条」、s01）。写之前拦下：newText 里有至少 6 个非空白字的
+// 片段在同段锚点前后原样出现、却不在锚点原文里，就退回并说明锚点覆盖的范围。
+const ECHO_MIN_CHARS = 6;
+function outsideAnchorEcho(anchorText, before, after, newText) {
+  const t = String(newText || ''), a = String(anchorText || '');
+  if (t.replace(/\s/g, '').length < ECHO_MIN_CHARS) return null;
+  // 单段 newText 只比同一段（contextAround 跨段带 \n）；newText 自带换行 = 要写多段，
+  // 前后相邻段也比（g19：把刚插入的下一段又拼进锚点替换）
+  const multi = /[\r\n]/.test(t);
+  const sides = multi ? [String(before || ''), String(after || '')]
+    : [String(before || '').split(/[\r\n]/).pop(), String(after || '').split(/[\r\n]/)[0]];
+  let best = '';
+  for (const c of sides) {
+    // 最长公共子串 DP；某格最长串若在锚点原文里，它的后缀也都在，故每格只查最长串
+    let prev = new Array(c.length + 1).fill(0);
+    for (let i = 1; i <= t.length; i++) {
+      const cur = new Array(c.length + 1).fill(0);
+      for (let j = 1; j <= c.length; j++) {
+        if (t[i - 1] !== c[j - 1]) continue;
+        const len = cur[j] = prev[j - 1] + 1;
+        if (len <= best.length) continue;
+        const sub = t.slice(i - len, i);
+        if (sub.replace(/\s/g, '').length >= ECHO_MIN_CHARS && a.indexOf(sub) < 0) best = sub;
+      }
+      prev = cur;
+    }
+  }
+  return best ? best.trim() : null;
+}
+// paragraph（锚点所在段全文）不长时直接给出整段查找词：复测里模型被退回后按句拆删，
+// 多花 3–5 轮（g16 2026-11-11 第二轮复测）
+function echoEditError(anchorText, echo, paragraph) {
+  const clip = s => (s.length > 30 ? s.slice(0, 30) + '…' : s);
+  const para = String(paragraph || '').trim();
+  const how = para && para.length <= 120 && para.indexOf('"') < 0
+    ? '要改写或删除这一整段：先 doc_find_text(keyword="' + para + '") 取覆盖整段的 anchorId，再一次替换（删除传 newText=""），不要逐句拆开删。'
+    : '要改写或删除整句/整段，先 doc_find_text 查完整原句/原段取得覆盖它的 anchorId，再替换（删除传 newText=""）。';
+  return '未执行编辑：newText 里的「' + clip(echo) + '」在锚点之外本来就有，锚点只覆盖「' + clip(String(anchorText)) +
+    '」，照此替换这段文字会重复出现。newText 只写锚点文字本身的新版本；' + how;
 }
 // ---- EvidenceLink 书签原语 helpers（dev-board#103）-----------------------------
 function bmFail(msg) { return { success: false, error: msg, message: msg }; }
@@ -322,6 +388,130 @@ function eachParagraph(fn) {
 function selectVisibly(range) {
   try { ctrl.getViewCursor().gotoRange(range, false); return true; }
   catch (e) { try { ctrl.select(range); return true; } catch (e2) { return false; } }
+}
+// 读取段落自动编号的可见标签（仅当 NumberingIsNumber !== false 且 ListLabelString 非空时返回）。
+function readParagraphLabel(el) {
+  if (!el || typeof el.getPropertyValue !== 'function') return '';
+  try {
+    const hasLabel = el.getPropertyValue('NumberingIsNumber');
+    if (hasLabel === false) return '';
+    const lbl = el.getPropertyValue('ListLabelString');
+    return typeof lbl === 'string' ? lbl.trim() : '';
+  } catch (e) { return ''; }
+}
+// 拼接自动编号标签与段落正文（如 ListLabelString="第一条" + text="服务内容" -> "第一条 服务内容"），
+// 供条款识别、标题定位与带编号关键词搜索统一匹配自动编号与手打编号。
+function paragraphCombinedText(el) {
+  const raw = String((el && typeof el.getString === 'function' && el.getString()) || '');
+  const lbl = readParagraphLabel(el);
+  if (!lbl) return raw;
+  const trimmed = raw.trim();
+  if (trimmed.indexOf(lbl) === 0) return raw;
+  const needSpace = !/[、.．:：）)\s]$/.test(lbl) && trimmed.length > 0 && !/^[、.．:：）)\s]/.test(trimmed);
+  return lbl + (needSpace ? ' ' : '') + raw;
+}
+// 当 XSearchable.findFirst 找不到带自动编号前缀的查询词（如 "第一条 服务内容"、"1.1 乙方义务" 或单独的 "第一条"）
+// 时，回退扫描段落的 ListLabelString + 正文，返回段落级或段内子区间 XTextRange 及其 paragraphIndex/numbering。
+function findNumberedParagraphRanges(keyword, matchCase, limit) {
+  const kw = String(keyword || '').trim();
+  if (!kw) return { hits: [], truncated: false };
+  const needle = matchCase ? kw : kw.toLowerCase();
+  const norm = function (s) { return (matchCase ? String(s) : String(s).toLowerCase()).replace(/[\s\u3000]+/g, ''); };
+  const needleCompact = norm(kw);
+  const hits = [];
+  let truncated = false;
+  const maxHits = Number(limit) || 50;
+  eachParagraph(function (el, idx) {
+    const lbl = readParagraphLabel(el);
+    if (!lbl) return false;
+    const raw = String(el.getString() || '');
+    const combined = paragraphCombinedText(el);
+    const hay = matchCase ? combined : combined.toLowerCase();
+    const lblCmp = matchCase ? lbl : lbl.toLowerCase();
+    const matched = hay.indexOf(needle) !== -1 || lblCmp === needle || (needleCompact.length > 0 && norm(combined).indexOf(needleCompact) !== -1);
+    if (!matched) return false;
+    if (hits.length >= maxHits) { truncated = true; return true; }
+    let range = el;
+    if (norm(combined).indexOf(needleCompact) === 0 && needleCompact.length > norm(lbl).length) {
+      const stripped = kw.slice(lbl.length).replace(/^[\s\u3000、.．:：）)]+/, '');
+      if (stripped && raw) {
+        const rawHay = matchCase ? raw : raw.toLowerCase();
+        const subNeedle = matchCase ? stripped : stripped.toLowerCase();
+        const pos = rawHay.indexOf(subNeedle);
+        if (pos >= 0 && !/[\uD800-\uDFFF]/.test(raw.slice(0, pos + stripped.length))) {
+          try {
+            const cur = el.getText().createTextCursorByRange(el.getStart());
+            if ((!pos || cur.goRight(pos, false)) && cur.goRight(stripped.length, true)) range = cur;
+          } catch (e) {}
+        }
+      }
+    }
+    hits.push({ range: range, paragraphIndex: idx, numbering: paragraphNumberingOf(el), combinedText: combined });
+    return false;
+  });
+  return { hits: hits, truncated: truncated };
+}
+// 选中闭区间 [startIdx, endIdx] 的正文段落（兼容单段与跨段，滚动视图光标并返回选中的段落数组）。
+function selectParagraphRange(startIdx, endIdx) {
+  const total = getParaIndex().total;
+  const s = Number(startIdx);
+  const e = endIdx != null ? Number(endIdx) : s;
+  if (!Number.isInteger(s) || !Number.isInteger(e) || s < 0 || e < s || s >= total || e >= total) {
+    return { error: 'paragraph index out of range: ' + startIdx + (endIdx != null ? '..' + endIdx : '') + ' (count ' + total + ')' };
+  }
+  const first = paraAt(s);
+  const last = e === s ? first : paraAt(e);
+  if (!first || !last) return { error: 'paragraph index out of range: ' + s + '..' + e + ' (count ' + total + ')' };
+  const paras = [];
+  for (let i = s; i <= e; i++) {
+    const pEl = paraAt(i);
+    if (pEl) paras.push(pEl);
+  }
+  try {
+    const vc = ctrl.getViewCursor();
+    if (s === e) {
+      if (!selectVisibly(first)) return { error: 'could not select paragraph ' + s };
+    } else {
+      vc.gotoRange(first.getStart(), false);
+      vc.gotoRange(last.getEnd(), true);
+    }
+  } catch (err) {
+    if (!selectVisibly(first)) return { error: 'could not select paragraph range ' + s + '..' + e };
+  }
+  return { startIndex: s, endIndex: e, paragraphs: paras, first: first, last: last };
+}
+// 收集当前选区覆盖到的正文段落对象（若选区在表格单元格或无法枚举则返回空数组，调用方回退到 vc）。
+function selectedBodyParagraphs(vc) {
+  const out = [];
+  try {
+    const cur = vc.getText().createTextCursorByRange(vc);
+    const en = cur.createEnumeration();
+    while (en.hasMoreElements()) {
+      const el = en.nextElement();
+      if (el && el.supportsService && el.supportsService('com.sun.star.text.Paragraph')) out.push(el);
+    }
+  } catch (e) {}
+  return out;
+}
+// 解析格式化原语可选携带的定位参数（paragraphIndex / index / startParagraph + endParagraph / anchor），
+// 若传入则先选中目标范围并返回 {paragraphs, startParagraph, endParagraph}；未传则沿用当前选区。
+function resolveFormatTargets(p) {
+  if (p && (p.paragraphIndex != null || p.index != null || p.startParagraph != null || p.endParagraph != null)) {
+    const s = p.startParagraph != null ? Number(p.startParagraph) : (p.paragraphIndex != null ? Number(p.paragraphIndex) : Number(p.index));
+    const e = p.endParagraph != null ? Number(p.endParagraph) : (p.endIndex != null ? Number(p.endIndex) : s);
+    const sel = selectParagraphRange(s, e);
+    if (sel.error) return { error: sel.error };
+    return { paragraphs: sel.paragraphs, startParagraph: sel.startIndex, endParagraph: sel.endIndex, explicitRange: true };
+  }
+  if (p && (p.anchor || p.anchorId)) {
+    const aName = String(p.anchor || p.anchorId);
+    const r = anchorRange(aName);
+    if (!r) return { error: 'anchor not found: ' + aName };
+    selectVisibly(r);
+  }
+  const vc = ctrl.getViewCursor();
+  const paras = selectedBodyParagraphs(vc);
+  return { paragraphs: paras, explicitRange: false };
 }
 function pad2(n) { return (n < 10 ? '0' : '') + n; }
 // ---- 审阅面板（修订/批注）的取址助手 ---------------------------------------
@@ -671,6 +861,82 @@ function insertTextAtCursor(vc, text) {
   }
 }
 
+// AI「新增一条条款」：text 作为独立新段落落在锚点（无锚点 = 视图光标）所在段落之前/之后
+// （p.newParagraph = 'before' | 'after'）。旧路径只能落在锚点文字边界上，模型不会自己补
+// 换行，真实评测里 insert → undo 循环到 16–42 轮（gap 2026-11-11 R2）。
+// 做法同人按回车：段首/段末先插段落标记再写字，拆出来的新段落沿用原段的段落样式与直接段落
+// 格式（编号列表成员也随之），段末拆分时引擎可能换成「下一样式」，所以写完再对齐一次样式。
+// 修订开着时段落标记与文字都是插入修订；整个操作一个撤销组，doc_undo 一步撤回。
+// 回执带新段落段号（与 get_document_text 同为正文 0 基）与前后相邻段落原文，供模型直接核对。
+function insertNewParagraph(p) {
+  if (!isWriterDoc()) return tableFail('newParagraph 只适用于 Word 文档');
+  const where = p.newParagraph === 'before' ? 'before' : 'after';
+  const text = String(p.text || '').replace(/\r\n?/g, '\n').replace(/^\n+|\n+$/g, '');
+  if (!text) return tableFail('text 为空，未插入');
+  let range;
+  if (p.anchor) {
+    range = anchorRange(String(p.anchor));
+    if (!range) return tableFail('anchor not found: ' + p.anchor);
+    const anchorError = anchorEditError(p.anchor, range);
+    if (anchorError) return tableFail(anchorError);
+  } else range = ctrl.getViewCursor();
+  const story = range.getText();
+  const at = story.createTextCursorByRange(where === 'before' ? range.getStart() : range.getEnd());
+  if (where === 'before') at.gotoStartOfParagraph(false); else at.gotoEndOfParagraph(false);
+  let style = '';
+  try { style = String(at.getPropertyValue('ParaStyleName') || ''); } catch (e) {}
+  const vc = ctrl.getViewCursor();
+  let um = null;
+  try { um = xModel.getUndoManager(); um.enterUndoContext('插入段落'); } catch (e) { um = null; }
+  try {
+    story.insertControlCharacter(at, css.text.ControlCharacter.PARAGRAPH_BREAK, false);
+    at.collapseToEnd();
+    // before：光标在原段段首（分段标记之后），退一格回到刚拆出的空段；after：已在新空段段首。
+    if (where === 'before') at.goLeft(1, false);
+    vc.gotoRange(at, false);
+    if (MD_MARKER_RE.test(text)) insertInlineStyled(vc, text);
+    else insertTextAtCursor(vc, text);
+    vc.collapseToEnd();
+    const lines = text.split('\n').length;
+    const block = story.createTextCursorByRange(vc.getEnd());
+    block.gotoEndOfParagraph(false);
+    block.gotoStartOfParagraph(true);
+    for (let i = 1; i < lines; i++) block.gotoPreviousParagraph(true);
+    if (style) {
+      let now = '';
+      try { now = String(block.getPropertyValue('ParaStyleName') || ''); } catch (e) {}
+      if (now !== style) { try { block.setPropertyValue('ParaStyleName', style); } catch (e) {} }
+    }
+    invalidateParaIndex();
+    const out = { success: true, inserted: text, newParagraph: where, newParagraphCount: lines, paragraphStyle: style || null };
+    const clip = function (s) { s = String(s || ''); return s.length > 200 ? s.slice(0, 200) + '…' : s; };
+    withParaIndex(function (ix) {
+      let idx = -1;
+      try {
+        const body = xModel.getText();
+        const start = block.getStart();
+        for (let i = 0; i < ix.total; i++) {
+          if (body.compareRegionStarts(ix.ranges[i].getStart(), start) >= 0 && body.compareRegionEnds(ix.ranges[i].getEnd(), start) <= 0) { idx = i; break; }
+        }
+      } catch (e) { idx = -1; } // 表格单元格等别的 story：没有正文段号
+      if (idx < 0) { out.paragraphAfterEdit = clip(paragraphTextOf(vc)); return; }
+      out.newParagraphIndex = idx;
+      out.newParagraphText = clip(ix.ranges.slice(idx, idx + lines).map(function (el) { return el.getString(); }).join('\n'));
+      if (idx > 0) out.previousParagraph = { index: idx - 1, text: clip(ix.ranges[idx - 1].getString()) };
+      if (idx + lines < ix.total) out.nextParagraph = { index: idx + lines, text: clip(ix.ranges[idx + lines].getString()) };
+    });
+    // 新段落自己的锚点：评测实录（g19 / v01）里模型插完新条款，接着拿插入时用的旧锚点去改「新条款」，
+    // 实际改到原段落，再 undo / 重来。回执直接给出覆盖新段落的锚点，后续改新条款就用它。
+    try {
+      out.newParagraphAnchor = anchorBookmark(block);
+      out.anchorNote = p.anchor
+        ? '后续修改新段落请用 newParagraphAnchor；' + p.anchor + ' 仍指向原来的文字 / Use newParagraphAnchor for further edits to the new paragraph; ' + p.anchor + ' still points at the original text'
+        : '后续修改新段落请用 newParagraphAnchor / Use newParagraphAnchor for further edits to the new paragraph';
+    } catch (e) { /* 别的 story 里建书签失败：回执照旧，不影响插入本身 */ }
+    return out;
+  } finally { if (um) { try { um.leaveUndoContext(); } catch (e) {} } }
+}
+
 // 用户手打覆盖选区（Word 语义）：选中一段再敲字 = 选区被删、新字落在原位置。
 // 旧实现一律 collapseToEnd 再插，选中的字原样留着、新字跟在后面（用户实测反馈）。
 // 只在 replace=true（IME 覆盖层的手打 / 回车 / Tab）时生效；AI 管线不带这个标记，
@@ -695,6 +961,38 @@ function typeOverSelection(vc, replace, title, insert) {
   } finally {
     if (um) { try { um.leaveUndoContext(); } catch (e) {} }
   }
+}
+
+// 用户在超链接末尾接着打字：新字不能沿用链接的字符样式（教程反馈 82）。
+// UNO insertString 不扩张 INetFmt（URL 不会跟过来），但 docx 往返后链接文字带着
+// 「Internet link」字符样式这条普通属性，接着打的字会继承它——看上去蓝色下划线，
+// 像链接的一部分。只在「光标前一字是链接、后一字不是同一链接」时成立，返回 true。
+function atHyperlinkEnd(vc) {
+  try {
+    const story = vc.getText();
+    const before = story.createTextCursorByRange(vc.getStart());
+    if (!before.goLeft(1, true)) return false;
+    const url = String(before.getPropertyValue('HyperLinkURL') || '');
+    if (!url) return false;
+    const after = story.createTextCursorByRange(vc.getStart());
+    if (!after.goRight(1, true)) return true;
+    return String(after.getPropertyValue('HyperLinkURL') || '') !== url;
+  } catch (e) { return false; }
+}
+// 刚落在链接末尾的 text（无换行）恢复成段落自身的字符样式。
+function detachTypedFromHyperlink(vc, text) {
+  const n = Array.from(text).length;
+  if (!n) return;
+  try {
+    const range = vc.getText().createTextCursorByRange(vc.getEnd());
+    if (!range.goLeft(n, true)) return;
+    // 只在确实继承到字符样式时才写：多写一次 HyperLinkURL='' 会在 docx 里留下空链接，
+    // 重开后反而把这几个字也染成链接样式（真引擎实证）。
+    let style = '';
+    try { style = String(range.getPropertyValue('CharStyleName') || ''); } catch (e) {}
+    if (!style) return;
+    withRecordChangesOff(function () { range.setPropertyToDefault('CharStyleName'); });
+  } catch (e) {}
 }
 
 // ---- 最小修订颗粒度 (minimal redline granularity) ---------------------------
@@ -1022,6 +1320,9 @@ function deselect() {
 // 缩放上下限。LO 自身允许 20%..600%，越界写进去引擎会自己夹，但夹之前会先按
 // 非法值重排一次版；在 JS 侧先夹住，捏合手势连发时不至于抖。
 const ZOOM_MIN = 20, ZOOM_MAX = 600;
+// 用户自己定的缩放（工具栏 / 捏合 / Cmd+加减号），set_zoom{fit} 只在它之下收。
+// 绑定 xModel：换文档后作废，新文档以打开时的缩放为准。
+let zoomPref = { model: null, value: 100 };
 
 // LO 自己的 chrome（自建工具栏要关掉的那些）。singlemode-* 是选中表格/图片时
 // 自动冒出来的上下文工具栏——逐项关的时候必须连它们一起关，否则一选中表格就
@@ -1065,6 +1366,26 @@ const CHROME_URLS = {
     'private:resource/toolbar/previewobjectbar',
     'private:resource/toolbar/fullscreenbar',
     'private:resource/toolbar/changes',
+    // Calc / Impress 经典与上下文工具栏
+    'private:resource/toolbar/formatobjectbar',
+    'private:resource/toolbar/calcobjectbar',
+    'private:resource/toolbar/inputbar',
+    'private:resource/toolbar/formtextobjectbar',
+    'private:resource/toolbar/formobjectbar',
+    'private:resource/toolbar/formcontrols',
+    'private:resource/toolbar/formdesign',
+    'private:resource/toolbar/moreformcontrols',
+    'private:resource/toolbar/slideviewtoolbar',
+    'private:resource/toolbar/slideviewobjectbar',
+    'private:resource/toolbar/outlinetoolbar',
+    'private:resource/toolbar/masterviewtoolbar',
+    'private:resource/toolbar/commontaskbar',
+    'private:resource/toolbar/optionsbar',
+    'private:resource/toolbar/gluepointsobjectbar',
+    'private:resource/toolbar/3dobjectsbar',
+    'private:resource/toolbar/extrusionobjectbar',
+    'private:resource/toolbar/fontworkobjectbar',
+    'private:resource/toolbar/mediaobjectbar',
   ],
 };
 
@@ -1186,11 +1507,114 @@ function parseColor(v, names) {
 }
 // Set a char property together with its Asian/Complex siblings so CJK runs
 // (the product's main language) pick up the format too.
+// 文字颜色：pptx/xlsx/docx 里常见主题色（schemeClr dk1 等）。LO 24.2 只写 CharColor 时主题链接仍在，
+// 导出照样写回主题色，用户看到的颜色没变（office-tier1 实测「改成红色」落盘仍是 dk1）。
+// 写具体颜色时同时把 CharColorTheme 置 -1 断开主题；auto(-1) 不动主题。
+function setCharColor(ps, color) {
+  ps.setPropertyValue('CharColor', color);
+  if (color === -1) return;
+  try {
+    const info = ps.getPropertySetInfo && ps.getPropertySetInfo();
+    if (info && info.hasPropertyByName('CharColorTheme')) ps.setPropertyValue('CharColorTheme', new zetajs.Any(zetajs.type.short, -1));
+  } catch (e) { /* 无主题属性的对象（图表标题等）照常 */ }
+}
+// Calc 单元格字体颜色：工作簿默认样式带主题色（openpyxl/Excel 生成的 xlsx 常见）时，单元格区域没有
+// CharColorTheme，API 写 CharColor 断不开 CharComplexColor 的主题链接，导出仍是 <color theme="1"/>。
+// 走界面同一条 .uno:Color 派发（真引擎实测导出 rgb="FFC00000"），失败再退回属性写入。
+function setCalcFontColor(range, color) {
+  if (color !== -1) {
+    try {
+      ctrl.select(range);
+      css.frame.DispatchHelper.create(context).executeDispatch(ctrl.getFrame(), '.uno:Color', '', 0, [mkProp('Color', color)]);
+      if (Number(range.getPropertyValue('CharColor')) === color) return;
+    } catch (e) { /* 退回属性写入 */ }
+  }
+  setCharColor(range, color);
+}
 function setCharProp(ps, base, value) {
   ps.setPropertyValue(base, value);
   for (const sfx of ['Asian', 'Complex']) {
     try { ps.setPropertyValue(base + sfx, value); } catch (e) { /* not all props have siblings */ }
   }
+}
+// 中文字号名 → 磅值映射（兼容「小四」「小四号」「四号」「五号」「三号」「小三」等律师常用口令）
+const CN_FONT_SIZE_PT = {
+  '初号': 42, '小初': 36, '一号': 26, '小一': 24, '二号': 22, '小二': 18,
+  '三号': 16, '小三': 15, '四号': 14, '小四': 12, '五号': 10.5, '小五': 9,
+  '六号': 7.5, '小六': 6.5, '七号': 5.5, '八号': 5,
+};
+function parseFontSizePt(v) {
+  if (v == null) return null;
+  if (typeof v === 'number') return (isFinite(v) && v > 0) ? v : null;
+  const s = String(v).trim();
+  if (!s) return null;
+  const key = s.replace(/号$/, '');
+  if (CN_FONT_SIZE_PT[s] != null) return CN_FONT_SIZE_PT[s];
+  if (CN_FONT_SIZE_PT[key] != null) return CN_FONT_SIZE_PT[key];
+  if (CN_FONT_SIZE_PT[key + '号'] != null) return CN_FONT_SIZE_PT[key + '号'];
+  const num = Number(s.replace(/(pt|磅|号)$/i, '').trim());
+  return (isFinite(num) && num > 0) ? num : null;
+}
+// 读取光标/段落的有效字号（优先读中文实际生效的 CharHeightAsian，再读 CharHeight，最后兜底 HOUSE.bodyPt）。
+function effectiveCharHeightPt(ps, fallbackPs) {
+  const sources = [ps, fallbackPs];
+  for (let i = 0; i < sources.length; i++) {
+    const src = sources[i];
+    if (!src || typeof src.getPropertyValue !== 'function') continue;
+    try { const ha = Number(src.getPropertyValue('CharHeightAsian')); if (isFinite(ha) && ha > 0) return ha; } catch (e) {}
+    try { const h = Number(src.getPropertyValue('CharHeight')); if (isFinite(h) && h > 0) return h; } catch (e) {}
+  }
+  return HOUSE.bodyPt || 12;
+}
+// 解析下划线参数：支持 boolean 与字符串线型（single/double/dotted/dashed/dash/wave/bold/none）。
+function resolveUnderlineEnum(u) {
+  const U = (css && css.awt && css.awt.FontUnderline) || {};
+  const NONE = U.NONE != null ? U.NONE : 0;
+  const SINGLE = U.SINGLE != null ? U.SINGLE : 1;
+  const DOUBLE = U.DOUBLE != null ? U.DOUBLE : 2;
+  const DOTTED = U.DOTTED != null ? U.DOTTED : 3;
+  const DASH = U.DASH != null ? U.DASH : 5;
+  const WAVE = U.WAVE != null ? U.WAVE : 10;
+  const BOLD = U.BOLD != null ? U.BOLD : 12;
+  if (typeof u === 'boolean') return { value: u ? SINGLE : NONE, label: u };
+  const s = String(u).trim().toLowerCase();
+  if (!s || s === 'false' || s === 'none' || s === '0' || s === 'off' || s === '无') return { value: NONE, label: false };
+  if (s === 'true' || s === 'single' || s === '1' || s === 'on' || s === '单下划线') return { value: SINGLE, label: s === 'single' ? 'single' : true };
+  if (s === 'double' || s === '双下划线') return { value: DOUBLE, label: 'double' };
+  if (s === 'dotted' || s === '点线' || s === '点式下划线') return { value: DOTTED, label: 'dotted' };
+  if (s === 'dash' || s === 'dashed' || s === '虚线') return { value: DASH, label: 'dashed' };
+  if (s === 'wave' || s === 'wavy' || s === '波浪线') return { value: WAVE, label: 'wave' };
+  if (s === 'bold' || s === 'thick' || s === '粗线') return { value: BOLD, label: 'bold' };
+  return { value: SINGLE, label: true };
+}
+// 解析行距参数（兼容 single/1.5/oneHalf/double/multiple/proportional/atLeast/minimum/exact/exactly/fixed 及直接数字字符串）
+function parseLineSpacingSpec(modeRaw, valueRaw) {
+  const mode = String(modeRaw || '').trim();
+  const modeLower = mode.toLowerCase();
+  const v = Number(valueRaw) || 0;
+  const M = (css && css.style && css.style.LineSpacingMode) || { PROP: 0, MINIMUM: 1, LEADING: 2, FIX: 3 };
+  if (modeLower === 'single' || mode === '1' || mode === '1.0') return { ls: { Mode: M.PROP, Height: 100 }, label: 'single' };
+  if (mode === '1.5' || modeLower === 'onehalf' || modeLower === '1.5x') return { ls: { Mode: M.PROP, Height: 150 }, label: '1.5' };
+  if (modeLower === 'double' || mode === '2' || mode === '2.0' || modeLower === '2x') return { ls: { Mode: M.PROP, Height: 200 }, label: 'double' };
+  if (modeLower === 'proportional' || modeLower === 'multiple' || modeLower === 'multi') {
+    if (v <= 0) return { error: 'proportional/multiple 行距需要正数 lineSpacingValue（百分比或倍数，如 150 或 1.5）' };
+    const pct = v <= 10 ? Math.round(v * 100) : Math.round(v);
+    return { ls: { Mode: M.PROP, Height: pct }, label: 'proportional:' + pct };
+  }
+  if (modeLower === 'atleast' || modeLower === 'minimum' || modeLower === 'min') {
+    if (v <= 0) return { error: 'atLeast 行距需要正数 lineSpacingValue（磅）' };
+    return { ls: { Mode: M.MINIMUM, Height: ptToMm100(v) }, label: 'atLeast:' + v };
+  }
+  if (modeLower === 'exactly' || modeLower === 'exact' || modeLower === 'fixed' || modeLower === 'fix') {
+    if (v <= 0) return { error: 'exactly 行距需要正数 lineSpacingValue（磅）' };
+    return { ls: { Mode: M.FIX, Height: ptToMm100(v) }, label: 'exactly:' + v };
+  }
+  const numMode = Number(mode.replace(/x$/i, ''));
+  if (isFinite(numMode) && numMode > 0) {
+    const pct = numMode <= 10 ? Math.round(numMode * 100) : Math.round(numMode);
+    return { ls: { Mode: M.PROP, Height: pct }, label: 'proportional:' + pct };
+  }
+  return { error: 'bad lineSpacingMode: ' + mode + ' (single/1.5/double/multiple/proportional/atLeast/exactly)' };
 }
 
 // ---- 标准格式（house style）与 markdown 剥离写入 -----------------------------
@@ -1430,18 +1854,41 @@ function applyHouseChar(ps, opts) {
   if (!o.keepWeight) {
     try { setCharProp(ps, 'CharWeight', o.bold ? css.awt.FontWeight.BOLD : css.awt.FontWeight.NORMAL); } catch (e) {}
   }
-  try { ps.setPropertyValue('CharColor', color); } catch (e) {}
+  try { setCharColor(ps, color); } catch (e) {}
+}
+// 同时对段落对象与跨整段的 XTextCursor 设字符格式，确保 Word 导入的 <w:rPr> run 级直接格式被覆盖。
+function applyHouseCharDeep(el, opts) {
+  applyHouseChar(el, opts);
+  try {
+    if (el && typeof el.getText === 'function') {
+      const cur = el.getText().createTextCursorByRange(el);
+      if (cur && cur !== el) applyHouseChar(cur, opts);
+    }
+  } catch (e) {}
 }
 // 段落规格按画像块取：title = 一级标题块；heading = opts.level 级标题块（缺省二级，
 // house-default 里二至六级与正文同款只加粗）；body / list（不缩进）= 正文块；
 // tableCell = 表格单元格块。opts.afterTable：紧跟表格的首段段前取 afterTableSpaceBefore。
 function houseParaSpec(kind, opts) {
   const o = opts || {};
-  if (kind === 'title') return headingSpec(1);
-  if (kind === 'heading') return headingSpec(o.level != null ? o.level : 2);
-  if (kind === 'tableCell') return HOUSE.cellSpec;
-  if (kind === 'list') return Object.assign({}, HOUSE.bodySpec, { indentMm: 0 });
-  return HOUSE.bodySpec;
+  let base;
+  if (kind === 'title') base = headingSpec(1);
+  else if (kind === 'heading') base = headingSpec(o.level != null ? o.level : 2);
+  else if (kind === 'tableCell') return HOUSE.cellSpec;
+  else if (kind === 'list') base = Object.assign({}, HOUSE.bodySpec, { indentMm: 0 });
+  else base = HOUSE.bodySpec;
+  const ov = o.overrides;
+  if (!ov && !o.isNumbered) return base;
+  const copy = Object.assign({}, base);
+  if (o.isNumbered) copy.indentMm = 0;
+  if (ov) {
+    if (kind !== 'title' && ov.align) copy.align = ov.align;
+    if (ov.topMm != null) copy.topMm = ov.topMm;
+    if (ov.bottomMm != null) copy.bottomMm = ov.bottomMm;
+    if (ov.ls != null) copy.ls = ov.ls;
+    if (kind === 'body' && !o.isNumbered && ov.indentMm != null) copy.indentMm = ov.indentMm;
+  }
+  return copy;
 }
 function applyHousePara(ps, kind, opts) {
   const o = opts || {};
@@ -1571,7 +2018,7 @@ function insertInlineStyled(vc, text) {
 // 文本里是否带 markdown 标记（插入路径按此决定走剥离转换还是原样插入）
 const MD_MARKER_RE = /(\*\*[^*\n]+\*\*|\*[^*\n]+\*|`[^`\n]+`|\[[^\]\n]+\]\([^)\s]+\)|^\s*#{1,6}\s|^\s*>\s)/m;
 
-// 编号规则预设。preset: 'bullet' | 'decimal' | 'chinese' | 'multilevel'。
+// 编号规则预设。preset: 'bullet' | 'decimal' | 'chinese' | 'clause' | 'paren_chinese' | 'multilevel'。
 // replaceByIndex 收 sequence<PropertyValue>（zetajs 编组：纯 Array of PropertyValue）。
 function makeNumberingRules(preset) {
   // 常量组带数值兜底：zetajs 常量组个别项缺失时 undefined 进 PropertyValue 会编组失败
@@ -1589,6 +2036,14 @@ function makeNumberingRules(preset) {
     } else if (preset === 'chinese') {
       props.push(mkProp('NumberingType', NUMBER_LOWER_ZH));
       props.push(mkProp('Suffix', '、')); // 一、二、
+    } else if (preset === 'clause') {
+      props.push(mkProp('NumberingType', NUMBER_LOWER_ZH));
+      props.push(mkProp('Prefix', '第'));
+      props.push(mkProp('Suffix', '条 ')); // 第一条 、第二条 
+    } else if (preset === 'paren_chinese') {
+      props.push(mkProp('NumberingType', NUMBER_LOWER_ZH));
+      props.push(mkProp('Prefix', '（'));
+      props.push(mkProp('Suffix', '）')); // （一）（二）
     } else if (preset === 'multilevel') {
       props.push(mkProp('NumberingType', ARABIC));
       props.push(mkProp('Suffix', '.'));
@@ -1641,28 +2096,70 @@ function borderLineStyle(name) {
   if (n === 'dashed') return S.DASHED != null ? S.DASHED : 2;
   return S.SOLID != null ? S.SOLID : 0;
 }
-// 给一张表设边框。spec: {outsideMm, insideMm, color, style}（宽度单位 1/100mm；
-// 缺省取 HOUSE.tableBorder：Grid 实线、内外同宽）。
+// 给一张表设边框。spec: {preset, outsideMm, insideMm, color, style}（宽度单位 1/100mm；
+// 缺省取 HOUSE.tableBorder：Grid 实线、内外同宽；preset: 'all'|'threeLine'|'outer'|'none'）。
 function applyTableBorders(table, spec) {
   const o = Object.assign({}, HOUSE.tableBorder, spec || {});
-  if (o.insideMm == null) o.insideMm = o.outsideMm;
+  const outsideMm = o.outsideMm != null ? o.outsideMm : HOUSE.tableBorder.outsideMm;
+  const insideMm = o.insideMm != null ? o.insideMm : outsideMm;
+  const rawPreset = String((spec && spec.preset) || o.preset || 'all').trim().toLowerCase();
+  const preset = rawPreset === 'threeline' ? 'threeLine' : rawPreset;
+  const noneStyle = (css.table.BorderLineStyle && css.table.BorderLineStyle.NONE != null) ? css.table.BorderLineStyle.NONE : 0;
   const mk = function (mm) {
+    const w = mm > 0 ? mm : 0;
     return new css.table.BorderLine2({
       Color: o.color == null ? 0x000000 : o.color,
       InnerLineWidth: 0, OuterLineWidth: 0, LineDistance: 0,
-      LineStyle: borderLineStyle(o.style),
-      LineWidth: mm,
+      LineStyle: w <= 0 ? noneStyle : borderLineStyle(o.style),
+      LineWidth: w,
     });
   };
-  const bl = mk(o.outsideMm), il = mk(o.insideMm);
+  try {
+    const names = table.getCellNames();
+    const zeroBorder = mk(0);
+    for (let i = 0; i < names.length; i++) {
+      if (parseInt(String(names[i]).replace(/^[A-Z]+/, ''), 10) !== 1) continue;
+      try {
+        const cell = table.getCellByName(names[i]);
+        cell.setPropertyValue('TopBorder', zeroBorder);
+        cell.setPropertyValue('BottomBorder', zeroBorder);
+      } catch (e) {}
+    }
+  } catch (e) {}
+  let topLine, bottomLine, leftLine, rightLine, horizLine, vertLine;
+  if (preset === 'none') {
+    topLine = bottomLine = leftLine = rightLine = horizLine = vertLine = mk(0);
+  } else if (preset === 'outer') {
+    topLine = bottomLine = leftLine = rightLine = mk(outsideMm);
+    horizLine = vertLine = mk(0);
+  } else if (preset === 'threeLine') {
+    const topBottomMm = spec && spec.outsideMm != null ? spec.outsideMm : ptToMm100(1.5);
+    topLine = bottomLine = mk(topBottomMm);
+    leftLine = rightLine = horizLine = vertLine = mk(0);
+  } else {
+    topLine = bottomLine = leftLine = rightLine = mk(outsideMm);
+    horizLine = vertLine = mk(insideMm);
+  }
   const tb = new css.table.TableBorder2({
-    TopLine: bl, BottomLine: bl, LeftLine: bl, RightLine: bl,
-    HorizontalLine: il, VerticalLine: il,
+    TopLine: topLine, BottomLine: bottomLine, LeftLine: leftLine, RightLine: rightLine,
+    HorizontalLine: horizLine, VerticalLine: vertLine,
     IsTopLineValid: true, IsBottomLineValid: true, IsLeftLineValid: true,
     IsRightLineValid: true, IsHorizontalLineValid: true, IsVerticalLineValid: true,
     Distance: 0, IsDistanceValid: false,
   });
   table.setPropertyValue('TableBorder2', tb);
+  if (preset === 'threeLine') {
+    const headerBottom = mk(spec && spec.insideMm != null ? spec.insideMm : ptToMm100(0.75));
+    try {
+      const names = table.getCellNames();
+      for (let i = 0; i < names.length; i++) {
+        if (parseInt(String(names[i]).replace(/^[A-Z]+/, ''), 10) !== 1) continue;
+        try {
+          table.getCellByName(names[i]).setPropertyValue('BottomBorder', headerBottom);
+        } catch (e) {}
+      }
+    } catch (e) {}
+  }
 }
 // 按标准格式刷一张已存在的表：字号/段距/行距/垂直居中/首行加粗居中/数字居右/边框。
 // keepWeight: 非首行不动原有粗体（apply_house_style 走这里，避免抹掉当事人加粗）。
@@ -1864,6 +2361,40 @@ function sheetRangeName(addr) {
 }
 // 绝对引用形式的单元格坐标（'$A$1'），命名区域公式拼接用。
 function absCellRef(col, row) { return '$' + colLetterOf(col) + '$' + (row + 1); }
+// 结构改动后的「新现状」（office-tier1）：页码 / 行列号整体漂移后，模型若仍按旧编号接着改就会改错对象。
+// 删页 / 移页 / 插页回执带当前页序；插删行列回执带新的已用区域与第 1 行（表头）的「地址=值」。
+function slidePageListBrief() {
+  const out = [];
+  try {
+    const pages = xModel.getDrawPages();
+    for (let i = 0; i < pages.getCount(); i++) {
+      let title = '';
+      try {
+        const page = pages.getByIndex(i);
+        for (let s = 0; s < page.getCount(); s++) {
+          const shape = page.getByIndex(s);
+          if (shapeKind(shape) === 'title') { title = shapeText(shape); break; }
+        }
+      } catch (e) {}
+      out.push({ number: i + 1, title: String(title || '').slice(0, 40) });
+    }
+  } catch (e) {}
+  return out;
+}
+function sheetLayoutBrief(sheet) {
+  const out = {};
+  try {
+    const a = usedRangeAddress(sheet);
+    out.usedRange = sheetRangeName(a);
+    const header = {};
+    for (let c = a.StartColumn; c <= Math.min(a.EndColumn, a.StartColumn + 14); c++) {
+      const v = readCellOut(sheet.getCellByPosition(c, a.StartRow));
+      if (v !== '') header[colLetterOf(c) + (a.StartRow + 1)] = v;
+    }
+    out.headerRow = header;
+  } catch (e) {}
+  return out;
+}
 function usedRangeAddress(sheet) {
   const cur = sheet.createCursor();
   cur.gotoStartOfUsedArea(false);
@@ -1891,6 +2422,72 @@ function readCellOut(cell) {
 // 写入时把"长得像数字"的字符串落成数值（同 NUMERIC_CELL_RE 的 house 口径，但
 // 更严格：前导 0 的编号（如 '001'）保持文本，避免证照号/编号被吞前导零）。
 const SHEET_NUMERIC_RE = /^-?(0|[1-9]\d*)(\.\d+)?$/;
+// 写入字符串的类型判定（office-tier1）：只认律师表格里常见、无歧义的写法，并给出该落的数字格式。
+// 返回 { text } 保持文本，或 { value, format }（format 为 null 表示不改格式）。
+// - 超过 15 位有效数字的数字串（身份证号、银行卡号）保持文本：Calc/Excel 的双精度只有 15 位，落成数值会吞掉尾数；
+// - 千分位「10,000」「1,234.56」、百分比「15%」、日期「2024-01-01」「2024/1/5」「2024年1月5日」、
+//   带 ¥/￥ 的金额按数值写入并配对应格式，否则求和会把它们当文本静默跳过；
+// - 「3/4」「TRUE」「12:30」「001」等仍按原样处理（不猜）。
+function sheetTypedInput(raw) {
+  const s = String(raw).trim();
+  if (SHEET_NUMERIC_RE.test(s)) {
+    if (s.replace(/^-/, '').replace('.', '').replace(/^0+/, '').length > 15) return { text: s };
+    return { value: Number(s), format: null };
+  }
+  let m = /^([-+]?)([¥￥]?)(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?$/.exec(s);
+  if (m && (m[2] || m[3].includes(','))) {
+    const digits = m[3].replace(/,/g, '');
+    if (digits.length + (m[4] ? m[4].length - 1 : 0) > 15) return { text: s };
+    const dec = m[4] ? m[4].length - 1 : 0;
+    const body = '#,##0' + (dec ? '.' + '0'.repeat(dec) : '');
+    return { value: Number(m[1] + digits + (m[4] || '')), format: m[2] ? '"¥"' + body : body };
+  }
+  m = /^([-+]?\d+(?:\.(\d+))?)%$/.exec(s);
+  if (m) {
+    const dec = m[2] ? m[2].length : 0;
+    return { value: Number((Number(m[1]) / 100).toFixed(dec + 2)), format: '0' + (dec ? '.' + '0'.repeat(dec) : '') + '%' };
+  }
+  m = /^(\d{4})(?:([-/])(\d{1,2})\2(\d{1,2})|年(\d{1,2})月(\d{1,2})日)$/.exec(s);
+  if (m) {
+    const y = Number(m[1]), mo = Number(m[3] || m[5]), d = Number(m[4] || m[6]);
+    const t = Date.UTC(y, mo - 1, d);
+    const back = new Date(t);
+    if (y < 1900 || back.getUTCFullYear() !== y || back.getUTCMonth() !== mo - 1 || back.getUTCDate() !== d) return { text: s };
+    return { value: Math.round((t - Date.UTC(1899, 11, 30)) / 86400000), format: m[5] ? 'yyyy"年"m"月"d"日"' : 'yyyy-mm-dd' };
+  }
+  return { text: s };
+}
+// 数字格式是日期/时间类时返回单元格显示文本，否则 null。按格式键缓存类型判定。
+function sheetDateText(cell, cache) {
+  try {
+    const key = cell.getPropertyValue('NumberFormat');
+    let isDate = cache.get(key);
+    if (isDate == null) {
+      const type = Number(xModel.getNumberFormats().getByKey(key).getPropertyValue('Type'));
+      const NF = css.util.NumberFormat;
+      const mask = (NF && NF.DATE != null ? NF.DATE : 2) | (NF && NF.TIME != null ? NF.TIME : 4);
+      isDate = (type & mask) !== 0;
+      cache.set(key, isDate);
+    }
+    return isDate ? String(cell.getString()) : null;
+  } catch (e) { return null; }
+}
+function sheetCellIsGeneral(cell) {
+  try {
+    const key = cell.getPropertyValue('NumberFormat');
+    const fs = xModel.getNumberFormats().getByKey(key).getPropertyValue('FormatString');
+    return /^(General|Standard)$/i.test(String(fs));
+  } catch (e) { return false; }
+}
+function setCellNumberFormat(cell, fmt) {
+  try {
+    const formats = xModel.getNumberFormats();
+    const loc = new css.lang.Locale({ Language: '', Country: '', Variant: '' });
+    let key = formats.queryKey(fmt, loc, false);
+    if (key === -1) key = formats.addNew(fmt, loc);
+    cell.setPropertyValue('NumberFormat', key);
+  } catch (e) { /* 格式失败不影响已写入的数值 */ }
+}
 // 列标解析：'B'→1、'AA'→26；也接受 1 开始的数字串（'2'→1）。返回 0 开始的列号，无效返回 -1。
 function colIndexOf(s) {
   const t = String(s == null ? '' : s).trim().toUpperCase();
@@ -1905,16 +2502,35 @@ let cfStyleSeq = 0; // 条件格式的"命中样式"（CellStyle）命名序号
 // 必须是分号（逗号 Err:508），跨表引用必须是 Sheet.A1（Sheet!A1 报 #NAME?
 // Err:525）。AI 与用户都按 Excel 习惯写逗号和 '!'，在此归一化——只动双引号
 // 字符串字面量之外的字符（Calc 转义引号是成对 ""，相邻翻转两次天然兼容）。
-// 代价：Excel 数组字面量的逗号列分隔与 Calc 交集操作符 '!' 会被误转，两者在
-// AI 生成的公式里出现率趋近于零，换取最高频的多参数函数全部可用。
-function normalizeFormula(f) {
+// 单引号包裹的工作表名同样必须保持字面值，包括其中的逗号、感叹号和双引号。
+// Incoming formulas use Excel array constants. Readback converts native array
+// separators back, so both the formula bar and AI read/edit/write retain shape.
+function normalizeFormula(f, toExcelArray = false) {
+  if (toExcelArray && f.charAt(0) !== '=') return f;
   let out = '';
-  let inStr = false;
+  let quote = '';
+  let arrayDepth = 0;
   for (let i = 0; i < f.length; i++) {
     const ch = f.charAt(i);
-    if (ch === '"') { inStr = !inStr; out += ch; continue; }
-    if (!inStr && ch === ',') { out += ';'; continue; }
-    if (!inStr && ch === '!') { out += '.'; continue; }
+    if (quote) {
+      out += ch;
+      if (ch === quote) {
+        if (f.charAt(i + 1) === quote) { out += f.charAt(++i); }
+        else quote = '';
+      }
+      continue;
+    }
+    if (ch === '"' || ch === "'") { quote = ch; out += ch; continue; }
+    if (ch === '{') arrayDepth++;
+    else if (ch === '}') arrayDepth = Math.max(0, arrayDepth - 1);
+    if (toExcelArray) {
+      if (arrayDepth && ch === ';') { out += ','; continue; }
+      if (arrayDepth && ch === '|') { out += ';'; continue; }
+    } else {
+      if (arrayDepth && ch === ';') { out += '|'; continue; }
+      if (ch === ',') { out += ';'; continue; }
+      if (ch === '!') { out += '.'; continue; }
+    }
     out += ch;
   }
   return out;
@@ -2163,6 +2779,15 @@ function nativeKeyDoc() { return isCalcDoc() || isImpressDoc(); }
 const NATIVE_ARROWS = { left: 'LEFT', right: 'RIGHT', up: 'UP', down: 'DOWN' };
 const NATIVE_UI_KEYS = { line_start: 'HOME', line_end: 'END', line_start_sel: 'HOME', line_end_sel: 'END', page_up: 'PAGEUP', page_down: 'PAGEDOWN', escape: 'ESCAPE' };
 let keyRobot = null;
+let nativeKeyRefreshTimer = 0;
+function scheduleNativeKeySelectionRefresh() {
+  if (typeof setTimeout !== 'function') return;
+  if (nativeKeyRefreshTimer) clearTimeout(nativeKeyRefreshTimer);
+  nativeKeyRefreshTimer = setTimeout(function () {
+    nativeKeyRefreshTimer = 0;
+    try { post('sel_changed', { cursorRectRaw: EXEC.get_cursor_rect(), documentSeq: docSeq }); } catch (e) {}
+  }, 60);
+}
 // keys: [{key:'RETURN'|..., shift, ch}]；key 缺省 = 纯字符（KeyCode 0）。
 function postNativeKeys(keys) {
   if (!keyRobot) keyRobot = css.awt.Toolkit.create(context);
@@ -2174,6 +2799,10 @@ function postNativeKeys(keys) {
     keyRobot.keyPress(ev);
     keyRobot.keyRelease(ev);
   }
+  scheduleNativeKeySelectionRefresh();
+  // Wake Qt's idle queue so Impress and Calc paint the posted input promptly
+  // (office-tier1 O8: Calc bursts painted only after the last key, 0.9-1.8 s late).
+  if (isImpressDoc() || isCalcDoc()) Module.resumeMainLoop();
   return { success: true, native: true, keys: keys.length };
 }
 // 全屏标志在引擎处理完投递的 Esc 之后才翻（异步，时点不定），所以 1.5 秒内每
@@ -2226,7 +2855,12 @@ function resolvePage(p) {
 }
 // XDrawPage 没有稳定的等值比较；退回按 Number 属性比对（GenericDrawPage.Number 只读）。
 function unoSameDrawPage(a, b) {
-  try { return a.getPropertyValue('Number') === b.getPropertyValue('Number'); } catch (e) { return a === b; }
+  try {
+    // 选区也可能是形状；读取不存在的属性即使捕获异常也会破坏 WASM 状态。
+    if (!a.getPropertySetInfo().hasPropertyByName('Number') ||
+        !b.getPropertySetInfo().hasPropertyByName('Number')) return a === b;
+    return a.getPropertyValue('Number') === b.getPropertyValue('Number');
+  } catch (e) { return a === b; }
 }
 // 用 .uno:MovePage* 把"当前页"从 fromIndex 挪到 toIndex（同一份 count 快照下，均
 // 0-based）。调用前必须已 ctrl.setCurrentPage() 到源页。XDrawPages 无直接 move
@@ -2250,6 +2884,34 @@ function locatePageIndex(page, out) {
 // 把 page 逐步移动到 toIndex（0-based），每步之间用 Number 属性核对是否真的挪动
 // 了一步再继续——.uno:MovePageUp/Down 偶发不生效，不能假设一次 dispatch 必定
 // 生效一步。不处理"挪进真正最后一页"这个特殊情形（见 movePageTo）。
+// .uno:MovePage* 是界面派发：刚插过页、刚打开文档时，引擎主循环还没处理完上一步，派发会被静默忽略
+// （office-tier1 实测：插页后立即移页原地不动，等 1.5s 再移就成）。没挪到位时让出事件循环再试，
+// 最多约 1.5s；仍失败才如实报错。
+//
+// 另一种静默失效（office-tier1 实测）：宿主把菜单栏、状态栏、工具栏三样**同时**藏掉后，
+// .uno:MovePage* 派发一律不生效（任两样藏掉都正常）；把状态栏显示一下再藏回去即恢复，且之后一直正常。
+// 所以第一次没挪动时先做这一步（每份文档至多一次、状态栏一闪），再按上面的节奏重试。
+async function slideMoveRetry(page, from, to, toIndex) {
+  let finalIndex = -1;
+  try {
+    const shown = EXEC.set_chrome({ statusbar: true });
+    if (shown && shown.applied && shown.applied.statusbar === true) EXEC.set_chrome({ statusbar: false });
+    finalIndex = movePageTo(page, toIndex);
+    if (finalIndex === toIndex) {
+      return { success: true, from: from + 1, to: to, slides: slidePageListBrief(), note: '页码已重排，后续操作以 slides 里的新页码为准' };
+    }
+  } catch (e) { /* 照常走下面的让出重试 */ }
+  for (let attempt = 0; attempt < 10; attempt++) {
+    try { Module.resumeMainLoop(); } catch (e) {}
+    await new Promise(function (r) { setTimeout(r, 150); });
+    finalIndex = movePageTo(page, toIndex);
+    if (finalIndex === toIndex) {
+      return { success: true, from: from + 1, to: to, slides: slidePageListBrief(), note: '页码已重排，后续操作以 slides 里的新页码为准' };
+    }
+    if (finalIndex < 0) break;
+  }
+  return slideFail('移动幻灯片未达预期位置: 目标第 ' + to + ' 页，实际落在第 ' + (finalIndex + 1) + ' 页');
+}
 function movePageStepwise(page, toIndex, maxSteps) {
   const cap = maxSteps || 50;
   let curIndex = -1;
@@ -2280,6 +2942,7 @@ function movePageTo(page, toIndex, maxSteps) {
   const loc0 = {}; const curIndex = locatePageIndex(page, loc0);
   if (curIndex === -1) return -1;
   const total = loc0.total;
+  if (curIndex === toIndex) return curIndex;
   if (toIndex < 0 || toIndex >= total) return curIndex;
   if (toIndex !== total - 1) return movePageStepwise(page, toIndex, maxSteps);
   const nearLast = total - 2;
@@ -2312,20 +2975,27 @@ function ensureShapeNames(page) {
   // 实锤：矩形形状的名字后来指向了标题形状）。先收集页面上已占用的名字集合，
   // 分配新名字时跳过已占用的，保证同一页内任何时刻名字唯一。
   const used = new Set();
+  const shapes = new Array(n), unnamed = [];
   for (let i = 0; i < n; i++) {
     let shape; try { shape = page.getByIndex(i); } catch (e) { continue; }
+    shapes[i] = shape;
     let name = ''; try { name = shape.getName ? shape.getName() : ''; } catch (e) {}
     if (name) used.add(name);
+    else unnamed.push(shape);
   }
-  let counter = 0;
-  for (let i = 0; i < n; i++) {
-    let shape; try { shape = page.getByIndex(i); } catch (e) { continue; }
-    let name = ''; try { name = shape.getName ? shape.getName() : ''; } catch (e) {}
-    if (name) continue;
-    let candidate;
-    do { candidate = '__awd_shape_' + (counter++); } while (used.has(candidate));
-    try { shape.setName(candidate); used.add(candidate); } catch (e) {}
-  }
+  // 起名只是定位用的内部记账，不是用户编辑：.ppt 的形状天生没名字，只读一次工具栏状态就给它们
+  // 起名并把文档标成 modified，宿主随即自动保存——打开一份旧演示文稿就被改写成 10 倍大（O14b 真机实测）。
+  if (unnamed.length) withViewOnlyChange(function () {
+    let counter = 0;
+    for (const shape of unnamed) {
+      let candidate;
+      do { candidate = '__awd_shape_' + (counter++); } while (used.has(candidate));
+      try { shape.setName(candidate); used.add(candidate); } catch (e) {}
+    }
+  });
+  // Reuse only within this synchronous read; the next call reacquires the page
+  // so edits, reordered shapes and recreated placeholders cannot leave stale refs.
+  return shapes;
 }
 // 形状文字：大多数形状（文本框/标题/占位符）实现 drawing.Text；线条/连接符/表格
 // 外壳等不实现，统一 try/catch 归零而非抛错，读取面据此判断"这个形状没有文字"。
@@ -2337,10 +3007,11 @@ function shapeText(shape) {
 // 形状，经 page.getByIndex() 重新取到的引用上 supportsService('com.sun.star.
 // drawing.TableShape') 报 false，但它的 Model 属性货真价实是一张能读写行列的
 // XTable（slide_add_table 内部用同一属性建表已验证）。service 名判定在这个引擎
-// 构建上对新建表格不可靠，改成直接尝试取 Model 并鸭子类型检查 getRows/
-// getColumns 方法是否存在——不依赖 service 字符串，也不关心它为什么不可靠。
+// 构建上对新建表格不可靠，先确认 Model 属性存在，再鸭子类型检查 getRows/
+// getColumns。普通形状读取不存在的 Model 会破坏 WASM 状态，catch 不能补救。
 function isTableShape(shape) {
   try {
+    if (!shape.getPropertySetInfo().hasPropertyByName('Model')) return false;
     const m = shape.getPropertyValue('Model');
     return !!(m && typeof m.getRows === 'function' && typeof m.getColumns === 'function');
   } catch (e) { return false; }
@@ -2370,12 +3041,15 @@ function resolveShape(page, p) {
   const wantName = p && p.shapeName != null && String(p.shapeName).trim() !== '' ? String(p.shapeName).trim() : null;
   const wantText = p && p.matchText != null && String(p.matchText).trim() !== '' ? String(p.matchText).trim() : null;
   if (wantName) {
+    let match = null;
     for (let i = 0; i < n; i++) {
       let shape; try { shape = page.getByIndex(i); } catch (e) { continue; }
       let name = ''; try { name = shape.getName(); } catch (e) {}
-      if (name === wantName) return { shape: shape, index: i, name: name };
+      if (name !== wantName) continue;
+      if (match) return { error: 'SLIDE_AMBIGUOUS_SHAPE', shapeName: wantName };
+      match = { shape: shape, index: i, name: name };
     }
-    return { error: '形状不存在: ' + wantName + '（该页共 ' + n + ' 个形状，可用 slide_get_page 查看）' };
+    return match || { error: '形状不存在: ' + wantName + '（该页共 ' + n + ' 个形状，可用 slide_get_page 查看）' };
   }
   if (wantText) {
     for (let i = 0; i < n; i++) {
@@ -2451,25 +3125,520 @@ function layoutNameOf(layout) {
 function shapeCharFormat(shape) {
   let xText; try { xText = shape.getText(); } catch (e) { return null; }
   let full = ''; try { full = xText.getString() || ''; } catch (e) {}
-  if (!full) return null;
-  let cur;
-  try { cur = xText.createTextCursor(); cur.gotoStart(false); cur.goRight(1, true); }
-  catch (e) { return null; }
+  let cur = null;
+  if (full) {
+    try { cur = xText.createTextCursor(); cur.gotoStart(false); cur.goRight(1, true); }
+    catch (e) { cur = null; }
+  }
+  const src = cur || shape;
+  if (!src || typeof src.getPropertyValue !== 'function') return null;
   const out = {};
-  try { out.fontName = cur.getPropertyValue('CharFontName'); } catch (e) {}
-  try { out.fontSize = cur.getPropertyValue('CharHeight'); } catch (e) {}
-  try { out.bold = cur.getPropertyValue('CharWeight') > 100; } catch (e) {}
-  try { out.italic = !enumEq(cur.getPropertyValue('CharPosture'), css.awt.FontSlant.NONE); } catch (e) {}
-  try { out.underline = !enumEq(cur.getPropertyValue('CharUnderline'), css.awt.FontUnderline.NONE); } catch (e) {}
-  try { out.strikethrough = !enumEq(cur.getPropertyValue('CharStrikeout'), css.awt.FontStrikeout.NONE); } catch (e) {}
-  try { const c = cur.getPropertyValue('CharColor'); out.color = c === -1 ? 'auto' : '#' + ('000000' + (c >>> 0).toString(16)).slice(-6); } catch (e) {}
+  try { out.fontName = src.getPropertyValue('CharFontName'); } catch (e) {}
+  try { out.fontNameAsian = src.getPropertyValue('CharFontNameAsian'); } catch (e) {}
+  try { out.fontSize = src.getPropertyValue('CharHeight'); } catch (e) {}
   try {
-    const a = cur.getPropertyValue('ParaAdjust');
+    const wa = Number(src.getPropertyValue('CharWeightAsian')) || 0;
+    const ww = Number(src.getPropertyValue('CharWeight')) || 0;
+    out.bold = wa > 100 || ww > 100;
+  } catch (e) {
+    try { out.bold = src.getPropertyValue('CharWeight') > 100; } catch (e2) {}
+  }
+  try { out.italic = !enumEq(src.getPropertyValue('CharPosture'), css.awt.FontSlant.NONE); } catch (e) {}
+  try { out.underline = !enumEq(src.getPropertyValue('CharUnderline'), css.awt.FontUnderline.NONE); } catch (e) {}
+  try { out.strikethrough = !enumEq(src.getPropertyValue('CharStrikeout'), css.awt.FontStrikeout.NONE); } catch (e) {}
+  try { const c = src.getPropertyValue('CharColor'); out.color = c === -1 ? 'auto' : '#' + ('000000' + (c >>> 0).toString(16)).slice(-6); } catch (e) {}
+  try {
+    const a = src.getPropertyValue('ParaAdjust');
     const A = css.style.ParagraphAdjust;
     out.alignment = enumEq(a, A.CENTER) ? 'center' : enumEq(a, A.RIGHT) ? 'right'
       : (enumEq(a, A.BLOCK) || enumEq(a, A.STRETCH)) ? 'justify' : 'left';
   } catch (e) {}
   return out;
+}
+
+// Pane configuration is view-only and belongs to one loaded document.
+let slideShowViewState = null;
+function restoreSlideShowView() {
+  const saved = slideShowViewState;
+  slideShowViewState = null;
+  if (!saved || saved.documentSeq !== docSeq) return;
+  saved.controller.restoreConfiguration(saved.configuration);
+  saved.controller.update();
+  Module.resumeMainLoop();
+}
+
+function slideError(code, details) {
+  return Object.assign({ success: false, error: code, message: code, errorCode: code }, details || {});
+}
+
+// Replace only the selected characters; whole-frame setString destroys mixed formatting.
+function slideReplaceTextRange(text, search, replacement, all) {
+  if (search === replacement) return 0;
+  const full = String(text.getString() || '');
+  const offsets = [];
+  for (let at = full.indexOf(search); at !== -1; at = full.indexOf(search, at + search.length)) {
+    offsets.push(at);
+    if (!all) break;
+  }
+  for (let i = offsets.length - 1; i >= 0; i--) {
+    const cur = text.createTextCursor();
+    cur.gotoStart(false);
+    if (offsets[i] && !cur.goRight(offsets[i], false)) throw new Error('Cannot locate replacement start');
+    if (!cur.goRight(search.length, true) || cur.getString() !== search) throw new Error('Replacement text changed');
+    cur.setString(replacement);
+    // Title placeholders keep the pre-edit portion length until the text is read again:
+    // exporting right after the write truncated 「案件概况」→「案件基本情况」 to 「案件基本」.
+    // Reading the frame back re-syncs it (office-tier1, 2026-11-12).
+    text.getString();
+    // Impress text UNO writes do not set the model dirty or emit modify events.
+    // Mark each completed edit so a later failed replacement still gets saved.
+    xModel.setModified(true);
+  }
+  return offsets.length;
+}
+
+// Probe optional UNO properties before reading: unsupported access can poison WASM.
+function slideProperty(source, name) {
+  if (!source || !source.getPropertySetInfo) return null;
+  try {
+    if (!source.getPropertySetInfo().hasPropertyByName(name)) return null;
+    return source.getPropertyValue(name);
+  } catch (e) { return null; }
+}
+function slideEnumName(value, family, names) {
+  for (const name of names) {
+    if (family && family[name] != null && enumEq(value, family[name])) return name.toLowerCase();
+  }
+  return 'unknown';
+}
+function slidePaintFormat(source) {
+  const out = {};
+  for (const prop of ['FillStyle', 'FillColor', 'FillTransparence', 'LineStyle', 'LineColor', 'LineWidth']) {
+    const value = slideProperty(source, prop);
+    if (value == null) continue;
+    if (prop === 'FillStyle' || prop === 'LineStyle') {
+      const family = css.drawing && css.drawing[prop];
+      out[prop] = slideEnumName(value, family, prop === 'FillStyle'
+        ? ['NONE', 'SOLID', 'GRADIENT', 'HATCH', 'BITMAP'] : ['NONE', 'SOLID', 'DASH']);
+      continue;
+    }
+    out[prop] = /Color$/.test(prop) ? '#' + ('000000' + (Number(value) >>> 0).toString(16)).slice(-6)
+      : prop === 'LineWidth' ? hmmToPt(value) : (typeof value === 'object' && typeof value.value === 'number' ? value.value : value);
+  }
+  return out;
+}
+function slideBackground(page) {
+  const own = slideProperty(page, 'Background');
+  if (own) return { source: 'page', format: slidePaintFormat(own) };
+  let master = null; try { master = page.getMasterPage(); } catch (e) {}
+  const inherited = slideProperty(master, 'Background');
+  return { source: inherited ? 'master' : 'unavailable', format: inherited ? slidePaintFormat(inherited) : null };
+}
+function slideTextStyle(source) {
+  const out = {};
+  const props = { fontName: 'CharFontName', fontNameAsian: 'CharFontNameAsian', fontSize: 'CharHeight',
+    fontSizeAsian: 'CharHeightAsian', weight: 'CharWeight', weightAsian: 'CharWeightAsian',
+    italic: 'CharPosture', underline: 'CharUnderline', color: 'CharColor', alignment: 'ParaAdjust',
+    spaceBeforePt: 'ParaTopMargin', spaceAfterPt: 'ParaBottomMargin',
+    leftIndentPt: 'ParaLeftMargin', rightIndentPt: 'ParaRightMargin', firstLineIndentPt: 'ParaFirstLineIndent' };
+  for (const [key, prop] of Object.entries(props)) {
+    const value = slideProperty(source, prop);
+    if (value == null) continue;
+    if (key === 'italic') {
+      const slant = slideEnumName(value, css.awt && css.awt.FontSlant,
+        ['NONE', 'OBLIQUE', 'ITALIC', 'DONTKNOW', 'REVERSE_OBLIQUE', 'REVERSE_ITALIC']);
+      out.fontSlant = slant;
+      out.italic = slant === 'unknown' || slant === 'dontknow' ? null : slant !== 'none';
+      continue;
+    }
+    if (key === 'alignment') {
+      out.alignment = slideEnumName(value, css.style && css.style.ParagraphAdjust, ['LEFT', 'RIGHT', 'BLOCK', 'CENTER', 'STRETCH']);
+      continue;
+    }
+    out[key] = key.endsWith('Pt') ? hmmToPt(value)
+      : key === 'color' ? (Number(value) === -1 ? 'auto' : '#' + ('000000' + (Number(value) >>> 0).toString(16)).slice(-6))
+      : typeof value === 'object' ? (typeof value.value === 'number' ? value.value : String(value)) : value;
+  }
+  const spacing = slideProperty(source, 'ParaLineSpacing');
+  if (spacing != null) out.lineSpacing = { mode: Number(spacing.Mode), height: Number(spacing.Height) };
+  return out;
+}
+function slideTextDetails(shape) {
+  const paragraphs = [];
+  let chars = 0, runs = 0;
+  try {
+    const en = shape.getText().createEnumeration();
+    while (en.hasMoreElements()) {
+      if (paragraphs.length >= 50 || runs >= 200 || chars >= 12000) return { paragraphs: paragraphs, truncated: true, available: true };
+      const para = en.nextElement();
+      const text = String(para.getString() || '');
+      const item = { text: text.slice(0, 12000 - chars), formatScope: 'paragraph-defaults', format: slideTextStyle(para), runs: [] };
+      paragraphs.push(item);
+      chars += text.length;
+      if (chars > 12000) return { paragraphs: paragraphs, truncated: true, available: true };
+      const pen = para.createEnumeration();
+      while (pen.hasMoreElements()) {
+        if (runs >= 200) return { paragraphs: paragraphs, truncated: true, available: true };
+        const run = pen.nextElement();
+        item.runs.push({ text: String(run.getString() || ''), formatScope: 'text-run', format: slideTextStyle(run) });
+        runs++;
+      }
+    }
+    return { paragraphs: paragraphs, truncated: false, available: true };
+  } catch (e) { return { paragraphs: paragraphs, truncated: true, available: false }; }
+}
+
+// Calc 当前活动工作表、单元格与选区解析（供 get_ui_state / format_selection / set_paragraph_format / ui_command 共用）
+function cellFormat(ps) {
+  if (!ps) return {};
+  const f = sheetRawFormat(ps);
+  try { f.underline = !enumEq(ps.getPropertyValue('CharUnderline'), css.awt.FontUnderline.NONE); } catch (e) {}
+  try { f.strikeout = !enumEq(ps.getPropertyValue('CharStrikeout'), css.awt.FontStrikeout.NONE); } catch (e) {}
+  return f;
+}
+function activeCalcSelection() {
+  let sheet = null, sheets = null, sheetCount = 1;
+  const sheetNames = [];
+  try {
+    sheets = xModel.getSheets();
+    sheetCount = sheets.getCount();
+    const cap = Math.min(sheetCount, 50);
+    try {
+      sheetNames.push(...Array.from(sheets.getElementNames()).slice(0, cap).map(name => String(name || '')));
+    } catch (e) {
+      for (let i = 0; i < cap; i++) {
+        try { sheetNames.push(String(sheets.getByIndex(i).getName() || '')); } catch (e) {}
+      }
+    }
+  } catch (e) {}
+  try { sheet = ctrl.getActiveSheet(); } catch (e) {}
+  if (!sheet && sheets && sheetCount > 0) {
+    try { sheet = sheets.getByIndex(0); } catch (e) {}
+  }
+  let sheetName = '';
+  try { if (sheet) sheetName = String(sheet.getName() || ''); } catch (e) {}
+  let col = 0, row = 0, endCol = 0, endRow = 0, selRange = null;
+  let sheetIdx = sheetName && sheetNames.indexOf(sheetName) >= 0 ? sheetNames.indexOf(sheetName) : 0;
+  try {
+    const sel = ctrl.getSelection ? ctrl.getSelection() : null;
+    if (sel && typeof sel.getRangeAddress === 'function') {
+      const a = sel.getRangeAddress();
+      col = a.StartColumn; row = a.StartRow; endCol = a.EndColumn; endRow = a.EndRow;
+      if (a.Sheet != null) sheetIdx = a.Sheet;
+      selRange = sel;
+    } else if (sel && typeof sel.getCellAddress === 'function') {
+      const a = sel.getCellAddress();
+      col = endCol = a.Column; row = endRow = a.Row;
+      if (a.Sheet != null) sheetIdx = a.Sheet;
+      selRange = sel;
+    } else if (sel && typeof sel.getByIndex === 'function' && sel.getCount && sel.getCount() > 0) {
+      const first = sel.getByIndex(0);
+      if (first && typeof first.getRangeAddress === 'function') {
+        const a = first.getRangeAddress();
+        col = a.StartColumn; row = a.StartRow; endCol = a.EndColumn; endRow = a.EndRow;
+        if (a.Sheet != null) sheetIdx = a.Sheet;
+        selRange = first;
+      }
+    }
+  } catch (e) {}
+  if (!(col >= 0)) col = 0;
+  if (!(row >= 0)) row = 0;
+  if (!(endCol >= col)) endCol = col;
+  if (!(endRow >= row)) endRow = row;
+  const address = colLetterOf(col) + (row + 1);
+  const range = sheetRangeName({ StartColumn: col, StartRow: row, EndColumn: endCol, EndRow: endRow });
+  let cell = null;
+  try { if (sheet) cell = sheet.getCellByPosition(col, row); } catch (e) {}
+  if (!selRange && sheet) {
+    try { selRange = sheet.getCellRangeByName(range); } catch (e) {}
+  }
+  const rowCount = endRow - row + 1;
+  const colCount = endCol - col + 1;
+  let merged = false, hasFrozenPanes = false, autoFilter = false, isProtected = false;
+  let rowHeightPt = null, colWidthPt = null;
+  try {
+    if (selRange && typeof selRange.getIsMerged === 'function') merged = !!selRange.getIsMerged();
+    else if (cell && typeof cell.getIsMerged === 'function') merged = !!cell.getIsMerged();
+  } catch (e) {}
+  try {
+    if (ctrl && typeof ctrl.hasFrozenPanes === 'function') hasFrozenPanes = !!ctrl.hasFrozenPanes();
+  } catch (e) {}
+  try {
+    const dbs = xModel && typeof xModel.getPropertyValue === 'function' ? xModel.getPropertyValue('DatabaseRanges') : null;
+    const afName = '__awd_af_' + sheetIdx;
+    if (dbs && typeof dbs.hasByName === 'function' && dbs.hasByName(afName)) {
+      const dbRange = dbs.getByName(afName);
+      autoFilter = !!(dbRange && dbRange.getPropertyValue && dbRange.getPropertyValue('AutoFilter'));
+    }
+  } catch (e) {}
+  try {
+    if (sheet && typeof sheet.isProtected === 'function') isProtected = !!sheet.isProtected();
+  } catch (e) {}
+  try {
+    if (sheet && typeof sheet.getRows === 'function') {
+      const rObj = sheet.getRows().getByIndex(row);
+      const h = Number(rObj.getPropertyValue('Height'));
+      if (h > 0) rowHeightPt = hmmToPt(h);
+    }
+  } catch (e) {}
+  try {
+    if (sheet && typeof sheet.getColumns === 'function') {
+      const cObj = sheet.getColumns().getByIndex(col);
+      const w = Number(cObj.getPropertyValue('Width'));
+      if (w > 0) colWidthPt = hmmToPt(w);
+    }
+  } catch (e) {}
+  return {
+    sheet: sheet,
+    sheetName: sheetName,
+    sheetIndex: sheetIdx,
+    sheetIdx: sheetIdx,
+    sheetCount: sheetCount,
+    sheetNames: sheetNames,
+    cell: cell,
+    selRange: selRange,
+    col: col,
+    row: row,
+    endCol: endCol,
+    endRow: endRow,
+    rowCount: rowCount,
+    colCount: colCount,
+    address: address,
+    cellName: address,
+    range: range,
+    rangeName: range,
+    merged: merged,
+    hasFrozenPanes: hasFrozenPanes,
+    autoFilter: autoFilter,
+    protected: isProtected,
+    rowHeightPt: rowHeightPt,
+    colWidthPt: colWidthPt,
+  };
+}
+function activeCalcRangeName() {
+  try { return activeCalcSelection().range || 'A1'; } catch (e) { return 'A1'; }
+}
+
+// Clipboard must use the complete real range, never the toolbar's A1 fallback.
+function calcClipboardSelection() {
+  let range = ctrl.getSelection();
+  if (range && typeof range.getByIndex === 'function' && typeof range.getRangeAddress !== 'function') {
+    if (range.getCount() !== 1) throw new Error('请先选择一个连续区域，再复制或粘贴');
+    range = range.getByIndex(0);
+  }
+  if (!range || typeof range.getRangeAddress !== 'function') throw new Error('请先选择单元格区域，再复制或粘贴');
+  const address = range.getRangeAddress();
+  return { range: range, address: address, sheet: xModel.getSheets().getByIndex(address.Sheet) };
+}
+
+// Impress 当前幻灯片、选中形状与形状列表解析（供 get_ui_state / format_selection / set_paragraph_format / ui_command 共用）
+function slidePages() {
+  try { return xModel.getDrawPages(); } catch (e) { return null; }
+}
+// Interaction reads must not enumerate or name every object on the slide.
+// Indices are deliberately unknown: resolving them would require that scan.
+function activeImpressSelection() {
+  const page = ctrl.getCurrentPage();
+  const pages = xModel.getDrawPages();
+  const slideNumber = Number(page.getPropertyValue('Number'));
+  let shape = null, textRange = null;
+  const selection = ctrl.getSelection();
+  if (selection && typeof selection.getString === 'function' && typeof selection.getShapeType !== 'function') {
+    textRange = selection;
+  } else {
+    const candidate = selection && typeof selection.getByIndex === 'function'
+      ? (selection.getCount() > 0 ? selection.getByIndex(0) : null) : selection;
+    if (candidate && typeof candidate.getPosition === 'function' && typeof candidate.getSize === 'function'
+      && !unoSameDrawPage(candidate, page)) shape = candidate;
+  }
+  let name = '';
+  try { if (shape && shape.getName) name = String(shape.getName() || ''); } catch (e) {}
+  return { slideNumber: slideNumber, currentSlideIndex: slideNumber - 1, slideCount: pages.getCount(),
+    shapeCount: page.getCount(), selectedShape: shape, selectedShapeIndex: -1, selectedShapeName: name, textRange: textRange };
+}
+function activeImpressContext(wantShapeName) {
+  let page = null, pageShapes = null;
+  try { if (ctrl && ctrl.getCurrentPage) page = ctrl.getCurrentPage(); } catch (e) {}
+  let pages = null, slideCount = 0;
+  try { pages = xModel.getDrawPages(); slideCount = pages.getCount(); } catch (e) {}
+  if (!page && pages && slideCount > 0) {
+    try { page = pages.getByIndex(0); } catch (e) {}
+  }
+  let slideNumber = 1;
+  if (page) {
+    let n = NaN;
+    try { n = Number(page.getPropertyValue('Number')); } catch (e) {}
+    if (!(n >= 1)) {
+      const idx = locatePageIndex(page, {});
+      if (idx >= 0) n = idx + 1;
+    }
+    if (n >= 1) slideNumber = n;
+    try { pageShapes = ensureShapeNames(page); } catch (e) {}
+  }
+  const currentSlideIndex = Math.max(0, slideNumber - 1);
+  let slideWidthMm = 280, slideHeightMm = 157.5, widthPt = 793.7, heightPt = 446.5;
+  let layout = null, layoutName = null, masterName = '', notesText = '';
+  const masterPages = [];
+  if (page) {
+    try {
+      const wHmm = Number(page.getPropertyValue('Width'));
+      const hHmm = Number(page.getPropertyValue('Height'));
+      if (wHmm > 0) { slideWidthMm = Math.round(wHmm / 10) / 10; widthPt = hmmToPt(wHmm); }
+      if (hHmm > 0) { slideHeightMm = Math.round(hHmm / 10) / 10; heightPt = hmmToPt(hHmm); }
+    } catch (e) {}
+    try { layout = Number(page.getPropertyValue('Layout')); layoutName = layoutNameOf(layout); } catch (e) {}
+    try { masterName = String(page.getMasterPage().getName() || ''); } catch (e) {}
+    try { notesText = notesPageText(page.getNotesPage()); } catch (e) {}
+  }
+  try {
+    const masters = xModel.getMasterPages();
+    const mCount = masters ? masters.getCount() : 0;
+    for (let i = 0; i < Math.min(mCount, 30); i++) {
+      try {
+        const mn = String(masters.getByIndex(i).getName() || '');
+        if (mn) masterPages.push(mn);
+      } catch (e) {}
+    }
+  } catch (e) {}
+  let selectedRawShape = null;
+  try {
+    const sel = ctrl && ctrl.getSelection ? ctrl.getSelection() : null;
+    let cand = null;
+    if (sel && typeof sel.getByIndex === 'function' && sel.getCount && sel.getCount() > 0) {
+      cand = sel.getByIndex(0);
+    } else if (sel && (typeof sel.getPosition === 'function' || typeof sel.getSize === 'function')) {
+      cand = sel;
+    }
+    if (cand && (!page || !unoSameDrawPage(cand, page)) && (typeof cand.getPosition === 'function' || typeof cand.getSize === 'function')) {
+      selectedRawShape = cand;
+    }
+  } catch (e) {}
+  const shapes = [];
+  let fallbackShape = null, fallbackIndex = -1, selectedShapeIndex = -1, selectedShapeName = '';
+  let rawSelectedName = '';
+  try { if (selectedRawShape && selectedRawShape.getName) rawSelectedName = String(selectedRawShape.getName() || ''); } catch (e) {}
+  if (page) {
+    let cnt = 0;
+    try { cnt = pageShapes ? pageShapes.length : page.getCount(); } catch (e) {}
+    for (let i = 0; i < cnt; i++) {
+      let s; try { s = pageShapes ? pageShapes[i] : page.getByIndex(i); } catch (e) { continue; }
+      if (!s) continue;
+      let nm = ''; try { nm = s.getName ? String(s.getName() || '') : ''; } catch (e) {}
+      const kind = shapeKind(s);
+      const txt = shapeText(s);
+      let pos = null, size = null;
+      try { pos = s.getPosition(); } catch (e) {}
+      try { size = s.getSize(); } catch (e) {}
+      shapes.push({
+        index: i + 1,
+        shapeIndex: i,
+        name: nm,
+        shapeName: nm,
+        kind: kind,
+        type: kind,
+        text: txt.slice(0, 40),
+        isTable: kind === 'table',
+        left: pos ? hmmToPt(pos.X) : 0,
+        top: pos ? hmmToPt(pos.Y) : 0,
+        width: size ? hmmToPt(size.Width) : 0,
+        height: size ? hmmToPt(size.Height) : 0,
+      });
+      if (selectedRawShape && (s === selectedRawShape || (rawSelectedName && nm === rawSelectedName))) {
+        selectedShapeIndex = i;
+        selectedShapeName = nm;
+      }
+      if (!fallbackShape && (kind === 'title' || kind === 'placeholder' || kind === 'text' || txt.length > 0)) {
+        fallbackShape = s;
+        fallbackIndex = i;
+      }
+    }
+    if (!fallbackShape && cnt > 0) {
+      try { fallbackShape = pageShapes ? pageShapes[0] : page.getByIndex(0); if (fallbackShape) fallbackIndex = 0; } catch (e) {}
+    }
+  }
+  let targetShape = selectedRawShape || fallbackShape;
+  if (!selectedRawShape && fallbackShape) {
+    selectedShapeIndex = fallbackIndex;
+    try { selectedShapeName = fallbackShape.getName ? String(fallbackShape.getName() || '') : ''; } catch (e) {}
+  }
+  if (page && wantShapeName != null && String(wantShapeName).trim() !== '') {
+    const rs = resolveShape(page, { shapeName: String(wantShapeName).trim() });
+    if (rs && rs.shape) {
+      targetShape = rs.shape;
+      selectedShapeIndex = rs.index;
+      selectedShapeName = rs.name;
+    }
+  }
+  return {
+    page: page,
+    slideNumber: slideNumber,
+    currentSlideIndex: currentSlideIndex,
+    slideCount: slideCount,
+    slideWidthMm: slideWidthMm,
+    slideHeightMm: slideHeightMm,
+    widthPt: widthPt,
+    heightPt: heightPt,
+    layout: layout,
+    layoutName: layoutName,
+    masterName: masterName,
+    masterPages: masterPages,
+    notesText: notesText,
+    shapeCount: shapes.length,
+    selectedRawShape: selectedRawShape,
+    fallbackShape: fallbackShape,
+    targetShape: targetShape,
+    selectedShape: targetShape,
+    selectedShapeIndex: selectedShapeIndex,
+    selectedShapeName: selectedShapeName,
+    shapes: shapes,
+  };
+}
+function impressShapeDetail(shape, index0) {
+  if (!shape) return null;
+  let name = ''; try { name = shape.getName ? String(shape.getName() || '') : ''; } catch (e) {}
+  const kind = shapeKind(shape);
+  let pos = null, size = null;
+  try { pos = shape.getPosition(); } catch (e) {}
+  try { size = shape.getSize(); } catch (e) {}
+  const idx0 = typeof index0 === 'number' && index0 >= 0 ? index0 : 0;
+  const detail = {
+    index: idx0 + 1,
+    shapeIndex: idx0,
+    name: name,
+    shapeName: name,
+    kind: kind,
+    type: kind,
+    left: pos ? hmmToPt(pos.X) : 0,
+    top: pos ? hmmToPt(pos.Y) : 0,
+    width: size ? hmmToPt(size.Width) : 0,
+    height: size ? hmmToPt(size.Height) : 0,
+    isTable: kind === 'table',
+    text: shapeText(shape),
+  };
+  if (detail.isTable) {
+    try {
+      const table = shape.getPropertyValue('Model');
+      detail.rows = table.getRows().getCount();
+      detail.cols = table.getColumns().getCount();
+    } catch (e) {}
+  }
+  try {
+    const fs = shape.getPropertyValue('FillStyle');
+    const fsVal = unoEnumVal(fs);
+    detail.fillStyle = (fsVal === 0 || String(fs) === 'NONE') ? 'none' : 'solid';
+    const fc = shape.getPropertyValue('FillColor');
+    detail.fillColor = (detail.fillStyle === 'none' || fc == null || Number(fc) === -1) ? 'none' : sheetHex(fc);
+  } catch (e) { detail.fillStyle = 'none'; detail.fillColor = 'none'; }
+  try {
+    const ls = shape.getPropertyValue('LineStyle');
+    const lsVal = unoEnumVal(ls);
+    detail.lineStyle = (lsVal === 0 || String(ls) === 'NONE') ? 'none' : 'solid';
+    const lc = shape.getPropertyValue('LineColor');
+    detail.lineColor = (detail.lineStyle === 'none' || lc == null || Number(lc) === -1) ? 'none' : sheetHex(lc);
+  } catch (e) { detail.lineStyle = 'none'; detail.lineColor = 'none'; }
+  try { detail.lineWidthPt = hmmToPt(shape.getPropertyValue('LineWidth')); } catch (e) { detail.lineWidthPt = 0; }
+  try { detail.fillTransparency = Number(shape.getPropertyValue('FillTransparence')) || 0; } catch (e) { detail.fillTransparency = 0; }
+  return detail;
 }
 // 定位一张 Impress 表格形状：shapeName 显式指定；缺省要求该页恰好一张表格形状
 // （Impress 没有"光标所在表"的等价概念，不能像 resolveWriterTable 那样回退）。
@@ -2517,7 +3686,9 @@ function styleProfileSummary() {
   };
 }
 // 段落分类：首个非空短段（idx 0、<=60 字）为 title；OutlineLevel>0 或 Heading 样式为
-// heading（trueLevels 时取真实级别，否则一律二级 = 改造前"小标题=正文款加粗"）；其余 body。
+// heading（trueLevels 时取真实级别，否则一律二级 = 改造前"小标题=正文款加粗"）；
+// 合同短条款头（第X章/节/编、第X条、一、，兼容自动编号与手打编号）同样归为 heading；
+// 非标题的自动编号段落归为 list（不叠加 2 字符首行缩进）；其余 body。
 function paraKindOf(el, isFirst, trueLevels) {
   let lvl = 0, style = '';
   try { lvl = el.getPropertyValue('OutlineLevel') || 0; } catch (e) {}
@@ -2527,15 +3698,79 @@ function paraKindOf(el, isFirst, trueLevels) {
     if (!level) { const m = /(\d+)/.exec(style); level = m ? Number(m[1]) : 2; }
     return { kind: 'heading', level: trueLevels ? level : 2 };
   }
+  const combined = paragraphCombinedText(el).trim();
+  if (combined && combined.length <= 45 && !/[。；;！!？?：:]$/.test(combined)) {
+    if (/^\s*第[一二三四五六七八九十百千零〇0-9１-９]+\s*[章节编]/.test(combined)) {
+      return { kind: 'heading', level: 2 };
+    }
+    if (/^\s*(第[一二三四五六七八九十百千零〇0-9１-９]+\s*条|[一二三四五六七八九十]{1,3}\s*、)/.test(combined)) {
+      return { kind: 'heading', level: trueLevels ? 3 : 2 };
+    }
+  }
+  if (readParagraphLabel(el)) {
+    return { kind: 'list', level: null };
+  }
   return { kind: 'body', level: null };
 }
-function charOptsFor(k) {
-  if (k.kind === 'body') return { sizePt: HOUSE.bodyPt, bold: HOUSE.bodyBold, keepWeight: true };
+function buildStandardOverrides(p) {
+  if (!p || typeof p !== 'object') return null;
+  const ov = {};
+  if (p.fontNameAsian || p.fontName) ov.fontAsian = String(p.fontNameAsian || p.fontName);
+  if (p.fontNameWestern || p.fontName) ov.fontWestern = String(p.fontNameWestern || p.fontName);
+  const bodyPt = parseFontSizePt(p.bodyFontSizePt != null ? p.bodyFontSizePt : p.fontSize);
+  if (bodyPt) ov.bodyPt = bodyPt;
+  const titlePt = parseFontSizePt(p.titleFontSizePt);
+  if (titlePt) ov.titlePt = titlePt;
+  const headingPt = parseFontSizePt(p.headingFontSizePt);
+  if (headingPt) ov.headingPt = headingPt;
+  if (p.alignment && PROFILE_ALIGN[String(p.alignment).toLowerCase()]) {
+    ov.align = PROFILE_ALIGN[String(p.alignment).toLowerCase()];
+  }
+  if (p.spaceBeforePt != null && isFinite(Number(p.spaceBeforePt))) ov.topMm = ptToMm100(Number(p.spaceBeforePt));
+  if (p.spaceAfterPt != null && isFinite(Number(p.spaceAfterPt))) ov.bottomMm = ptToMm100(Number(p.spaceAfterPt));
+  if (p.lineSpacingMode != null) {
+    const parsed = parseLineSpacingSpec(p.lineSpacingMode, p.lineSpacingValue);
+    if (parsed && parsed.ls) {
+      const M = (css && css.style && css.style.LineSpacingMode) || { PROP: 0, MINIMUM: 1, FIX: 3 };
+      if (parsed.ls.Mode === M.PROP) ov.ls = { mode: 'prop', pct: parsed.ls.Height };
+      else if (parsed.ls.Mode === M.FIX) ov.ls = { mode: 'fix', mm: parsed.ls.Height };
+      else ov.ls = { mode: 'min', mm: parsed.ls.Height };
+    }
+  }
+  const effBodyPt = ov.bodyPt || HOUSE.bodyPt || 12;
+  if (p.firstLineIndentChars != null && isFinite(Number(p.firstLineIndentChars))) {
+    ov.indentMm = ptToMm100(Number(p.firstLineIndentChars) * effBodyPt);
+  } else if (p.firstLineIndentPt != null && isFinite(Number(p.firstLineIndentPt))) {
+    ov.indentMm = ptToMm100(Number(p.firstLineIndentPt));
+  }
+  return Object.keys(ov).length ? ov : null;
+}
+function charOptsFor(k, overrides) {
+  const ov = overrides || {};
+  if (k.kind === 'body' || k.kind === 'list') {
+    return {
+      sizePt: ov.bodyPt || HOUSE.bodyPt,
+      bold: HOUSE.bodyBold,
+      keepWeight: true,
+      fontAsian: ov.fontAsian || HOUSE.fontAsian,
+      fontWestern: ov.fontWestern || HOUSE.fontWestern,
+    };
+  }
   const hs = k.kind === 'title' ? headingSpec(1) : headingSpec(k.level);
-  return { sizePt: hs.sizePt, bold: hs.bold, fontAsian: hs.fontAsian, fontWestern: hs.fontWestern, color: hs.color };
+  const sz = k.kind === 'title'
+    ? (ov.titlePt || hs.sizePt)
+    : (ov.headingPt || ov.bodyPt || hs.sizePt);
+  return {
+    sizePt: sz,
+    bold: hs.bold,
+    fontAsian: ov.fontAsian || hs.fontAsian,
+    fontWestern: ov.fontWestern || hs.fontWestern,
+    color: hs.color,
+  };
 }
 async function applyHouseToDocument(p, opts) {
   const trueLevels = !!(opts && opts.trueLevels);
+  const overrides = buildStandardOverrides(p);
   // progress 的 total = 正文段数 + 表数（顶层元素数）；段数走索引缓存，表数一次 getCount。
   let total = 0;
   try { total = getParaIndex().total; } catch (e) {}
@@ -2558,8 +3793,8 @@ async function applyHouseToDocument(p, opts) {
         if (idx === 0 && text.length <= 60) k = { kind: 'title', level: 1 };
       }
       if (k.kind !== 'title') k = paraKindOf(el, idx === 0, trueLevels);
-      applyHousePara(el, k.kind, { afterTable: prevWasTable, level: k.level });
-      applyHouseChar(el, charOptsFor(k));
+      applyHousePara(el, k.kind, { afterTable: prevWasTable, level: k.level, isNumbered: !!readParagraphLabel(el), overrides: overrides });
+      applyHouseCharDeep(el, charOptsFor(k, overrides));
       prevWasTable = false;
       paras++;
     } else if (el.supportsService && el.supportsService('com.sun.star.text.TextTable')) {
@@ -2571,6 +3806,7 @@ async function applyHouseToDocument(p, opts) {
   } finally { unlockModel(); }
   if (idx > BATCH && !cancelled) postProgress(p, idx, total);
   const r = Object.assign({ success: true, paragraphs: paras, tables: tables, truncated: cancelled }, verifySnapshot());
+  if (overrides) r.overrides = overrides;
   if (cancelled) { r.cancelled = true; r.done = idx; }
   return r;
 }
@@ -2775,6 +4011,7 @@ function rememberInlineUndo() {
 }
 // One undo or redo step through `run` (the UndoManager, or Writer's own command).
 function undoStep(um, kind, run) {
+  noteRedlinesMayHaveBeenRemoved();
   const other = kind === 'undo' ? 'redo' : 'undo';
   const detour = isWriterDoc() && readShowChangesInMargin() === true
     && sameUndoEntry(inlineUndoEntries[kind], topUndoEntry(um, kind));
@@ -2823,14 +4060,34 @@ function resetRevisionView() { return applyRevisionView(DEFAULT_REVISION_VIEW); 
 // Writer's final-text view can lose/rename the private bookmarks that its DOCX
 // exporter uses for move ranges, while native RedlineMovedID remains intact.
 // Restore only complete native pairs; never infer movement from matching text.
+// 逐条取 redline 在这个引擎上每条 2–7ms：4107 条修订的定稿每次导出（=每次自动保存）白耗 10s
+// （office-tier1 实测 article.docx：导出 11.7s，其中本函数 10.3s，引擎 storeToURL 只 0.9s）。
+// 跳过条件：上次全扫整篇没有移动、期间没有接受/拒绝/撤销/重做/重载（纪元未变），且条数只增加了 0 或 1。
+// 新的移动对要新增 ≥2 条 redline 才会出现（修订模式下打字通常每处只 +1，不能因此每次全扫）。
+// 已知取舍：引擎把一条新插入与「早已存在的同文删除」配成移动时只 +1，这一次会漏修书签——
+// 后果是 Word 里显示为普通删除+插入而不是移动（与 2026-10 加修复前相同），正文不丢；下次条数 +2 或纪元变化即补扫。
+let moveRepairCache = { model: null, count: -1, epoch: -1 };
+let redlineRemovalEpoch = 0;
+function noteRedlinesMayHaveBeenRemoved() { redlineRemovalEpoch++; }
 function repairMoveRangeBookmarks() {
   if (!isWriterDoc()) return;
+  let count = -1;
+  try { count = xModel.getRedlines().getCount(); } catch (e) { count = -1; }
+  if (count === 0) return;
+  if (count > 0 && moveRepairCache.model === xModel && moveRepairCache.epoch === redlineRemovalEpoch
+    && count - moveRepairCache.count >= 0 && count - moveRepairCache.count <= 1) {
+    moveRepairCache.count = count;
+    return;
+  }
+  const scanned = { model: xModel, count: count, epoch: redlineRemovalEpoch };
   const groups = Object.create(null), en = xModel.getRedlines().createEnumeration();
+  let sawMove = false;
   while (en.hasMoreElements()) {
     const redline = en.nextElement();
     let id;
     try { id = Number(redline.getPropertyValue('RedlineMovedID')); } catch (e) { return; }
     if (!(id > 1)) continue;
+    sawMove = true;
     const type = String(redline.getPropertyValue('RedlineType'));
     if (type !== 'Delete' && type !== 'Insert') continue;
     const group = groups[id] || (groups[id] = { Delete: [], Insert: [] });
@@ -2839,6 +4096,8 @@ function repairMoveRangeBookmarks() {
     if (start.getText().compareRegionStarts(start, end) < 0) { const tmp = start; start = end; end = tmp; }
     group[type].push({ start: start, end: end });
   }
+  // 只有确认整篇没有任何移动 redline 时才记缓存；有移动的文档每次导出都照旧核对配对书签
+  if (!sawMove) moveRepairCache = scanned;
   const ids = Object.keys(groups).filter(id => groups[id].Delete.length && groups[id].Insert.length);
   if (!ids.length) return;
   const span = function (parts) {
@@ -3055,7 +4314,9 @@ let contextMenuInterceptor = null;
 // 光标（或选区）落在哪一条 redline 上——工具条「接受/拒绝当前」用。与
 // selectionTouchesDeletion 同口径的区间相交：compareRegionStarts(A,B)>0 表示 A 在 B 前，
 // ==0 表示重合。零宽删除（页边态塌到一点）靠端点相等也能命中。
+// 若光标未直接命中修订，默认取光标位置往后的第一个修订（#1287）。
 function revisionIndexAtCursor() {
+  let firstAfter = -1;
   try {
     const vc = ctrl.getViewCursor();
     const text = vc.getText(), start = vc.getStart(), end = vc.getEnd();
@@ -3070,11 +4331,24 @@ function revisionIndexAtCursor() {
         if (text.compareRegionStarts(rs, re) < 0) { const tmp = rs; rs = re; re = tmp; }
         // 相交：start 不在 re 之后，且 rs 不在 end 之后（含端点贴合）。
         if (text.compareRegionStarts(start, re) >= 0 && text.compareRegionStarts(rs, end) >= 0) return index;
-      } catch (ignored) {}
+        if (firstAfter < 0 && text.compareRegionStarts(end, rs) > 0) firstAfter = index;
+      } catch (crossStory) {
+        if (firstAfter < 0) {
+          try {
+            const body = xModel.getText();
+            const vcTable = vc.getPropertyValue && vc.getPropertyValue('TextTable');
+            const rs = r.getPropertyValue('RedlineStart');
+            const rTable = rs && rs.getPropertyValue && rs.getPropertyValue('TextTable');
+            const vcAnchor = vcTable ? vcTable.getAnchor().getEnd() : end;
+            const rAnchor = rTable ? rTable.getAnchor().getStart() : rs;
+            if (rAnchor && body.compareRegionStarts(vcAnchor, rAnchor) >= 0) firstAfter = index;
+          } catch (ignored) {}
+        }
+      }
       index++;
     }
   } catch (e) {}
-  return -1;
+  return firstAfter;
 }
 function selectionTouchesDeletion(vc) {
   const text = vc.getText(), start = vc.getStart(), end = vc.getEnd();
@@ -3122,10 +4396,16 @@ function installContextMenuInterceptor(controller) {
 // seed scaffolding text here — earlier dev-prototype seed text would otherwise
 // show through whenever a real load was skipped/failed, looking like the editor
 // loaded the wrong content.
-function bootDoc() {
+// 备胎引擎开机时的空白文档；warm_engine 只在它还挂着时运行，换上真文档后一律跳过。
+let bootBlankModel = null;
+function bootDoc(initialDocument = false) {
   context = zetajs.getUnoComponentContext();
   desktop = css.frame.Desktop.create(context);
+  // The relay is usable without a model. A cold file loads directly through the
+  // normal load_document path; ui_ready belongs to that successful first model.
+  if (initialDocument) { log('等待首个真实文档 / waiting for first document'); return; }
   xModel = desktop.loadComponentFromURL('private:factory/swriter', '_default', 0, []);
+  bootBlankModel = xModel;
   ctrl = xModel.getCurrentController();
   installReviewCommentInterceptor(ctrl);
   installContextMenuInterceptor(ctrl);
@@ -3210,9 +4490,13 @@ function resumeModifyListener() {
 // **这条通道只覆盖「选区」类变化**：真机实测扩选/全选/选中段落每次都触发，但
 // **纯光标移动（塌陷选区左右挪）基本不触发**。所以编辑器页还会在画布 mouseup
 // 和覆盖层转发控制键之后各补一发——两路合起来才盖得住用户的实际操作。
+let suppressSelectionEvent = false;
 function installSelectionListener(controller) {
   const listener = zetajs.unoObject([css.view.XSelectionChangeListener], {
-    selectionChanged() { try { post('sel_changed'); } catch (e) { /* ignore */ } },
+    selectionChanged() {
+      if (suppressSelectionEvent) return;
+      try { post('sel_changed'); } catch (e) { /* ignore */ }
+    },
     disposing() {},
   });
   controller.addSelectionChangeListener(listener);
@@ -3530,6 +4814,51 @@ function readNativeCaretRect(frame, live, charHeightPt) {
     viewport: { x: x, y: y, width: width, height: height } };
 }
 
+let stashedDragSelection = null;
+function readSelectionCaretRects(frame, vc, charHeightPt) {
+  if (!vc) return null;
+  let selText = '';
+  try { selText = vc.getString() || ''; } catch (e) { return null; }
+  if (!selText || selText.length > 2000) return null;
+  let text = null, s = null, e = null, curPos = null;
+  try {
+    text = vc.getText();
+    s = text.createTextCursorByRange(vc.getStart());
+    e = text.createTextCursorByRange(vc.getEnd());
+    curPos = vc.getPosition();
+  } catch (err) {
+    return null;
+  }
+  let startRect = null, endRect = null, sPos = null, ePos = null;
+  suppressSelectionEvent = true;
+  try {
+    vc.gotoRange(s, false);
+    try { sPos = vc.getPosition(); } catch (err) {}
+    startRect = readNativeCaretRect(frame, ctrl.getViewData(), charHeightPt);
+    vc.gotoRange(e, false);
+    try { ePos = vc.getPosition(); } catch (err) {}
+    endRect = readNativeCaretRect(frame, ctrl.getViewData(), charHeightPt);
+  } catch (err) {
+    startRect = null;
+    endRect = null;
+  } finally {
+    try {
+      const backward = curPos && sPos && ePos
+        && Math.hypot(curPos.X - sPos.X, curPos.Y - sPos.Y) < Math.hypot(curPos.X - ePos.X, curPos.Y - ePos.Y);
+      if (backward) {
+        vc.gotoRange(e, false);
+        vc.gotoRange(s, true);
+      } else {
+        vc.gotoRange(s, false);
+        vc.gotoRange(e, true);
+      }
+    } catch (err) {}
+    suppressSelectionEvent = false;
+  }
+  if (!startRect || !endRect) return null;
+  return { start: startRect, end: endRect };
+}
+
 function completionUnavailable(reason) {
   return { success: false, available: false, reason: reason, error: reason, message: reason };
 }
@@ -3596,14 +4925,14 @@ function writingSectionOf(range) {
       if (index >= ix.total) return null;
       let appendix = '', heading = '', appendixSource = null, headingSource = null;
       for (let i = 0; i <= index; i++) {
-        const paragraph = ix.ranges[i], rawText = String(paragraph.getString() || ''), text = rawText.trim();
+        const paragraph = ix.ranges[i], rawText = String(paragraph.getString() || ''), combined = paragraphCombinedText(paragraph), text = combined.trim();
         const marker = text.match(/^(第[一二三四五六七八九十百零〇0-9]+[条节章]|附件[一二三四五六七八九十零〇0-9]+).{0,100}$/);
         if (marker) {
-          if (marker[1].indexOf('附件') === 0) { appendix = marker[1]; heading = ''; appendixSource = { index: i, text: rawText }; headingSource = null; }
-          else { heading = marker[1]; headingSource = { index: i, text: rawText }; }
+          if (marker[1].indexOf('附件') === 0) { appendix = marker[1]; heading = ''; appendixSource = { index: i, text: combined }; headingSource = null; }
+          else { heading = marker[1]; headingSource = { index: i, text: combined }; }
         } else {
           let level = 0; try { level = Number(paragraph.getPropertyValue('OutlineLevel')) || 0; } catch (e) {}
-          if (level > 0 && level <= 6 && text.length <= 100) { heading = text; headingSource = text ? { index: i, text: rawText } : null; }
+          if (level > 0 && level <= 6 && text.length <= 100) { heading = text; headingSource = text ? { index: i, text: rawText || combined } : null; }
         }
       }
       const path = [appendix, heading].filter(Boolean);
@@ -4030,19 +5359,38 @@ const EXEC = {
       try { if (paraKeyOf(xModel.getText(), checked.cursor.getStart()) < 0) return completionUnavailable('table-requires-body'); }
       catch (e) { return completionUnavailable('table-requires-body'); }
     }
+    // 「仅替换为正确全称」：真替换选区（教程反馈 43）。删选区与写入在同一个撤销组里，
+    // 修订开着时与写作建议同口径走最小差异修订。
+    if (p.mode === 'replace-selection') {
+      if (rows || !text || /[\r\n]/.test(text) || !checked.snapshot.selectedText) return completionUnavailable('invalid-content');
+      return completionEdit('替换为查询结果', function () {
+        const vc = checked.cursor;
+        let replaced = false, tracked = false;
+        try { tracked = !!xModel.getPropertyValue('RecordChanges'); } catch (e) {}
+        if (tracked) replaced = applyMinimalRedline(vc, text);
+        if (!replaced) { vc.setString(''); vc.collapseToEnd(); insertTextAtCursor(vc, text); }
+        vc.collapseToEnd();
+        return { inserted: text, replaced: checked.snapshot.selectedText, operation: 'replace-selection' };
+      });
+    }
     return completionEdit('插入补全资料', function () {
       const vc = checked.cursor;
-      vc.collapseToEnd(); // 右键外查的选区保留原文，资料追加在其后。
+      // 外查资料另起一段，落在选区/光标所在段落之后，不拆断原句（教程反馈 107）。
+      // 选区原文保留；表格单独占一个空段插入（Writer 把该空段留在表后）。
       const story = vc.getText();
-      const lines = text.replace(/\r\n?/g, '\n').split('\n');
+      const paragraphEnd = story.createTextCursorByRange(vc.getEnd());
+      paragraphEnd.gotoEndOfParagraph(false);
+      vc.gotoRange(paragraphEnd, false);
+      const lines = text ? text.replace(/\r\n?/g, '\n').split('\n') : [];
+      if (rows) lines.push('');
       for (let i = 0; i < lines.length; i++) {
-        if (i) story.insertControlCharacter(vc, css.text.ControlCharacter.PARAGRAPH_BREAK, false);
+        story.insertControlCharacter(vc, css.text.ControlCharacter.PARAGRAPH_BREAK, false);
         if (lines[i]) story.insertString(vc, lines[i], false);
       }
       vc.collapseToEnd();
       let name = null;
       if (rows) { const table = insertStyledTable(rows, 1, true); name = table.getName(); }
-      return { inserted: text, table: name };
+      return { inserted: text, table: name, operation: 'insert-paragraph-after' };
     });
   },
   // [取消] 宿主对一条在飞的批量命令喊停（reqId 来自 progress 消息）。只置位，
@@ -4061,6 +5409,7 @@ const EXEC = {
   // 选区、在原位置落字（Word 行为）。不带时仍是「塌到选区末尾追加」——AI / 插件管线
   // 先 select 再 insert_at_cursor 表示「插在后面」，那条契约不能被改掉。
   insert_at_cursor(p) {
+    if (p.newParagraph) return insertNewParagraph(p);
     if (nativeKeyDoc()) {
       const text = String(p.text || '');
       // Array.from 按码点切分（split('') 按 UTF-16 code unit，会把 emoji/扩展
@@ -4080,8 +5429,15 @@ const EXEC = {
     const text = String(p.text || '');
     return typeOverSelection(vc, !!p.replaceSelection, '输入', function () {
       vc.collapseToEnd();
-      if (MD_MARKER_RE.test(text)) insertInlineStyled(vc, text);
-      else insertTextAtCursor(vc, text);
+      // 只管用户手打（replaceSelection）的单段纯文本；AI / 插件管线照旧。
+      const typedAfterLink = !!p.replaceSelection && text && !/\n/.test(text) && !MD_MARKER_RE.test(text) && atHyperlinkEnd(vc);
+      let um = null;
+      if (typedAfterLink) { try { um = xModel.getUndoManager(); um.enterUndoContext('输入'); } catch (e) { um = null; } }
+      try {
+        if (MD_MARKER_RE.test(text)) insertInlineStyled(vc, text);
+        else insertTextAtCursor(vc, text);
+        if (typedAfterLink) detachTypedFromHyperlink(vc, text);
+      } finally { if (um) { try { um.leaveUndoContext(); } catch (e) {} } }
       vc.collapseToEnd();
       return Object.assign({ success: true, inserted: text }, verifySnapshot());
     });
@@ -4089,6 +5445,51 @@ const EXEC = {
   // [verified] replace selection if any, else insert at cursor. '\n' in the new
   // text becomes a paragraph break (insertTextAtCursor).
   replace_selection(p) {
+    const rawText = String((p && p.text) || '');
+    // 调用方带了 expectedText = 它以为选中的原文：与实时选区不符就拒绝，不在错位置落修订。
+    // 与下面的写入同一条命令内完成，核对到改写之间没有别的命令能挪动选区。
+    if (p && typeof p.expectedText === 'string' && p.expectedText) {
+      const norm = function (t) { return String(t || '').replace(/\r\n?/g, '\n').trim(); };
+      const cur = EXEC.get_selection({});
+      // 模型手里的选区原文最多 2000 字（后端截断）；长选区按前缀核对，否则永远对不上。
+      const live = norm(cur && cur.text), want = norm(p.expectedText);
+      if (live !== want && !(want.length >= 1900 && live.startsWith(want.slice(0, 1900)))) {
+        const msg = '当前选区与 expectedText 不符（用户可能已挪动选区），未执行替换；请改用 doc_replace_at_anchor，或重新 doc_get_cursor_context 核对后再试';
+        return { success: false, error: msg, message: msg, currentSelection: String((cur && cur.text) || '').slice(0, 200) };
+      }
+    }
+    if (typeof isCalcDoc === 'function' && isCalcDoc() && typeof activeCalcSelection === 'function') {
+      const selection = calcClipboardSelection();
+      const lines = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+      if (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
+      const rows = (lines.length ? lines : ['']).map(function (ln) { return ln.split('\t'); });
+      const r = EXEC.sheet_write_cells({
+        sheet: selection.sheet.getName(),
+        startCell: colLetterOf(selection.address.StartColumn) + (selection.address.StartRow + 1),
+        rows: rows,
+      });
+      return Object.assign({}, r, { text: rawText });
+    }
+    if (typeof isImpressDoc === 'function' && isImpressDoc()) {
+      // Retain the model-edit contract used by plugins/AI. Only the real
+      // clipboard bridge targets the live outliner/caret instead of a shape.
+      if (!p.clipboard) {
+        const ctx = activeImpressContext(p.shapeName);
+        if (ctx && ctx.selectedShape && ctx.selectedShapeName) return Object.assign({}, EXEC.slide_set_shape_text({
+          slideNumber: ctx.slideNumber, shapeName: ctx.selectedShapeName, text: rawText,
+        }), { text: rawText });
+        return slideFail('请先选择要替换的文本框');
+      }
+      // A live Impress outliner owns its text while editing. Mutating the shape
+      // model reports success but is overwritten by that outliner. Use the same
+      // native input route as typing, preserving the caret, selection and format.
+      const selection = ctrl.getSelection();
+      if (!selection) return slideFail('请先双击文本框，把光标放在要粘贴的位置');
+      const keys = Array.from(rawText.replace(/\r\n?/g, '\n')).map(function (ch) {
+        return ch === '\n' ? { key: 'RETURN', ch: '\r' } : ch === '\t' ? { key: 'TAB', ch: '\t' } : { ch: ch };
+      });
+      return Object.assign(postNativeKeys(keys), { text: rawText });
+    }
     const vc = ctrl.getViewCursor();
     // One paste may contain hundreds of paragraphs. Batch native layout and
     // JS modify callbacks for the entire replacement, including tracked edits.
@@ -4114,6 +5515,32 @@ const EXEC = {
   // 改前面的不影响后面的），只在结束时滚到首处；命中 > 50 时按 30 一批，批间发
   // progress / 检查 cancel（见 batchBreak）。
   async find_replace(p) {
+    if (typeof isCalcDoc === 'function' && isCalcDoc()) {
+      const findVal = p && (p.find != null ? p.find : p.findText);
+      const replaceVal = p && (p.replace != null ? p.replace : p.replaceText);
+      const r = EXEC.sheet_find_replace({
+        find: findVal != null ? String(findVal) : '',
+        replace: replaceVal != null ? String(replaceVal) : '',
+        matchCase: !!(p && p.matchCase),
+        maxReplacements: (p && p.replaceAll === false) ? 1 : undefined,
+        sheet: p && p.sheet,
+        range: p && p.range,
+      });
+      if (r && r.success) r.total = r.replaced || 0;
+      return r;
+    }
+    if (typeof isImpressDoc === 'function' && isImpressDoc()) {
+      const searchVal = p && (p.searchText != null ? p.searchText : p.findText);
+      const replaceVal = p && (p.replaceText != null ? p.replaceText : p.replace);
+      const r = EXEC.slide_replace_text({
+        searchText: searchVal != null ? String(searchVal) : '',
+        replaceText: replaceVal != null ? String(replaceVal) : '',
+        all: !p || p.replaceAll !== false,
+        slideNumber: p && (p.slideNumber != null ? p.slideNumber : (p.slideIndex != null ? Number(p.slideIndex) + 1 : undefined)),
+      });
+      if (r && r.success) r.total = r.replaced || 0;
+      return r;
+    }
     xModel.setPropertyValue('RecordChanges', true);
     const all = p.replaceAll !== false;
     const replaceText = String(p.replaceText || '');
@@ -4164,7 +5591,33 @@ const EXEC = {
     return r;
   },
   // [verified] current selection text (anchor, not integer offset).
-  get_selection() {
+  get_selection(p = {}) {
+    if (typeof isCalcDoc === 'function' && isCalcDoc()) {
+      const selection = calcClipboardSelection();
+      const a = selection.address;
+      const cells = (a.EndRow - a.StartRow + 1) * (a.EndColumn - a.StartColumn + 1);
+      if (cells > 50000) return slideFail('所选区域超过 50,000 个单元格，请缩小范围后复制；未复制或删除任何内容');
+      // One UNO range read instead of thousands of per-cell bridge calls.
+      const rows = Array.from(selection.range.getDataArray());
+      const text = rows.map(function (row) {
+        return Array.from(row).map(function (value) { return value == null ? '' : String(value); }).join('\t');
+      }).join('\n');
+      return { success: true, text: text, hasSelection: true };
+    }
+    if (typeof isImpressDoc === 'function' && isImpressDoc()) {
+      if (!p.clipboard) {
+        const ctx = activeImpressContext();
+        const text = ctx && ctx.selectedShape ? shapeText(ctx.selectedShape) : '';
+        return { success: true, text: text, hasSelection: text.length > 0 };
+      }
+      const selection = ctrl.getSelection();
+      // Only a selected text range is clipboard text. A shape collection also
+      // appears for a collapsed caret; copying its whole text would cut data
+      // outside the user's selection. Object clipboard is not this text bridge.
+      const text = selection && typeof selection.getString === 'function'
+        && typeof selection.getShapeType !== 'function' ? String(selection.getString() || '') : '';
+      return { success: true, text: text, hasSelection: text.length > 0 };
+    }
     const sel = ctrl.getSelection();
     let text = '';
     try {
@@ -4187,9 +5640,20 @@ const EXEC = {
     // 同步执行，200 个匹配足以把 Qt 事件循环冻住好几秒（修订期假死的贡献因素）。
     // 消歧一个目标用不到 50 个候选；批量替换走 find_replace。
     const ranges = [];
+    const fallbackMetas = [];
     let hit = xModel.findFirst(sd);
     while (hit !== null && ranges.length < 50) { ranges.push(hit); hit = xModel.findNext(hit, sd); }
-    const truncated = hit !== null;
+    let truncated = hit !== null;
+    // 若 XSearchable 未命中，而查询词含自动编号前缀（如「第一条 服务内容」「1.1 乙方义务」或「第一条」），
+    // 回退扫描段落的 ListLabelString + 正文合并文本。
+    if (ranges.length === 0 && typeof findNumberedParagraphRanges === 'function') {
+      const fb = findNumberedParagraphRanges(String(p.keyword || ''), !!p.matchCase, 50);
+      for (let k = 0; k < fb.hits.length; k++) {
+        ranges.push(fb.hits[k].range);
+        fallbackMetas.push(fb.hits[k]);
+      }
+      if (fb.truncated) truncated = true;
+    }
     // Each match carries DISAMBIGUATION CONTEXT (chars before/after + enclosing
     // paragraph), so the AI can tell identical hits apart BEFORE editing — the
     // WPS-era "replaced the wrong one" class of bug dies here.
@@ -4198,12 +5662,19 @@ const EXEC = {
       try { anchorId = anchorBookmark(r); } catch (e) {}
       const ctx = contextAround(r, 40);
       const paragraph = paragraphTextOf(r) || '';
-      return {
+      const meta = fallbackMetas[i] || null;
+      const item = {
         matchIndex: i, anchorId: anchorId, text: r.getString(),
         contextBefore: ctx.before, contextAfter: ctx.after,
         paragraph: paragraph.slice(0, 160),
         paragraphLength: paragraph.length, paragraphTruncated: paragraph.length > 160,
       };
+      if (meta) {
+        item.paragraphIndex = meta.paragraphIndex;
+        item.numbering = meta.numbering;
+        item.matchedViaNumberingLabel = true;
+      }
+      return item;
     });
     const res = { success: true, count: matches.length, matches: matches };
     if (truncated) { res.truncated = true; res.note = '匹配超过 50 个，仅返回前 50——请用更长的关键词缩小范围，或用 find_replace 批量处理'; }
@@ -4305,43 +5776,69 @@ const EXEC = {
   // rarely use heading styles, which is why get_outline sees nothing there and
   // the model degraded to counting paragraphs/lines as "clauses".
   get_clauses() {
-    const RE_TIAO  = /^\s*第[一二三四五六七八九十百千零〇0-9１-９]+\s*条/;       // 第X条 — the clause proper
-    const RE_ZHANG = /^\s*第[一二三四五六七八九十百千零〇0-9１-９]+\s*[章节编]/;  // 第X章/节/编 — section above clauses
-    const RE_ENUM  = /^\s*[一二三四五六七八九十]{1,3}\s*、/;                      // 一、 二、 — top-level enum many contracts use
+    const RE_TIAO   = /^\s*第[一二三四五六七八九十百千零〇0-9１-９]+\s*条/;       // 第X条 — the clause proper
+    const RE_ZHANG  = /^\s*第[一二三四五六七八九十百千零〇0-9１-９]+\s*[章节编]/;  // 第X章/节/编 — section above clauses
+    const RE_ENUM   = /^\s*[一二三四五六七八九十]{1,3}\s*、/;                      // 一、 二、 — top-level enum many contracts use
+    const RE_PAREN  = /^\s*[（(][一二三四五六七八九十]{1,3}[）)]/;                  // （一）（二） — fallback enum
+    const RE_ARABIC = /^\s*\d{1,2}\s*[.．、]\s*(?!\d)\S/;                          // 1. / 1、 — top-level numeric clause
     const marks = []; let total = 0;
     eachParagraph(function (el, i) {
       total = i + 1;
-      const t = el.getString() || '';
+      const raw = el.getString() || '';
+      let label = '';
+      if (el && typeof el.getPropertyValue === 'function') {
+        try {
+          if (el.getPropertyValue('NumberingIsNumber') !== false) {
+            const lbl = el.getPropertyValue('ListLabelString');
+            if (typeof lbl === 'string') label = lbl.trim();
+          }
+        } catch (e) {}
+      }
+      const trimmedRaw = raw.trim();
+      const t = (label && trimmedRaw.indexOf(label) !== 0)
+        ? (label + (!/[、.．:：）)\s]$/.test(label) && trimmedRaw ? ' ' : '') + raw)
+        : raw;
       let type = null;
       if (RE_TIAO.test(t)) type = 'tiao';
       else if (RE_ZHANG.test(t)) type = 'zhang';
       else if (RE_ENUM.test(t)) type = 'enum';
-      if (type) marks.push({ index: i, type: type, text: t });
+      else if (RE_PAREN.test(t) && t.trim().length <= 60 && !/[。；;]$/.test(t.trim())) type = 'paren';
+      else if (RE_ARABIC.test(t) && t.trim().length <= 45 && !/[。；;]$/.test(t.trim())) type = 'arabic';
+      if (type) marks.push({ index: i, type: type, text: t, autoNumbered: !!label, listLabel: label || null });
       return false;
     });
     // Granularity: 第X条 wins when present (一、 then is usually a sub-item);
-    // otherwise fall back to the 一、 enum as the clause level. 章/节 always kept.
+    // otherwise fall back to 一、, then （一）, then 1. as the clause level. 章/节 always kept.
     const hasTiao = marks.some(function (m) { return m.type === 'tiao'; });
+    const hasEnum = marks.some(function (m) { return m.type === 'enum'; });
+    const hasParen = marks.some(function (m) { return m.type === 'paren'; });
+    const primaryType = hasTiao ? 'tiao' : (hasEnum ? 'enum' : (hasParen ? 'paren' : 'arabic'));
     const boundaries = marks.filter(function (m) {
-      return m.type === 'zhang' || m.type === (hasTiao ? 'tiao' : 'enum');
+      return m.type === 'zhang' || m.type === primaryType;
     });
     const clauses = [];
     for (let k = 0; k < boundaries.length && clauses.length < 300; k++) {
       const b = boundaries[k];
       const end = (k + 1 < boundaries.length) ? boundaries[k + 1].index - 1 : total - 1;
       const line = b.text.trim();
-      const re = b.type === 'tiao' ? RE_TIAO : (b.type === 'zhang' ? RE_ZHANG : RE_ENUM);
+      const re = b.type === 'tiao' ? RE_TIAO : (b.type === 'zhang' ? RE_ZHANG : (b.type === 'enum' ? RE_ENUM : (b.type === 'paren' ? RE_PAREN : /^\s*\d{1,2}\s*[.．、]/)));
       const m = line.match(re);
-      clauses.push({
+      const item = {
         no: (m ? m[0] : line.slice(0, 8)).trim(),
         type: b.type,
         title: line.slice(0, 60),
         startParagraph: b.index,
         endParagraph: end,
         paragraphCount: end - b.index + 1,
-      });
+      };
+      if (b.autoNumbered) {
+        item.autoNumbered = true;
+        item.listLabel = b.listLabel;
+      }
+      clauses.push(item);
     }
     const firstBoundary = boundaries.length ? boundaries[0].index : total;
+    const granLabel = hasTiao ? '第X条' : (hasEnum ? '一、二、…' : (hasParen ? '（一）（二）…' : (boundaries.length ? '1. 2. …' : 'none')));
     return {
       success: true, totalParagraphs: total, clauseCount: clauses.length,
       totalClauseCount: boundaries.length, truncated: boundaries.length > clauses.length,
@@ -4349,7 +5846,7 @@ const EXEC = {
         nextStartParagraph: boundaries[clauses.length].index,
         note: '条款目录超过 300 条，仅返回前 300 条；totalClauseCount 是完整目录数量。请从 nextStartParagraph 用 get_document_text 继续读取正文。',
       } : {}),
-      granularity: hasTiao ? '第X条' : (boundaries.length ? '一、二、…' : 'none'),
+      granularity: granLabel,
       // 0..preambleParagraphs-1 = 首部（合同名称/当事人信息），不属于任何条款
       preambleParagraphs: firstBoundary,
       clauses: clauses,
@@ -4385,6 +5882,13 @@ const EXEC = {
     if (!range) return { success: false, message: 'anchor not found: ' + p.anchor };
     const anchorError = anchorEditError(p.anchor, range);
     if (anchorError) return { success: false, error: anchorError, message: anchorError };
+    // 只管 AI 锚点（与 anchorEditError 同口径）；插件自己的书签替换不受影响
+    const around = String(p.anchor).startsWith(ANCHOR_PREFIX) ? contextAround(range, 200) : null;
+    const echo = around && outsideAnchorEcho(range.getString(), around.before, around.after, p.newText);
+    if (echo) {
+      const echoError = echoEditError(range.getString(), echo, paragraphTextOf(range));
+      return { success: false, error: echoError, message: echoError };
+    }
     if (!selectVisibly(range)) return { success: false, message: 'could not select anchor: ' + p.anchor };
     if (!applyMinimalRedline(range, String(p.newText || ''))) range.setString(String(p.newText || ''));
     // Keep the excerpt budget, but expose whether verification needs a full paragraph read.
@@ -4438,7 +5942,13 @@ const EXEC = {
   // re-selected the SAME char and deletion jammed after one press (headless-
   // verified). The engine dispatch owns revision semantics: mark + step past for
   // original text, hard-delete for own unaccepted inserts, selection-aware.
-  delete_backward() {
+  delete_backward(p = {}) {
+    if (p.clipboard && isCalcDoc()) {
+      const selected = calcClipboardSelection();
+      // Clear only values, dates, strings and formulas; keep cell formatting.
+      selected.range.clearContents(1 | 2 | 4 | 16);
+      return { success: true };
+    }
     if (nativeKeyDoc()) return postNativeKeys([{ key: 'BACKSPACE', ch: '\b' }]);
     dispatchUno('.uno:SwBackspace');
     return { success: true };
@@ -4482,6 +5992,66 @@ const EXEC = {
     if (name === 'escape') return deselect();
     const url = UI_COMMANDS[name];
     if (!url) return { success: false, message: 'ui_command not allowed: ' + (p.name || '') };
+    const alignMap = { align_left: 'left', align_center: 'center', align_right: 'right', align_justify: 'justify' };
+    if (typeof isCalcDoc === 'function' && isCalcDoc() && typeof activeCalcSelection === 'function') {
+      const selInfo = activeCalcSelection();
+      const rangeName = selInfo.range || 'A1';
+      const cell = selInfo.cell || selInfo.selRange;
+      const cf = cell ? cellFormat(cell) : {};
+      if (name === 'bold' && typeof EXEC.sheet_format_cells === 'function') {
+        EXEC.sheet_format_cells({ range: rangeName, bold: !cf.bold });
+        return { success: true, name: name };
+      }
+      if (name === 'italic' && typeof EXEC.sheet_format_cells === 'function') {
+        EXEC.sheet_format_cells({ range: rangeName, italic: !cf.italic });
+        return { success: true, name: name };
+      }
+      if (name === 'underline' && typeof EXEC.sheet_format_cells === 'function') {
+        EXEC.sheet_format_cells({ range: rangeName, underline: !cf.underline });
+        return { success: true, name: name };
+      }
+      if (name === 'strikeout') {
+        const nextStrike = !cf.strikeout;
+        const target = selInfo.selRange || selInfo.cell;
+        if (target && typeof target.setPropertyValue === 'function') {
+          try { target.setPropertyValue('CharStrikeout', nextStrike ? css.awt.FontStrikeout.SINGLE : css.awt.FontStrikeout.NONE); } catch (e) {}
+        } else {
+          dispatchUno(url);
+        }
+        return { success: true, name: name };
+      }
+      if (alignMap[name] && typeof EXEC.sheet_format_cells === 'function') {
+        const hAlign = alignMap[name] === 'justify' ? 'standard' : alignMap[name];
+        EXEC.sheet_format_cells({ range: rangeName, hAlign: hAlign });
+        return { success: true, name: name };
+      }
+    } else if (typeof isImpressDoc === 'function' && isImpressDoc() && typeof EXEC !== 'undefined' && typeof EXEC.slide_format_text === 'function') {
+      const ctx = typeof activeImpressContext === 'function' ? activeImpressContext(p && p.shapeName) : null;
+      if (ctx && ctx.selectedShape && ctx.selectedShapeName) {
+        const cur = (typeof shapeCharFormat === 'function' ? shapeCharFormat(ctx.selectedShape) : null) || {};
+        if (name === 'bold') {
+          EXEC.slide_format_text({ slideNumber: ctx.slideNumber, shapeName: ctx.selectedShapeName, bold: !cur.bold });
+          return { success: true, name: name };
+        }
+        if (name === 'italic') {
+          EXEC.slide_format_text({ slideNumber: ctx.slideNumber, shapeName: ctx.selectedShapeName, italic: !cur.italic });
+          return { success: true, name: name };
+        }
+        if (name === 'underline') {
+          EXEC.slide_format_text({ slideNumber: ctx.slideNumber, shapeName: ctx.selectedShapeName, underline: cur.underline ? 'none' : 'single' });
+          return { success: true, name: name };
+        }
+        if (name === 'strikeout') {
+          const curStrike = !!(cur.strikethrough != null ? cur.strikethrough : cur.strikeout);
+          EXEC.slide_format_text({ slideNumber: ctx.slideNumber, shapeName: ctx.selectedShapeName, strikethrough: !curStrike });
+          return { success: true, name: name };
+        }
+        if (alignMap[name]) {
+          EXEC.slide_format_text({ slideNumber: ctx.slideNumber, shapeName: ctx.selectedShapeName, alignment: alignMap[name] });
+          return { success: true, name: name };
+        }
+      }
+    }
     dispatchUno(url);
     return { success: true, name: name };
   },
@@ -4495,6 +6065,69 @@ const EXEC = {
     const kw = String((p && p.keyword) || '');
     if (!kw) return tableFail('find_navigate requires {keyword}');
     const dir = String((p && p.direction) || 'next').toLowerCase();
+    if (typeof isCalcDoc === 'function' && isCalcDoc()) {
+      const sr = EXEC.sheet_search({ query: kw, matchCase: !!(p && p.matchCase) });
+      if (!sr || !sr.success) return sr || tableFail('查找失败');
+      const matches = sr.hits || sr.matches || [];
+      if (!matches.length) return { success: true, found: false, total: 0 };
+      const curSel = activeCalcSelection();
+      let curIdx = -1;
+      for (let i = 0; i < matches.length; i++) {
+        if ((matches[i].sheet || sr.sheet) === curSel.sheetName && matches[i].cell === curSel.cellName) {
+          curIdx = i;
+          break;
+        }
+      }
+      const n = matches.length;
+      const target = dir === 'prev'
+        ? (curIdx <= 0 ? n - 1 : curIdx - 1)
+        : (curIdx < 0 ? 0 : (curIdx + 1) % n);
+      const hit = matches[target];
+      const targetSheet = hit.sheet || sr.sheet;
+      EXEC.sheet_select_range({ sheet: targetSheet, range: hit.cell });
+      return { success: true, found: true, index: target + 1, total: n, truncated: !!sr.truncated, sheet: targetSheet, cell: hit.cell };
+    }
+    if (typeof isImpressDoc === 'function' && isImpressDoc()) {
+      const pages = slidePages();
+      if (!pages) return tableFail('非演示文档');
+      const matchCase = !!(p && p.matchCase);
+      const needle = matchCase ? kw : kw.toLowerCase();
+      const hits = [];
+      const totalSlides = pages.getCount();
+      for (let s = 0; s < totalSlides; s++) {
+        let page = null;
+        try { page = pages.getByIndex(s); ensureShapeNames(page); } catch (e) { continue; }
+        const cnt = page.getCount();
+        for (let i = 0; i < cnt; i++) {
+          let sh = null, txt = '', sName = '';
+          try {
+            sh = page.getByIndex(i);
+            txt = typeof shapeText === 'function' ? shapeText(sh) : String(sh.getString() || '');
+            sName = String(sh.getName() || '');
+          } catch (e) { continue; }
+          if (!txt) continue;
+          const hay = matchCase ? txt : txt.toLowerCase();
+          if (hay.indexOf(needle) >= 0) hits.push({ slideIndex: s, slideNumber: s + 1, shapeIndex: i, shapeName: sName, shape: sh });
+        }
+      }
+      if (!hits.length) return { success: true, found: false, total: 0 };
+      const ctx = activeImpressContext();
+      let curIdx = -1;
+      for (let i = 0; i < hits.length; i++) {
+        if (hits[i].slideIndex === ctx.currentSlideIndex && (hits[i].shapeIndex === ctx.selectedShapeIndex || ctx.selectedShapeIndex < 0)) {
+          curIdx = i;
+          if (hits[i].shapeIndex === ctx.selectedShapeIndex) break;
+        }
+      }
+      const n = hits.length;
+      const target = dir === 'prev'
+        ? (curIdx <= 0 ? n - 1 : curIdx - 1)
+        : (curIdx < 0 ? 0 : (curIdx + 1) % n);
+      const chosen = hits[target];
+      EXEC.slide_goto({ slideNumber: chosen.slideNumber, shapeName: chosen.shapeName });
+      try { if (ctrl && ctrl.select) ctrl.select(chosen.shape); } catch (e) {}
+      return { success: true, found: true, index: target + 1, total: n, truncated: false, slideNumber: chosen.slideNumber, slideIndex: chosen.slideIndex, shapeName: chosen.shapeName, shapeIndex: chosen.shapeIndex };
+    }
     const sd = xModel.createSearchDescriptor();
     sd.setSearchString(kw);
     try { sd.setPropertyValue('SearchCaseSensitive', !!(p && p.matchCase)); } catch (e) {}
@@ -4537,11 +6170,32 @@ const EXEC = {
   // ZoomType 必须先切 BY_VALUE——停在「适合页宽」这类自动模式时，引擎会按窗口
   // 重算 ZoomValue，写进去的数当场被覆盖。两个属性都是 sal_Int16，裸 number 会
   // 编组成 long 被严格 setter 拒绝（且常被 try 吞掉），必须走 shortAny。
+  // {fit:'width'}：分屏开合后窗格宽度变了（宿主发起），按页宽重算一次，但不超过
+  // 用户自己定的缩放（只缩不放）；之后仍是 BY_VALUE，不跟着窗口持续变。仅 Writer：
+  // Impress 默认整页适配本就随窗口重算，Calc 没有「页宽」可言。
   set_zoom(p) {
     let vs = null;
-    try { vs = ctrl.getViewSettings(); } catch (e) { return { success: false, message: 'no view settings: ' + errStr(e) }; }
+    try { vs = ctrl.getViewSettings(); } catch (e) { vs = ctrl; }
+    if (!vs || typeof vs.getPropertyValue !== 'function') return { success: false, message: 'no view settings' };
     let cur = 100;
     try { cur = Number(vs.getPropertyValue('ZoomValue')) || 100; } catch (e) {}
+    if (p && p.fit === 'width') {
+      if (!isWriterDoc()) return { success: true, zoom: cur, fitted: false };
+      const pref = zoomPref.model === xModel ? zoomPref.value : cur;
+      let fit = pref;
+      try {
+        vs.setPropertyValue('ZoomType', shortAny(css.view.DocumentZoomType.PAGE_WIDTH));
+        fit = Number(vs.getPropertyValue('ZoomValue')) || pref;
+      } catch (e) {}
+      const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, Math.min(pref, Math.round(fit))));
+      try { vs.setPropertyValue('ZoomType', shortAny(css.view.DocumentZoomType.BY_VALUE)); } catch (e) {}
+      try { vs.setPropertyValue('ZoomValue', shortAny(next)); }
+      catch (e) { return { success: false, message: 'set_zoom 失败: ' + errStr(e) }; }
+      zoomPref = { model: xModel, value: pref };
+      let applied = next;
+      try { applied = Number(vs.getPropertyValue('ZoomValue')) || next; } catch (e) {}
+      return { success: true, zoom: applied, fitted: true };
+    }
     const hasValue = p && p.value != null;
     const hasDelta = p && p.delta != null;
     if (!hasValue && !hasDelta) return { success: true, zoom: cur };
@@ -4553,11 +6207,15 @@ const EXEC = {
     catch (e) { return { success: false, message: 'set_zoom 失败: ' + errStr(e) }; }
     let applied = next;
     try { applied = Number(vs.getPropertyValue('ZoomValue')) || next; } catch (e) {}
+    zoomPref = { model: xModel, value: applied };
     return { success: true, zoom: applied };
   },
   // ---- [主题] 纸外工作区配色（dev-board#273）------------------------------
   // 宿主深浅主题切换时把 LO 的 AppBackground（纸张周围的工作区底色）跟着切；
-  // DocColor（纸张本身）刻意不动——文档以打印观感为准，深色下纸仍是纸白。
+  // DocColor（Word 纸面 / Excel 无底色单元格）深色下也变暗，同 Word 的深色模式：
+  // 「自动」颜色的字引擎自己改画白色，显式深色字靠引擎补丁（lowa-build
+  // patch_dark_page_text）只在屏幕上改画白色；PPT 幻灯片有自己的背景，不受影响。
+  // 只改屏幕绘制，文档内容、打印与 PDF 导出仍是原色。纸面色 = roles.dark.surface。
   // 配置项运行时可写（与 setRedlineAuthor 同一机制）；色值与 --awd-canvas 令牌同源
   // （light #E4E0D4 / dark #141210，见 design/tokens/awd-palette.json 的
   // roles.light.canvas / roles.dark.canvas，editor.html 头部那份令牌表同值），
@@ -4566,6 +6224,7 @@ const EXEC = {
   set_app_theme(p) {
     const mode = p && p.mode === 'dark' ? 'dark' : 'light';
     const color = mode === 'dark' ? 0x141210 : 0xE4E0D4;
+    const docColor = mode === 'dark' ? 0x221F1A : 0xFFFFFF;
     try {
       const provider = context.getServiceManager().createInstanceWithContext(
         'com.sun.star.configuration.ConfigurationProvider', context);
@@ -4582,21 +6241,207 @@ const EXEC = {
         [mkProp('nodepath', '/org.openoffice.Office.UI/ColorScheme/ColorSchemes')]);
       const scheme = root.getByName(schemeName);
       scheme.getByName('AppBackground').replaceByName('Color', color);
+      scheme.getByName('DocColor').replaceByName('Color', docColor);
       root.commitChanges();
+      // 引擎补丁 patch_dark_scrollbars 读 vcl 自己的 ApplicationAppearance（1 浅 / 2 深）给
+      // Qt 滚动条换深色；旧引擎不认这层补丁，写了也无副作用（无头实测运行时改它不影响其余界面）。
+      try {
+        const misc = provider.createInstanceWithArguments('com.sun.star.configuration.ConfigurationUpdateAccess',
+          [mkProp('nodepath', '/org.openoffice.Office.Common/Misc')]);
+        misc.replaceByName('ApplicationAppearance', shortAny(mode === 'dark' ? 2 : 1));
+        misc.commitChanges();
+      } catch (e) { /* 配置项缺失时只是滚动条不跟着变 */ }
+      // 滚动条、标尺是子窗口，配色改完不会自己重画；整窗连同子窗口失效一次。
+      try { ctrl.getFrame().getContainerWindow().invalidate(1 | 8); } catch (e) { /* CHILDREN | UPDATE */ }
       return { success: true, mode, scheme: schemeName };
     } catch (e) { return { success: false, message: 'set_app_theme 失败: ' + errStr(e) }; }
   },
   // ---- [P1 自建工具栏] 状态回读 / 样式清单 / chrome 开关 -------------------
   // 工具栏的激活态（B 是否高亮、当前字体字号样式对齐、能不能撤销）一次拿全。
-  // 高频调用（选区事件 + 400ms 聚焦轮询），实测整套读一遍约 6ms——每个字段各自
-  // try/catch，缺一个不影响其余，绝不因为某个属性在当前上下文不存在就整体失败。
-  get_ui_state() {
-    const out = { success: true, documentSeq: docSeq };
+  // PPT 交互刷新显式使用 selection 范围，避免每次按键扫描整页形状。
+  // 无参保留完整状态，供工具栏页面菜单与既有插件使用。
+  get_ui_state(p = {}) {
+    const out = { success: true, documentSeq: docSeq, docKind: docKindOf() };
+    const readUndo = function () {
+      try {
+        const um = xModel.getUndoManager();
+        const u = {};
+        try { u.canUndo = !!um.isUndoPossible(); } catch (e) {}
+        try { u.canRedo = !!um.isRedoPossible(); } catch (e) {}
+        if (u.canUndo != null || u.canRedo != null) out.undo = u;
+      } catch (e) { out.undoErr = errStr(e); }
+    };
+    if (isCalcDoc()) {
+      const selInfo = activeCalcSelection();
+      const cell = selInfo.cell || selInfo.selRange;
+      const cf = cell ? cellFormat(cell) : {};
+      const ch = {
+        bold: !!cf.bold,
+        italic: !!cf.italic,
+        underline: !!cf.underline,
+        strikeout: false,
+        superscript: false,
+        subscript: false,
+        font: cf.fontName || '',
+        fontAsian: cf.fontNameAsian || cf.fontName || '',
+        sizePt: cf.fontSize || 11,
+        color: cf.color || 'auto',
+        highlight: cf.background || 'none',
+      };
+      if (cell) {
+        try { ch.strikeout = !enumEq(cell.getPropertyValue('CharStrikeout'), css.awt.FontStrikeout.NONE); } catch (e) {}
+      }
+      out.character = ch;
+      out.paragraph = {
+        styleName: '',
+        alignment: (cf.hAlign === 'center' || cf.hAlign === 'right') ? cf.hAlign : 'left',
+        outlineLevel: 0,
+        inList: false,
+        listKind: 'none',
+      };
+      const view = { zoom: 100, showGrid: true };
+      try { view.zoom = Number(ctrl.getPropertyValue('ZoomValue')) || 100; } catch (e) {}
+      try { view.showGrid = ctrl.getPropertyValue('ShowGrid') !== false; } catch (e) {}
+      out.view = view;
+      let cellText = '', cellFormula = '', cellVal = '';
+      if (selInfo.cell) {
+        try { cellText = String(selInfo.cell.getString() || ''); } catch (e) {}
+        try { cellVal = readCellOut(selInfo.cell); } catch (e) {}
+        try {
+          if (enumEq(selInfo.cell.getType(), css.table.CellContentType.FORMULA)) {
+            cellFormula = normalizeFormula(String(selInfo.cell.getFormula() || ''), true);
+          } else {
+            cellFormula = cellVal != null ? String(cellVal) : cellText;
+          }
+        } catch (e) {
+          try { cellFormula = normalizeFormula(String(selInfo.cell.getFormula() || cellText || ''), true); } catch (e2) {}
+        }
+      }
+      out.selection = {
+        collapsed: selInfo.rowCount <= 1 && selInfo.colCount <= 1,
+        inTable: true,
+        address: selInfo.cellName,
+        range: selInfo.rangeName,
+        cellName: selInfo.cellName,
+        rangeName: selInfo.rangeName,
+        sheetName: selInfo.sheetName,
+      };
+      out.calc = {
+        sheet: selInfo.sheetName,
+        sheetName: selInfo.sheetName,
+        sheetIndex: selInfo.sheetIndex,
+        sheetCount: selInfo.sheetCount,
+        sheets: selInfo.sheetNames,
+        sheetNames: selInfo.sheetNames,
+        address: selInfo.cellName,
+        cellName: selInfo.cellName,
+        range: selInfo.rangeName,
+        rangeName: selInfo.rangeName,
+        row: selInfo.row,
+        col: selInfo.col,
+        rowCount: selInfo.rowCount,
+        colCount: selInfo.colCount,
+        text: cellText,
+        value: cellVal !== '' ? cellVal : cellText,
+        formula: cellFormula,
+        hAlign: cf.hAlign || 'standard',
+        vAlign: cf.vAlign || 'standard',
+        wrap: !!cf.wrap,
+        background: cf.background || 'none',
+        numberFormat: cf.numberFormat || 'General',
+        numberFormatKey: cf.numberFormatKey != null ? cf.numberFormatKey : 0,
+        merged: !!selInfo.merged,
+        hasFrozenPanes: !!selInfo.hasFrozenPanes,
+        autoFilter: !!selInfo.autoFilter,
+        protected: !!selInfo.protected,
+        showGrid: view.showGrid !== false,
+        rowHeightPt: selInfo.rowHeightPt,
+        colWidthPt: selInfo.colWidthPt,
+      };
+      readUndo();
+      return out;
+    }
+    if (isImpressDoc()) {
+      const selectionOnly = p.scope === 'selection';
+      const ctx = selectionOnly ? activeImpressSelection() : activeImpressContext();
+      const shape = ctx.selectedShape;
+      const sf = (shape ? shapeCharFormat(shape) : null) || {};
+      out.character = {
+        bold: !!sf.bold,
+        italic: !!sf.italic,
+        underline: !!sf.underline,
+        strikeout: !!sf.strikeout,
+        superscript: false,
+        subscript: false,
+        font: sf.fontName || '',
+        fontAsian: sf.fontNameAsian || sf.fontName || '',
+        sizePt: sf.fontSize || 18,
+        color: sf.color || 'auto',
+        highlight: 'none',
+      };
+      out.paragraph = {
+        styleName: '',
+        alignment: sf.alignment || 'left',
+        outlineLevel: 0,
+        inList: false,
+        listKind: 'none',
+      };
+      const view = { zoom: 100 };
+      try { view.zoom = Number(ctrl.getPropertyValue('ZoomValue')) || 100; } catch (e) {}
+      out.view = view;
+      const detail = shape ? impressShapeDetail(shape, ctx.selectedShapeIndex) : null;
+      if (selectionOnly && detail) { delete detail.index; detail.shapeIndex = -1; }
+      out.selection = {
+        collapsed: ctx.textRange ? !String(ctx.textRange.getString() || '').length : !shape,
+        inTable: !!(detail && detail.isTable),
+        hasShape: !!shape,
+        shapeIndex: ctx.selectedShapeIndex,
+        shapeName: ctx.selectedShapeName || '',
+      };
+      out.impress = selectionOnly ? {
+        slideNumber: ctx.slideNumber, currentSlideIndex: ctx.currentSlideIndex, slideCount: ctx.slideCount,
+        shapeCount: ctx.shapeCount, selectedShapeIndex: -1, selectedShapeName: ctx.selectedShapeName, selectedShape: detail,
+      } : {
+        slideNumber: ctx.slideNumber,
+        currentSlideIndex: ctx.currentSlideIndex,
+        slideCount: ctx.slideCount,
+        slideWidthMm: ctx.slideWidthMm,
+        slideHeightMm: ctx.slideHeightMm,
+        widthPt: ctx.widthPt,
+        heightPt: ctx.heightPt,
+        layout: ctx.layout,
+        layoutName: ctx.layoutName,
+        masterName: ctx.masterName,
+        masterPages: ctx.masterPages || [],
+        notesText: ctx.notesText || '',
+        shapeCount: ctx.shapeCount,
+        selectedShapeIndex: ctx.selectedShapeIndex,
+        selectedShapeName: ctx.selectedShapeName || '',
+        selectedShape: detail,
+        shapes: ctx.shapes || [],
+      };
+      if (selectionOnly) out.scope = 'selection';
+      readUndo();
+      return out;
+    }
     let vc = null;
     try { vc = ctrl.getViewCursor(); } catch (e) { return { success: false, message: errStr(e) }; }
     const ch = {};
-    try { ch.bold = vc.getPropertyValue('CharWeight') > 100; } catch (e) {}
-    try { ch.italic = !enumEq(vc.getPropertyValue('CharPosture'), css.awt.FontSlant.NONE); } catch (e) {}
+    try {
+      const wa = Number(vc.getPropertyValue('CharWeightAsian')) || 0;
+      const ww = Number(vc.getPropertyValue('CharWeight')) || 0;
+      ch.bold = wa > 100 || ww > 100;
+    } catch (e) {
+      try { ch.bold = vc.getPropertyValue('CharWeight') > 100; } catch (e2) {}
+    }
+    try {
+      const paSlant = vc.getPropertyValue('CharPostureAsian');
+      const pwSlant = vc.getPropertyValue('CharPosture');
+      ch.italic = (paSlant != null && !enumEq(paSlant, css.awt.FontSlant.NONE))
+        || (pwSlant != null && !enumEq(pwSlant, css.awt.FontSlant.NONE));
+    } catch (e) {
+      try { ch.italic = !enumEq(vc.getPropertyValue('CharPosture'), css.awt.FontSlant.NONE); } catch (e2) {}
+    }
     try { ch.underline = !enumEq(vc.getPropertyValue('CharUnderline'), css.awt.FontUnderline.NONE); } catch (e) {}
     try { ch.strikeout = !enumEq(vc.getPropertyValue('CharStrikeout'), css.awt.FontStrikeout.NONE); } catch (e) {}
     try {
@@ -4605,7 +6450,7 @@ const EXEC = {
     } catch (e) {}
     try { ch.font = vc.getPropertyValue('CharFontName'); } catch (e) {}
     try { ch.fontAsian = vc.getPropertyValue('CharFontNameAsian'); } catch (e) {}
-    try { ch.sizePt = vc.getPropertyValue('CharHeight'); } catch (e) {}
+    try { ch.sizePt = effectiveCharHeightPt(vc); } catch (e) {}
     try { const c = vc.getPropertyValue('CharColor'); ch.color = c === -1 ? 'auto' : '#' + ('000000' + (c >>> 0).toString(16)).slice(-6); } catch (e) {}
     try { const h = vc.getPropertyValue('CharHighlight'); ch.highlight = h === -1 ? 'none' : '#' + ('000000' + (h >>> 0).toString(16)).slice(-6); } catch (e) {}
     out.character = ch;
@@ -4742,7 +6587,7 @@ const EXEC = {
     };
     // 不带任何字段 = 只读查询：回报当前各处可见性。宿主用它复核「藏了之后
     // 真的没再冒出来」（上下文工具栏是选中表格/图片时由引擎自己拉起来的）。
-    const anyField = ['all', 'menubar', 'statusbar', 'toolbars', 'rulers'].some((k) => req[k] != null);
+    const anyField = ['all', 'menubar', 'statusbar', 'toolbars', 'rulers', 'sheetTabs'].some((k) => req[k] != null);
     if (!anyField) {
       const cur = { toolbars: {} };
       try { cur.all = !!lm.isVisible(); } catch (e) {}
@@ -4756,6 +6601,7 @@ const EXEC = {
         const vs = ctrl.getViewSettings();
         cur.rulers = { ShowHoriRuler: !!vs.getPropertyValue('ShowHoriRuler'), ShowVertRuler: !!vs.getPropertyValue('ShowVertRuler') };
       } catch (e) {}
+      if (isCalcDoc()) { try { cur.sheetTabs = !!ctrl.getPropertyValue('HasSheetTabs'); } catch (e) {} }
       return { success: true, visible: cur };
     }
     if (req.all != null) {
@@ -4769,22 +6615,52 @@ const EXEC = {
     if (req.statusbar != null) out.applied.statusbar = setOne(CHROME_URLS.statusbar, !!req.statusbar);
     if (req.toolbars != null) {
       const states = {};
-      for (let i = 0; i < CHROME_URLS.toolbars.length; i++) {
-        const u = CHROME_URLS.toolbars[i];
+      const urls = CHROME_URLS.toolbars.slice();
+      try {
+        if (typeof lm.getElements === 'function') {
+          const els = lm.getElements() || [];
+          for (let i = 0; i < (els.length || 0); i++) {
+            const u = els[i] && els[i].ResourceURL ? String(els[i].ResourceURL) : '';
+            if (u && u.indexOf('private:resource/toolbar/') === 0 && urls.indexOf(u) < 0) urls.push(u);
+          }
+        }
+      } catch (e) {}
+      for (let i = 0; i < urls.length; i++) {
+        const u = urls[i];
         // fullscreenbar 永不放出来（「全屏」浮条，见 CHROME_NEVER_SHOWN）。
         states[u.slice(u.lastIndexOf('/') + 1)] = setOne(u, !!req.toolbars && CHROME_NEVER_SHOWN.indexOf(u) < 0);
       }
       out.applied.toolbars = states;
     }
+    if (req.all == null) {
+      if (req.menubar || req.statusbar || req.toolbars) {
+        try { lm.setVisible(true); } catch (e) {}
+      } else if (req.menubar === false && req.statusbar === false && req.toolbars === false) {
+        try { lm.setVisible(false); } catch (e) {}
+      }
+    }
+    if (req.sheetTabs != null && isCalcDoc()) {
+      try {
+        ctrl.setPropertyValue('HasSheetTabs', !!req.sheetTabs);
+        out.applied.sheetTabs = !!ctrl.getPropertyValue('HasSheetTabs');
+      } catch (e) { out.sheetTabsErr = errStr(e); }
+    }
     if (req.rulers != null) {
-      const vs = ctrl.getViewSettings();
+      let vs = null;
+      try { vs = ctrl.getViewSettings(); } catch (e) {}
       const r = {};
-      for (const k of ['ShowHoriRuler', 'ShowVertRuler']) {
-        try { vs.setPropertyValue(k, !!req.rulers); } catch (e) {}
-        try { r[k] = !!vs.getPropertyValue(k); } catch (e) {}
+      if (vs) {
+        for (const k of ['ShowHoriRuler', 'ShowVertRuler']) {
+          try { vs.setPropertyValue(k, !!req.rulers); } catch (e) {}
+          try { r[k] = !!vs.getPropertyValue(k); } catch (e) {}
+        }
       }
       out.applied.rulers = r;
     }
+    // A replacement Qt window may retain its former title/frame margins even
+    // after FullScreen and LayoutManager report the correct state. Reconcile
+    // the native surface once after chrome changes, without changing its size.
+    post('ui_layout');
     return out;
   },
   // 纯视图开关（自建工具栏「¶ 格式标记」「标尺」，默认都开、开关落在用户偏好里）。
@@ -4796,7 +6672,17 @@ const EXEC = {
   set_view_options(p) {
     const req = p || {};
     let vs = null;
-    try { vs = ctrl.getViewSettings(); } catch (e) { return { success: false, message: 'no view settings: ' + errStr(e) }; }
+    try { vs = ctrl.getViewSettings(); } catch (e) {
+      if ((typeof isCalcDoc === 'function' && isCalcDoc()) || (typeof isImpressDoc === 'function' && isImpressDoc())) {
+        const out = { success: true };
+        if (typeof isCalcDoc === 'function' && isCalcDoc()) {
+          if (req.showGrid != null) { try { ctrl.setPropertyValue('ShowGrid', !!req.showGrid); } catch (e2) {} }
+          try { out.showGrid = !!ctrl.getPropertyValue('ShowGrid'); } catch (e2) {}
+        }
+        return out;
+      }
+      return { success: false, message: 'no view settings: ' + errStr(e) };
+    }
     const marks = { paragraphMarks: 'ShowParaBreaks', lineBreaks: 'ShowBreaks', spaces: 'ShowSpaces', tabs: 'ShowTabstops' };
     for (const [key, property] of Object.entries(marks)) {
       if (req[key] == null) continue;
@@ -4879,7 +6765,7 @@ const EXEC = {
   //   - zoom: ZoomValue (%) from the view settings.
   //   - winPx: the Qt component window rect (px) — the canvas surface bounds.
   // Each field is independently try/caught so a missing API degrades, not throws.
-  get_cursor_rect() {
+  get_cursor_rect(p) {
     // The IME/caret timer can outlive a Writer document during a tab switch.
     if (!isWriterDoc()) return completionUnavailable('not-writer');
     const out = { success: true };
@@ -4914,7 +6800,129 @@ const EXEC = {
     } catch (e) { out.viewDataErr = errStr(e); }
     try { out.nativeCaret = readNativeCaretRect(ctrl.getFrame(), ctrl.getViewData(), out.charHeightPt); }
     catch (e) { /* Older engines retain the click-calibrated fallback. */ }
+    // Endpoint geometry temporarily moves the view cursor. Background caret
+    // reads must stay read-only, especially during mouse selection + scrolling.
+    if (vc && out.collapsed === false && p && p.selectionRects === true) {
+      try {
+        const sr = readSelectionCaretRects(ctrl.getFrame(), vc, out.charHeightPt);
+        if (sr) out.selectionRects = sr;
+      } catch (e) {}
+    }
     return out;
+  },
+  // 选中文字鼠标点击拖拽移动（dev-board#1286）：
+  // Qt5-WASM 的 QDrag 模态循环在浏览器沙箱内不工作，画布内在已选中文本上按下并
+  // 拖动鼠标会被引擎当成从按下点重新拉选区，而不是把原选区搬到松手处。
+  // 客体页在检测到拖离原选区松手时：
+  //   1. 先调 stash_selection_for_drag 暂存原选区起止锚点与 XTransferable（保富格式）；
+  //   2. 向画布派发合成单击，交由 Qt 原生命中测试把视图光标挪到松手字符；
+  //   3. 调 complete_selection_drag，在同一撤销组内删除原选区并在落点插入（支持修订与非修订态），
+  //      并在新位置重新选中被移动的文字（Word 语义）。
+  stash_selection_for_drag() {
+    if (!isWriterDoc()) return bmFail('not-writer');
+    if (!isReviewWritable()) return bmFail('readonly');
+    try {
+      const vc = ctrl.getViewCursor();
+      const selText = vc ? (vc.getString() || '') : '';
+      if (!selText) {
+        stashedDragSelection = null;
+        return { success: false, empty: true, error: 'empty-selection', message: '未选中文字' };
+      }
+      const text = vc.getText();
+      const srcStart = text.createTextCursorByRange(vc.getStart());
+      const srcEnd = text.createTextCursorByRange(vc.getEnd());
+      try { dropAiAnchors(); } catch (e) {}
+      let transferable = null;
+      try {
+        if (typeof ctrl.getTransferable === 'function') transferable = ctrl.getTransferable();
+      } catch (e) {}
+      stashedDragSelection = {
+        model: xModel,
+        text: text,
+        srcStart: srcStart,
+        srcEnd: srcEnd,
+        selText: selText,
+        transferable: transferable,
+        at: Date.now(),
+      };
+      return { success: true, text: selText };
+    } catch (e) {
+      stashedDragSelection = null;
+      return bmFail('stash_selection_for_drag failed: ' + errStr(e));
+    }
+  },
+  complete_selection_drag(p) {
+    if (p && p.cancel) {
+      stashedDragSelection = null;
+      return { success: true, cancelled: true };
+    }
+    const stash = stashedDragSelection;
+    if (!stash || stash.model !== xModel || !isWriterDoc()) {
+      stashedDragSelection = null;
+      return bmFail('no-stashed-selection');
+    }
+    if (!isReviewWritable()) {
+      stashedDragSelection = null;
+      return bmFail('readonly');
+    }
+    try {
+      const vc = ctrl.getViewCursor();
+      const curSel = vc ? (vc.getString() || '') : '';
+      if (curSel.length > 0 && !(p && p.force)) {
+        return { success: true, pendingClick: true };
+      }
+      stashedDragSelection = null;
+      const dstText = vc.getText();
+      const dstPos = vc.getStart();
+      let insideSource = false;
+      try {
+        const afterStart = stash.text.compareRegionStarts(stash.srcStart, dstPos) >= 0;
+        const beforeEnd = stash.text.compareRegionStarts(dstPos, stash.srcEnd) >= 0;
+        if (afterStart && beforeEnd) insideSource = true;
+      } catch (e) {
+        insideSource = false;
+      }
+      if (insideSource) {
+        try {
+          vc.gotoRange(stash.srcStart, false);
+          vc.gotoRange(stash.srcEnd, true);
+        } catch (e) {}
+        return { success: true, moved: false, reason: 'inside-source', text: stash.selText };
+      }
+      const dstCur = dstText.createTextCursorByRange(dstPos);
+      const srcCur = stash.text.createTextCursorByRange(stash.srcStart);
+      srcCur.gotoRange(stash.srcEnd, true);
+      let um = null;
+      try { um = xModel.getUndoManager(); um.enterUndoContext('移动文字'); } catch (e) { um = null; }
+      lockModel();
+      try {
+        srcCur.setString('');
+        vc.gotoRange(dstCur, false);
+        let insertedViaTransferable = false;
+        if (stash.transferable && typeof ctrl.insertTransferable === 'function') {
+          try {
+            ctrl.insertTransferable(stash.transferable);
+            insertedViaTransferable = true;
+          } catch (e) {}
+        }
+        if (!insertedViaTransferable) {
+          insertTextAtCursor(vc, stash.selText);
+        }
+        vc.collapseToEnd();
+        const stepCount = stash.selText.replace(/\r\n/g, '\n').length;
+        if (stepCount > 0) {
+          try { vc.goLeft(stepCount, true); } catch (e) {}
+        }
+      } finally {
+        unlockModel();
+        if (um) { try { um.leaveUndoContext(); } catch (e) {} }
+      }
+      invalidateParaIndex();
+      return Object.assign({ success: true, moved: true, text: stash.selText }, verifySnapshot());
+    } catch (e) {
+      stashedDragSelection = null;
+      return bmFail('complete_selection_drag failed: ' + errStr(e));
+    }
   },
   // [spike] probe 4b: LOAD performance of a 50-page docx (#56 余项). The existing
   // testPerf times GENERATION; this times the docx IMPORT path: generate N pages,
@@ -4985,7 +6993,12 @@ const EXEC = {
     // Empty body = a brand-new / unsaved document (the backend streams 200 + 0
     // bytes for it). That is NOT an error: keep the blank boot doc as-is. The
     // host also guards this, but defend here too.
-    if (!u8 || u8.length === 0) return { success: true, empty: true, name: name, kind: docKindOf() };
+    // An author-only update must not create a model while real bytes are in flight.
+    if (!u8) return { success: true, empty: true, name: name, kind: docKindOf() };
+    if (u8.length === 0) {
+      if (!xModel) bootDoc();
+      return { success: true, empty: true, name: name, kind: docKindOf() };
+    }
     // zeta.js marshals JS→UNO sequences ONLY from plain Arrays (translateToEmbind
     // gates on Array.isArray), and sequence<byte> elements are SIGNED — so go
     // through an Int8Array view, then Array.from. Passing the typed array itself
@@ -4993,6 +7006,10 @@ const EXEC = {
     // the shape of RESULTS only, and only in some zetajs builds.)
     const bytes = Array.from(new Int8Array(u8.buffer, u8.byteOffset, u8.byteLength));
 
+    if(slideShowViewState) {
+      try{if(isImpressDoc() && xModel.getPresentation().isRunning())xModel.getPresentation().end();}catch(_){}
+      try{restoreSlideShowView();}catch(_){}
+    }
     // Retarget the worker's model/controller onto a freshly-loaded component.
     const retarget = (loaded) => {
       const previous = xModel;
@@ -5020,8 +7037,16 @@ const EXEC = {
         try { xModel.setPropertyValue('RecordChanges', true); } catch (e) {}
         resetRevisionView();
       }
+      // 装载期的规范化（修订开关、显示模式、锚点清场；Calc/Impress 装载同样会置位）
+      // 把刚打开的模型留在 modified 态。此后任何一条纯视图命令（set_chrome /
+      // set_view_options）引起的 modify 广播都会过 isModified() 那道筛子、在 ready
+      // 之后到达宿主——只打开就显示「更改待保存」，自动保存再把重新序列化的 docx
+      // 传回去成了「待提交」（教程反馈 15，lowa-e2e open-not-dirty 实证）。
+      // 装载结果就是磁盘上的文件：清掉这个标志，真编辑照常置位。
+      try { if (xModel.isModified()) xModel.setModified(false); } catch (e) {}
       // _default keeps modified components alive. Close only after successful
       // replacement: 33 retained models exhausted LOWA's 1 GiB heap (#1121).
+      if (!previous) post('ui_ready');
       if (previous && previous !== loaded) {
         try { previous.setModified(false); previous.close(true); }
         catch (e) { log('load_document: previous model close failed: ' + errStr(e)); }
@@ -5082,6 +7107,21 @@ const EXEC = {
   // The filter names in IMPORT_FILTERS are the registry FilterNames, valid for
   // BOTH directions for these formats (e.g. 'MS Word 2007 XML' imports AND
   // exports .docx).
+  // [预热] 备胎空闲时把空白文档导出成 docx 再装回来一次（0.81「秒开」）。
+  // 真机实测：一个引擎装第一份文档要多花约 1.3s 一次性初始化（与格式无关：先装 pptx，
+  // 再装 docx 也快），之后每份只要 0.4s 左右；而每份文档都开在新的备胎上，于是每次
+  // 打开都付这 1.3s。备胎空闲时先付掉，用户点开时就是「第二份文档」的速度。
+  // 只在空白开机文档上做；导出→装回不经宿主保存链路，也不留 modified。
+  warm_engine() {
+    if (!xModel || xModel !== bootBlankModel || !isWriterDoc()) return { success: true, skipped: true };
+    const t0 = performance.now();
+    const ex = EXEC.export_document({ name: 'warm.docx' });
+    if (!ex || !ex.success) return { success: false, message: (ex && ex.message) || 'warm export failed' };
+    const r = EXEC.load_document({ name: 'warm.docx', bytes: ex.bytes });
+    try { if (xModel && xModel.isModified()) xModel.setModified(false); } catch (e) { /* ignore */ }
+    log('warm_engine: 预热完成 / warmed in ' + Math.round(performance.now() - t0) + 'ms');
+    return { success: !!(r && r.success), ms: Math.round(performance.now() - t0) };
+  },
   export_document(p) {
     const name = String(p && p.name || 'document.docx');
     const m = name.match(/\.([A-Za-z0-9]+)$/);
@@ -5115,11 +7155,23 @@ const EXEC = {
     // 导出是同步的、跑在这条 office 线程上，期间不可能有用户编辑挤进来，
     // 复原不会吃掉真实修改；宿主侧的 dirty 是另一套独立记账，也不受影响。
     const wasModified = (() => { try { return !!xModel.isModified(); } catch (e) { return false; } })();
+    // The office queue has now applied earlier IME/AI writes. Export is
+    // synchronous: later input can only modify the model after this snapshot.
+    if (Number.isSafeInteger(p && p.saveSnapshotId) && p.saveSnapshotId > 0)
+      post('save-snapshot', { saveSnapshotId: p.saveSnapshotId });
     exportInFlight = true;
     try {
       withInlineMarkupForExport(function () { if (ext === 'docx') repairMoveRangeBookmarks(); xModel.storeToURL('private:stream', props); });
     } finally {
-      try { if (!!xModel.isModified() !== wasModified) xModel.setModified(wasModified); } catch (e) { /* 只读文档等场景可能拒绝，忽略 */ }
+      // 宿主的保存（带 saveSnapshotId）落下快照后，引擎这边就是「自上次保存以来没改过」：标志清成 false。
+      // Impress 的 modify 广播只在 false→true 那一下发，复原成 true 的话之后单条格式类命令（如 AI 把标题
+      // 改红）再也报不上来，宿主不标脏、不自动保存、关标签也不拦——改动丢失（O7 实测）。
+      // Writer/Calc 每笔都广播，不受影响；宿主 dirty 独立记账，上传失败照常重试。其余导出（另存副本、比对）照旧复原。
+      const savedSnapshot = Number.isSafeInteger(p && p.saveSnapshotId) && p.saveSnapshotId > 0;
+      try {
+        const target = savedSnapshot ? false : wasModified;
+        if (!!xModel.isModified() !== target) xModel.setModified(target);
+      } catch (e) { /* 只读文档等场景可能拒绝，忽略 */ }
       exportInFlight = false;
     }
     saveSeq++;
@@ -5202,8 +7254,13 @@ const EXEC = {
   // 走段落索引缓存：O(窗口) 而非 O(全文)，total 直接取索引长度。
   get_document_text(p) {
     const start = Math.max(0, Number(p && p.startParagraph) || 0);
-    const maxParas = Math.max(1, Math.min(Number(p && p.maxParagraphs) || 200, 500));
-    const charBudget = 15000;
+    // bulk：宿主自己的后台读者（写作辅助词表、即时审校快照）一次取全文。__agent 读要切到最终稿视图、
+    // 每次切换都让段落索引失效重建（2006 段的稿子每页 ~650ms，分页通读要 8–10 次，office-tier1 O8）；
+    // 一次读完只建一次索引。AI 工具不带 bulk，仍按 500 段 / 15000 字分页。
+    const bulk = !!(p && p.bulk === true);
+    const maxParas = bulk ? Math.max(1, Math.min(Number(p && p.maxParagraphs) || 10000, 10000))
+      : Math.max(1, Math.min(Number(p && p.maxParagraphs) || 200, 500));
+    const charBudget = bulk ? 200000 : 15000;
     return withParaIndex(function (ix) {
       const total = ix.total;
       const paragraphs = [];
@@ -5223,6 +7280,35 @@ const EXEC = {
       return r;
     });
   },
+  // [感知] 发送时的「指针」：有选区 → 选区原文 + 锚点 + 段号；无选区 → 光标所在段 + 锚点 + 段号。
+  // 供 AI 对话发送时一并带上，让「改这里 / 这段」一步 doc_replace_at_anchor 命中，不必先查找。
+  // 仅 Writer；锚点沿用 find_text_locations 的书签机制（anchorBookmark）。
+  get_ai_pointer() {
+    if (!isWriterDoc()) return { success: true, kind: 'none' };
+    const MAX_ANCHOR_CHARS = 2000;   // 选区超过这个长度不挂锚点（整块替换风险大，也不该是「这一句」）
+    const MAX_PARA_CHARS = 600;      // 光标段落回传上限；超长段不挂锚点，让模型自己 doc_get_paragraph
+    const selRange = selectionRange();
+    const selText = selRange ? (selRange.getString() || '') : '';
+    if (selText.length > 0) {
+      let anchorId = null;
+      if (selText.length <= MAX_ANCHOR_CHARS) { try { anchorId = silentPointerAnchor(selRange); } catch (e) {} }
+      return { success: true, kind: 'selection', selectionText: selText.slice(0, MAX_ANCHOR_CHARS),
+        anchorId: anchorId, paragraphIndex: headingChainOf(selRange).paragraphIndex };
+    }
+    const vc = ctrl.getViewCursor();
+    let para = null;
+    try {
+      para = vc.getText().createTextCursorByRange(vc.getStart());
+      para.gotoStartOfParagraph(false);
+      para.gotoEndOfParagraph(true);
+    } catch (e) { return { success: true, kind: 'none' }; }
+    const text = para.getString() || '';
+    if (!text.trim()) return { success: true, kind: 'none' };
+    let anchorId = null;
+    if (text.length <= MAX_PARA_CHARS) { try { anchorId = silentPointerAnchor(para); } catch (e) {} }
+    return { success: true, kind: 'cursor', paragraphText: text.slice(0, MAX_PARA_CHARS),
+      anchorId: anchorId, paragraphIndex: headingChainOf(vc).paragraphIndex };
+  },
   // [感知] what's around the cursor right now — selection, chars before/after,
   // and the enclosing paragraph ("看一眼手边").
   get_cursor_context(p) {
@@ -5233,13 +7319,27 @@ const EXEC = {
       before: ctx.before, after: ctx.after, paragraph: (paragraphTextOf(vc) || '').slice(0, 300),
     };
   },
-  // [定位] select the Nth (0-based) body paragraph, visibly (view scrolls to it).
+  // [定位] select the Nth (0-based) body paragraph or [index, endIndex] range, visibly (view scrolls to it).
   select_paragraph(p) {
-    const idx = Number(p.index) || 0;
+    const idx = Number(p && p.index) || 0;
+    if (p && p.endIndex != null && Number(p.endIndex) !== idx) {
+      const sel = selectParagraphRange(idx, Number(p.endIndex));
+      if (sel.error) return { success: false, message: sel.error };
+      let txt = '';
+      try { txt = ctrl.getViewCursor().getString() || ''; } catch (e) {}
+      if (!txt) txt = sel.paragraphs.map(function (el) { return el.getString(); }).join('\n');
+      return {
+        success: true,
+        index: sel.startIndex,
+        endIndex: sel.endIndex,
+        paragraphCount: sel.paragraphs.length,
+        text: txt.slice(0, 300),
+      };
+    }
     const found = paraAt(idx);
     if (!found) return { success: false, message: 'paragraph index out of range: ' + idx };
     if (!selectVisibly(found)) return { success: false, message: 'could not select paragraph ' + idx };
-    return { success: true, index: idx, text: found.getString() };
+    return { success: true, index: idx, text: found.getString(), numbering: paragraphNumberingOf(found) };
   },
   // [定位] drop the cursor at the start/end edge of the current selection — the
   // human move for "insert BEFORE/AFTER this" (compose with insert_at_cursor).
@@ -5259,7 +7359,8 @@ const EXEC = {
     return Object.assign({ success: true, deletedText: had.slice(0, 200), deletedChars: had.length }, verifySnapshot());
   },
   // [格式] character formatting on the CURRENT selection (select first, then
-  // format — same order a human works in). Any subset of the params applies;
+  // format — same order a human works in) or on an explicit paragraph range
+  // (startParagraph/endParagraph/paragraphIndex). Any subset of the params applies;
   // booleans false/'none' explicitly clear. CJK-safe via Asian/Complex siblings.
   // atCursor:true（自建工具栏传）= Word 语义：没有选区时把格式设在光标处，之后在这里
   // 敲的字沿用新格式。真引擎实证（24.2.8-zhcn-r5）：塌陷视图光标上 setPropertyValue
@@ -5268,92 +7369,292 @@ const EXEC = {
   // AI 管线不传 atCursor，没选区照旧明确报错——否则模型会以为「格式已设」而文档上
   // 什么都看不见。
   format_selection(p) {
+    const hasExplicitPara = p && (p.paragraphIndex != null || p.startParagraph != null || p.endParagraph != null);
+    if (!hasExplicitPara && typeof isCalcDoc === 'function' && isCalcDoc()) {
+      const rangeName = (p && p.range) ? String(p.range) : activeCalcRangeName();
+      const cp = { range: rangeName };
+      if (p && p.bold != null) cp.bold = !!p.bold;
+      if (p && p.italic != null) cp.italic = !!p.italic;
+      const rawUl = p && (p.underlineStyle != null ? p.underlineStyle : p.underline);
+      if (rawUl != null) cp.underline = rawUl !== false && String(rawUl).toLowerCase() !== 'none';
+      if (p && p.strikeout != null) cp.strikeout = !!p.strikeout;
+      if (p && p.fontSize != null) {
+        const sz = parseFontSizePt(p.fontSize);
+        if (sz == null) return { success: false, message: 'bad fontSize: ' + p.fontSize };
+        cp.fontSize = sz;
+      }
+      const fn = p && (p.fontName != null ? p.fontName : (p.fontNameAsian != null ? p.fontNameAsian : p.fontNameWestern));
+      if (fn != null) cp.fontName = String(fn);
+      if (p && p.color != null) cp.color = String(p.color);
+      if (p && p.highlight != null) {
+        if (String(p.highlight).toLowerCase() === 'none') cp.background = 'none';
+        else {
+          const hc = parseColor(p.highlight, HIGHLIGHT_COLORS);
+          if (hc == null) return { success: false, message: 'bad highlight color: ' + p.highlight };
+          cp.background = '#' + ('000000' + (hc >>> 0).toString(16)).slice(-6);
+        }
+      }
+      return EXEC.sheet_format_cells(cp);
+    }
+    if (!hasExplicitPara && typeof isImpressDoc === 'function' && isImpressDoc()) {
+      const ctx = activeImpressContext();
+      const targetShapeName = (p && p.shapeName) ? String(p.shapeName) : ctx.selectedShapeName;
+      if (!targetShapeName) return { success: false, message: '请先选中要设置格式的形状或文本框' };
+      const sp = {
+        slideNumber: (p && p.slideNumber != null) ? Number(p.slideNumber) : ctx.slideNumber,
+        shapeName: targetShapeName,
+      };
+      if (p && p.bold != null) sp.bold = !!p.bold;
+      if (p && p.italic != null) sp.italic = !!p.italic;
+      const rawUl = p && (p.underlineStyle != null ? p.underlineStyle : p.underline);
+      if (rawUl != null) {
+        if (typeof rawUl === 'boolean') sp.underline = rawUl ? 'single' : 'none';
+        else sp.underline = String(rawUl).toLowerCase() === 'none' ? 'none' : String(rawUl).toLowerCase();
+      }
+      if (p && (p.strikeout != null || p.strikethrough != null)) sp.strikethrough = !!(p.strikethrough != null ? p.strikethrough : p.strikeout);
+      if (p && p.fontSize != null) {
+        const sz = parseFontSizePt(p.fontSize);
+        if (sz == null) return { success: false, message: 'bad fontSize: ' + p.fontSize };
+        sp.fontSize = sz;
+      }
+      const fn = p && (p.fontName != null ? p.fontName : (p.fontNameAsian != null ? p.fontNameAsian : p.fontNameWestern));
+      if (fn != null) sp.fontName = String(fn);
+      if (p && p.color != null) sp.color = String(p.color);
+      return EXEC.slide_format_text(sp);
+    }
+    const tgt = resolveFormatTargets(p);
+    if (tgt.error) return { success: false, message: tgt.error };
     const vc = ctrl.getViewCursor();
-    const collapsed = (vc.getString() || '').length === 0;
+    const collapsed = (vc.getString() || '').length === 0 && !tgt.explicitRange;
     if (collapsed && !p.atCursor) return { success: false, message: 'nothing selected — select first, then format' };
-    const applied = {};
-    if (p.bold != null) { setCharProp(vc, 'CharWeight', p.bold ? css.awt.FontWeight.BOLD : css.awt.FontWeight.NORMAL); applied.bold = !!p.bold; }
-    if (p.italic != null) { setCharProp(vc, 'CharPosture', p.italic ? css.awt.FontSlant.ITALIC : css.awt.FontSlant.NONE); applied.italic = !!p.italic; }
-    if (p.underline != null) { vc.setPropertyValue('CharUnderline', p.underline ? css.awt.FontUnderline.SINGLE : css.awt.FontUnderline.NONE); applied.underline = !!p.underline; }
-    if (p.strikeout != null) { vc.setPropertyValue('CharStrikeout', p.strikeout ? css.awt.FontStrikeout.SINGLE : css.awt.FontStrikeout.NONE); applied.strikeout = !!p.strikeout; }
+    let hiColor = null;
     if (p.highlight != null) {
-      const c = parseColor(p.highlight, HIGHLIGHT_COLORS);
-      if (c == null) return { success: false, message: 'bad highlight color: ' + p.highlight + ' (use yellow/green/cyan/magenta/red/blue/gray/none or #RRGGBB)' };
-      vc.setPropertyValue('CharHighlight', c); applied.highlight = String(p.highlight);
+      hiColor = parseColor(p.highlight, HIGHLIGHT_COLORS);
+      if (hiColor == null) return { success: false, message: 'bad highlight color: ' + p.highlight + ' (use yellow/green/cyan/magenta/red/blue/gray/none or #RRGGBB)' };
     }
+    let fgColor = null;
     if (p.color != null) {
-      const c = parseColor(p.color, { auto: -1 });
-      if (c == null) return { success: false, message: 'bad color: ' + p.color + ' (use #RRGGBB or auto)' };
-      vc.setPropertyValue('CharColor', c); applied.color = String(p.color);
+      fgColor = parseColor(p.color, { auto: -1 });
+      if (fgColor == null) return { success: false, message: 'bad color: ' + p.color + ' (use #RRGGBB or auto)' };
     }
-    if (p.fontSize != null) { setCharProp(vc, 'CharHeight', Number(p.fontSize)); applied.fontSize = Number(p.fontSize); }
-    if (p.fontName != null) { setCharProp(vc, 'CharFontName', String(p.fontName)); applied.fontName = String(p.fontName); }
-    // 中文字体单独设（fontName 已把西文/中文/复杂文种三项一起设成同一字体；中西文分设时后设中文）
-    if (p.fontNameAsian != null) { vc.setPropertyValue('CharFontNameAsian', String(p.fontNameAsian)); applied.fontNameAsian = String(p.fontNameAsian); }
+    let parsedSize = null;
+    if (p.fontSize != null) {
+      parsedSize = parseFontSizePt(p.fontSize);
+      if (parsedSize == null) return { success: false, message: 'bad fontSize: ' + p.fontSize + ' (use number in pt or Chinese size like 小四/四号/三号)' };
+    }
+    let ulSpec = null;
+    const rawUl = p.underlineStyle != null ? p.underlineStyle : p.underline;
+    if (rawUl != null) ulSpec = resolveUnderlineEnum(rawUl);
+    const applied = {};
+    if (p.bold != null) applied.bold = !!p.bold;
+    if (p.italic != null) applied.italic = !!p.italic;
+    if (ulSpec != null) applied.underline = ulSpec.label;
+    if (p.strikeout != null) applied.strikeout = !!p.strikeout;
+    if (p.highlight != null) applied.highlight = String(p.highlight);
+    if (p.color != null) applied.color = String(p.color);
+    if (parsedSize != null) applied.fontSize = parsedSize;
+    if (p.fontName != null) applied.fontName = String(p.fontName);
+    if (p.fontNameWestern != null) applied.fontNameWestern = String(p.fontNameWestern);
+    if (p.fontNameAsian != null) applied.fontNameAsian = String(p.fontNameAsian);
     if (Object.keys(applied).length === 0) return { success: false, message: 'no format params given' };
-    return { success: true, applied: applied, selectedText: vc.getString().slice(0, 100), atCursor: collapsed };
+    const applyCharProps = function (target) {
+      if (!target || typeof target.setPropertyValue !== 'function') return;
+      if (p.bold != null) setCharProp(target, 'CharWeight', p.bold ? css.awt.FontWeight.BOLD : css.awt.FontWeight.NORMAL);
+      if (p.italic != null) setCharProp(target, 'CharPosture', p.italic ? css.awt.FontSlant.ITALIC : css.awt.FontSlant.NONE);
+      if (ulSpec != null) target.setPropertyValue('CharUnderline', ulSpec.value);
+      if (p.strikeout != null) target.setPropertyValue('CharStrikeout', p.strikeout ? css.awt.FontStrikeout.SINGLE : css.awt.FontStrikeout.NONE);
+      if (hiColor != null) target.setPropertyValue('CharHighlight', hiColor);
+      if (fgColor != null) setCharColor(target, fgColor);
+      if (parsedSize != null) setCharProp(target, 'CharHeight', parsedSize);
+      if (p.fontName != null) setCharProp(target, 'CharFontName', String(p.fontName));
+      // 西文字体单独设（不覆盖 CharFontNameAsian）；中文字体单独设时放在后面确保生效
+      if (p.fontNameWestern != null) {
+        target.setPropertyValue('CharFontName', String(p.fontNameWestern));
+        try { target.setPropertyValue('CharFontNameComplex', String(p.fontNameWestern)); } catch (e) {}
+      }
+      if (p.fontNameAsian != null) target.setPropertyValue('CharFontNameAsian', String(p.fontNameAsian));
+    };
+    const selStr = vc.getString() || '';
+    const coverWholeParas = tgt.explicitRange
+      || tgt.paragraphs.length > 1
+      || (tgt.paragraphs.length === 1 && selStr === (tgt.paragraphs[0].getString() || ''));
+    if (coverWholeParas && tgt.paragraphs.length > 0) {
+      lockModel();
+      try {
+        applyCharProps(vc);
+        for (let i = 0; i < tgt.paragraphs.length; i++) {
+          const el = tgt.paragraphs[i];
+          applyCharProps(el);
+          try {
+            if (typeof el.getText === 'function') {
+              const cur = el.getText().createTextCursorByRange(el);
+              if (cur && cur !== el) applyCharProps(cur);
+            }
+          } catch (e) {}
+        }
+      } finally { unlockModel(); }
+    } else {
+      applyCharProps(vc);
+    }
+    const res = { success: true, applied: applied, selectedText: (vc.getString() || '').slice(0, 100), atCursor: collapsed };
+    if (tgt.explicitRange) {
+      res.startParagraph = tgt.startParagraph;
+      res.endParagraph = tgt.endParagraph;
+      res.paragraphCount = tgt.paragraphs.length;
+    }
+    return res;
   },
   // [格式] paragraph-level formatting on the selection's paragraph(s): alignment,
   // paragraph style, line spacing, space before/after, indents. headingLevel 1-9
   // maps to the programmatic style name ('Heading N', valid regardless of UI
   // language); 0 = back to body ('Standard').
   set_paragraph_format(p) {
+    const hasExplicitPara = p && (p.paragraphIndex != null || p.startParagraph != null || p.endParagraph != null);
+    if (!hasExplicitPara && typeof isCalcDoc === 'function' && isCalcDoc()) {
+      const rangeName = (p && p.range) ? String(p.range) : activeCalcRangeName();
+      const cp = { range: rangeName };
+      if (p && p.alignment != null) {
+        const al = String(p.alignment).toLowerCase();
+        cp.hAlign = (al === 'left' || al === 'center' || al === 'right') ? al : 'standard';
+      }
+      if (p && p.vAlign != null) cp.vAlign = String(p.vAlign);
+      if (p && p.wrap != null) cp.wrap = !!p.wrap;
+      if (Object.keys(cp).length <= 1) return { success: true, applied: {} };
+      return EXEC.sheet_format_cells(cp);
+    }
+    if (!hasExplicitPara && typeof isImpressDoc === 'function' && isImpressDoc()) {
+      const ctx = activeImpressContext();
+      const targetShapeName = (p && p.shapeName) ? String(p.shapeName) : ctx.selectedShapeName;
+      if (!targetShapeName) return { success: false, message: '请先选中要设置段落格式的形状或文本框' };
+      const sp = {
+        slideNumber: (p && p.slideNumber != null) ? Number(p.slideNumber) : ctx.slideNumber,
+        shapeName: targetShapeName,
+      };
+      if (p && (p.styleName != null || p.headingLevel != null)) return slideError('SLIDE_UNSUPPORTED_PARAGRAPH_STYLE');
+      for (const key of ['alignment', 'anchorText', 'lineSpacingMode', 'lineSpacingValue',
+        'spaceBeforePt', 'spaceAfterPt', 'spaceBeforeLines', 'spaceAfterLines',
+        'firstLineIndentPt', 'firstLineIndentChars', 'leftIndentPt', 'leftIndentChars', 'rightIndentPt']) {
+        if (p && p[key] != null) sp[key] = p[key];
+      }
+      return EXEC.slide_format_text(sp);
+    }
+    const tgt = resolveFormatTargets(p);
+    if (tgt.error) return { success: false, message: tgt.error };
     const vc = ctrl.getViewCursor();
     const applied = {};
     let alignment = null;
     if (p.alignment != null) {
-      const m = { left: css.style.ParagraphAdjust.LEFT, right: css.style.ParagraphAdjust.RIGHT, center: css.style.ParagraphAdjust.CENTER, justify: css.style.ParagraphAdjust.BLOCK };
+      const m = {
+        left: css.style.ParagraphAdjust.LEFT,
+        right: css.style.ParagraphAdjust.RIGHT,
+        center: css.style.ParagraphAdjust.CENTER,
+        justify: css.style.ParagraphAdjust.BLOCK,
+        both: css.style.ParagraphAdjust.BLOCK,
+        distribute: css.style.ParagraphAdjust.BLOCK,
+      };
       alignment = m[String(p.alignment).toLowerCase()];
       if (alignment == null) return { success: false, message: 'bad alignment: ' + p.alignment + ' (left/right/center/justify)' };
+      applied.alignment = String(p.alignment);
     }
     let styleName = p.styleName != null ? String(p.styleName) : null;
     if (p.headingLevel != null) {
       const lvl = Number(p.headingLevel);
       styleName = lvl >= 1 && lvl <= 9 ? 'Heading ' + lvl : 'Standard';
     }
-    if (styleName != null) { vc.setPropertyValue('ParaStyleName', styleName); applied.styleName = styleName; }
-    // 切换段落样式会重置对齐；用户同次明确给出的格式必须在样式之后应用。
-    if (alignment != null) { vc.setPropertyValue('ParaAdjust', alignment); applied.alignment = String(p.alignment); }
-    // 行距：single / 1.5 / double（固定倍数），proportional（百分比），
-    // atLeast（最小值，磅），exactly（固定值，磅）
+    if (styleName != null) applied.styleName = styleName;
+    // 行距：single / 1.5 / double / multiple / proportional / atLeast / exactly（及常见别名）
+    let parsedLs = null;
     if (p.lineSpacingMode != null) {
+      parsedLs = parseLineSpacingSpec(p.lineSpacingMode, p.lineSpacingValue);
+      if (parsedLs.error) return { success: false, message: parsedLs.error };
       const mode = String(p.lineSpacingMode);
       const v = Number(p.lineSpacingValue) || 0;
-      const M = css.style.LineSpacingMode;
-      let ls = null;
-      if (mode === 'single') ls = { Mode: M.PROP, Height: 100 };
-      else if (mode === '1.5' || mode === 'oneHalf') ls = { Mode: M.PROP, Height: 150 };
-      else if (mode === 'double') ls = { Mode: M.PROP, Height: 200 };
-      else if (mode === 'proportional') { if (v <= 0) return { success: false, message: 'proportional 行距需要 lineSpacingValue（百分比，如 120）' }; ls = { Mode: M.PROP, Height: Math.round(v) }; }
-      else if (mode === 'atLeast') { if (v <= 0) return { success: false, message: 'atLeast 行距需要 lineSpacingValue（磅）' }; ls = { Mode: M.MINIMUM, Height: ptToMm100(v) }; }
-      else if (mode === 'exactly') { if (v <= 0) return { success: false, message: 'exactly 行距需要 lineSpacingValue（磅）' }; ls = { Mode: M.FIX, Height: ptToMm100(v) }; }
-      else return { success: false, message: 'bad lineSpacingMode: ' + mode + ' (single/1.5/double/proportional/atLeast/exactly)' };
-      vc.setPropertyValue('ParaLineSpacing', new css.style.LineSpacing(ls));
       applied.lineSpacing = mode + (v > 0 ? ':' + v : '');
     }
-    if (p.spaceBeforePt != null) { vc.setPropertyValue('ParaTopMargin', ptToMm100(p.spaceBeforePt)); applied.spaceBeforePt = Number(p.spaceBeforePt); }
-    if (p.spaceAfterPt != null) { vc.setPropertyValue('ParaBottomMargin', ptToMm100(p.spaceAfterPt)); applied.spaceAfterPt = Number(p.spaceAfterPt); }
-    // 首行缩进按"字符"数折算：以光标处字号为一个字符宽（CJK 方块字口径）
-    if (p.firstLineIndentChars != null) {
-      let chPt = HOUSE.bodyPt;
-      try { const h = vc.getPropertyValue('CharHeight'); if (h > 0) chPt = h; } catch (e) {}
-      vc.setPropertyValue('ParaFirstLineIndent', ptToMm100(Number(p.firstLineIndentChars) * chPt));
-      applied.firstLineIndentChars = Number(p.firstLineIndentChars);
-    } else if (p.firstLineIndentPt != null) {
-      vc.setPropertyValue('ParaFirstLineIndent', ptToMm100(p.firstLineIndentPt));
-      applied.firstLineIndentPt = Number(p.firstLineIndentPt);
-    }
-    if (p.leftIndentPt != null) { vc.setPropertyValue('ParaLeftMargin', ptToMm100(p.leftIndentPt)); applied.leftIndentPt = Number(p.leftIndentPt); }
-    if (p.rightIndentPt != null) { vc.setPropertyValue('ParaRightMargin', ptToMm100(p.rightIndentPt)); applied.rightIndentPt = Number(p.rightIndentPt); }
+    if (p.spaceBeforePt != null) applied.spaceBeforePt = Number(p.spaceBeforePt);
+    else if (p.spaceBeforeLines != null) applied.spaceBeforeLines = Number(p.spaceBeforeLines);
+    if (p.spaceAfterPt != null) applied.spaceAfterPt = Number(p.spaceAfterPt);
+    else if (p.spaceAfterLines != null) applied.spaceAfterLines = Number(p.spaceAfterLines);
+    if (p.firstLineIndentChars != null) applied.firstLineIndentChars = Number(p.firstLineIndentChars);
+    else if (p.firstLineIndentPt != null) applied.firstLineIndentPt = Number(p.firstLineIndentPt);
+    if (p.leftIndentChars != null) applied.leftIndentChars = Number(p.leftIndentChars);
+    else if (p.leftIndentPt != null) applied.leftIndentPt = Number(p.leftIndentPt);
+    if (p.rightIndentPt != null) applied.rightIndentPt = Number(p.rightIndentPt);
     if (Object.keys(applied).length === 0) return { success: false, message: 'no paragraph format params given' };
-    return Object.assign({ success: true, applied: applied }, verifySnapshot());
+    const applyParaProps = function (target) {
+      if (!target || typeof target.setPropertyValue !== 'function') return;
+      if (styleName != null) target.setPropertyValue('ParaStyleName', styleName);
+      // 切换段落样式会重置对齐；用户同次明确给出的格式必须在样式之后应用。
+      if (alignment != null) target.setPropertyValue('ParaAdjust', alignment);
+      if (parsedLs != null) target.setPropertyValue('ParaLineSpacing', new css.style.LineSpacing(parsedLs.ls));
+      const chPt = effectiveCharHeightPt(target, vc);
+      if (p.spaceBeforePt != null) target.setPropertyValue('ParaTopMargin', ptToMm100(p.spaceBeforePt));
+      else if (p.spaceBeforeLines != null) target.setPropertyValue('ParaTopMargin', ptToMm100(Number(p.spaceBeforeLines) * chPt * 1.2));
+      if (p.spaceAfterPt != null) target.setPropertyValue('ParaBottomMargin', ptToMm100(p.spaceAfterPt));
+      else if (p.spaceAfterLines != null) target.setPropertyValue('ParaBottomMargin', ptToMm100(Number(p.spaceAfterLines) * chPt * 1.2));
+      // 首行缩进按"字符"数折算：优先按中文实际字号 CharHeightAsian 计算（CJK 方块字口径）
+      if (p.firstLineIndentChars != null) {
+        const chars = Number(p.firstLineIndentChars);
+        target.setPropertyValue('ParaFirstLineIndent', ptToMm100(chars * chPt));
+        if (chars === 0 && p.leftIndentPt == null && p.leftIndentChars == null && !readParagraphLabel(target)) {
+          try { target.setPropertyValue('ParaLeftMargin', 0); } catch (e) {}
+        }
+      } else if (p.firstLineIndentPt != null) {
+        const ptVal = Number(p.firstLineIndentPt);
+        target.setPropertyValue('ParaFirstLineIndent', ptToMm100(ptVal));
+        if (ptVal === 0 && p.leftIndentPt == null && p.leftIndentChars == null && !readParagraphLabel(target)) {
+          try { target.setPropertyValue('ParaLeftMargin', 0); } catch (e) {}
+        }
+      }
+      if (p.leftIndentChars != null) target.setPropertyValue('ParaLeftMargin', ptToMm100(Number(p.leftIndentChars) * chPt));
+      else if (p.leftIndentPt != null) target.setPropertyValue('ParaLeftMargin', ptToMm100(p.leftIndentPt));
+      if (p.rightIndentPt != null) target.setPropertyValue('ParaRightMargin', ptToMm100(p.rightIndentPt));
+    };
+    if (tgt.paragraphs.length > 1) {
+      lockModel();
+      try {
+        applyParaProps(vc);
+        for (let i = 0; i < tgt.paragraphs.length; i++) applyParaProps(tgt.paragraphs[i]);
+      } finally { unlockModel(); }
+    } else {
+      applyParaProps(vc);
+      if (tgt.paragraphs.length === 1) applyParaProps(tgt.paragraphs[0]);
+    }
+    const out = Object.assign({ success: true, applied: applied }, verifySnapshot());
+    if (tgt.explicitRange) {
+      out.startParagraph = tgt.startParagraph;
+      out.endParagraph = tgt.endParagraph;
+      out.paragraphCount = tgt.paragraphs.length;
+    }
+    return out;
   },
   // [格式] 给选区所在段落设置编号/项目符号。preset: bullet（•）/ decimal（1. 2.）/
-  // chinese（一、二、）/ multilevel（1. → 1.1 → 1.1.1）/ none（去掉编号）。
+  // chinese（一、二、）/ clause（第一条）/ paren_chinese（（一））/ multilevel（1. → 1.1 → 1.1.1）/ none（去掉编号）。
   set_numbering(p) {
+    const tgt = resolveFormatTargets(p);
+    if (tgt.error) return { success: false, message: tgt.error };
     const preset = String(p.preset || 'decimal');
     if (preset === 'none') {
       dispatchUno('.uno:RemoveBullets');
+      const vc = ctrl.getViewCursor();
+      // 若跨段选区或样式绑定编号导致 RemoveBullets 未彻底清除，逐段补充清空 NumberingStyleName 并复位悬挂缩进
+      const clearNumOn = function (ps) {
+        if (!ps || typeof ps.setPropertyValue !== 'function') return;
+        try {
+          if (ps.getPropertyValue('NumberingIsNumber') !== false) {
+            try { ps.setPropertyValue('NumberingStyleName', ''); } catch (e) {}
+            try { ps.setPropertyValue('NumberingRules', null); } catch (e) {}
+          }
+        } catch (e) {}
+        try {
+          const fi = Number(ps.getPropertyValue('ParaFirstLineIndent')) || 0;
+          if (fi < 0) {
+            ps.setPropertyValue('ParaFirstLineIndent', 0);
+            ps.setPropertyValue('ParaLeftMargin', 0);
+          }
+        } catch (e) {}
+      };
+      for (let i = 0; i < tgt.paragraphs.length; i++) clearNumOn(tgt.paragraphs[i]);
       // UNO 派发可能不抛错却没有生效；去列表必须用真实状态判定，不能只回显 preset。
       const isNumbered = ctrl.getViewCursor().getPropertyValue('NumberingIsNumber');
       if (isNumbered !== false) return tableFail('项目符号或编号尚未清除，请重新选中目标段落后重试，并用 doc_get_formatting 核验');
@@ -5370,6 +7671,17 @@ const EXEC = {
     const vc = ctrl.getViewCursor();
     vc.setPropertyValue('NumberingRules', rules);
     vc.setPropertyValue('NumberingLevel', lvl);
+    if (tgt.paragraphs.length > 1) {
+      lockModel();
+      try {
+        for (let i = 0; i < tgt.paragraphs.length; i++) {
+          try {
+            tgt.paragraphs[i].setPropertyValue('NumberingRules', rules);
+            tgt.paragraphs[i].setPropertyValue('NumberingLevel', lvl);
+          } catch (e) {}
+        }
+      } finally { unlockModel(); }
+    }
     return Object.assign({ success: true, preset: preset, level: lvl + 1 }, verifySnapshot());
   },
   // [格式] 表格格式：边框/字号/首行加粗居中/单元格垂直对齐/数字居右/列宽/行高。
@@ -5383,17 +7695,27 @@ const EXEC = {
       styleTableStandard(table, { headerRows: p.firstRowBold === false ? 0 : 1 });
       applied.standard = true;
     }
-    // 边框：borderWidthPt 内外同宽；outsideBorderWidthPt / insideBorderWidthPt 分设；
+    // 边框：borderPreset(all|threeLine|outer|none)；borderWidthPt 内外同宽；
+    // outsideBorderWidthPt / insideBorderWidthPt 分设；
     // borderColor / borderStyle(single|double|dashed) 单独给时宽度沿用画像值。
-    if (p.borderWidthPt != null || p.outsideBorderWidthPt != null || p.insideBorderWidthPt != null || p.borderColor != null || p.borderStyle != null) {
+    if (p.borderPreset != null || p.borderWidthPt != null || p.outsideBorderWidthPt != null || p.insideBorderWidthPt != null || p.borderColor != null || p.borderStyle != null) {
+      let preset = null;
+      if (p.borderPreset != null) {
+        const rawPreset = String(p.borderPreset).trim().toLowerCase();
+        preset = rawPreset === 'threeline' ? 'threeLine' : rawPreset;
+        if (['all', 'threeLine', 'outer', 'none'].indexOf(preset) < 0) {
+          return { success: false, message: 'bad borderPreset: ' + p.borderPreset + ' (all/threeLine/outer/none)' };
+        }
+      }
       const color = p.borderColor != null ? parseColor(p.borderColor, { black: 0 }) : HOUSE.tableBorder.color;
       if (color == null) return { success: false, message: 'bad borderColor: ' + p.borderColor + ' (use #RRGGBB)' };
       const style = p.borderStyle != null ? String(p.borderStyle).toLowerCase() : HOUSE.tableBorder.style;
       if (['single', 'double', 'dashed'].indexOf(style) < 0) return { success: false, message: 'bad borderStyle: ' + p.borderStyle + ' (single/double/dashed)' };
-      const outsideMm = p.outsideBorderWidthPt != null ? ptToMm100(p.outsideBorderWidthPt) : p.borderWidthPt != null ? ptToMm100(p.borderWidthPt) : HOUSE.tableBorder.outsideMm;
-      const insideMm = p.insideBorderWidthPt != null ? ptToMm100(p.insideBorderWidthPt) : p.borderWidthPt != null ? ptToMm100(p.borderWidthPt) : outsideMm;
-      try { applyTableBorders(table, { outsideMm: outsideMm, insideMm: insideMm, color: color, style: style }); }
+      const outsideMm = p.outsideBorderWidthPt != null ? ptToMm100(p.outsideBorderWidthPt) : p.borderWidthPt != null ? ptToMm100(p.borderWidthPt) : (preset === 'threeLine' ? null : HOUSE.tableBorder.outsideMm);
+      const insideMm = p.insideBorderWidthPt != null ? ptToMm100(p.insideBorderWidthPt) : p.borderWidthPt != null ? ptToMm100(p.borderWidthPt) : (preset === 'threeLine' ? null : outsideMm);
+      try { applyTableBorders(table, { preset: preset || 'all', outsideMm: outsideMm, insideMm: insideMm, color: color, style: style }); }
       catch (e) { return { success: false, message: '边框设置失败: ' + errStr(e) }; }
+      if (preset != null) applied.borderPreset = preset;
       if (p.borderWidthPt != null) applied.borderWidthPt = Number(p.borderWidthPt);
       if (p.outsideBorderWidthPt != null) applied.outsideBorderWidthPt = Number(p.outsideBorderWidthPt);
       if (p.insideBorderWidthPt != null) applied.insideBorderWidthPt = Number(p.insideBorderWidthPt);
@@ -5694,30 +8016,158 @@ const EXEC = {
     };
   },
   // [感知] 读取光标/选区处的字符+段落+表格格式——"先看清现状再动手"的眼睛。
-  get_formatting() {
+  get_formatting(p) {
+    if ((!p || p.paragraphIndex == null) && typeof isCalcDoc === 'function' && isCalcDoc()) {
+      const selInfo = activeCalcSelection();
+      const cell = selInfo.cell || selInfo.range;
+      const cf = cell ? cellFormat(cell) : {};
+      let strikeout = false;
+      if (cell) {
+        try { strikeout = !enumEq(cell.getPropertyValue('CharStrikeout'), css.awt.FontStrikeout.NONE); } catch (e) {}
+      }
+      const out = {
+        success: true,
+        docKind: 'calc',
+        character: {
+          fontWestern: cf.fontName || '',
+          fontAsian: cf.fontNameAsian || cf.fontName || '',
+          sizePt: cf.fontSize || 11,
+          bold: !!cf.bold,
+          italic: !!cf.italic,
+          underline: !!cf.underline,
+          strikeout: strikeout,
+          color: cf.color || 'auto',
+          highlight: cf.background || 'none',
+        },
+        paragraph: {
+          styleName: 'Default',
+          alignment: (cf.hAlign === 'center' || cf.hAlign === 'right') ? cf.hAlign : 'left',
+          outlineLevel: 0,
+          isNumbered: false,
+        },
+        calc: {
+          sheetName: selInfo.sheetName,
+          cellName: selInfo.cellName,
+          rangeName: selInfo.rangeName,
+          hAlign: cf.hAlign || 'standard',
+          vAlign: cf.vAlign || 'standard',
+          wrap: !!cf.wrap,
+          background: cf.background || 'none',
+          numberFormat: cf.numberFormat != null ? cf.numberFormat : 0,
+        },
+      };
+      try {
+        let psName = 'Default';
+        if (selInfo.sheet) {
+          try { psName = String(selInfo.sheet.getPropertyValue('PageStyle') || 'Default'); } catch (e) {}
+        }
+        const ps = xModel.getStyleFamilies().getByName('PageStyles').getByName(psName);
+        const rdMm = function (prop) { try { return Math.round(ps.getPropertyValue(prop)) / 100; } catch (e) { return null; } };
+        out.page = {
+          pageStyle: psName,
+          width: rdMm('Width'),
+          height: rdMm('Height'),
+          landscape: !!ps.getPropertyValue('IsLandscape'),
+          margins: {
+            top: rdMm('TopMargin'),
+            bottom: rdMm('BottomMargin'),
+            left: rdMm('LeftMargin'),
+            right: rdMm('RightMargin'),
+          },
+        };
+      } catch (e) {}
+      return out;
+    }
+    if ((!p || p.paragraphIndex == null) && typeof isImpressDoc === 'function' && isImpressDoc()) {
+      const ctx = activeImpressContext();
+      const shape = ctx.selectedShape;
+      const sf = (shape ? shapeCharFormat(shape) : null) || {};
+      const detail = shape ? impressShapeDetail(shape) : null;
+      if (detail) detail.shapeIndex = ctx.selectedShapeIndex;
+      const w = ctx.slideWidthMm || 280;
+      const h = ctx.slideHeightMm || 157.5;
+      return {
+        success: true,
+        docKind: 'impress',
+        character: {
+          fontWestern: sf.fontName || '',
+          fontAsian: sf.fontNameAsian || sf.fontName || '',
+          sizePt: sf.fontSize || 18,
+          bold: !!sf.bold,
+          italic: !!sf.italic,
+          underline: !!sf.underline,
+          strikeout: !!sf.strikeout,
+          color: sf.color || 'auto',
+          highlight: 'none',
+        },
+        paragraph: {
+          styleName: 'Standard',
+          alignment: sf.alignment || 'left',
+          outlineLevel: 0,
+          isNumbered: false,
+        },
+        page: {
+          pageStyle: 'Default',
+          width: w,
+          height: h,
+          landscape: w >= h,
+          margins: { top: 0, bottom: 0, left: 0, right: 0 },
+        },
+        impress: {
+          currentSlideIndex: ctx.currentSlideIndex,
+          slideCount: ctx.slideCount,
+          slideWidthMm: w,
+          slideHeightMm: h,
+          selectedShapeIndex: ctx.selectedShapeIndex,
+          selectedShape: detail,
+        },
+      };
+    }
+    let targetEl = null;
+    if (p && p.paragraphIndex != null) {
+      const idx = Number(p.paragraphIndex);
+      targetEl = paraAt(idx);
+      if (!targetEl) return { success: false, message: 'paragraph index out of range: ' + idx };
+      try { selectVisibly(targetEl); } catch (e) {}
+    }
     const vc = ctrl.getViewCursor();
+    const src = targetEl || vc;
     const out = { success: true };
+    if (p && p.paragraphIndex != null) out.paragraphIndex = Number(p.paragraphIndex);
     const ch = {};
-    try { ch.fontWestern = vc.getPropertyValue('CharFontName'); } catch (e) {}
-    try { ch.fontAsian = vc.getPropertyValue('CharFontNameAsian'); } catch (e) {}
-    try { ch.sizePt = vc.getPropertyValue('CharHeight'); } catch (e) {}
-    try { ch.bold = vc.getPropertyValue('CharWeight') > 100; } catch (e) {}
-    try { ch.italic = !enumEq(vc.getPropertyValue('CharPosture'), css.awt.FontSlant.NONE); } catch (e) {}
-    try { ch.underline = !enumEq(vc.getPropertyValue('CharUnderline'), css.awt.FontUnderline.NONE); } catch (e) {}
-    try { ch.strikeout = !enumEq(vc.getPropertyValue('CharStrikeout'), css.awt.FontStrikeout.NONE); } catch (e) {}
-    try { const c = vc.getPropertyValue('CharColor'); ch.color = c === -1 ? 'auto' : '#' + ('000000' + (c >>> 0).toString(16)).slice(-6); } catch (e) {}
-    try { const h = vc.getPropertyValue('CharHighlight'); ch.highlight = h === -1 ? 'none' : '#' + ('000000' + (h >>> 0).toString(16)).slice(-6); } catch (e) {}
+    try { ch.fontWestern = src.getPropertyValue('CharFontName'); } catch (e) {}
+    try { ch.fontAsian = src.getPropertyValue('CharFontNameAsian'); } catch (e) {}
+    try { ch.sizePt = effectiveCharHeightPt(src, vc); } catch (e) {}
+    try {
+      const wa = Number(src.getPropertyValue('CharWeightAsian')) || 0;
+      const ww = Number(src.getPropertyValue('CharWeight')) || 0;
+      ch.bold = wa > 100 || ww > 100;
+    } catch (e) {
+      try { ch.bold = src.getPropertyValue('CharWeight') > 100; } catch (e2) {}
+    }
+    try {
+      const paSlant = src.getPropertyValue('CharPostureAsian');
+      const pwSlant = src.getPropertyValue('CharPosture');
+      ch.italic = (paSlant != null && !enumEq(paSlant, css.awt.FontSlant.NONE))
+        || (pwSlant != null && !enumEq(pwSlant, css.awt.FontSlant.NONE));
+    } catch (e) {
+      try { ch.italic = !enumEq(src.getPropertyValue('CharPosture'), css.awt.FontSlant.NONE); } catch (e2) {}
+    }
+    try { ch.underline = !enumEq(src.getPropertyValue('CharUnderline'), css.awt.FontUnderline.NONE); } catch (e) {}
+    try { ch.strikeout = !enumEq(src.getPropertyValue('CharStrikeout'), css.awt.FontStrikeout.NONE); } catch (e) {}
+    try { const c = src.getPropertyValue('CharColor'); ch.color = c === -1 ? 'auto' : '#' + ('000000' + (c >>> 0).toString(16)).slice(-6); } catch (e) {}
+    try { const h = src.getPropertyValue('CharHighlight'); ch.highlight = h === -1 ? 'none' : '#' + ('000000' + (h >>> 0).toString(16)).slice(-6); } catch (e) {}
     out.character = ch;
     const pa = {};
-    try { pa.styleName = vc.getPropertyValue('ParaStyleName'); } catch (e) {}
+    try { pa.styleName = src.getPropertyValue('ParaStyleName'); } catch (e) {}
     try {
-      const a = vc.getPropertyValue('ParaAdjust');
+      const a = src.getPropertyValue('ParaAdjust');
       const A = css.style.ParagraphAdjust;
       pa.alignment = enumEq(a, A.CENTER) ? 'center' : enumEq(a, A.RIGHT) ? 'right'
         : (enumEq(a, A.BLOCK) || enumEq(a, A.STRETCH)) ? 'justify' : 'left';
     } catch (e) {}
     try {
-      const ls = vc.getPropertyValue('ParaLineSpacing');
+      const ls = src.getPropertyValue('ParaLineSpacing');
       if (ls) {
         const M = css.style.LineSpacingMode;
         if (enumEq(ls.Mode, M.PROP)) pa.lineSpacing = { mode: 'proportional', percent: ls.Height };
@@ -5726,13 +8176,20 @@ const EXEC = {
         else pa.lineSpacing = { mode: 'leading', valuePt: Math.round(ls.Height * 72 / 2540 * 10) / 10 };
       }
     } catch (e) {}
-    try { pa.spaceBeforePt = Math.round(vc.getPropertyValue('ParaTopMargin') * 72 / 2540 * 10) / 10; } catch (e) {}
-    try { pa.spaceAfterPt = Math.round(vc.getPropertyValue('ParaBottomMargin') * 72 / 2540 * 10) / 10; } catch (e) {}
-    try { pa.firstLineIndentPt = Math.round(vc.getPropertyValue('ParaFirstLineIndent') * 72 / 2540 * 10) / 10; } catch (e) {}
-    try { pa.leftIndentPt = Math.round(vc.getPropertyValue('ParaLeftMargin') * 72 / 2540 * 10) / 10; } catch (e) {}
-    try { pa.rightIndentPt = Math.round(vc.getPropertyValue('ParaRightMargin') * 72 / 2540 * 10) / 10; } catch (e) {}
-    try { pa.outlineLevel = vc.getPropertyValue('OutlineLevel') || 0; } catch (e) {}
-    try { pa.isNumbered = !!vc.getPropertyValue('NumberingIsNumber'); } catch (e) {}
+    try { pa.spaceBeforePt = Math.round(src.getPropertyValue('ParaTopMargin') * 72 / 2540 * 10) / 10; } catch (e) {}
+    try { pa.spaceAfterPt = Math.round(src.getPropertyValue('ParaBottomMargin') * 72 / 2540 * 10) / 10; } catch (e) {}
+    try {
+      pa.firstLineIndentPt = Math.round(src.getPropertyValue('ParaFirstLineIndent') * 72 / 2540 * 10) / 10;
+      const basePt = ch.sizePt || HOUSE.bodyPt || 12;
+      if (basePt > 0 && isFinite(pa.firstLineIndentPt)) {
+        pa.firstLineIndentChars = Math.round((pa.firstLineIndentPt / basePt) * 10) / 10;
+      }
+    } catch (e) {}
+    try { pa.leftIndentPt = Math.round(src.getPropertyValue('ParaLeftMargin') * 72 / 2540 * 10) / 10; } catch (e) {}
+    try { pa.rightIndentPt = Math.round(src.getPropertyValue('ParaRightMargin') * 72 / 2540 * 10) / 10; } catch (e) {}
+    try { pa.outlineLevel = src.getPropertyValue('OutlineLevel') || 0; } catch (e) {}
+    try { pa.isNumbered = !!src.getPropertyValue('NumberingIsNumber'); } catch (e) {}
+    try { pa.numbering = paragraphNumberingOf(src); } catch (e) {}
     out.paragraph = pa;
     try {
       const table = currentTextTable(null);
@@ -5741,8 +8198,27 @@ const EXEC = {
         try { t.rows = table.getRows().getCount(); } catch (e) {}
         try { t.cols = table.getColumns().getCount(); } catch (e) {}
         try { const cell = vc.getPropertyValue('Cell'); if (cell) t.cell = cell.getPropertyValue('CellName'); } catch (e) {}
+        try { t.repeatHeader = !!table.getPropertyValue('RepeatHeadline'); } catch (e) {}
+        try { const c1 = table.getCellByName('A1'); if (c1) { const bc = c1.getPropertyValue('BackColor'); t.headerFill = (bc === -1 || bc == null) ? 'none' : '#' + ('000000' + (bc >>> 0).toString(16)).slice(-6); } } catch (e) {}
         out.table = t;
       }
+    } catch (e) {}
+    try {
+      const psName = String(vc.getPropertyValue('PageStyleName') || 'Standard');
+      const ps = xModel.getStyleFamilies().getByName('PageStyles').getByName(psName);
+      const rdMm = function (prop) { try { return Math.round(ps.getPropertyValue(prop)) / 100; } catch (e) { return null; } };
+      out.page = {
+        pageStyle: psName,
+        width: rdMm('Width'),
+        height: rdMm('Height'),
+        landscape: !!ps.getPropertyValue('IsLandscape'),
+        margins: {
+          top: rdMm('TopMargin'),
+          bottom: rdMm('BottomMargin'),
+          left: rdMm('LeftMargin'),
+          right: rdMm('RightMargin'),
+        },
+      };
     } catch (e) {}
     try { out.selectedText = (vc.getString() || '').slice(0, 80); } catch (e) {}
     return out;
@@ -5803,8 +8279,8 @@ const EXEC = {
           const el = en.nextElement();
           if (!(el.supportsService && el.supportsService('com.sun.star.text.Paragraph'))) continue;
           const k = paraKindOf(el, false, true);
-          applyHousePara(el, k.kind, { level: k.level });
-          applyHouseChar(el, charOptsFor(k));
+          applyHousePara(el, k.kind, { level: k.level, isNumbered: !!readParagraphLabel(el) });
+          applyHouseCharDeep(el, charOptsFor(k));
           paras++;
         }
       } finally { unlockModel(); }
@@ -5882,7 +8358,12 @@ const EXEC = {
     let target = null;
     eachParagraph(function (el) {
       const t = (el.getString() || '').trim();
-      if (t && (t === headingText || t.indexOf(headingText) !== -1)) { target = el; return true; }
+      const combined = paragraphCombinedText(el).trim();
+      if ((t && (t === headingText || t.indexOf(headingText) !== -1))
+        || (combined && (combined === headingText || combined.indexOf(headingText) !== -1))) {
+        target = el;
+        return true;
+      }
       return false;
     });
     if (!target) return { success: false, message: '未找到标题: ' + headingText };
@@ -6013,7 +8494,10 @@ const EXEC = {
     if (!range || !text.length) return { success: false, message: 'no selection to hyperlink' };
     const xText = range.getText();
     const cur = xText.createTextCursorByRange(range);
-    cur.setPropertyValue('HyperLinkURL', url);
+    // 建链是给原文挂关联，不是改稿：修订开着时也不记成「属性修订」（教程反馈 75）。
+    withRecordChangesOff(function () { cur.setPropertyValue('HyperLinkURL', url); });
+    // 建完链把光标收到链接末尾（教程反馈 82）：选区留着的话，接着打字会把刚建链的文字整段覆盖掉。
+    try { ctrl.getViewCursor().gotoRange(cur.getEnd(), false); } catch (e) {}
     return { success: true, text: text, url: url };
   },
   // [Word 二期] AI 工具面的超链接原语——与 set_selection_hyperlink（host-initiated，
@@ -6279,15 +8763,64 @@ const EXEC = {
     const gp = css.graphic.GraphicProvider.create(context);
     const graphic = gp.queryGraphic([mkProp('InputStream', stream)]);
     if (!graphic) return { success: false, message: 'GraphicProvider could not decode the image' };
-    const img = xModel.createInstance('com.sun.star.text.TextGraphicObject');
-    img.setPropertyValue('Graphic', graphic);
-    img.setPropertyValue('AnchorType', css.text.TextContentAnchorType.AS_CHARACTER);
-    // natural size (1/100 mm), fall back to pixels @96dpi; cap to ~15cm text width
     let w = 0, h = 0;
     try { const sz = graphic.getPropertyValue('Size100thMM'); w = sz.Width || 0; h = sz.Height || 0; } catch (e) {}
     if (!w || !h) {
       try { const px = graphic.getPropertyValue('SizePixel'); w = Math.round((px.Width || 0) * 2540 / 96); h = Math.round((px.Height || 0) * 2540 / 96); } catch (e) {}
     }
+    if (typeof isImpressDoc === 'function' && isImpressDoc()) {
+      const ctx = activeImpressContext();
+      const wantSlide = p && (p.slideNumber != null ? Number(p.slideNumber) : (p.slideIndex != null ? Number(p.slideIndex) + 1 : ctx.slideNumber));
+      const r0 = resolvePage({ slideNumber: wantSlide });
+      if (r0.error) return { success: false, message: r0.error };
+      const MAX_W = 18000;
+      if (w > 0 && h > 0) {
+        if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W; }
+      } else {
+        w = 12000; h = 9000;
+      }
+      const xMm = p && p.x != null ? Number(p.x) : Math.max(10, Math.round(((ctx.slideWidthMm || 280) - w / 100) / 2));
+      const yMm = p && p.y != null ? Number(p.y) : Math.max(10, Math.round(((ctx.slideHeightMm || 157.5) - h / 100) / 2));
+      const shape = xModel.createInstance('com.sun.star.drawing.GraphicObjectShape');
+      shape.setSize(new css.awt.Size({ Width: w, Height: h }));
+      shape.setPosition(new css.awt.Point({ X: Math.round(xMm * 100), Y: Math.round(yMm * 100) }));
+      r0.page.add(shape);
+      try { shape.setPropertyValue('Graphic', graphic); } catch (e) {}
+      try { ensureShapeNames(r0.page); } catch (e) {}
+      let shapeName = '';
+      try { shapeName = String(shape.getName() || ''); } catch (e) {}
+      try { ctrl.select(shape); } catch (e) {}
+      return { success: true, bytes: u8.length, width: w, height: h, slideNumber: r0.index + 1, slideIndex: r0.index, shapeName: shapeName, shapeIndex: r0.page.getCount() - 1 };
+    }
+    if (typeof isCalcDoc === 'function' && isCalcDoc() && typeof activeCalcSelection === 'function') {
+      const selInfo = activeCalcSelection();
+      const sheet = selInfo.sheet;
+      if (!sheet) return { success: false, message: '无法获取当前工作表' };
+      const dp = sheet.getDrawPage();
+      const MAX_W = 12000;
+      if (w > 0 && h > 0) {
+        if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W; }
+      } else {
+        w = 8000; h = 6000;
+      }
+      let posX = 1000, posY = 1000;
+      if (selInfo.cell) {
+        try {
+          const pt = selInfo.cell.getPropertyValue('Position');
+          if (pt) { posX = Number(pt.X) || 0; posY = Number(pt.Y) || 0; }
+        } catch (e) {}
+      }
+      const shape = xModel.createInstance('com.sun.star.drawing.GraphicObjectShape');
+      shape.setSize(new css.awt.Size({ Width: w, Height: h }));
+      shape.setPosition(new css.awt.Point({ X: posX, Y: posY }));
+      dp.add(shape);
+      try { shape.setPropertyValue('Graphic', graphic); } catch (e) {}
+      return { success: true, bytes: u8.length, width: w, height: h, sheet: selInfo.sheetName };
+    }
+    const img = xModel.createInstance('com.sun.star.text.TextGraphicObject');
+    img.setPropertyValue('Graphic', graphic);
+    img.setPropertyValue('AnchorType', css.text.TextContentAnchorType.AS_CHARACTER);
+    // natural size (1/100 mm), fall back to pixels @96dpi; cap to ~15cm text width
     if (w > 0 && h > 0) {
       const MAX_W = 15000;
       if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W; }
@@ -6475,11 +9008,65 @@ const EXEC = {
   // margins: {top, bottom, left, right}}。作用于文档首节页面样式（取法同 edit_header_footer）。
   // 横向要求宽 > 高：给了 orientation 时按它校正宽高；只给宽高时原样写入。
   set_page_setup(p) {
-    if (!isWriterDoc()) return tableFail(NOT_TEXT_DOC_MSG);
-    const ps = currentPageStyle();
-    if (ps.error) return ps;
-    const pageStyle = ps.pageStyle;
     const mm = function (v) { const n = Number(v); return isFinite(n) && n > 0 ? Math.round(n * 100) : null; };
+    if (typeof isImpressDoc === 'function' && isImpressDoc()) {
+      const pages = slidePages();
+      if (!pages || pages.getCount() === 0) return tableFail('无幻灯片可设置');
+      let w = p && p.width != null ? mm(p.width) : null;
+      let h = p && p.height != null ? mm(p.height) : null;
+      if ((p && p.width != null && w == null) || (p && p.height != null && h == null)) return tableFail('width/height 必须是正数（mm）');
+      const first = pages.getByIndex(0);
+      let W = w != null ? w : Number(first.getPropertyValue('Width')) || 28000;
+      let H = h != null ? h : Number(first.getPropertyValue('Height')) || 15750;
+      const applied = {};
+      if (p && p.orientation != null) {
+        const o = String(p.orientation).toLowerCase();
+        if (o !== 'portrait' && o !== 'landscape') return tableFail("orientation must be 'portrait' or 'landscape'");
+        const land = o === 'landscape';
+        if (land ? W < H : W > H) { const t = W; W = H; H = t; }
+        applied.orientation = o;
+      }
+      if (w != null) applied.width = Math.round(W / 100 * 10) / 10;
+      if (h != null) applied.height = Math.round(H / 100 * 10) / 10;
+      if (Object.keys(applied).length === 0) return tableFail('no page setup params given');
+      try {
+        for (let i = 0; i < pages.getCount(); i++) {
+          const pg = pages.getByIndex(i);
+          pg.setPropertyValue('Width', W);
+          pg.setPropertyValue('Height', H);
+          try { pg.setPropertyValue('Orientation', W >= H ? css.view.PaperOrientation.LANDSCAPE : css.view.PaperOrientation.PORTRAIT); } catch (e) {}
+        }
+        try {
+          const masters = xModel.getMasterPages();
+          for (let i = 0; i < masters.getCount(); i++) {
+            const mp = masters.getByIndex(i);
+            mp.setPropertyValue('Width', W);
+            mp.setPropertyValue('Height', H);
+          }
+        } catch (e) {}
+      } catch (e) { return tableFail('幻灯片尺寸设置失败: ' + errStr(e)); }
+      return {
+        success: true, pageStyle: 'Default', applied: applied,
+        page: { width: Math.round(W) / 100, height: Math.round(H) / 100, landscape: W >= H, margins: { top: 0, bottom: 0, left: 0, right: 0 } },
+      };
+    }
+    let ps = null;
+    if (typeof isCalcDoc === 'function' && isCalcDoc()) {
+      try {
+        const selInfo = activeCalcSelection();
+        let styleName = 'Default';
+        if (selInfo.sheet) {
+          try { styleName = String(selInfo.sheet.getPropertyValue('PageStyle') || 'Default'); } catch (e) {}
+        }
+        const fam = xModel.getStyleFamilies().getByName('PageStyles');
+        ps = { pageStyle: fam.getByName(styleName), styleName: styleName };
+      } catch (e) { return tableFail('获取表格页面样式失败: ' + errStr(e)); }
+    } else {
+      if (!isWriterDoc()) return tableFail(NOT_TEXT_DOC_MSG);
+      ps = currentPageStyle();
+      if (ps.error) return ps;
+    }
+    const pageStyle = ps.pageStyle;
     const applied = {};
     let w = p && p.width != null ? mm(p.width) : null;
     let h = p && p.height != null ? mm(p.height) : null;
@@ -6668,10 +9255,20 @@ const EXEC = {
             it.contiguous = rangeStartsEqual(prevEnd, rs, locate ? locatorCache.body : null);
             let spanLength = null;
             if (!it.text) {
-              const rc = locate && locatorCache.currentParaKey >= 0
-                ? reviewBodyCursorAt(locatorCache, rs) : rs.getText().createTextCursorByRange(rs);
-              rc.gotoRange(re, true);
-              it.text = String(rc.getString() || '');
+              try {
+                const rc = locate && locatorCache.currentParaKey >= 0
+                  ? reviewBodyCursorAt(locatorCache, rs) : rs.getText().createTextCursorByRange(rs);
+                rc.gotoRange(re, true);
+                it.text = String(rc.getString() || '');
+              } catch (e) {
+                // A table boundary can compare inside the body while its range
+                // belongs to a cell. Do not turn a failed body locator into an
+                // empty revision: snapshots must read the same text as balloons.
+                locatorCache.currentParaKey = -1;
+                const rc = rs.getText().createTextCursorByRange(rs);
+                rc.gotoRange(re, true);
+                it.text = String(rc.getString() || '');
+              }
               spanLength = it.text.length; // Only the body span, never hidden deletion text.
             }
             if (locate) {
@@ -7402,6 +9999,96 @@ const EXEC = {
       text: para2 ? String(para2.getString() || '') : '',
     };
   },
+  // Lightweight navigation: read native identities without changing the active page/sheet.
+  office_get_navigation() {
+    try {
+      const kind = docKindOf();
+      const items = [];
+      let activeId = null;
+      if (kind === 'calc') {
+        const sheets = xModel.getSheets();
+        activeId = String(ctrl.getActiveSheet().getName());
+        for (let i = 0; i < sheets.getCount(); i++) {
+          const sheet = sheets.getByIndex(i);
+          if (!sheet.getPropertyValue('IsVisible')) continue;
+          const name = String(sheet.getName());
+          items.push({ id: name, name: name });
+        }
+      } else if (kind === 'impress') {
+        const pages = xModel.getDrawPages();
+        const current = ctrl.getCurrentPage();
+        for (let i = 0; i < pages.getCount(); i++) {
+          const page = pages.getByIndex(i);
+          if (unoSameDrawPage(current, page)) activeId = i + 1;
+          items.push({ id: i + 1, name: String(page.getName()),
+            width: Number(page.getPropertyValue('Width')), height: Number(page.getPropertyValue('Height')) });
+        }
+      }
+      return { success: true, kind: kind, items: items, activeId: activeId, documentSeq: docSeq, revision: currentReviewRevision() };
+    } catch (e) { return { success: false, message: errStr(e) }; }
+  },
+  office_activate_item(p) {
+    if (!p || p.documentSeq !== docSeq) return { success: false, message: '文档已切换，请重试' };
+    try {
+      if (isCalcDoc()) {
+        const sheets = xModel.getSheets();
+        if (typeof p.id !== 'string' || !sheets.hasByName(p.id)) return { success: false, message: '工作表不存在' };
+        const sheet = sheets.getByName(p.id);
+        if (!sheet.getPropertyValue('IsVisible')) return { success: false, message: '工作表不可见' };
+        ctrl.setActiveSheet(sheet);
+      } else if (isImpressDoc()) {
+        const pages = xModel.getDrawPages();
+        if (!Number.isInteger(p.id) || p.id < 1 || p.id > pages.getCount()) return slideFail('页码越界');
+        ctrl.setCurrentPage(pages.getByIndex(p.id - 1));
+      } else return { success: false, message: '当前文档不支持此导航' };
+      return EXEC.office_get_navigation();
+    } catch (e) { return { success: false, message: errStr(e) }; }
+  },
+  // Export one draw page directly; resolvePage would move the user's current page.
+  slide_get_thumbnail(p) {
+    if (!p || p.documentSeq !== docSeq) return slideFail('文档已切换，请重试');
+    if (!isImpressDoc()) return slideFail(NOT_PRESENTATION_MSG);
+    const pages = xModel.getDrawPages();
+    const number = Number(p && p.slideNumber);
+    if (!Number.isInteger(number) || number < 1 || number > pages.getCount()) return slideFail('页码越界');
+    const page = pages.getByIndex(number - 1);
+    // preview:true（冷启动预览缓存，office-tier1）允许到 1280px；format:'jpeg' 体积约为 PNG 的 1/15
+    const maxWidth = p && p.preview === true ? 1280 : 480;
+    const width = Math.max(80, Math.min(maxWidth, Math.round(Number(p && p.width) || 240)));
+    const jpeg = !!(p && p.format === 'jpeg');
+    const pageWidth = Number(page.getPropertyValue('Width'));
+    const pageHeight = Number(page.getPropertyValue('Height'));
+    const height = Math.max(1, Math.round(width * pageHeight / pageWidth));
+    const chunks = [];
+    let total = 0;
+    const sink = zetajs.unoObject([css.io.XOutputStream], {
+      writeBytes(seq) {
+        const bytes = new Uint8Array(seq.buffer ? seq.buffer.slice(seq.byteOffset, seq.byteOffset + seq.byteLength) : seq);
+        chunks.push(bytes); total += bytes.length;
+      },
+      flush() {}, closeOutput() {},
+    });
+    const wasModified = xModel.isModified();
+    exportInFlight = true;
+    try {
+      const exporter = context.getServiceManager().createInstanceWithContext('com.sun.star.drawing.GraphicExportFilter', context);
+      exporter.setSourceDocument(page);
+      const filterProps = [mkProp('PixelWidth', width), mkProp('PixelHeight', height)];
+      if (jpeg) filterProps.push(mkProp('Quality', 82));
+      const filterData = new zetajs.Any(zetajs.type.sequence(zetajs.type.struct(css.beans.PropertyValue)), filterProps);
+      if (!exporter.filter([mkProp('MediaType', jpeg ? 'image/jpeg' : 'image/png'), mkProp('OutputStream', sink), mkProp('FilterData', filterData)]))
+        return slideFail('缩略图导出失败');
+      if (!total) return slideFail('缩略图为空');
+      const bytes = new Uint8Array(total);
+      let offset = 0;
+      for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
+      return { success: true, slideNumber: number, width: width, height: height, total: pages.getCount(), format: jpeg ? 'jpeg' : 'png', bytes: bytes, documentSeq: docSeq, revision: currentReviewRevision() };
+    } catch (e) { return slideFail(errStr(e)); }
+    finally {
+      try { if (xModel.isModified() !== wasModified) xModel.setModified(wasModified); } catch (e) {}
+      exportInFlight = false;
+    }
+  },
   // [逐段溯源] 表格里的「当前这一格」。段落级用 get_review_context 的
   // paragraphIndex，xlsx 这一条与 pptx 的 slide_get_current 是它的对应物。
   sheet_get_active_cell() {
@@ -7485,14 +10172,17 @@ const EXEC = {
     const rowCap = Math.min(nRows, Math.max(1, Math.floor(MAX_CELLS / colCap)));
     const rows = [];
     const formulas = [];
+    const dateFmtCache = new Map();
     for (let r = 0; r < rowCap; r++) {
       const row = [];
       for (let c = 0; c < colCap; c++) {
         const cell = range.getCellByPosition(c, r);
-        row.push(readCellOut(cell));
+        const v = readCellOut(cell);
+        // 日期/时间格式的数值回显示文本（office-tier1）：只给序列号 45718 时模型会照念或算错日期
+        row.push(typeof v === 'number' ? (sheetDateText(cell, dateFmtCache) ?? v) : v);
         try {
-          if (enumEq(cell.getType(), css.table.CellContentType.FORMULA) && formulas.length < 100) {
-            formulas.push({ cell: colLetterOf(addr.StartColumn + c) + (addr.StartRow + r + 1), formula: cell.getFormula() });
+          if (enumEq(cell.getType(), css.table.CellContentType.FORMULA)) {
+            formulas.push({ cell: colLetterOf(addr.StartColumn + c) + (addr.StartRow + r + 1), formula: normalizeFormula(cell.getFormula(), true) });
           }
         } catch (e) {}
       }
@@ -7555,18 +10245,45 @@ const EXEC = {
     const rows = p && p.rows;
     if (!Array.isArray(rows) || !rows.length) return { success: false, message: 'sheet_write_cells requires {rows: any[][]}' };
     if (rows.length > 500) return { success: false, message: '一次最多写 500 行，请分批写入' };
-    const anchor = sheetRange(sheet, String(p.startCell || 'A1'));
+    if (!p.startCell || !/^\$?[A-Za-z]+\$?[1-9]\d*$/.test(String(p.startCell))) return tableFail('SHEET_INVALID_START_CELL');
+    for (const line of rows) {
+      if (!Array.isArray(line) || !line.length || line.some(v => v != null && !['string', 'number', 'boolean'].includes(typeof v)) || line.some(v => typeof v === 'number' && !Number.isFinite(v))) return tableFail('SHEET_INVALID_ROWS');
+    }
+    const anchor = sheetRange(sheet, String(p.startCell));
     if (!anchor) return { success: false, message: '无效的起始单元格: ' + p.startCell };
     const a0 = anchor.getRangeAddress();
     let nCols = 1;
     for (let i = 0; i < rows.length; i++) if (Array.isArray(rows[i])) nCols = Math.max(nCols, rows[i].length);
     if (nCols > 100) return { success: false, message: '一次最多写 100 列，请分批写入' };
+    try {
+      if (a0.StartRow + rows.length > sheet.getRows().getCount() || a0.StartColumn + nCols > sheet.getColumns().getCount()) return tableFail('SHEET_RANGE_OUT_OF_BOUNDS');
+    } catch (e) { return tableFail('SHEET_RANGE_CHECK_FAILED'); }
+    if (sheet.isProtected()) {
+      for (let r = 0; r < rows.length; r++) {
+        for (let c = 0; c < rows[r].length; c++) {
+          if (rows[r][c] != null && sheet.getCellByPosition(a0.StartColumn + c, a0.StartRow + r).getPropertyValue('CellProtection').IsLocked) return tableFail('SHEET_PROTECTED_CELL');
+        }
+      }
+    }
     let written = 0;
+    // 被覆盖的原有非空值（office-tier1）：回执里点名「A2 原来是 …」，模型写错格时能看出来并改回
+    const overwrote = {};
+    let overwroteCount = 0;
+    for (let r = 0; r < rows.length && overwroteCount < 20; r++) {
+      const line = Array.isArray(rows[r]) ? rows[r] : [rows[r]];
+      for (let c = 0; c < line.length && overwroteCount < 20; c++) {
+        if (line[c] == null) continue;
+        try {
+          const old = readCellOut(sheet.getCellByPosition(a0.StartColumn + c, a0.StartRow + r));
+          if (old !== '' && String(old) !== String(line[c])) { overwrote[colLetterOf(a0.StartColumn + c) + (a0.StartRow + r + 1)] = old; overwroteCount++; }
+        } catch (e) {}
+      }
+    }
     const formulaCells = []; // 写完统一验错：解析失败/求值出错的公式要报给 AI 自纠
     // 追加到表格下方时沿用上一行格式（dev-board#844，判定见 shouldInheritRowFormat）。
     // inheritFormat 缺省开，显式 false 才关。逐行判定、逐行级联：多行追加时第 2 行
     // 看的「上一行」就是刚写好的第 1 行。
-    const inherit = !(p && p.inheritFormat === false);
+    const inherit = !sheet.isProtected() && !(p && p.inheritFormat === false);
     const formatInherited = [];
     // 抄格式是一串属性写入：摘下修改监听器（每条写入一次 35ms 回调，见
     // suspendModifyListener），并把值和格式收进同一个撤销组——撤销一次，新行连同
@@ -7600,12 +10317,21 @@ const EXEC = {
             cell.setFormula(normalizeFormula(s));
             formulaCells.push({ cell: cell, name: colLetterOf(a0.StartColumn + c) + (a0.StartRow + r + 1), input: s });
           }
-          else if (SHEET_NUMERIC_RE.test(s.trim())) cell.setValue(Number(s.trim()));
-          else cell.setString(s);
+          else {
+            const typed = sheetTypedInput(s);
+            if (typed.text != null) cell.setString(s);
+            else {
+              cell.setValue(typed.value);
+              // 只在单元格还是「常规」格式时配格式：已有日期/金额格式的列保留用户自己的格式
+              if (typed.format && sheetCellIsGeneral(cell)) setCellNumberFormat(cell, typed.format);
+            }
+          }
         }
         written++;
       }
     }
+    } catch (e) {
+      return { ...tableFail('SHEET_WRITE_PARTIAL'), cellsWritten: written, retryable: false, sheet: sheet.getName(), startCell: String(p.startCell) };
     } finally {
       unlockModel();
       if (um) { try { um.leaveUndoContext(); } catch (e) {} }
@@ -7627,7 +10353,21 @@ const EXEC = {
       const vr = sheet.getCellRangeByName(wrote);
       for (let c = 0; c < Math.min(nCols, 10); c++) firstRowAfterWrite.push(readCellOut(vr.getCellByPosition(c, 0)));
     } catch (e) {}
-    const res = { success: true, sheet: sheet.getName(), range: wrote, cellsWritten: written, firstRowAfterWrite: firstRowAfterWrite };
+    // 带地址的回读（office-tier1）：首行、末行与每个公式格的「地址=值」。弱模型常把「合计」标签写进目标列、
+    // 公式被挤到右边一格；只给值列表看不出落点，有地址才能一眼对上「D10 应该是求和」。
+    const cellsAfterWrite = {};
+    try {
+      const vr = sheet.getCellRangeByName(wrote);
+      const put = (c, r) => { cellsAfterWrite[colLetterOf(a0.StartColumn + c) + (a0.StartRow + r + 1)] = readCellOut(vr.getCellByPosition(c, r)); };
+      for (let c = 0; c < Math.min(nCols, 10); c++) put(c, 0);
+      if (rows.length > 1) for (let c = 0; c < Math.min(nCols, 10); c++) put(c, rows.length - 1);
+      for (let i = 0; i < Math.min(formulaCells.length, 20); i++) cellsAfterWrite[formulaCells[i].name] = readCellOut(formulaCells[i].cell);
+    } catch (e) {}
+    const res = { success: true, sheet: sheet.getName(), range: wrote, cellsWritten: written, firstRowAfterWrite: firstRowAfterWrite, cellsAfterWrite: cellsAfterWrite };
+    if (overwroteCount) {
+      res.overwrote = overwrote;
+      res.overwroteNote = '这些格原有内容已被替换（左为地址、右为原值）；若不是用户要改的那一格，立刻把原值写回';
+    }
     if (formatInherited.length) {
       res.formatInherited = formatInherited;
       res.formatNote = '新写入的行位于表格下方且原本为空，已沿用上一行的格式（字体/字号/对齐/数字格式/边框/底色/行高）；from 是被沿用的行号。不需要时传 inheritFormat=false。';
@@ -7646,8 +10386,14 @@ const EXEC = {
     if (!range) return { success: false, message: '无效的区域: ' + (p.range || '(空)') };
     try { ctrl.select(range); } catch (e) { return { success: false, message: '选中失败: ' + errStr(e) }; }
     const addr = range.getRangeAddress();
+    let visibleRange = null;
+    try {
+      ctrl.setFirstVisibleRow(addr.StartRow);
+      ctrl.setFirstVisibleColumn(addr.StartColumn);
+      visibleRange = sheetRangeName(ctrl.getVisibleRange());
+    } catch (_) { /* Selection remains valid even if the host cannot reveal it. */ }
     return {
-      success: true, sheet: r0.sheet.getName(), range: sheetRangeName(addr),
+      success: true, sheet: r0.sheet.getName(), range: sheetRangeName(addr), visibleRange,
       topLeftText: String(range.getCellByPosition(0, 0).getString() || ''),
     };
   },
@@ -7656,18 +10402,21 @@ const EXEC = {
   sheet_format_cells(p) {
     const r0 = resolveSheet(p);
     if (r0.error) return { success: false, message: r0.error };
-    const range = sheetRange(r0.sheet, String(p.range || ''));
+    if (r0.sheet.isProtected()) return tableFail('SHEET_PROTECTED_CELL');
+    const rangeRef = (p && p.range) ? String(p.range) : activeCalcRangeName();
+    const range = sheetRange(r0.sheet, rangeRef);
     if (!range) return { success: false, message: '无效的区域: ' + (p.range || '(空)') };
     const applied = {};
     if (p.bold != null) { setCharProp(range, 'CharWeight', p.bold ? css.awt.FontWeight.BOLD : css.awt.FontWeight.NORMAL); applied.bold = !!p.bold; }
     if (p.italic != null) { setCharProp(range, 'CharPosture', p.italic ? css.awt.FontSlant.ITALIC : css.awt.FontSlant.NONE); applied.italic = !!p.italic; }
     if (p.underline != null) { range.setPropertyValue('CharUnderline', p.underline ? css.awt.FontUnderline.SINGLE : css.awt.FontUnderline.NONE); applied.underline = !!p.underline; }
+    if (p.strikeout != null) { range.setPropertyValue('CharStrikeout', p.strikeout ? css.awt.FontStrikeout.SINGLE : css.awt.FontStrikeout.NONE); applied.strikeout = !!p.strikeout; }
     if (p.fontSize != null) { setCharProp(range, 'CharHeight', Number(p.fontSize)); applied.fontSize = Number(p.fontSize); }
     if (p.fontName != null && String(p.fontName) !== '') { setCharProp(range, 'CharFontName', String(p.fontName)); applied.fontName = String(p.fontName); }
     if (p.color != null) {
       const c = parseColor(p.color, { auto: -1 });
       if (c == null) return { success: false, message: 'bad color: ' + p.color + ' (use #RRGGBB or auto)' };
-      range.setPropertyValue('CharColor', c); applied.color = String(p.color);
+      setCalcFontColor(range, c); applied.color = String(p.color);
     }
     if (p.background != null) {
       const c = parseColor(p.background, { none: -1 });
@@ -7712,10 +10461,12 @@ const EXEC = {
   sheet_set_borders(p) {
     const r0 = resolveSheet(p);
     if (r0.error) return { success: false, message: r0.error };
-    const range = sheetRange(r0.sheet, String(p.range || ''));
+    if (r0.sheet.isProtected()) return tableFail('SHEET_PROTECTED_CELL');
+    const rangeRef = (p && p.range) ? String(p.range) : activeCalcRangeName();
+    const range = sheetRange(r0.sheet, rangeRef);
     if (!range) return { success: false, message: '无效的区域: ' + (p.range || '(空)') };
     const preset = String(p.preset || 'all').toLowerCase();
-    if (['all', 'outer', 'none'].indexOf(preset) === -1) return { success: false, message: 'bad preset: ' + preset + ' (all/outer/none)' };
+    if (['all', 'outer', 'bottom', 'none'].indexOf(preset) === -1) return { success: false, message: 'bad preset: ' + preset + ' (all/outer/bottom/none)' };
     const widthPt = Number(p.widthPt) || 0.75;
     const widthMm = ptToMm100(widthPt);
     const color = p.color != null ? parseColor(p.color, { black: 0 }) : 0;
@@ -7727,10 +10478,13 @@ const EXEC = {
         LineStyle: solid, LineWidth: on ? widthMm : 0,
       });
     };
-    const outer = mk(preset !== 'none');
+    const isBottomOnly = preset === 'bottom';
+    const topL = mk(preset !== 'none' && !isBottomOnly);
+    const bottomL = mk(preset !== 'none');
+    const sideL = mk(preset !== 'none' && !isBottomOnly);
     const inner = mk(preset === 'all');
     const tb = new css.table.TableBorder2({
-      TopLine: outer, BottomLine: outer, LeftLine: outer, RightLine: outer,
+      TopLine: topL, BottomLine: bottomL, LeftLine: sideL, RightLine: sideL,
       HorizontalLine: inner, VerticalLine: inner,
       IsTopLineValid: true, IsBottomLineValid: true, IsLeftLineValid: true,
       IsRightLineValid: true, IsHorizontalLineValid: true, IsVerticalLineValid: true,
@@ -7746,7 +10500,9 @@ const EXEC = {
   sheet_set_row_col(p) {
     const r0 = resolveSheet(p);
     if (r0.error) return { success: false, message: r0.error };
-    const range = sheetRange(r0.sheet, String(p.range || ''));
+    if (r0.sheet.isProtected()) return tableFail('SHEET_PROTECTED_CELL');
+    const rangeRef = (p && p.range) ? String(p.range) : activeCalcRangeName();
+    const range = sheetRange(r0.sheet, rangeRef);
     if (!range) return { success: false, message: '无效的区域: ' + (p.range || '(空)') };
     const applied = {};
     try {
@@ -7777,8 +10533,8 @@ const EXEC = {
   sheet_manage_sheets(p) {
     if (!isCalcDoc()) return { success: false, message: NOT_SPREADSHEET_MSG };
     const sheets = xModel.getSheets();
-    const op = String(p.op || '').toLowerCase();
-    const name = p.name != null ? String(p.name).trim() : '';
+    const op = String((p && (p.op || p.action)) || '').toLowerCase();
+    const name = p && p.name != null ? String(p.name).trim() : '';
     try {
       if (op === 'add') {
         if (!name) return { success: false, message: 'add 需要 {name}（新工作表名）' };
@@ -7786,6 +10542,10 @@ const EXEC = {
         const pos = p.position != null ? Math.max(0, Math.min(Number(p.position), sheets.getCount())) : sheets.getCount();
         sheets.insertNewByName(name, pos);
         try { ctrl.setActiveSheet(sheets.getByName(name)); } catch (e) {}
+      } else if (op === 'activate') {
+        if (!name) return { success: false, message: 'activate 需要 {name}' };
+        if (!sheets.hasByName(name)) return { success: false, message: '工作表不存在: ' + name };
+        ctrl.setActiveSheet(sheets.getByName(name));
       } else if (op === 'rename') {
         const newName = p.newName != null ? String(p.newName).trim() : '';
         if (!name || !newName) return { success: false, message: 'rename 需要 {name, newName}' };
@@ -7803,7 +10563,7 @@ const EXEC = {
         if (p.position == null) return { success: false, message: 'move 需要 {position}（0 开始的目标位置）' };
         sheets.moveByName(name, Math.max(0, Math.min(Number(p.position), sheets.getCount())));
       } else {
-        return { success: false, message: 'bad op: ' + op + ' (add/rename/delete/move)' };
+        return { success: false, message: 'bad op: ' + op + ' (add/rename/delete/move/activate)' };
       }
     } catch (e) { return { success: false, message: '工作表操作失败: ' + errStr(e) }; }
     const list = [];
@@ -7816,34 +10576,45 @@ const EXEC = {
   sheet_edit_rows_cols(p) {
     const r0 = resolveSheet(p);
     if (r0.error) return { success: false, message: r0.error };
+    if (r0.sheet.isProtected()) return tableFail('SHEET_PROTECTED_CELL');
     const sheet = r0.sheet;
-    const op = String(p.op || '').toLowerCase();
-    const count = Math.max(1, Math.min(Number(p.count) || 1, 100));
+    const op = String((p && (p.op || p.action)) || '').toLowerCase();
+    const count = Math.max(1, Math.min(Number(p && p.count) || 1, 100));
     const isRow = op === 'insert_rows' || op === 'delete_rows';
     const isCol = op === 'insert_cols' || op === 'delete_cols';
     if (!isRow && !isCol) return { success: false, message: 'bad op: ' + op + ' (insert_rows/delete_rows/insert_cols/delete_cols)' };
+    let startRaw = p && p.start;
+    if (startRaw == null || String(startRaw).trim() === '') {
+      const selInfo = activeCalcSelection();
+      const after = p && String(p.position || '').toLowerCase() === 'after';
+      if (isRow) startRaw = String((selInfo.row || 0) + 1 + (after ? (selInfo.rowCount || 1) : 0));
+      else startRaw = colLetterOf((selInfo.col || 0) + (after ? (selInfo.colCount || 1) : 0));
+    }
     let idx;
     if (isRow) {
-      idx = /^\d+$/.test(String(p.start || '').trim()) ? Number(String(p.start).trim()) - 1 : -1;
-      if (idx < 0) return { success: false, message: '行号无效: ' + p.start + '（1 开始的数字）' };
+      idx = /^\d+$/.test(String(startRaw || '').trim()) ? Number(String(startRaw).trim()) - 1 : -1;
+      if (idx < 0) return { success: false, message: '行号无效: ' + startRaw + '（1 开始的数字）' };
     } else {
-      idx = colIndexOf(p.start);
-      if (idx < 0) return { success: false, message: '列标无效: ' + p.start + "（如 'B' 或 1 开始的数字）" };
+      idx = colIndexOf(startRaw);
+      if (idx < 0) return { success: false, message: '列标无效: ' + startRaw + "（如 'B' 或 1 开始的数字）" };
     }
     try {
       const coll = isRow ? sheet.getRows() : sheet.getColumns();
       if (op.indexOf('insert') === 0) coll.insertByIndex(idx, count);
       else coll.removeByIndex(idx, count);
     } catch (e) { return { success: false, message: '行列操作失败: ' + errStr(e) }; }
-    return { success: true, op: op, start: String(p.start), count: count, sheet: sheet.getName() };
+    return Object.assign({ success: true, op: op, start: String(startRaw), count: count, sheet: sheet.getName() }, sheetLayoutBrief(sheet),
+      { note: '行号/列标已整体移动，后续操作以这里的新地址为准' });
   },
   // [表格·结构] 合并/取消合并单元格区域（XMergeable）。合并后内容以左上格为准。
   sheet_merge_cells(p) {
     const r0 = resolveSheet(p);
     if (r0.error) return { success: false, message: r0.error };
-    const range = sheetRange(r0.sheet, String(p.range || ''));
+    if (r0.sheet.isProtected()) return tableFail('SHEET_PROTECTED_CELL');
+    const rangeRef = (p && p.range) ? String(p.range) : activeCalcRangeName();
+    const range = sheetRange(r0.sheet, rangeRef);
     if (!range) return { success: false, message: '无效的区域: ' + (p.range || '(空)') };
-    const merge = p.merge !== false;
+    const merge = p && p.action ? String(p.action).toLowerCase() !== 'unmerge' : (!p || p.merge !== false);
     try { range.merge(merge); } catch (e) { return { success: false, message: '合并操作失败: ' + errStr(e) }; }
     try { ctrl.select(range); } catch (e) {}
     // 验证回路：XMergeable.getIsMerged() 读回实际状态（'IsMerged' 属性不存在）
@@ -7853,16 +10624,25 @@ const EXEC = {
   },
   // [表格·结构] 区域排序。byColumn 是列标（'B'，须在区域内），ascending 默认
   // true，hasHeader 默认 true（首行不参与排序）。
-  // 为什么不走 XSortable.sort()：SortFields 需要 sequence<TableSortField>，而
-  // 引擎 WASM 没为该类型预编 embind 序列构造器（getEmbindSequenceCtor 直接抛，
-  // 裸 Array 又被猜成 sequence<any> 被 Calc 静默忽略——组 19 真机实证两条路都
-  // 死）。改为 worker 内读值 → JS 排 → 回写：值与公式文本随行整体移动；代价是
-  // 单元格格式不随行移动、公式相对引用不重定位（数值表主流场景无影响）。
+  // Native Calc sorting preserves row formats and relocates formula references.
+  // XSortable's TableSortField sequence is not bound in this WASM build; use the
+  // equivalent scalar UNO dispatch contract (sc/sdi/scalc.sdi: DataSort).
   sheet_sort_range(p) {
     const r0 = resolveSheet(p);
     if (r0.error) return { success: false, message: r0.error };
-    const range = sheetRange(r0.sheet, String(p.range || ''));
-    if (!range) return { success: false, message: '无效的区域: ' + (p.range || '(空)') };
+    if (r0.sheet.isProtected()) return tableFail('SHEET_PROTECTED_CELL');
+    let range;
+    if (p && p.range) {
+      range = sheetRange(r0.sheet, String(p.range));
+      if (!range) return { success: false, message: '无效的区域: ' + (p.range || '(空)') };
+    } else {
+      const activeRef = activeCalcRangeName();
+      if (activeRef && activeRef.indexOf(':') >= 0) range = sheetRange(r0.sheet, activeRef);
+      if (!range) {
+        try { range = r0.sheet.getCellRangeByName(sheetRangeName(usedRangeAddress(r0.sheet))); }
+        catch (e) { return { success: false, message: '无效的区域: ' + (p && p.range || '(空)') }; }
+      }
+    }
     const addr = range.getRangeAddress();
     const nRows = addr.EndRow - addr.StartRow + 1;
     const nCols = addr.EndColumn - addr.StartColumn + 1;
@@ -7874,52 +10654,30 @@ const EXEC = {
     const asc = p.ascending !== false;
     const headerOfs = p.hasHeader !== false ? 1 : 0;
     const keyOfs = byCol - addr.StartColumn;
-    const T = css.table.CellContentType;
-    // 读出待排行（每格记类型，回写时保真：公式回 setFormula、数值回 setValue）
-    const dataRows = [];
-    for (let r = headerOfs; r < nRows; r++) {
-      const line = [];
-      for (let c = 0; c < nCols; c++) {
-        const cell = range.getCellByPosition(c, r);
-        const t = cell.getType();
-        if (enumEq(t, T.EMPTY)) line.push({ k: 'e' });
-        else if (enumEq(t, T.FORMULA)) line.push({ k: 'f', f: cell.getFormula(), sort: readCellOut(cell) });
-        else if (enumEq(t, T.VALUE)) line.push({ k: 'v', v: cell.getValue() });
-        else line.push({ k: 's', s: cell.getString() });
-      }
-      dataRows.push(line);
-    }
-    const keyOf = function (line) {
-      const it = line[keyOfs];
-      if (!it || it.k === 'e') return null; // 空值恒排最后（Calc 口径）
-      if (it.k === 'v') return it.v;
-      if (it.k === 'f') return it.sort;
-      return it.s;
-    };
-    dataRows.sort(function (a, b) {
-      const ka = keyOf(a), kb = keyOf(b);
-      if (ka === null && kb === null) return 0;
-      if (ka === null) return 1;
-      if (kb === null) return -1;
-      const na = typeof ka === 'number', nb = typeof kb === 'number';
-      let cmp;
-      if (na && nb) cmp = ka - kb;
-      else if (na !== nb) cmp = na ? -1 : 1; // 数值排在文本前（Calc 升序口径）
-      else cmp = String(ka).localeCompare(String(kb), 'zh');
-      return asc ? cmp : -cmp;
-    });
+    // A one-row selection has nothing to sort. Dispatching a single cell would
+    // let Calc expand it to the surrounding data region.
+    if (nRows <= 1) return { success: true, range: sheetRangeName(addr), byColumn: colLetterOf(byCol), ascending: asc, sortedSample: [] };
     try {
-      for (let r = 0; r < dataRows.length; r++) {
-        for (let c = 0; c < nCols; c++) {
-          const cell = range.getCellByPosition(c, headerOfs + r);
-          const it = dataRows[r][c];
-          if (it.k === 'v') cell.setValue(it.v);
-          else if (it.k === 'f') cell.setFormula(it.f);
-          else if (it.k === 's') cell.setString(it.s);
-          else cell.setString('');
-        }
-      }
-    } catch (e) { return { success: false, message: '排序回写失败: ' + errStr(e) }; }
+      // Expand the target once to catch a merged anchor outside its boundaries.
+      const cursor = r0.sheet.createCursorByRange(range);
+      cursor.collapseToMergedArea();
+      const expanded = cursor.getRangeAddress();
+      if (expanded.StartRow !== addr.StartRow || expanded.EndRow !== addr.EndRow
+          || expanded.StartColumn !== addr.StartColumn || expanded.EndColumn !== addr.EndColumn) return tableFail('SHEET_SORT_MERGED_RANGE');
+      if (range.getIsMerged()) return tableFail('SHEET_SORT_MERGED_RANGE');
+      ctrl.setActiveSheet(r0.sheet);
+      ctrl.select(range);
+      const dispatcher = context.getServiceManager().createInstanceWithContext('com.sun.star.frame.DispatchHelper', context);
+      dispatcher.executeDispatch(ctrl.getFrame(), '.uno:DataSort', '', 0, [
+        mkProp('ByRows', true), mkProp('HasHeader', headerOfs === 1),
+        mkProp('CaseSensitive', false), mkProp('NaturalSort', false),
+        mkProp('IncludeAttribs', true), mkProp('IncludeComments', true), mkProp('IncludeImages', true),
+        mkProp('UserDefIndex', new zetajs.Any(zetajs.type.unsigned_short, 0)),
+        mkProp('Col1', new zetajs.Any(zetajs.type.long, byCol + 1)), mkProp('Ascending1', asc),
+        mkProp('Col2', new zetajs.Any(zetajs.type.long, 0)), mkProp('Col3', new zetajs.Any(zetajs.type.long, 0))
+      ]);
+    } catch (e) { return { success: false, error: 'SHEET_SORT_FAILED', message: 'SHEET_SORT_FAILED', detail: errStr(e) }; }
+
     try { ctrl.select(range); } catch (e) {}
     // 验证回路：回读排序列前几个值
     const sample = [];
@@ -7935,6 +10693,7 @@ const EXEC = {
   sheet_set_autofilter(p) {
     const r0 = resolveSheet(p);
     if (r0.error) return { success: false, message: r0.error };
+    if (r0.sheet.isProtected()) return tableFail('SHEET_PROTECTED_CELL');
     const sheet = r0.sheet;
     let addr;
     if (p.range) {
@@ -7982,9 +10741,11 @@ const EXEC = {
   sheet_conditional_format(p) {
     const r0 = resolveSheet(p);
     if (r0.error) return { success: false, message: r0.error };
-    const range = sheetRange(r0.sheet, String(p.range || ''));
+    if (r0.sheet.isProtected()) return tableFail('SHEET_PROTECTED_CELL');
+    const rangeRef = (p && p.range) ? String(p.range) : activeCalcRangeName();
+    const range = sheetRange(r0.sheet, rangeRef);
     if (!range) return { success: false, message: '无效的区域: ' + (p.range || '(空)') };
-    if (p.clear) {
+    if (p && p.clear) {
       try {
         const cf0 = range.getPropertyValue('ConditionalFormat');
         cf0.clear();
@@ -7993,15 +10754,20 @@ const EXEC = {
       return { success: true, range: sheetRangeName(range.getRangeAddress()), cleared: true };
     }
     const OPS = {
-      greater: 'GREATER', greaterequal: 'GREATER_EQUAL', less: 'LESS', lessequal: 'LESS_EQUAL',
-      equal: 'EQUAL', notequal: 'NOT_EQUAL', between: 'BETWEEN', notbetween: 'NOT_BETWEEN', formula: 'FORMULA',
+      greater: 'GREATER', '>': 'GREATER', greaterequal: 'GREATER_EQUAL', '>=': 'GREATER_EQUAL',
+      less: 'LESS', '<': 'LESS', lessequal: 'LESS_EQUAL', '<=': 'LESS_EQUAL',
+      equal: 'EQUAL', '=': 'EQUAL', '==': 'EQUAL', notequal: 'NOT_EQUAL', '!=': 'NOT_EQUAL',
+      between: 'BETWEEN', notbetween: 'NOT_BETWEEN', formula: 'FORMULA',
     };
-    const opKey = OPS[String(p.rule || '').toLowerCase().replace(/[_-]/g, '')];
-    if (!opKey) return { success: false, message: 'bad rule: ' + p.rule + ' (greater/greaterEqual/less/lessEqual/equal/notEqual/between/notBetween/formula)' };
+    const ruleRaw = (p && (p.rule != null ? p.rule : p.operator)) || '';
+    const opKey = OPS[String(ruleRaw).toLowerCase().replace(/[_-]/g, '')];
+    if (!opKey) return { success: false, message: 'bad rule: ' + ruleRaw + ' (greater/greaterEqual/less/lessEqual/equal/notEqual/between/notBetween/formula)' };
     if (p.value1 == null || String(p.value1) === '') return { success: false, message: '条件格式需要 value1（数值或公式）' };
     if ((opKey === 'BETWEEN' || opKey === 'NOT_BETWEEN') && (p.value2 == null || String(p.value2) === '')) {
       return { success: false, message: 'between/notBetween 需要 value2' };
     }
+    const bgIn = p.background != null ? p.background : p.bgColor;
+    const fgIn = p.color != null ? p.color : p.fontColor;
     // 命中外观 = 一个专用 CellStyle（条件格式只认样式名，不收散属性）
     let styleName;
     try {
@@ -8009,18 +10775,18 @@ const EXEC = {
       do { styleName = '__awd_cf_' + (++cfStyleSeq); } while (styles.hasByName(styleName));
       const style = xModel.createInstance('com.sun.star.style.CellStyle');
       styles.insertByName(styleName, style);
-      if (p.background != null) {
-        const c = parseColor(p.background, { none: -1 });
-        if (c == null) return { success: false, message: 'bad background: ' + p.background };
+      if (bgIn != null) {
+        const c = parseColor(bgIn, { none: -1 });
+        if (c == null) return { success: false, message: 'bad background: ' + bgIn };
         style.setPropertyValue('CellBackColor', c);
       }
-      if (p.color != null) {
-        const c = parseColor(p.color, { auto: -1 });
-        if (c == null) return { success: false, message: 'bad color: ' + p.color };
-        style.setPropertyValue('CharColor', c);
+      if (fgIn != null) {
+        const c = parseColor(fgIn, { auto: -1 });
+        if (c == null) return { success: false, message: 'bad color: ' + fgIn };
+        setCharColor(style, c);
       }
       if (p.bold) style.setPropertyValue('CharWeight', css.awt.FontWeight.BOLD);
-      if (p.background == null && p.color == null && !p.bold) {
+      if (bgIn == null && fgIn == null && !p.bold) {
         return { success: false, message: '条件格式需要至少一项外观（background/color/bold）' };
       }
     } catch (e) { return { success: false, message: '条件格式样式创建失败: ' + errStr(e) }; }
@@ -8038,7 +10804,7 @@ const EXEC = {
       const readBack = range.getPropertyValue('ConditionalFormat');
       return {
         success: true, range: sheetRangeName(range.getRangeAddress()),
-        rule: String(p.rule), entries: readBack.getCount(), styleName: styleName,
+        rule: String(ruleRaw), entries: readBack.getCount(), styleName: styleName,
       };
     } catch (e) { return { success: false, message: '条件格式设置失败: ' + errStr(e) }; }
   },
@@ -8050,6 +10816,7 @@ const EXEC = {
   sheet_add_comment(p) {
     const r0 = resolveSheet(p);
     if (r0.error) return tableFail(r0.error);
+    if (r0.sheet.isProtected()) return tableFail('SHEET_PROTECTED_CELL');
     const sheet = r0.sheet;
     const cellStr = p && p.cell ? String(p.cell).trim() : '';
     const text = p && p.text != null ? String(p.text) : '';
@@ -8089,7 +10856,14 @@ const EXEC = {
         const item = { index: i, cell: colLetterOf(pos.Column) + (pos.Row + 1) };
         try { item.author = String(anno.getAuthor() || ''); } catch (e) {}
         try { item.date = String(anno.getDate() || ''); } catch (e) {}
-        try { item.text = String(anno.getString() || '').slice(0, 500); } catch (e) {}
+        try {
+          // Imported XLSX notes keep lazy caption text until the annotation shape is materialized.
+          let text = String(anno.getString() || '');
+          if (!text) text = String(anno.getAnnotationShape().getString() || '');
+          item.text = text.slice(0, 500);
+          item.textLength = text.length;
+          item.textTruncated = text.length > item.text.length;
+        } catch (e) { item.textUnavailable = true; }
         out.push(item);
       }
     } catch (e) { return tableFail(errStr(e)); }
@@ -8098,6 +10872,7 @@ const EXEC = {
   sheet_delete_comment(p) {
     const r0 = resolveSheet(p);
     if (r0.error) return tableFail(r0.error);
+    if (r0.sheet.isProtected()) return tableFail('SHEET_PROTECTED_CELL');
     const sheet = r0.sheet;
     const cellStr = p && p.cell ? String(p.cell).trim() : '';
     if (!cellStr) return tableFail('sheet_delete_comment requires {cell}（如 "B2"）');
@@ -8127,9 +10902,12 @@ const EXEC = {
   sheet_set_data_validation(p) {
     const r0 = resolveSheet(p);
     if (r0.error) return tableFail(r0.error);
-    const range = sheetRange(r0.sheet, String(p.range || ''));
+    if (r0.sheet.isProtected()) return tableFail('SHEET_PROTECTED_CELL');
+    const rangeRef = (p && p.range) ? String(p.range) : activeCalcRangeName();
+    const range = sheetRange(r0.sheet, rangeRef);
     if (!range) return tableFail('无效的区域: ' + (p.range || '(空)'));
-    if (p && p.clear) {
+    const rawType = String((p && p.type) || '').toLowerCase().replace(/[_-]/g, '');
+    if ((p && p.clear) || rawType === 'any' || rawType === 'clear') {
       try {
         const v0 = range.getPropertyValue('Validation');
         v0.setPropertyValue('Type', css.sheet.ValidationType.ANY);
@@ -8138,12 +10916,13 @@ const EXEC = {
       return { success: true, range: sheetRangeName(range.getRangeAddress()), cleared: true };
     }
     const TYPE_MAP = { list: 'LIST', wholenumber: 'WHOLE', whole: 'WHOLE', decimal: 'DECIMAL', date: 'DATE', time: 'TIME', textlength: 'TEXT_LEN', custom: 'CUSTOM' };
-    const typeKey = TYPE_MAP[String(p && p.type || '').toLowerCase().replace(/[_-]/g, '')];
+    const typeKey = TYPE_MAP[rawType];
     if (!typeKey) return tableFail('bad type: ' + (p && p.type) + ' (list/wholeNumber/decimal/date/time/textLength/custom)');
     const OP_MAP = { greater: 'GREATER', greaterequal: 'GREATER_EQUAL', less: 'LESS', lessequal: 'LESS_EQUAL', equal: 'EQUAL', notequal: 'NOT_EQUAL', between: 'BETWEEN', notbetween: 'NOT_BETWEEN' };
     let formula1 = '', formula2 = '', operatorKey = null;
     if (typeKey === 'LIST') {
-      const items = String((p && p.value1) || '').split(',').map(function (s) { return s.trim(); }).filter(function (s) { return s !== ''; });
+      const listRaw = (p && p.value1 != null) ? String(p.value1) : (Array.isArray(p && p.list) ? p.list.join(',') : String((p && p.list) || ''));
+      const items = listRaw.split(',').map(function (s) { return s.trim(); }).filter(function (s) { return s !== ''; });
       if (!items.length) return tableFail('list 类型的 value1 需要逗号分隔的候选值，如 "合规,不合规,待核查"');
       formula1 = items.map(function (v) { return '"' + v.replace(/"/g, '""') + '"'; }).join(';');
     } else if (typeKey === 'CUSTOM') {
@@ -8151,21 +10930,24 @@ const EXEC = {
       if (!formula1) return tableFail('custom 类型的 value1 需要一个返回布尔值的校验公式');
       formula1 = normalizeFormula(formula1);
     } else {
-      operatorKey = OP_MAP[String((p && p.operator) || '').toLowerCase().replace(/[_-]/g, '')];
+      const opRaw = (p && p.operator) ? String(p.operator) : ((p && p.min != null && p.max != null) ? 'between' : '');
+      operatorKey = OP_MAP[opRaw.toLowerCase().replace(/[_-]/g, '')];
       if (!operatorKey) return tableFail('bad operator: ' + (p && p.operator) + ' (greater/greaterEqual/less/lessEqual/equal/notEqual/between/notBetween)');
-      if (!p || p.value1 == null || String(p.value1) === '') return tableFail(typeKey + ' 类型需要 value1');
-      formula1 = normalizeFormula(String(p.value1));
+      const v1Raw = (p && p.value1 != null && String(p.value1) !== '') ? p.value1 : (p && p.min);
+      const v2Raw = (p && p.value2 != null && String(p.value2) !== '') ? p.value2 : (p && p.max);
+      if (v1Raw == null || String(v1Raw) === '') return tableFail(typeKey + ' 类型需要 value1');
+      formula1 = normalizeFormula(String(v1Raw));
       if (operatorKey === 'BETWEEN' || operatorKey === 'NOT_BETWEEN') {
-        if (p.value2 == null || String(p.value2) === '') return tableFail('between/notBetween 需要 value2');
-        formula2 = normalizeFormula(String(p.value2));
+        if (v2Raw == null || String(v2Raw) === '') return tableFail('between/notBetween 需要 value2');
+        formula2 = normalizeFormula(String(v2Raw));
       }
     }
     try {
       const v = range.getPropertyValue('Validation');
       v.setPropertyValue('Type', css.sheet.ValidationType[typeKey]);
-      if (operatorKey) v.setPropertyValue('Operator', css.sheet.ConditionOperator[operatorKey]);
-      v.setPropertyValue('Formula1', formula1);
-      if (formula2) v.setPropertyValue('Formula2', formula2);
+      if (operatorKey) v.setOperator(css.sheet.ConditionOperator[operatorKey]);
+      v.setFormula1(formula1);
+      v.setFormula2(formula2);
       v.setPropertyValue('IgnoreBlankCells', (p && p.allowBlank) !== false);
       if (p && p.showInputMessage) {
         v.setPropertyValue('ShowInputMessage', true);
@@ -8192,26 +10974,37 @@ const EXEC = {
   sheet_add_chart(p) {
     const r0 = resolveSheet(p);
     if (r0.error) return tableFail(r0.error);
+    if (r0.sheet.isProtected()) return tableFail('SHEET_PROTECTED_CELL');
     const sheet = r0.sheet;
-    const range = sheetRange(sheet, String((p && p.range) || ''));
-    if (!range) return tableFail('无效的数据区域: ' + ((p && p.range) || '(空)'));
-    const addr = range.getRangeAddress();
-    const TYPE_MAP = { column: { cls: 'Bar', vertical: true }, bar: { cls: 'Bar', vertical: false }, line: { cls: 'Line' }, pie: { cls: 'Pie' } };
-    const typeInfo = TYPE_MAP[String((p && p.chartType) || 'column').toLowerCase()];
-    if (!typeInfo) return tableFail('bad chartType: ' + (p && p.chartType) + ' (column/bar/line/pie)');
+    // 'A1:A7,D1:D7'：逗号分开的多块区域，第一块是分类标签、其余是数据（只画某一列时用，O7 实测）。
+    // 单块区域时首列当分类标签——只有一列就没有可画的数据（导出的图表没有系列），所以单列不当标签。
+    const parts = String((p && p.range) || '').split(',').map(x => x.trim()).filter(Boolean);
+    const addrs = [];
+    for (const part of parts) {
+      const rg = sheetRange(sheet, part);
+      if (!rg) return tableFail('无效的数据区域: ' + part);
+      addrs.push(rg.getRangeAddress());
+    }
+    if (!addrs.length) return tableFail('无效的数据区域: ' + ((p && p.range) || '(空)'));
+    const addr = addrs[0];
+    const rowHeaders = addrs.length > 1 || addr.EndColumn > addr.StartColumn;
+    const TYPE_MAP = { column: { cls: 'Bar', vertical: false }, bar: { cls: 'Bar', vertical: true }, line: { cls: 'Line' }, pie: { cls: 'Pie' } };
+    const chartTypeRaw = (p && (p.chartType != null ? p.chartType : p.type)) || 'column';
+    const typeInfo = TYPE_MAP[String(chartTypeRaw).toLowerCase()];
+    if (!typeInfo) return tableFail('bad chartType: ' + chartTypeRaw + ' (column/bar/line/pie)');
     let charts;
     try { charts = sheet.getCharts(); } catch (e) { return tableFail('获取图表集合失败: ' + errStr(e)); }
     const name = (p && p.name != null && String(p.name).trim()) ? String(p.name).trim() : ('Chart_' + Date.now());
     if (charts.hasByName(name)) return tableFail('图表已存在: ' + name);
     let rect;
     try {
-      const anchorCol = Math.min(addr.EndColumn + 2, 1023);
+      const anchorCol = Math.min(Math.max(...addrs.map(a => a.EndColumn)) + 2, 1023);
       const anchorCell = sheet.getCellByPosition(anchorCol, addr.StartRow);
       const pos = anchorCell.getPropertyValue('Position');
       rect = new css.awt.Rectangle({ X: pos.X, Y: pos.Y, Width: ptToMm100(400), Height: ptToMm100(250) });
     } catch (e) { return tableFail('计算图表放置位置失败: ' + errStr(e)); }
     try {
-      charts.addNewByName(name, rect, [addr], true, true);
+      charts.addNewByName(name, rect, addrs, true, rowHeaders);
     } catch (e) { return tableFail('创建图表失败: ' + errStr(e)); }
     const note = [];
     try {
@@ -8224,16 +11017,16 @@ const EXEC = {
       if (p && p.title) {
         try {
           embedded.setPropertyValue('HasMainTitle', true);
-          embedded.getTitle().setString(String(p.title));
+          embedded.getTitle().setPropertyValue('String', String(p.title));
         } catch (e) { note.push('标题设置失败'); }
       }
     } catch (e) { note.push('图表类型/标题设置失败: ' + errStr(e)); }
     const res = {
-      success: true, name: name, chartType: String((p && p.chartType) || 'column').toLowerCase(),
-      range: sheetRangeName(addr), sheet: sheet.getName(),
+      success: true, name: name, chartType: String(chartTypeRaw).toLowerCase(),
+      range: addrs.map(sheetRangeName).join(','), sheet: sheet.getName(),
     };
     if (p && p.title) res.title = String(p.title);
-    if (note.length) res.note = note.join('；');
+    if (note.length) return { ...res, ...tableFail('SHEET_CHART_PARTIAL'), created: true, retryable: false };
     return res;
   },
   // [表格·看] Excel 专用查找：遍历区域（缺省=已用区域）逐格比对字符串，不区分
@@ -8243,12 +11036,14 @@ const EXEC = {
     const r0 = resolveSheet(p);
     if (r0.error) return tableFail(r0.error);
     const sheet = r0.sheet;
-    const query = (p && p.query != null) ? String(p.query) : '';
+    const queryRaw = p && (p.query != null ? p.query : p.keyword);
+    const query = queryRaw != null ? String(queryRaw) : '';
     if (!query) return tableFail('sheet_search requires {query}');
     const matchCase = !!(p && p.matchCase);
     let addr;
     try {
       const range = (p && p.range) ? sheetRange(sheet, p.range) : null;
+      if (p && p.range && !range) return tableFail('SHEET_INVALID_RANGE');
       addr = range ? range.getRangeAddress() : usedRangeAddress(sheet);
     } catch (e) { return tableFail('读取搜索区域失败: ' + errStr(e)); }
     const nRows = addr.EndRow - addr.StartRow + 1;
@@ -8287,6 +11082,7 @@ const EXEC = {
   sheet_find_replace(p) {
     const r0 = resolveSheet(p);
     if (r0.error) return tableFail(r0.error);
+    if (r0.sheet.isProtected()) return tableFail('SHEET_PROTECTED_CELL');
     const sheet = r0.sheet;
     const find = (p && p.find != null) ? String(p.find) : '';
     if (!find) return tableFail('sheet_find_replace requires {find}');
@@ -8375,7 +11171,7 @@ const EXEC = {
   // sheet）/ remove（name）/ list（枚举全部）。add 落成绝对引用公式
   // '$Sheet1.$A$1:$C$10'，与 range 参数所在工作表绑定。
   sheet_define_name(p) {
-    const op = String((p && p.op) || 'list').toLowerCase();
+    const op = String((p && (p.op || p.action)) || 'list').toLowerCase();
     let nr;
     try { nr = xModel.getPropertyValue('NamedRanges'); } catch (e) { return tableFail('读取命名区域集合失败: ' + errStr(e)); }
     if (op === 'list') {
@@ -8403,7 +11199,7 @@ const EXEC = {
       const range = sheetRange(r0.sheet, String((p && p.range) || ''));
       if (!range) return tableFail('无效的区域: ' + ((p && p.range) || '(空)'));
       const addr = range.getRangeAddress();
-      const content = '$' + r0.sheet.getName() + '.' + absCellRef(addr.StartColumn, addr.StartRow)
+      const content = "$'" + r0.sheet.getName().replace(/'/g, "''") + "'." + absCellRef(addr.StartColumn, addr.StartRow)
         + ((addr.StartColumn !== addr.EndColumn || addr.StartRow !== addr.EndRow) ? ':' + absCellRef(addr.EndColumn, addr.EndRow) : '');
       try {
         nr.addNewByName(name, content, new css.table.CellAddress({ Sheet: addr.Sheet, Column: addr.StartColumn, Row: addr.StartRow }), 0);
@@ -8434,16 +11230,18 @@ const EXEC = {
   sheet_group_rows_cols(p) {
     const r0 = resolveSheet(p);
     if (r0.error) return tableFail(r0.error);
+    if (r0.sheet.isProtected()) return tableFail('SHEET_PROTECTED_CELL');
     const sheet = r0.sheet;
-    const range = sheetRange(sheet, String((p && p.range) || ''));
+    const rangeRef = (p && p.range) ? String(p.range) : activeCalcRangeName();
+    const range = sheetRange(sheet, rangeRef);
     if (!range) return tableFail('无效的区域: ' + ((p && p.range) || '(空)'));
     const addr = range.getRangeAddress();
-    const orientRaw = String((p && p.orient) || 'rows').toLowerCase();
+    const orientRaw = String((p && (p.orient || p.orientation)) || 'rows').toLowerCase();
     const isCols = orientRaw === 'cols' || orientRaw === 'columns';
     const isRows = orientRaw === 'rows';
-    if (!isCols && !isRows) return tableFail('bad orient: ' + (p && p.orient) + ' (rows/cols)');
+    if (!isCols && !isRows) return tableFail('bad orient: ' + (p && (p.orient || p.orientation)) + ' (rows/cols)');
     const orientation = isCols ? css.table.TableOrientation.COLUMNS : css.table.TableOrientation.ROWS;
-    const op = String((p && p.op) || 'group').toLowerCase();
+    const op = String((p && (p.op || p.action)) || 'group').toLowerCase();
     try {
       if (op === 'group') sheet.group(addr, orientation);
       else if (op === 'ungroup') sheet.ungroup(addr, orientation);
@@ -8460,12 +11258,15 @@ const EXEC = {
   sheet_add_pivot_table(p) {
     const r0 = resolveSheet(p);
     if (r0.error) return tableFail(r0.error);
+    if (r0.sheet.isProtected()) return tableFail('SHEET_PROTECTED_CELL');
     const sheet = r0.sheet;
     const source = sheetRange(sheet, String((p && p.sourceRange) || ''));
     if (!source) return tableFail('无效的源数据区域: ' + ((p && p.sourceRange) || '(空)'));
     const srcAddr = source.getRangeAddress();
-    const rowFieldNames = String((p && p.rowFields) || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
-    const dataFieldName = (p && p.dataField != null) ? String(p.dataField).trim() : '';
+    const rawRowFields = p && p.rowFields;
+    const rowFieldNames = (Array.isArray(rawRowFields) ? rawRowFields : String(rawRowFields || '').split(',')).map(function (s) { return String(s).trim(); }).filter(Boolean);
+    const rawDataField = p && (p.dataField != null ? p.dataField : (Array.isArray(p.dataFields) ? p.dataFields[0] : p.dataFields));
+    const dataFieldName = (rawDataField != null) ? String(rawDataField).trim() : '';
     if (!rowFieldNames.length) return tableFail('sheet_add_pivot_table requires {rowFields}（逗号分隔的表头字段名）');
     if (!dataFieldName) return tableFail('sheet_add_pivot_table requires {dataField}（求和字段的表头字段名）');
     let dpTables;
@@ -8518,6 +11319,233 @@ const EXEC = {
   // 机制，写入即生效；安全网是 doc_undo 与后端文档检查点（fileEffect=MODIFIED）。
   // [幻灯片·看] 每页页码/名称/版式/母版/标题/形状数/是否有备注/是否含表格。
   // 打开演示文稿后的第一步。
+  // Native chart data is embedded in the document, never rasterized.
+  slide_add_image(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    const fit = p.fit || 'cover';
+    if (!['cover', 'contain', 'stretch'].includes(fit) || [p.left,p.top,p.width,p.height].some(v => typeof v !== 'number' || !Number.isFinite(v)) || p.width <= 0 || p.height <= 0)
+      return slideError('SLIDE_INVALID_GEOMETRY');
+    const focalX=p.focalX==null?0.5:p.focalX,focalY=p.focalY==null?0.5:p.focalY;
+    if([focalX,focalY].some(v=>typeof v!=='number'||!Number.isFinite(v)||v<0||v>1))return slideError('SLIDE_INVALID_GEOMETRY');
+    let shape, added = false;
+    try {
+      const bin = atob(String(p.base64 || ''));
+      if (!bin.length) return slideError('SLIDE_INVALID_IMAGE');
+      const bytes = Array.from(bin, c => { const n=c.charCodeAt(0); return n>127?n-256:n; });
+      const stream = css.io.SequenceInputStream.createStreamFromSequence(context, bytes);
+      const graphic = css.graphic.GraphicProvider.create(context).queryGraphic([mkProp('InputStream', stream)]);
+      if (!graphic) return slideError('SLIDE_INVALID_IMAGE');
+      let natural = graphic.getPropertyValue('Size100thMM');
+      if (!natural.Width || !natural.Height) {
+        // Images without density metadata use the native output device's pixel scale.
+        // A fixed 96 DPI doubles crop distances on a 192 DPI/Retina canvas.
+        const pixels = graphic.getPropertyValue('SizePixel');
+        const device = css.awt.Toolkit.create(context).createScreenCompatibleDevice(1,1);
+        natural = device.convertSizeToLogic(pixels,css.util.MeasureUnit.MM_100TH);
+      }
+      if (!Number.isFinite(natural.Width) || !Number.isFinite(natural.Height) || natural.Width <= 0 || natural.Height <= 0)
+        return slideError('SLIDE_INVALID_IMAGE');
+      let w=ptToMm100(p.width), h=ptToMm100(p.height), x=ptToMm100(p.left), y=ptToMm100(p.top);
+      const targetW=w,targetH=h;
+      if (fit === 'contain') { const scale=Math.min(w/natural.Width,h/natural.Height);w=Math.round(natural.Width*scale);h=Math.round(natural.Height*scale);x+=Math.round((targetW-w)/2);y+=Math.round((targetH-h)/2); }
+      shape=xModel.createInstance('com.sun.star.drawing.GraphicObjectShape');
+      shape.setSize(new css.awt.Size({Width:w,Height:h}));shape.setPosition(new css.awt.Point({X:x,Y:y}));
+      r0.page.add(shape);added=true;ensureShapeNames(r0.page);shape.setPropertyValue('Graphic',graphic);
+      if (fit === 'cover') {
+        // GraphicCrop is expressed in the graphic's natural 1/100 mm units.
+        const physical=natural;
+        const scale=Math.max(w/physical.Width,h/physical.Height);
+        const excessX=Math.max(0,Math.round(physical.Width-w/scale)),excessY=Math.max(0,Math.round(physical.Height-h/scale));
+        const cropX=Math.round(excessX*focalX),cropY=Math.round(excessY*focalY);
+        shape.setPropertyValue('GraphicCrop',new css.text.GraphicCrop({Left:cropX,Right:excessX-cropX,Top:cropY,Bottom:excessY-cropY}));
+      }
+      if (p.sendToBack === true) shape.setPropertyValue('ZOrder',0);
+      return {success:true,slideNumber:r0.index+1,shapeName:String(shape.getName()),fit,left:hmmToPt(x),top:hmmToPt(y),width:hmmToPt(w),height:hmmToPt(h)};
+    } catch(e) {
+      let name='';try{name=String(shape.getName());}catch(_){}
+      return {...slideError(added?'SLIDE_IMAGE_PARTIAL':'SLIDE_INVALID_IMAGE'),created:added,outcomeUnknown:added,retryable:false,slideNumber:r0.index+1,shapeName:name};
+    }
+  },
+  slide_add_chart(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    const types = { column: 'Bar', bar: 'Bar', line: 'Line', area: 'Area', pie: 'Pie', doughnut: 'Donut', scatter: 'XY' };
+    const type = p.chartType;
+    const categories = p.categories, series = p.series;
+    if (!Object.hasOwn(types,type) || !Array.isArray(categories) || !categories.length || categories.length > 100 ||
+        categories.some(v => typeof v !== 'string') || !Array.isArray(series) || !series.length || series.length > 12 ||
+        series.some(s => !s || typeof s.name !== 'string' || !Array.isArray(s.values) || s.values.length !== categories.length || s.values.some(v => typeof v !== 'number' || !Number.isFinite(v))) ||
+        (['pie', 'doughnut'].includes(type) && (series.length !== 1 || series[0].values.some(v => v < 0) || !series[0].values.some(v => v > 0))))
+      return slideError('SLIDE_INVALID_CHART_DATA');
+    const geometry = [p.left, p.top, p.width, p.height];
+    if (geometry.some(v => typeof v !== 'number' || !Number.isFinite(v)) || p.width <= 0 || p.height <= 0)
+      return slideError('SLIDE_INVALID_GEOMETRY');
+    if (type === 'scatter' && categories.some(v => !v.trim() || !Number.isFinite(Number(v)))) return slideError('SLIDE_INVALID_CHART_DATA');
+    let shape, added = false;
+    try {
+      shape = xModel.createInstance('com.sun.star.drawing.OLE2Shape');
+      shape.setPropertyValue('CLSID', '12DCAE26-281F-416F-A234-C3086127382E');
+      shape.setSize(new css.awt.Size({ Width: ptToMm100(p.width), Height: ptToMm100(p.height) }));
+      shape.setPosition(new css.awt.Point({ X: ptToMm100(p.left), Y: ptToMm100(p.top) }));
+      r0.page.add(shape); added = true;
+      ensureShapeNames(r0.page);
+      const model = shape.getPropertyValue('Model');
+      const diagram = model.createInstance('com.sun.star.chart.' + types[type] + 'Diagram');
+      model.setDiagram(diagram);
+      if (type === 'column' || type === 'bar') diagram.setPropertyValue('Vertical', type === 'bar');
+      const data = model.getData();
+      data.setData(categories.map((label, index) => type === 'scatter' ? [Number(label), ...series.map(s => s.values[index])] : series.map(s => s.values[index])));
+      data.setRowDescriptions(categories);
+      data.setColumnDescriptions(type === 'scatter' ? ['X', ...series.map(s => s.name)] : series.map(s => s.name));
+      if (type === 'scatter') {
+        const provider=model.getDataProvider(), chartType=model.getFirstDiagram().getCoordinateSystems()[0].getChartTypes()[0];
+        const chartSeries=series.map((s,i)=>{
+          const item=context.getServiceManager().createInstanceWithContext('com.sun.star.chart2.DataSeries',context);
+          const x=context.getServiceManager().createInstanceWithContext('com.sun.star.chart2.data.LabeledDataSequence',context), y=context.getServiceManager().createInstanceWithContext('com.sun.star.chart2.data.LabeledDataSequence',context);
+          const xValues=provider.createDataSequenceByRangeRepresentation('0');xValues.setPropertyValue('Role','values-x');x.setValues(xValues);
+          const yValues=provider.createDataSequenceByRangeRepresentation(String(i+1));yValues.setPropertyValue('Role','values-y');y.setValues(yValues);
+          y.setLabel(provider.createDataSequenceByRangeRepresentation('label '+(i+1)));
+          item.setData([x,y]);
+          item.setPropertyValue('LineStyle',css.drawing.LineStyle.NONE);
+          return item;
+        });
+        chartType.setDataSeries(chartSeries);
+        diagram.setPropertyValue('SymbolType', -2);
+        diagram.setPropertyValue('SymbolSize',new css.awt.Size({Width:250,Height:250}));
+      }
+      if (p.title) { model.setPropertyValue('HasMainTitle', true); model.getTitle().setPropertyValue('String', String(p.title)); }
+      model.setPropertyValue('HasLegend', series.length > 1 || type === 'pie' || type === 'doughnut');
+      return { success: true, slideNumber: r0.index + 1, shapeName: String(shape.getName()), chartType: type, categories, series };
+    } catch (e) {
+      let name = ''; try { name = String(shape.getName()); } catch (_) {}
+      return { ...slideError('SLIDE_CHART_PARTIAL'), created: added, outcomeUnknown: true, retryable: false, slideNumber: r0.index + 1, shapeName: name };
+    }
+  },
+  slide_format_chart(p) {
+    if (typeof p.shapeName !== 'string' || !p.shapeName.trim() ||
+        (p.showLegend != null && typeof p.showLegend !== 'boolean') ||
+        (p.showGrid != null && typeof p.showGrid !== 'boolean') ||
+        !['backgroundColor', 'textColor', 'fontSize', 'seriesColors', 'showLegend', 'showGrid'].some(key => p[key] != null)) return slideError('SLIDE_INVALID_CHART_STYLE');
+    const r0=resolvePage(p);if(r0.error)return slideFail(r0.error);
+    ensureShapeNames(r0.page);const rs=resolveShape(r0.page,p);if(rs.error)return slideFail(rs.error);
+    if ((p.backgroundColor != null && parseColor(p.backgroundColor)==null) || (p.textColor != null && parseColor(p.textColor)==null) ||
+        (p.fontSize != null && (typeof p.fontSize!=='number'||!Number.isFinite(p.fontSize)||p.fontSize<8||p.fontSize>72)) ||
+        (p.seriesColors != null && (!Array.isArray(p.seriesColors)||!p.seriesColors.length||p.seriesColors.length>12||p.seriesColors.some(c=>parseColor(c)==null)))) return slideError('SLIDE_INVALID_CHART_STYLE');
+    let model;try{model=rs.shape.getPropertyValue('Model');if(!model.supportsService('com.sun.star.chart.ChartDocument'))return slideError('SLIDE_NOT_CHART');}catch(e){return slideError('SLIDE_NOT_CHART');}
+    try {
+      const diagram=model.getDiagram(), diagramType=String(diagram.getDiagramType());
+      const circular=/PieDiagram|DonutDiagram/.test(diagramType), scatter=/XYDiagram/.test(diagramType);
+      if(p.backgroundColor!=null){
+        for(const target of (circular ? [model.getArea()] : [model.getArea(),diagram.getWall()])){
+          target.setPropertyValue('FillStyle',css.drawing.FillStyle.SOLID);target.setPropertyValue('FillColor',parseColor(p.backgroundColor));target.setPropertyValue('LineStyle',css.drawing.LineStyle.NONE);
+        }
+      }
+      const legend=model.getLegend();
+      legend.setPropertyValue('FillStyle',css.drawing.FillStyle.NONE);
+      legend.setPropertyValue('LineStyle',css.drawing.LineStyle.NONE);
+      if(p.showLegend!=null)model.setPropertyValue('HasLegend',p.showLegend===true);
+      if(p.showGrid!=null && !circular)diagram.setPropertyValue('HasYAxisGrid',p.showGrid===true);
+      if(p.fontSize!=null||p.textColor!=null){
+        const targets=[model.getTitle(),model.getLegend()];
+        if(!circular && diagram.getPropertyValue('HasXAxis'))targets.push(diagram.getXAxis());
+        if(!circular && diagram.getPropertyValue('HasYAxis'))targets.push(diagram.getYAxis());
+        for(const target of targets){if(p.fontSize!=null)target.setPropertyValue('CharHeight',new zetajs.Any(zetajs.type.float,p.fontSize));if(p.textColor!=null)setCharColor(target,parseColor(p.textColor));}
+      }
+      if(p.seriesColors!=null){
+        const nativeSeries=model.getFirstDiagram().getCoordinateSystems().flatMap(system=>system.getChartTypes().flatMap(type=>type.getDataSeries()));
+        const count=circular ? model.getData().getRowDescriptions().length : nativeSeries.length;
+        for(let i=0;i<count;i++) {
+          const target=circular ? diagram.getDataPointProperties(i,0) : nativeSeries[i];
+          const color=parseColor(p.seriesColors[i%p.seriesColors.length]);
+          target.setPropertyValue('FillColor',color);
+          target.setPropertyValue('LineColor',color);
+          if(scatter){
+            target.setPropertyValue('Color',color);
+            target.setPropertyValue('Symbol',new css.chart2.Symbol({Style:css.chart2.SymbolStyle.STANDARD,StandardSymbol:i%8,Size:new css.awt.Size({Width:250,Height:250}),FillColor:color,BorderColor:color}));
+          }
+        }
+      }
+      return {success:true,slideNumber:r0.index+1,shapeName:rs.name};
+    }catch(e){return {...slideError('SLIDE_CHART_STYLE_PARTIAL'),outcomeUnknown:true,retryable:false,slideNumber:r0.index+1,shapeName:rs.name};}
+  },
+  // View-only native slideshow. UNO navigation must also wake the Qt worker render loop.
+  async slide_show_control(p) {
+    if (!isImpressDoc()) return slideFail(NOT_PRESENTATION_MSG);
+    const operation=p.operation || 'state';
+    const ownerModel=xModel, ownerDocumentSeq=docSeq;
+    if (!['start','next','previous','end','state'].includes(operation)) return slideError('SLIDE_INVALID_SHOW_OPERATION');
+    try {
+      const presentation=xModel.getPresentation();
+      if(operation==='start'){
+        const active=activeImpressContext();
+        const target=resolvePage({slideNumber:p.slideNumber==null?active.slideNumber:p.slideNumber});
+        if(target.error)return slideFail(target.error);
+        if(presentation.isRunning())presentation.end();
+        restoreSlideShowView();
+        const configurationController=ctrl.getConfigurationController();
+        const configuration=configurationController.getRequestedConfiguration();
+        slideShowViewState={documentSeq:docSeq,controller:configurationController,configuration};
+        // PaneHider waits synchronously up to 60s for these requests inside native
+        // startShow. Complete them while this JS action can still yield to Qt.
+        for(const resource of configuration.getResources(null,'private:resource/pane/',css.drawing.framework.AnchorBindingMode.DIRECT)) {
+          if(resource.getResourceURL()!=='private:resource/pane/CenterPane')configurationController.requestResourceDeactivation(resource);
+        }
+        configurationController.update();
+        Module.resumeMainLoop();
+        for(let attempt=0;attempt<30 && configurationController.hasPendingRequests();attempt++) {
+          await new Promise(resolve=>setTimeout(resolve,50));
+          css.awt.Toolkit.create(context).reschedule();
+        }
+        if(configurationController.hasPendingRequests() || slideShowViewState?.documentSeq!==docSeq)throw new Error('Slideshow view not ready');
+        Module.resumeMainLoop();
+        await new Promise(resolve=>setTimeout(resolve,0));
+        if(xModel!==ownerModel || docSeq!==ownerDocumentSeq)throw new Error('Slideshow document changed');
+        presentation.startWithArguments([mkProp('IsFullScreen',false),mkProp('FirstPage',target.page.getName())]);
+        const controller=presentation.getController();
+        if(!controller)throw new Error('Slideshow controller unavailable');
+        controller.activate();
+      }else if(operation==='end'){
+        if(presentation.isRunning())presentation.end();
+        restoreSlideShowView();
+      }else if(operation==='next'||operation==='previous'){
+        if(!presentation.isRunning())return slideError('SLIDE_SHOW_NOT_RUNNING');
+        const controller=presentation.getController();controller.activate();
+        if(operation==='next')controller.gotoNextSlide();else controller.gotoPreviousSlide();
+      }
+      const running=presentation.isRunning();
+      if(!running)restoreSlideShowView();
+      if(running && ['start','next','previous'].includes(operation)) Module.resumeMainLoop();
+      const controller=running?presentation.getController():null;
+      return {success:true,running,slideNumber:controller?controller.getCurrentSlideIndex()+1:null,slideCount:xModel.getDrawPages().getCount()};
+    }catch(e){
+      log('slide_show_control failed: '+errStr(e));
+      if((operation==='start' || operation==='end') && xModel===ownerModel && docSeq===ownerDocumentSeq) {
+        try{if(ownerModel.getPresentation().isRunning())ownerModel.getPresentation().end();}catch(_){}
+        try{restoreSlideShowView();}catch(_){}
+      }
+      return slideError('SLIDE_SHOW_UNAVAILABLE');
+    }
+  },
+  slide_set_transition(p) {
+    const r0 = resolvePage(p);
+    if (r0.error) return slideFail(r0.error);
+    // LibreOffice animations TransitionType / TransitionSubType IDL constants.
+    const effects = { none: [0, 0], fade: [37, 101], push: [35, 97], wipe: [1, 1] };
+    const effect = Object.hasOwn(effects,p.effect) ? effects[p.effect] : null;
+    const seconds = p.durationSeconds == null ? 0.6 : p.durationSeconds;
+    if (!effect || typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < 0.1 || seconds > 5)
+      return slideError('SLIDE_INVALID_TRANSITION');
+    try {
+      r0.page.setPropertyValue('TransitionType', shortAny(effect[0]));
+      r0.page.setPropertyValue('TransitionSubtype', shortAny(effect[1]));
+      r0.page.setPropertyValue('TransitionDirection', true);
+      r0.page.setPropertyValue('TransitionDuration', seconds);
+      return { success: true, slideNumber: r0.index + 1, transition: {
+        type: r0.page.getPropertyValue('TransitionType'), subtype: r0.page.getPropertyValue('TransitionSubtype'),
+        durationSeconds: r0.page.getPropertyValue('TransitionDuration') } };
+    } catch (e) { return { ...slideError('SLIDE_TRANSITION_PARTIAL'), outcomeUnknown: true, retryable: false, slideNumber: r0.index + 1 }; }
+  },
   slide_get_overview() {
     if (!isImpressDoc()) return slideFail(NOT_PRESENTATION_MSG);
     let pages;
@@ -8570,7 +11598,8 @@ const EXEC = {
       try { pos = shape.getPosition(); } catch (e) {}
       try { size = shape.getSize(); } catch (e) {}
       const item = {
-        name: name, kind: kind,
+        name: name, shapeName: name, kind: kind,
+        style: slidePaintFormat(shape),
         left: pos ? hmmToPt(pos.X) : null, top: pos ? hmmToPt(pos.Y) : null,
         width: size ? hmmToPt(size.Width) : null, height: size ? hmmToPt(size.Height) : null,
         text: shapeText(shape), isTable: kind === 'table',
@@ -8586,13 +11615,36 @@ const EXEC = {
         // 真实生效值（而非只信 setter 返回的 applied 回声）。表格形状不适用
         // （每格文字可各自不同，读整格没有意义），保持 null。
         item.format = shapeCharFormat(shape);
+        item.textDetails = slideTextDetails(shape);
       }
+      try {
+        const model = shape.getPropertyValue('Model');
+        if (model && model.supportsService('com.sun.star.chart.ChartDocument')) {
+          item.isChart = true;
+          const data = model.getData();
+          const values = data.getData(), labels = data.getColumnDescriptions(), categories = data.getRowDescriptions();
+          const plots=model.getFirstDiagram().getCoordinateSystems().flatMap(system=>system.getChartTypes().flatMap(type=>type.getDataSeries().map(series=>({
+            sequences:series.getDataSequences().map(sequence=>({
+              role:String(sequence.getValues().getPropertyValue('Role')),
+              values:sequence.getValues().getData().slice(0,100).map(value=>zetajs.fromAny(value)),
+              label:sequence.getLabel()?sequence.getLabel().getData().map(value=>zetajs.fromAny(value)):[]
+            }))
+          }))));
+          item.chart = { plots, diagramType: model.getDiagram().getDiagramType(),
+            categories: categories.slice(0, 100), seriesNames: labels.slice(0, 12),
+            values: values.slice(0, 100).map(row => row.slice(0, 12)),
+            truncated: values.length > 100 || labels.length > 12 || values.some(row => row.length > 12) };
+        }
+      } catch (e) {}
       shapes.push(item);
     }
     return {
       success: true, number: r0.index + 1, width: width, height: height,
       layout: layout, layoutName: layoutNameOf(layout), masterName: masterName,
-      notesText: notesText, shapes: shapes,
+      notesText: notesText, background: slideBackground(page), shapes: shapes,
+      transition: (() => { try { return { type: page.getPropertyValue('TransitionType'),
+        subtype: page.getPropertyValue('TransitionSubtype'), durationSeconds: page.getPropertyValue('TransitionDuration') }; }
+        catch (e) { return { available: false }; } })(),
     };
   },
   // [幻灯片·看] 备注页（Speaker Notes）文字。不传 slideNumber 读取全篇。
@@ -8657,7 +11709,13 @@ const EXEC = {
     if (rs.error) return slideFail(rs.error);
     const text = p && p.text != null ? String(p.text) : '';
     let previousText = ''; try { previousText = shapeText(rs.shape); } catch (e) {}
-    try { rs.shape.getText().setString(text); } catch (e) { return slideFail('写入形状文字失败: ' + errStr(e)); }
+    try {
+      if (previousText !== text) {
+        rs.shape.getText().setString(text);
+        // Impress setString alone leaves isModified false; trigger the normal autosave listener.
+        xModel.setModified(true);
+      }
+    } catch (e) { return slideFail('写入形状文字失败: ' + errStr(e)); }
     return { success: true, previousText: previousText };
   },
   // [幻灯片·写] 跨页（或限定单页）查找替换文字，覆盖普通文本框与表格单元格。
@@ -8666,58 +11724,64 @@ const EXEC = {
     if (!isImpressDoc()) return slideFail(NOT_PRESENTATION_MSG);
     const searchText = p && p.searchText != null ? String(p.searchText) : '';
     if (!searchText) return slideFail('缺少 searchText 参数');
-    const replaceText = p && p.replaceText != null ? String(p.replaceText) : '';
-    const all = !!(p && p.all);
+    if (p.replaceText == null) return slideError('SLIDE_MISSING_REPLACE_TEXT');
+    const replaceText = String(p.replaceText);
+    const all = p.all === true;
+    if ((p.shapeName != null || p.expectedText != null) && p.slideNumber == null) {
+      return slideError('SLIDE_TARGET_REQUIRED');
+    }
+    if (p.expectedText != null && !p.shapeName) return slideError('SLIDE_EXPECTED_TARGET_REQUIRED');
     let pages;
     try { pages = xModel.getDrawPages(); } catch (e) { return slideFail('读取幻灯片列表失败: ' + errStr(e)); }
     const count = pages.getCount();
     let from = 0, to = count - 1;
-    if (p && p.slideNumber != null) {
+    if (p.slideNumber != null) {
       const want = Number(p.slideNumber);
-      if (!Number.isFinite(want) || want < 1 || want > count) {
-        return slideFail('页码越界: ' + p.slideNumber + '（共 ' + count + ' 页，1 开始）');
-      }
+      if (!Number.isInteger(want) || want < 1 || want > count) return slideError('SLIDE_INVALID_NUMBER');
       from = to = want - 1;
     }
     let replaced = 0;
     const hits = [];
-    for (let pi = from; pi <= to; pi++) {
-      let page; try { page = pages.getByIndex(pi); } catch (e) { continue; }
-      ensureShapeNames(page);
-      const n = page.getCount();
-      for (let si = 0; si < n; si++) {
-        let shape; try { shape = page.getByIndex(si); } catch (e) { continue; }
-        const kind = shapeKind(shape);
-        if (kind === 'table') {
-          let table; try { table = shape.getPropertyValue('Model'); } catch (e) { continue; }
-          let rows = 0, cols = 0;
-          try { rows = table.getRows().getCount(); cols = table.getColumns().getCount(); } catch (e) { continue; }
-          for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-              let cell; try { cell = table.getCellByPosition(c, r); } catch (e) { continue; }
-              let cellText = ''; try { cellText = cell.getString() || ''; } catch (e) {}
-              if (!cellText || cellText.indexOf(searchText) === -1) continue;
-              const hitCount = cellText.split(searchText).length - 1;
-              const newText = cellText.split(searchText).join(replaceText);
-              try { cell.setString(newText); } catch (e) { continue; }
-              replaced += hitCount;
-              let name = ''; try { name = shape.getName(); } catch (e) {}
-              hits.push({ slideNumber: pi + 1, shapeName: name });
-              if (!all) return { success: true, replaced: replaced, hits: hits };
-            }
+    try {
+      for (let pi = from; pi <= to; pi++) {
+        const page = pages.getByIndex(pi);
+        ensureShapeNames(page);
+        let target = null;
+        if (p.shapeName) {
+          target = resolveShape(page, p);
+          if (target.error) return slideFail(target.error);
+          if (p.expectedText != null && shapeText(target.shape) !== String(p.expectedText)) {
+            return slideError('SLIDE_STALE_TEXT');
           }
-          continue;
         }
-        const text = shapeText(shape);
-        if (!text || text.indexOf(searchText) === -1) continue;
-        const hitCount = text.split(searchText).length - 1;
-        const newText = text.split(searchText).join(replaceText);
-        try { shape.getText().setString(newText); } catch (e) { continue; }
-        replaced += hitCount;
-        let name = ''; try { name = shape.getName(); } catch (e) {}
-        hits.push({ slideNumber: pi + 1, shapeName: name });
-        if (!all) return { success: true, replaced: replaced, hits: hits };
+        for (let si = 0; si < page.getCount(); si++) {
+          if (target && si !== target.index) continue;
+          const shape = target ? target.shape : page.getByIndex(si);
+          const name = shape.getName();
+          const replaceIn = (text, row, col) => {
+            const changed = slideReplaceTextRange(text, searchText, replaceText, all);
+            if (changed) {
+              replaced += changed;
+              hits.push({ slideNumber: pi + 1, shapeName: name, row: row, col: col, replaced: changed });
+            }
+          };
+          if (shapeKind(shape) === 'table') {
+            const table = shape.getPropertyValue('Model');
+            for (let row = 0; row < table.getRows().getCount(); row++) {
+              for (let col = 0; col < table.getColumns().getCount(); col++) {
+                replaceIn(table.getCellByPosition(col, row), row, col);
+                if (!all && replaced) return { success: true, replaced: replaced, hits: hits };
+              }
+            }
+          } else if (shapeText(shape).includes(searchText)) {
+            replaceIn(shape.getText(), null, null);
+            if (!all && replaced) return { success: true, replaced: replaced, hits: hits };
+          }
+        }
       }
+    } catch (e) {
+      return slideError('SLIDE_REPLACE_INTERRUPTED',
+        { detail: errStr(e), replaced: replaced, hits: hits, outcomeUnknown: true, retryable: false });
     }
     return { success: true, replaced: replaced, hits: hits };
   },
@@ -8741,135 +11805,133 @@ const EXEC = {
     } else {
       insertIndex = count; // 缺省末尾
     }
-    // 真机实测（r4）：XDrawPages.insertNewByIndex(nIndex) 的落点在这个引擎构建上
-    // 不总是 nIndex 本身——边界情形（nIndex===当前页数）与看似正常的中间索引都
-    // 观察到过偏差（debug_impress_bare_append 探针 + e2e 组 22 实测均复现），死信
-    // 任何具体传入索引都不可靠。改用唯一没有歧义的调用方式：永远插在最前面
-    // （index 0，不存在"边界"这回事），定位到它后再用已验证可靠的 .uno:MovePage*
-    // 挪到真正目标位置（与 slide_move_page 同一套实现，已过多组真机断言）。
-    // 另外，文档已经历过一次插入后，同一文档上再插入可能连带清空某个"仅标题"
-    // 版式（无内容占位符）既有页的标题占位符——与我们往新页里塞了什么完全无关
-    // （裸调、不加任何内容也一样复现），疑似 r4 引擎对 AutoLayout 占位符的重算
-    // 逻辑本身有 bug，规避不了触发条件；用"插入前拍全篇标题快照、插入后逐页核对
-    // 补回"的自愈兜底，保证"新增一页"这个操作的净效果里不会有别的页丢内容。
+    // Keep the XDrawPage returned by insertNewByIndex. A new page may contain
+    // inherited placeholders: looking for an empty page can select an old page.
+    // Only title identity is needed for the retention safeguard. Do not run
+    // the full table/image/geometry classification for every existing object.
+    const isTitle = shape => {
+      try { return shape.supportsService('com.sun.star.presentation.TitleTextShape'); }
+      catch (e) { return false; }
+    };
     const beforeTitles = [];
     for (let i = 0; i < count; i++) {
-      let pg; try { pg = pages.getByIndex(i); } catch (e) { beforeTitles.push(null); continue; }
-      let t = null;
-      for (let s = 0; s < pg.getCount(); s++) {
-        let sh; try { sh = pg.getByIndex(s); } catch (e) { continue; }
-        if (shapeKind(sh) === 'title') { try { t = shapeText(sh); } catch (e) {} break; }
-      }
-      beforeTitles.push(t);
-    }
-    try { pages.insertNewByIndex(0); } catch (e) { return slideFail('插入幻灯片失败: ' + errStr(e)); }
-    let pages2;
-    try { pages2 = xModel.getDrawPages(); } catch (e) { return slideFail('重新读取幻灯片列表失败: ' + errStr(e)); }
-    const newCount = pages2.getCount();
-    if (newCount !== count + 1) return slideFail('插入幻灯片后页数未增加，疑似失败');
-    // 鲁棒定位新页：index 0 应当就是刚创建的空白页（形状数=0）；万一这个假设也不
-    // 成立（引擎行为超出预期），退化为全篇扫描找空白页，找不到就明确报错，不要
-    // 悄悄操作错的页。
-    let newIndex = -1;
-    try { if (pages2.getByIndex(0).getCount() === 0) newIndex = 0; } catch (e) {}
-    if (newIndex === -1) {
-      for (let i = 0; i < newCount; i++) {
-        let cand; try { cand = pages2.getByIndex(i); } catch (e) { continue; }
-        let n = -1; try { n = cand.getCount(); } catch (e) {}
-        if (n === 0) { newIndex = i; break; }
+      const pg = pages.getByIndex(i);
+      for (let si = 0; si < pg.getCount(); si++) {
+        const shape = pg.getByIndex(si);
+        if (isTitle(shape)) {
+          beforeTitles.push({ page: pg, text: shapeText(shape) });
+          break;
+        }
       }
     }
-    if (newIndex === -1) return slideFail('插入幻灯片后无法定位新页（未找到空白页）');
-    let page;
-    try { page = pages2.getByIndex(newIndex); } catch (e) { return slideFail('定位新页失败: ' + errStr(e)); }
-    // 挪位放在自愈之前：自愈是在既有页上补形状，不改变页顺序，先做后做都不影响
-    // movePageTo 的落点判定（它每步都重新核对 page 的实际位置，不依赖顺序假设）。
-    if (newIndex !== insertIndex) {
-      const finalIndex = movePageTo(page, insertIndex);
-      if (finalIndex !== insertIndex) {
-        return slideFail('新页未能挪到预期位置: 目标第 ' + (insertIndex + 1) + ' 页，实际落在第 ' + (finalIndex + 1) + ' 页');
-      }
-    }
-    // 自愈核对：此刻新页已确定落在 insertIndex（要么本来就是，要么挪位已复核通过）。
-    // "index i（i!==insertIndex）对应插入前 index：i<insertIndex 时是 i 本身，
-    // 否则是 i-1"——因为其余既有页彼此之间的相对顺序全程不变，只是被新页插入的
-    // 那个位置隔开，这条位置算术与新页具体经过几次挪位无关，只看它最终停在哪。
+    // Coalesce synchronous structural changes without locking the view controller.
+    // Partial insertions must restore the listener and still reach autosave.
+    suspendModifyListener();
     try {
-      const pagesFinal = xModel.getDrawPages();
-      const finalCount = pagesFinal.getCount();
-      for (let i = 0; i < finalCount; i++) {
-        if (i === insertIndex) continue;
-        const preIdx = i < insertIndex ? i : i - 1;
-        if (preIdx < 0 || preIdx >= beforeTitles.length) continue;
-        const expected = beforeTitles[preIdx];
-        if (expected == null) continue; // 该页原本就没有标题占位符，不用管
-        let pg; try { pg = pagesFinal.getByIndex(i); } catch (e) { continue; }
-        let curTitle = null;
-        for (let s = 0; s < pg.getCount(); s++) {
-          let sh; try { sh = pg.getByIndex(s); } catch (e) { continue; }
-          if (shapeKind(sh) === 'title') { try { curTitle = shapeText(sh); } catch (e) {} break; }
-        }
-        if (curTitle === expected) continue; // 完好
-        try {
-          const repairShape = xModel.createInstance('com.sun.star.presentation.TitleTextShape');
-          pg.add(repairShape);
-          let rpw = 720, rph = 540;
-          try { rpw = Number(pg.getPropertyValue('Width')); rph = Number(pg.getPropertyValue('Height')); } catch (e) {}
-          repairShape.setPosition(new css.awt.Point({ X: Math.round(rpw * 0.08), Y: Math.round(rph * 0.05) }));
-          repairShape.setSize(new css.awt.Size({ Width: Math.round(rpw * 0.84), Height: Math.round(rph * 0.15) }));
-          repairShape.getText().setString(expected);
-        } catch (e) { /* 自愈失败不阻断主流程，已尽力保留原内容 */ }
-      }
-    } catch (e) { /* 自愈整体失败不阻断主流程 */ }
-    // layout 只在调用方显式给出时才碰这个属性。title/body 走手工 createInstance
-    // 真占位符服务类型（presentation.TitleTextShape / OutlineTextShape）直接
-    // page.add()，**不经过 Layout 属性**——保留 slide_get_page/slide_get_overview
-    // 靠 shapeKind() 识别 'title'/'placeholder' 的既有读取路径不用改；createInstance
-    // 失败（真机未核实这两个服务在未设 Layout 时能否独立
-    // 创建）时回退普通文本框，保证功能不因服务名不可用而整体失败。
-    const layoutIn = p && p.layout != null ? Number(p.layout) : null;
-    if (layoutIn != null) { try { page.setPropertyValue('Layout', shortAny(layoutIn)); } catch (e) {} }
-    const wantTitle = p && p.title != null ? String(p.title) : null;
-    const wantBody = p && p.body != null ? String(p.body) : null;
-    let pw = 720, ph = 540; // 缺省 fallback（1/100mm），读不到页面尺寸时仍能给出合理位置
-    try { pw = Number(page.getPropertyValue('Width')); ph = Number(page.getPropertyValue('Height')); } catch (e) {}
-    function createPlaceholderShape(service) {
-      try { const s = xModel.createInstance(service); page.add(s); return s; }
+      let page;
+      // LO 24.2 InsertSdPage inserts AFTER the supplied 0-based predecessor,
+      // despite the XDrawPages method name. Passing the destination shifts it one
+      // page too far and needlessly relies on a separate UI selection to move it.
+      // Source: LibreOffice/core libreoffice-24-2 sd/source/ui/unoidl/unomodel.cxx.
+      try { page = pages.insertNewByIndex(Math.max(0, insertIndex - 1)); }
       catch (e) {
-        try { const s2 = xModel.createInstance('com.sun.star.drawing.TextShape'); page.add(s2); return s2; }
-        catch (e2) { return null; }
+        return slideError('SLIDE_INSERT_UNCERTAIN', { detail: errStr(e), outcomeUnknown: true, retryable: false });
       }
-    }
-    if (wantTitle != null) {
+      const partial = (stage, detail) => {
+        const actual = page ? locatePageIndex(page) : -1;
+        return slideError('SLIDE_INSERT_PARTIAL',
+          { created: true, stage: stage, detail: detail || null, slideNumber: actual >= 0 ? actual + 1 : null, retryable: false });
+      };
       try {
-        const titleShape = createPlaceholderShape('com.sun.star.presentation.TitleTextShape');
-        if (titleShape) {
-          titleShape.setPosition(new css.awt.Point({ X: Math.round(pw * 0.08), Y: Math.round(ph * 0.05) }));
-          titleShape.setSize(new css.awt.Size({ Width: Math.round(pw * 0.84), Height: Math.round(ph * 0.15) }));
-          titleShape.getText().setString(wantTitle);
+        if (!page) return partial('identity');
+        let newIndex = locatePageIndex(page);
+        if (newIndex < 0) return partial('locate');
+        if (newIndex !== insertIndex) {
+          newIndex = movePageTo(page, insertIndex);
+          if (newIndex !== insertIndex) return partial('move');
+        }
+        // Check retained page identities, never positional arithmetic after reordering.
+        // r4 can remove an existing title placeholder while inserting another page.
+        for (const previous of beforeTitles) {
+          let title = null;
           try {
-            const cur = titleShape.getText().createTextCursor();
-            cur.gotoStart(false); cur.gotoEnd(true);
-            setCharProp(cur, 'CharHeight', 28);
-            setCharProp(cur, 'CharWeight', css.awt.FontWeight.BOLD);
-          } catch (e) {}
+            for (let si = 0; si < previous.page.getCount(); si++) {
+              const shape = previous.page.getByIndex(si);
+              if (isTitle(shape)) { title = shape; break; }
+            }
+            if (title && shapeText(title) === previous.text) continue;
+            if (title) title.getText().setString(previous.text);
+            else {
+              const restored = xModel.createInstance('com.sun.star.presentation.TitleTextShape');
+              previous.page.add(restored);
+              const width = Number(previous.page.getPropertyValue('Width'));
+              const height = Number(previous.page.getPropertyValue('Height'));
+              restored.setPosition(new css.awt.Point({ X: Math.round(width * 0.08), Y: Math.round(height * 0.05) }));
+              restored.setSize(new css.awt.Size({ Width: Math.round(width * 0.84), Height: Math.round(height * 0.15) }));
+              restored.getText().setString(previous.text);
+            }
+          } catch (e) { return partial('restore-title', errStr(e)); }
         }
-      } catch (e) { /* 标题框创建失败不阻断整体插页 */ }
-    }
-    if (wantBody != null) {
-      try {
-        const bodyShape = createPlaceholderShape('com.sun.star.presentation.OutlineTextShape');
-        if (bodyShape) {
-          bodyShape.setPosition(new css.awt.Point({ X: Math.round(pw * 0.08), Y: Math.round(ph * 0.25) }));
-          bodyShape.setSize(new css.awt.Size({ Width: Math.round(pw * 0.84), Height: Math.round(ph * 0.65) }));
-          bodyShape.getText().setString(wantBody);
+        // layout 只在调用方显式给出时才碰这个属性。title/body 走手工 createInstance
+        // 真占位符服务类型（presentation.TitleTextShape / OutlineTextShape）直接
+        // page.add()，**不经过 Layout 属性**——保留 slide_get_page/slide_get_overview
+        // 靠 shapeKind() 识别 'title'/'placeholder' 的既有读取路径不用改；createInstance
+        // 失败（真机未核实这两个服务在未设 Layout 时能否独立
+        // 创建）时回退普通文本框，保证功能不因服务名不可用而整体失败。
+        const layoutIn = p && p.layout != null ? Number(p.layout) : null;
+        if (layoutIn != null) { try { page.setPropertyValue('Layout', shortAny(layoutIn)); } catch (e) { return partial('layout', errStr(e)); } }
+        const wantTitle = p && p.title != null ? String(p.title) : null;
+        const wantBody = p && p.body != null ? String(p.body) : null;
+        let pw = 25400, ph = 19050; // 10 × 7.5 inches in 1/100 mm
+        try { pw = Number(page.getPropertyValue('Width')); ph = Number(page.getPropertyValue('Height')); } catch (e) {}
+        function createPlaceholderShape(service) {
+          try { const s = xModel.createInstance(service); page.add(s); return s; }
+          catch (e) {
+            try { const s2 = xModel.createInstance('com.sun.star.drawing.TextShape'); page.add(s2); return s2; }
+            catch (e2) { return null; }
+          }
         }
-      } catch (e) { /* 正文框创建失败不阻断整体插页 */ }
+        if (wantTitle != null) {
+          try {
+            const titleShape = createPlaceholderShape('com.sun.star.presentation.TitleTextShape');
+            if (!titleShape) return partial('create-title');
+            if (titleShape) {
+              titleShape.setPosition(new css.awt.Point({ X: Math.round(pw * 0.08), Y: Math.round(ph * 0.05) }));
+              titleShape.setSize(new css.awt.Size({ Width: Math.round(pw * 0.84), Height: Math.round(ph * 0.15) }));
+              titleShape.getText().setString(wantTitle);
+              try {
+                const cur = titleShape.getText().createTextCursor();
+                cur.gotoStart(false); cur.gotoEnd(true);
+                setCharProp(cur, 'CharHeight', 28);
+                setCharProp(cur, 'CharWeight', css.awt.FontWeight.BOLD);
+              } catch (e) {}
+            }
+          } catch (e) { return partial('write-title', errStr(e)); }
+        }
+        if (wantBody != null) {
+          try {
+            const bodyShape = createPlaceholderShape('com.sun.star.presentation.OutlineTextShape');
+            if (!bodyShape) return partial('create-body');
+            if (bodyShape) {
+              bodyShape.setPosition(new css.awt.Point({ X: Math.round(pw * 0.08), Y: Math.round(ph * 0.25) }));
+              bodyShape.setSize(new css.awt.Size({ Width: Math.round(pw * 0.84), Height: Math.round(ph * 0.65) }));
+              bodyShape.getText().setString(wantBody);
+            }
+          } catch (e) { return partial('write-body', errStr(e)); }
+        }
+        ensureShapeNames(page);
+        try { if (ctrl && ctrl.setCurrentPage) ctrl.setCurrentPage(page); } catch (e) {}
+        let layoutOut = null; try { layoutOut = page.getPropertyValue('Layout'); } catch (e) {}
+        const shapes = [];
+        try { for (let i = 0; i < page.getCount(); i++) { const sh = page.getByIndex(i); shapes.push({ shapeName: sh.getName(), kind: shapeKind(sh) }); } } catch (e) {}
+        return { success: true, slideNumber: insertIndex + 1, layout: layoutOut, shapes: shapes, slides: slidePageListBrief(),
+          note: '新页之后的页码都已后移一位，后续操作以 slides 里的新页码为准；改新页文字用 shapes 里的 shapeName' };
+      } catch (e) { return partial('initialize', errStr(e)); }
+    } finally {
+      resumeModifyListener();
+      // Wake Qt's idle queue after restoring modification reporting.
+      Module.resumeMainLoop();
     }
-    ensureShapeNames(page);
-    try { if (ctrl && ctrl.setCurrentPage) ctrl.setCurrentPage(page); } catch (e) {}
-    let layoutOut = null; try { layoutOut = page.getPropertyValue('Layout'); } catch (e) {}
-    return { success: true, slideNumber: insertIndex + 1, layout: layoutOut };
   },
   // [幻灯片·写] 删除指定页。拒绝删到 0 页（至少保留一页）。
   slide_delete_page(p) {
@@ -8879,39 +11941,44 @@ const EXEC = {
     try { pages = xModel.getDrawPages(); } catch (e) { return slideFail('读取幻灯片列表失败: ' + errStr(e)); }
     if (pages.getCount() <= 1) return slideFail('无法删除：演示文稿只剩最后一页');
     try { pages.remove(r0.page); } catch (e) { return slideFail('删除幻灯片失败: ' + errStr(e)); }
-    return { success: true, slideCount: pages.getCount() };
+    return { success: true, slideCount: pages.getCount(), slides: slidePageListBrief(), note: '页码已重排，后续操作以 slides 里的新页码为准' };
   },
   // [幻灯片·写] 把指定页移到新位置。XDrawPages 只有 insert/remove、无直接 move API
   // （GenericDrawPage.Number 只读），走 .uno:MovePageUp/Down/First/Last 派发（同「删除键
   // 必须走 .uno: 调度」PR#164/166 一个经验），再用页在 getDrawPages() 里的实际下标
   // 双口径复核——不信 dispatch 本身的返回值。
   slide_move_page(p) {
-    const r0 = resolvePage(p); // 顺手把 slideNumber 设为当前页，MovePage* 作用于当前页
+    const pageArg = (p && p.slideNumber == null && p.fromSlide != null) ? Object.assign({}, p, { slideNumber: p.fromSlide }) : p;
+    const r0 = resolvePage(pageArg); // 顺手把 slideNumber 设为当前页，MovePage* 作用于当前页
     if (r0.error) return slideFail(r0.error);
     let pages;
     try { pages = xModel.getDrawPages(); } catch (e) { return slideFail('读取幻灯片列表失败: ' + errStr(e)); }
     const count = pages.getCount();
-    const to = p && p.toPosition != null ? Number(p.toPosition) : NaN;
+    const rawTo = p && (p.toPosition != null ? p.toPosition : p.toSlide);
+    const to = rawTo != null ? Number(rawTo) : NaN;
     if (!Number.isFinite(to) || to < 1 || to > count) {
-      return slideFail('toPosition 越界: ' + (p && p.toPosition) + '（共 ' + count + ' 页，1 开始）');
+      return slideFail('toPosition 越界: ' + rawTo + '（共 ' + count + ' 页，1 开始）');
     }
     const from = r0.index;
     const toIndex = to - 1;
     const finalIndex = movePageTo(r0.page, toIndex);
+    if (finalIndex !== toIndex && finalIndex >= 0) return slideMoveRetry(r0.page, from, to, toIndex);
     if (finalIndex !== toIndex) {
       return slideFail('移动幻灯片未达预期位置: 目标第 ' + to + ' 页，实际落在第 ' + (finalIndex + 1) + ' 页');
     }
-    return { success: true, from: from + 1, to: to };
+    return { success: true, from: from + 1, to: to, slides: slidePageListBrief(), note: '页码已重排，后续操作以 slides 里的新页码为准' };
   },
   // [幻灯片·写] 设置版式（AutoLayout short 常量）与/或母版（按名匹配 XMasterPagesSupplier）。
   // 至少给一个参数。
   slide_set_layout(p) {
     const r0 = resolvePage(p);
     if (r0.error) return slideFail(r0.error);
-    if (!p || (p.layout == null && (p.masterName == null || String(p.masterName).trim() === ''))) {
-      return slideFail('缺少 layout 或 masterName 参数（至少给一个）');
+    if (!p || (p.layout == null && p.backgroundColor == null && (p.masterName == null || String(p.masterName).trim() === ''))) {
+      return slideError('SLIDE_LAYOUT_REQUIRED');
     }
     const page = r0.page;
+    const backgroundColor = p.backgroundColor != null ? parseColor(p.backgroundColor) : null;
+    if (p.backgroundColor != null && backgroundColor == null) return slideError('SLIDE_INVALID_BACKGROUND');
     if (p.layout != null) {
       const layoutNum = Number(p.layout);
       if (!Number.isFinite(layoutNum)) return slideFail('layout 必须是数字（AutoLayout 常量）');
@@ -8929,9 +11996,18 @@ const EXEC = {
       if (!found) return slideFail('母版不存在: ' + wantMaster);
       try { page.setMasterPage(found); } catch (e) { return slideFail('设置母版失败: ' + errStr(e)); }
     }
+    if (p.backgroundColor != null) {
+      try {
+        // XDrawPage.Background is a property set; assign it back after editing.
+        const background = xModel.createInstance('com.sun.star.drawing.Background');
+        background.setPropertyValue('FillStyle', css.drawing.FillStyle.SOLID);
+        background.setPropertyValue('FillColor', backgroundColor);
+        page.setPropertyValue('Background', background);
+      } catch (e) { return slideError('SLIDE_BACKGROUND_FAILED', { detail: errStr(e) }); }
+    }
     let layoutOut = null; try { layoutOut = page.getPropertyValue('Layout'); } catch (e) {}
     let masterOut = ''; try { masterOut = page.getMasterPage().getName(); } catch (e) {}
-    return { success: true, layout: layoutOut, layoutName: layoutNameOf(layoutOut), masterName: masterOut };
+    return { success: true, layout: layoutOut, layoutName: layoutNameOf(layoutOut), masterName: masterOut, background: slideBackground(page) };
   },
   // [幻灯片·写] 插入文本框。位置尺寸缺省值（磅）：left/top=100, width=300, height=80。
   slide_add_text_box(p) {
@@ -8957,11 +12033,12 @@ const EXEC = {
         cur.gotoStart(false); cur.gotoEnd(true);
         if (p.fontSize != null) setCharProp(cur, 'CharHeight', Number(p.fontSize));
         if (p.bold != null) setCharProp(cur, 'CharWeight', p.bold ? css.awt.FontWeight.BOLD : css.awt.FontWeight.NORMAL);
-        if (p.color != null) { const c = parseColor(p.color); if (c != null) setCharProp(cur, 'CharColor', c); }
+        if (p.color != null) { const c = parseColor(p.color); if (c != null) setCharColor(cur, c); }
       } catch (e) {}
     }
     ensureShapeNames(r0.page);
     let name = ''; try { name = shape.getName(); } catch (e) {}
+    try { if (ctrl && ctrl.select) ctrl.select(shape); } catch (e) {}
     return { success: true, shapeName: name };
   },
   // [幻灯片·写] 插入形状：矩形/椭圆/线条走对应 UNO 服务；三角形走 CustomShape +
@@ -9003,6 +12080,7 @@ const EXEC = {
     }
     ensureShapeNames(r0.page);
     let name = ''; try { name = shape.getName(); } catch (e) {}
+    try { if (ctrl && ctrl.select) ctrl.select(shape); } catch (e) {}
     return { success: true, shapeName: name };
   },
   // [幻灯片·写] 按 shapeName 精确删除一个形状。
@@ -9063,6 +12141,7 @@ const EXEC = {
     ensureShapeNames(r0.page);
     const rs = resolveShape(r0.page, p);
     if (rs.error) return slideFail(rs.error);
+    if (shapeKind(rs.shape) === 'table') return slideError('SLIDE_TABLE_TEXT_TOOL_REQUIRED');
     let xText; try { xText = rs.shape.getText(); } catch (e) { return slideFail('该形状不支持文字: ' + errStr(e)); }
     const anchorText = p && p.anchorText != null && String(p.anchorText) !== '' ? String(p.anchorText) : null;
     let cur;
@@ -9079,8 +12158,30 @@ const EXEC = {
     } else {
       try { cur = xText.createTextCursor(); cur.gotoStart(false); cur.gotoEnd(true); }
       catch (e) { return slideFail('选中形状全部文字失败: ' + errStr(e)); }
-      if ((cur.getString() || '').length === 0) return slideFail('该形状没有文字，无法格式化');
+      if ((cur.getString() || '').length === 0) {
+        if (rs.shape && typeof rs.shape.setPropertyValue === 'function') cur = rs.shape;
+        else return slideFail('该形状没有文字，无法格式化');
+      }
     }
+    // Validate all paragraph inputs before any character or paragraph mutation.
+    const numericParagraphKeys = ['lineSpacingValue', 'spaceBeforePt', 'spaceAfterPt',
+      'spaceBeforeLines', 'spaceAfterLines', 'firstLineIndentPt', 'firstLineIndentChars',
+      'leftIndentPt', 'leftIndentChars', 'rightIndentPt'];
+    for (const key of numericParagraphKeys) {
+      if (p[key] != null && (!Number.isFinite(Number(p[key])) ||
+        (key.startsWith('space') && Number(p[key]) < 0))) {
+        return slideError('SLIDE_INVALID_PARAGRAPH_FORMAT', { parameter: key });
+      }
+    }
+    // LOWA's PPTX export drops nonzero ParaRightMargin; do not report an edit
+    // that disappears when the presentation is saved and reopened.
+    if (p.rightIndentPt != null && Number(p.rightIndentPt) !== 0)
+      return slideError('SLIDE_RIGHT_INDENT_UNSUPPORTED', { parameter: 'rightIndentPt' });
+    if (p.lineSpacingValue != null && p.lineSpacingMode == null)
+      return slideError('SLIDE_INVALID_PARAGRAPH_FORMAT', { parameter: 'lineSpacingMode' });
+    const parsedSpacing = p.lineSpacingMode != null ? parseLineSpacingSpec(p.lineSpacingMode, p.lineSpacingValue) : null;
+    if (parsedSpacing && (parsedSpacing.error || !Number.isFinite(parsedSpacing.ls.Height) || parsedSpacing.ls.Height > 32767))
+      return slideError('SLIDE_INVALID_PARAGRAPH_FORMAT', { parameter: 'lineSpacingMode' });
     const applied = {};
     if (p.fontName != null) { setCharProp(cur, 'CharFontName', String(p.fontName)); applied.fontName = String(p.fontName); }
     if (p.fontSize != null) { setCharProp(cur, 'CharHeight', Number(p.fontSize)); applied.fontSize = Number(p.fontSize); }
@@ -9094,14 +12195,15 @@ const EXEC = {
       try { cur.setPropertyValue('CharUnderline', v); applied.underline = String(p.underline).toLowerCase(); }
       catch (e) { return slideFail('设置下划线失败: ' + errStr(e)); }
     }
-    if (p.strikethrough != null) {
-      try { cur.setPropertyValue('CharStrikeout', p.strikethrough ? css.awt.FontStrikeout.SINGLE : css.awt.FontStrikeout.NONE); applied.strikethrough = !!p.strikethrough; }
+    const strikeIn = p.strikethrough != null ? p.strikethrough : p.strikeout;
+    if (strikeIn != null) {
+      try { cur.setPropertyValue('CharStrikeout', strikeIn ? css.awt.FontStrikeout.SINGLE : css.awt.FontStrikeout.NONE); applied.strikethrough = !!strikeIn; }
       catch (e) { return slideFail('设置删除线失败: ' + errStr(e)); }
     }
     if (p.color != null) {
       const c = parseColor(p.color, { auto: -1 });
       if (c == null) return slideFail('颜色格式非法: ' + p.color + '（用 #RRGGBB 或 auto）');
-      try { cur.setPropertyValue('CharColor', c); applied.color = String(p.color); }
+      try { setCharColor(cur, c); applied.color = String(p.color); }
       catch (e) { return slideFail('设置颜色失败: ' + errStr(e)); }
     }
     if (p.alignment != null) {
@@ -9112,6 +12214,27 @@ const EXEC = {
       try { cur.setPropertyValue('ParaAdjust', v2); applied.alignment = String(p.alignment).toLowerCase(); }
       catch (e) { return slideFail('设置对齐失败: ' + errStr(e)); }
     }
+    try {
+      if (parsedSpacing) {
+        cur.setPropertyValue('ParaLineSpacing', new css.style.LineSpacing(parsedSpacing.ls));
+        applied.lineSpacing = parsedSpacing.label;
+      }
+      const needsRelativeUnit = [p.spaceBeforeLines, p.spaceAfterLines, p.firstLineIndentChars, p.leftIndentChars].some(v => v != null);
+      const charPt = needsRelativeUnit ? effectiveCharHeightPt(cur, cur) : 1;
+      for (const [ptKey, relativeKey, property, factor, relativeFirst] of [
+        ['spaceBeforePt', 'spaceBeforeLines', 'ParaTopMargin', charPt * 1.2, false],
+        ['spaceAfterPt', 'spaceAfterLines', 'ParaBottomMargin', charPt * 1.2, false],
+        ['firstLineIndentPt', 'firstLineIndentChars', 'ParaFirstLineIndent', charPt, true],
+        ['leftIndentPt', 'leftIndentChars', 'ParaLeftMargin', charPt, true],
+        ['rightIndentPt', null, 'ParaRightMargin', 1, false]
+      ]) {
+        const key = relativeFirst && p[relativeKey] != null ? relativeKey : p[ptKey] != null ? ptKey : relativeKey;
+        if (key && p[key] != null) {
+          cur.setPropertyValue(property, ptToMm100(Number(p[key]) * (key === ptKey ? 1 : factor)));
+          applied[key] = Number(p[key]);
+        }
+      }
+    } catch (e) { return slideError('SLIDE_PARAGRAPH_FORMAT_FAILED', { detail: errStr(e), applied }); }
     if (Object.keys(applied).length === 0) return slideFail('未给出任何格式参数');
     return { success: true, shapeName: rs.name, applied: applied };
   },
@@ -9169,8 +12292,9 @@ const EXEC = {
     const r0 = resolvePage(p);
     if (r0.error) return slideFail(r0.error);
     const rowsData = p && Array.isArray(p.rowsJson) ? p.rowsJson : null;
-    if (rowsData != null && (!rowsData.length || !Array.isArray(rowsData[0]))) {
-      return slideFail('rowsJson 必须是非空二维数组');
+    if (rowsData != null && (!rowsData.length || rowsData.some(row =>
+      !Array.isArray(row) || !row.length || row.length !== rowsData[0].length))) {
+      return slideError('SLIDE_INVALID_TABLE_DATA');
     }
     let rowCount, colCount;
     if (rowsData) { rowCount = rowsData.length; colCount = rowsData[0].length; }
@@ -9206,17 +12330,31 @@ const EXEC = {
     if (afterRows !== rowCount || afterCols !== colCount) {
       return slideFail('表格行列数调整未生效（目标 ' + rowCount + '×' + colCount + '，实际 ' + afterRows + '×' + afterCols + '）');
     }
+    ensureShapeNames(r0.page);
+    let name = ''; try { name = shape.getName(); } catch (e) {}
     if (rowsData) {
       for (let rIdx = 0; rIdx < rowCount; rIdx++) {
         for (let cIdx = 0; cIdx < colCount; cIdx++) {
           const v = rowsData[rIdx][cIdx];
-          try { table.getCellByPosition(cIdx, rIdx).setString(v == null ? '' : String(v)); } catch (e) {}
+          try { table.getCellByPosition(cIdx, rIdx).setString(v == null ? '' : String(v)); }
+          catch (e) { return slideError('SLIDE_TABLE_WRITE_PARTIAL', { created: true, retryable: false, shapeName: name, row: rIdx, col: cIdx, detail: errStr(e) }); }
         }
       }
     }
-    ensureShapeNames(r0.page);
-    let name = ''; try { name = shape.getName(); } catch (e) {}
-    return { success: true, shapeName: name, rows: rowCount, cols: colCount };
+    try {
+      // Inserted rows inherit the original full-table height. Normalize only after
+      // all rows, columns and content exist; text may impose a larger minimum.
+      for (let c = 0; c < colCount; c++) table.getColumns().getByIndex(c).setPropertyValue('Width', ptToMm100(widthPt / colCount));
+      for (let r = 0; r < rowCount; r++) table.getRows().getByIndex(r).setPropertyValue('Height', ptToMm100(heightPt / rowCount));
+    const actualSize = shape.getSize();
+    const actualWidth = hmmToPt(actualSize.Width), actualHeight = hmmToPt(actualSize.Height);
+    const rowHeightsPt = Array.from({ length: rowCount }, (_, r) => hmmToPt(table.getRows().getByIndex(r).getPropertyValue('Height')));
+    const columnWidthsPt = Array.from({ length: colCount }, (_, c) => hmmToPt(table.getColumns().getByIndex(c).getPropertyValue('Width')));
+    try { if (ctrl && ctrl.select) ctrl.select(shape); } catch (e) {}
+    return { success: true, shapeName: name, rows: rowCount, cols: colCount,
+      width: actualWidth, height: actualHeight, rowHeightsPt, columnWidthsPt,
+      exceedsRequestedSize: actualWidth > widthPt + 0.1 || actualHeight > heightPt + 0.1 };
+    } catch (e) { return slideError('SLIDE_TABLE_SIZE_PARTIAL', { created: true, retryable: false, shapeName: name, detail: errStr(e) }); }
   },
   // [幻灯片·看] 读一张表格形状为二维数组。不传 shapeName 要求该页只有一张表格。
   slide_table_read(p) {
@@ -9238,8 +12376,12 @@ const EXEC = {
       }
       cells.push(line);
     }
+    let rowHeightsPt = null, columnWidthsPt = null;
+    try { rowHeightsPt = Array.from({ length: rows }, (_, r) => hmmToPt(rt.table.getRows().getByIndex(r).getPropertyValue('Height'))); } catch (e) {}
+    try { columnWidthsPt = Array.from({ length: cols }, (_, c) => hmmToPt(rt.table.getColumns().getByIndex(c).getPropertyValue('Width'))); } catch (e) {}
     return {
       success: true, shapeName: rt.shapeName, rows: rows, cols: cols, cells: cells,
+      rowHeightsPt, columnWidthsPt,
       truncated: maxRows < rows || maxCols < cols,
     };
   },
@@ -9277,8 +12419,62 @@ const EXEC = {
     let rows = 0, cols = 0;
     try { rows = table.getRows().getCount(); cols = table.getColumns().getCount(); }
     catch (e) { return slideFail('读取表格行列数失败: ' + errStr(e)); }
+    const firstRow = p.row == null ? 0 : Number(p.row), firstCol = p.col == null ? 0 : Number(p.col);
+    const lastRow = p.endRow == null ? (p.row == null ? rows - 1 : firstRow) : Number(p.endRow);
+    const lastCol = p.endCol == null ? (p.col == null ? cols - 1 : firstCol) : Number(p.endCol);
+    const cellFormatKeys = ['fontName', 'fontSize', 'bold', 'color', 'fillColor', 'alignment'];
+    const hasCellFormat = cellFormatKeys.some(key => p[key] != null);
+    const color = p.color == null ? null : parseColor(p.color);
+    const fill = p.fillColor == null ? null : parseColor(p.fillColor);
+    const alignment = p.alignment == null ? null : ({ left: css.style.ParagraphAdjust.LEFT,
+      center: css.style.ParagraphAdjust.CENTER, right: css.style.ParagraphAdjust.RIGHT,
+      justify: css.style.ParagraphAdjust.BLOCK })[String(p.alignment).toLowerCase()];
+    if (![firstRow, firstCol, lastRow, lastCol].every(Number.isInteger) || firstRow < 0 || firstCol < 0 ||
+      lastRow < firstRow || lastCol < firstCol || lastRow >= rows || lastCol >= cols ||
+      (p.fontName != null && !String(p.fontName).trim()) ||
+      (p.fontSize != null && (!Number.isFinite(Number(p.fontSize)) || Number(p.fontSize) <= 0)) ||
+      (p.color != null && color == null) || (p.fillColor != null && fill == null) ||
+      (p.alignment != null && alignment == null)) return slideError('SLIDE_INVALID_CELL_FORMAT');
+    if (p.rowHeightsPt != null && (!Array.isArray(p.rowHeightsPt) || !p.rowHeightsPt.length ||
+      p.rowHeightsPt.some(h => h == null || !Number.isFinite(Number(h)) || Number(h) <= 0)))
+      return slideError('SLIDE_INVALID_CELL_FORMAT');
+    // Validate legacy options too before any cell formatting can mutate the table.
+    if ((p.borderColor != null && parseColor(p.borderColor, { black: 0 }) == null) ||
+      (p.borderWidthPt != null && (!Number.isFinite(Number(p.borderWidthPt)) || Number(p.borderWidthPt) < 0)) ||
+      (p.headerFill != null && String(p.headerFill).toLowerCase() !== 'none' && parseColor(p.headerFill) == null) ||
+      (p.columnWidthsPt != null && (!Array.isArray(p.columnWidthsPt) || !p.columnWidthsPt.length ||
+        p.columnWidthsPt.some(w => w == null || !Number.isFinite(Number(w)) || Number(w) <= 0))))
+      return slideError('SLIDE_INVALID_CELL_FORMAT');
     const result = { success: true, shapeName: rt.shapeName };
     let didAnything = false;
+
+    if (hasCellFormat) {
+      didAnything = true;
+      let cellsOk = 0;
+      for (let r = firstRow; r <= lastRow; r++) {
+        for (let c = firstCol; c <= lastCol; c++) {
+          try {
+            const cell = table.getCellByPosition(c, r);
+            if (fill != null) {
+              cell.setPropertyValue('FillStyle', css.drawing.FillStyle.SOLID);
+              cell.setPropertyValue('FillColor', fill);
+            }
+            if (cellFormatKeys.some(key => key !== 'fillColor' && p[key] != null)) {
+              let cur;
+              try { cur = cell.createTextCursor(); } catch (e) { cur = cell.getText().createTextCursor(); }
+              cur.gotoStart(false); cur.gotoEnd(true);
+              if (p.fontName != null) setCharProp(cur, 'CharFontName', String(p.fontName));
+              if (p.fontSize != null) setCharProp(cur, 'CharHeight', Number(p.fontSize));
+              if (p.bold != null) setCharProp(cur, 'CharWeight', p.bold ? css.awt.FontWeight.BOLD : css.awt.FontWeight.NORMAL);
+              if (color != null) setCharColor(cur, color);
+              if (alignment != null) cur.setPropertyValue('ParaAdjust', alignment);
+            }
+            cellsOk++;
+          } catch (e) { return slideError('SLIDE_CELL_FORMAT_PARTIAL', { cellsOk, row: r, col: c, shapeName: rt.shapeName, outcomeUnknown: true, retryable: false, detail: errStr(e) }); }
+        }
+      }
+      result.cells = { row: firstRow, col: firstCol, endRow: lastRow, endCol: lastCol, cellsOk };
+    }
 
     if (p && p.headerBold != null) {
       didAnything = true;
@@ -9303,11 +12499,10 @@ const EXEC = {
       didAnything = true;
       const widthMm = p.borderWidthPt != null ? ptToMm100(Number(p.borderWidthPt)) : ptToMm100(1);
       const colorNum = p.borderColor != null ? parseColor(p.borderColor, { black: 0 }) : 0;
-      if (p.borderColor != null && colorNum == null) return slideFail('borderColor 格式非法: ' + p.borderColor + '（用 #RRGGBB）');
       const solid = (css.table.BorderLineStyle && css.table.BorderLineStyle.SOLID != null) ? css.table.BorderLineStyle.SOLID : 0;
       let bl;
       try { bl = new css.table.BorderLine2({ Color: colorNum == null ? 0 : colorNum, LineWidth: widthMm, LineStyle: solid }); }
-      catch (e) { return slideFail('构建边框样式失败: ' + errStr(e)); }
+      catch (e) { return slideError('SLIDE_CELL_FORMAT_PARTIAL', { shapeName: rt.shapeName, outcomeUnknown: true, retryable: false, detail: errStr(e) }); }
       let ok = 0, fail = 0;
       for (let rIdx = 0; rIdx < rows; rIdx++) {
         for (let cIdx = 0; cIdx < cols; cIdx++) {
@@ -9325,13 +12520,28 @@ const EXEC = {
       if (ok === 0) result.borders.note = 'Impress 表格单元格未暴露 Top/Bottom/Left/RightBorder 属性（引擎不支持或本 API 路径不适用），边框设置未生效';
     }
 
+    if (p && p.headerFill != null) {
+      didAnything = true;
+      const fillVal = String(p.headerFill).toLowerCase() === 'none' ? -1 : parseColor(p.headerFill);
+      const FILL_STYLE = (css.drawing && css.drawing.FillStyle) || { NONE: 0, SOLID: 1 };
+      let ok = 0, fail = 0;
+      for (let c = 0; c < cols; c++) {
+        try {
+          const cell = table.getCellByPosition(c, 0);
+          if (fillVal === -1) cell.setPropertyValue('FillStyle', FILL_STYLE.NONE);
+          else { cell.setPropertyValue('FillStyle', FILL_STYLE.SOLID); cell.setPropertyValue('FillColor', fillVal); }
+          ok++;
+        } catch (e) { fail++; }
+      }
+      result.headerFill = { applied: ok > 0, cellsOk: ok, cellsFailed: fail };
+    }
+
     if (p && Array.isArray(p.columnWidthsPt)) {
       didAnything = true;
       let ok = 0, fail = 0;
       const n = Math.min(p.columnWidthsPt.length, cols);
       for (let i = 0; i < n; i++) {
         const wPt = Number(p.columnWidthsPt[i]);
-        if (!Number.isFinite(wPt) || wPt <= 0) { fail++; continue; }
         try { table.getColumns().getByIndex(i).setPropertyValue('Width', ptToMm100(wPt)); ok++; }
         catch (e) { fail++; }
       }
@@ -9339,7 +12549,25 @@ const EXEC = {
       if (ok === 0) result.columnWidths.note = 'Impress 表格列未暴露可写的 Width 属性（引擎不支持），列宽设置未生效';
     }
 
+    if (Array.isArray(p.rowHeightsPt)) {
+      didAnything = true;
+      let rowsOk = 0;
+      try {
+        for (let r = 0; r < Math.min(rows, p.rowHeightsPt.length); r++) {
+          table.getRows().getByIndex(r).setPropertyValue('Height', ptToMm100(p.rowHeightsPt[r]));
+          rowsOk++;
+        }
+        result.rowHeights = { rowsOk, actualPt: Array.from({ length: rows }, (_, r) =>
+          hmmToPt(table.getRows().getByIndex(r).getPropertyValue('Height'))) };
+      } catch (e) { return slideError('SLIDE_ROW_HEIGHT_FAILED', { rowsOk, shapeName: rt.shapeName, outcomeUnknown: true, retryable: false, detail: errStr(e) }); }
+    }
+
     if (!didAnything) return slideFail('未给出任何样式参数（headerBold / borderWidthPt+borderColor / columnWidthsPt 至少给一个）');
+    if ([result.headerBold, result.borders, result.headerFill, result.columnWidths]
+      .some(receipt => receipt && (receipt.cellsFailed > 0 || receipt.colsFailed > 0))) {
+      return slideError('SLIDE_CELL_FORMAT_PARTIAL', { shapeName: rt.shapeName,
+        outcomeUnknown: true, retryable: false, applied: result });
+    }
     return result;
   },
   // [幻灯片·写] 在指定页查找文字并加超链接。优先走与 Writer 的
@@ -9355,12 +12583,23 @@ const EXEC = {
   slide_set_hyperlink(p) {
     const r0 = resolvePage(p);
     if (r0.error) return slideFail(r0.error);
-    const searchText = p && p.searchText != null ? String(p.searchText) : '';
-    if (!searchText) return slideFail('缺少 searchText 参数');
+    let searchText = p && p.searchText != null ? String(p.searchText) : '';
     const url = p && p.url != null ? String(p.url) : '';
     if (!url) return slideFail('缺少 url 参数');
     if (!/^https?:\/\//i.test(url)) return slideFail('url 仅支持 http/https: ' + url);
     ensureShapeNames(r0.page);
+    if (!searchText && p && p.shapeName) {
+      const rs = resolveShape(r0.page, p);
+      if (!rs.error && rs.shape) {
+        try {
+          const CA = (css.presentation && css.presentation.ClickAction) || { DOCUMENT: 6 };
+          rs.shape.setPropertyValue('OnClick', CA.DOCUMENT);
+          rs.shape.setPropertyValue('Bookmark', url);
+          return { success: true, shapeName: rs.name, url: url, via: 'shape-click-action' };
+        } catch (e) { return slideFail('设置超链接失败: ' + errStr(e)); }
+      }
+    }
+    if (!searchText) return slideFail('缺少 searchText 参数');
     const n = r0.page.getCount();
     for (let i = 0; i < n; i++) {
       let shape; try { shape = r0.page.getByIndex(i); } catch (e) { continue; }
@@ -9417,16 +12656,17 @@ const EXEC = {
 // 原语可能是 async（分批的 find_replace / apply_house_style），恢复必须等它 settle；
 // 批间仍让出事件循环，但后续最终文本命令及用户显示切换等待当前批次完成，
 // 避免中途改变段落成员，或收尾恢复覆盖用户的新选择。
-const FINAL_TEXT_ACTIONS = new Set(['get_completion_context', 'accept_completion', 'insert_completion_content', 'capture_writing_context', 'accept_writing_suggestion', 'get_review_context', 'goto_review_range', 'apply_review_edit']);
+const FINAL_TEXT_ACTIONS = new Set(['get_ai_pointer', 'get_completion_context', 'accept_completion', 'insert_completion_content', 'capture_writing_context', 'accept_writing_suggestion', 'get_review_context', 'goto_review_range', 'apply_review_edit']);
 // Only known readers may skip the view guard on a clean document. A write can
 // create its first deletion and then read paragraphAfterEdit in the same command.
 const FINAL_TEXT_READ_ACTIONS = new Set([
-  'get_selection', 'get_paragraph', 'get_outline', 'get_document_text', 'get_cursor_context',
+  'get_selection', 'get_paragraph', 'get_outline', 'get_document_text', 'get_cursor_context', 'get_ai_pointer',
   'get_clauses', 'get_cursor_rect', 'get_ui_state', 'get_ui_lang', 'get_doc_kind',
   'get_selection_hyperlink', 'get_hyperlink_at_cursor', 'get_bookmark_context',
   'get_review_context', 'get_review_layout', 'get_completion_context', 'capture_writing_context',
   'get_context_menu_context', 'find_text_locations', 'table_read', 'check_link_anchors',
   'list_styles', 'list_fonts', 'list_revisions', 'list_comments', 'var_list', 'debug_revisions', 'probe_modules',
+  'stash_selection_for_drag',
 ]);
 const AGENT_VIEW_EXEMPT = { set_revision_view: 1, export_document: 1, load_document: 1 };
 let agentViewPending = null;
@@ -9563,13 +12803,25 @@ function runRevisionResolution(fn, p, action) {
 function execCommand(reqId, action, params) {
   // 原语可以是 async（分批的 find_replace / apply_house_style）：返回 Promise 就等它，
   // 期间 worker 事件循环继续处理别的命令；同步原语路径与从前完全一样。
+  const commandDocSeq = docSeq;
   const finish = function (result) {
     delete CANCELLED[reqId];
     delete INFLIGHT[reqId];
     if (action === 'get_review_context' && result && result.success) result.cursorRectRaw = EXEC.get_cursor_rect();
+    // Host toolbar and guest IME undo/redo share this completion path. Page
+    // order can change without a count change, independently of save/typing.
+    if (result && result.success && ['slide_add_page', 'slide_delete_page', 'slide_move_page', 'undo', 'redo'].includes(action)
+        && commandDocSeq === docSeq && isImpressDoc()) post('structure_changed', { documentSeq: docSeq });
     post('result', { reqId: reqId, result: result });
   };
+  // Early cursor/zoom queries must not touch UNO model/controller before the
+  // first import. A rejected import stays retryable and never exposes a blank.
+  if (!xModel && !['load_document', 'set_app_theme', 'set_host_context_menu', 'set_style_profile'].includes(action)) {
+    finish({ success: false, code: 'DOCUMENT_NOT_READY', message: 'Document is not loaded yet' });
+    return;
+  }
   INFLIGHT[reqId] = true;
+  if (/revision|undo|redo|accept|reject|load_document|restore/.test(action)) noteRedlinesMayHaveBeenRemoved();
   let result;
   try {
     const p = params || {};
@@ -9591,11 +12843,22 @@ function execCommand(reqId, action, params) {
   } catch (e) {
     result = { success: false, message: errStr(e) };
   }
+  markSlideWriteModified(action, result);
   if (result && typeof result.then === 'function') {
     result.then(finish, function (e) { finish({ success: false, message: errStr(e) }); });
   } else {
     finish(result);
   }
+}
+
+// Impress 的不少 UNO 写入（备注、字符格式等）不置 modified、也不发修改事件：宿主收不到「有改动」，
+// 自动保存永远不触发，用户关掉就丢（office-tier1 实测 slide_write_notes / slide_format_text）。
+// 成功的 slide_* 写命令在这里统一标脏；读类命令按名排除。
+const SLIDE_READ_ACTION_RE = /^slide_(get_|read_|goto$|table_read$|count$|show_)/;
+function markSlideWriteModified(action, result) {
+  if (!/^slide_/.test(action) || SLIDE_READ_ACTION_RE.test(action)) return;
+  if (!result || typeof result.then === 'function' || result.success !== true) return;
+  try { if (isImpressDoc() && !xModel.isModified()) xModel.setModified(true); } catch (e) { /* ignore */ }
 }
 
 // ---- message loop --------------------------------------------------------
@@ -9612,6 +12875,6 @@ Module.zetajs.then(function (pZetajs) {
       default: log('unknown cmd: ' + e.data.cmd);
     }
   };
-  bootDoc();
+  bootDoc(self.__awdInitialDocument === true);
   post('thr_running');
 });

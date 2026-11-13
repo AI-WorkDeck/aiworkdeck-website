@@ -124,10 +124,12 @@ export function nativeCursorRectToPixels(raw, surface) {
  *        宿主用它刷新工具栏激活态——引擎的选区监听盖不住纯光标移动。
  * @param {()=>void} [options.onCommentRequested] Opens the host's comment form
  *        for Ctrl/Cmd+Alt+C without creating an empty native annotation.
+ * @param {()=>void} [options.onSaveRequested] Ctrl/Cmd+S: ask the host to save now
+ *        (the engine's own .uno:Save would only write into the WASM MEMFS).
  * @param {(msg:string)=>void} [options.onLog] optional progress/diagnostic log.
  * @returns {{element, focus, reposition, computeRect, destroy}}
  */
-export function attachImeOverlay({ canvas, commit, getCursorRaw, onEnter, sendCommand, onCursorMoved, onCommitted, onAssistanceKey, onCommentRequested, onLog } = {}) {
+export function attachImeOverlay({ canvas, commit, getCursorRaw, onEnter, sendCommand, onCursorMoved, onCommitted, onAssistanceKey, onCommentRequested, onSaveRequested, onError, onLog } = {}) {
   if (!canvas) throw new Error('attachImeOverlay: canvas is required')
   if (typeof commit !== 'function') throw new Error('attachImeOverlay: commit(text) is required')
   const log = (m) => { if (onLog) onLog(m) }
@@ -325,6 +327,15 @@ export function attachImeOverlay({ canvas, commit, getCursorRaw, onEnter, sendCo
     trailingCommit = text || null
     trailingTimer = trailingCommit ? setTimeout(() => { trailingCommit = null }, 0) : null
   }
+  const reportError = error => {
+    const message = String(error?.error || error?.message || error || '编辑未完成，请重试')
+    log('overlay input error: ' + message)
+    if (typeof onError === 'function') onError(message)
+  }
+  const checked = result => {
+    if (result?.success === false || result?.truncated) throw new Error(result.error || result.message || '内容未完整处理，请缩小范围后重试')
+    return result
+  }
   const doCommit = (t) => {
     // Emptying the box while the browser composition is open tears the DOM
     // buffer away from the IME's marked-text session (the preedit stops being
@@ -336,10 +347,11 @@ export function attachImeOverlay({ canvas, commit, getCursorRaw, onEnter, sendCo
     try { Promise.resolve(commit(t)).then(async (result) => {
       // Read the caret after insertion has completed, so suggestions follow the
       // new glyph/line instead of the position before the committed phrase.
+      checked(result)
       await reposition('commit')
       if (result?.success !== false && typeof onCommitted === 'function') onCommitted(t)
-    }).catch((e) => log('overlay commit error: ' + (e && e.message || e))) }
-    catch (e) { log('overlay commit error: ' + (e && e.message || e)) }
+    }).catch(reportError) }
+    catch (e) { reportError(e) }
   }
   input.addEventListener('compositionstart', () => {
     composing = true; compositionCommitted = false; committedText = ''; armTrailingCommit(null)
@@ -393,8 +405,8 @@ export function attachImeOverlay({ canvas, commit, getCursorRaw, onEnter, sendCo
   // Forward a worker UI command, then move the box to the (now-moved) cursor.
   const forward = (action, params, label) => {
     log('IME 覆盖层 → ' + label)
-    try { Promise.resolve(sendCommand(action, params || {})).then(reposition).catch((err) => log('overlay ' + action + ' error: ' + (err && err.message || err))) }
-    catch (err) { log('overlay ' + action + ' error: ' + (err && err.message || err)) }
+    try { Promise.resolve(sendCommand(action, params || {})).then(checked).then(reposition).catch(reportError) }
+    catch (err) { reportError(err) }
   }
   const ARROW_DIR = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' }
   const isMac = /Mac/i.test((navigator && navigator.platform) || '')
@@ -405,25 +417,26 @@ export function attachImeOverlay({ canvas, commit, getCursorRaw, onEnter, sendCo
   // as desktop); multi-line text becomes real paragraph breaks downstream.
   const copySelection = (cut) => {
     log('IME 覆盖层 → ' + (cut ? 'Cmd+X 剪切 / cut' : 'Cmd+C 复制 / copy'))
-    Promise.resolve(sendCommand('get_selection', {}))
+    Promise.resolve(sendCommand('get_selection', { clipboard: true }))
+      .then(checked)
       .then((r) => {
         const text = r && r.text
         if (!text) return
         return navigator.clipboard.writeText(text).then(() => {
           // selection-aware tracked delete — same engine path as Backspace
-          if (cut) return Promise.resolve(sendCommand('delete_backward', {})).then(reposition)
+          if (cut) return Promise.resolve(sendCommand('delete_backward', { clipboard: true })).then(checked).then(reposition)
         })
       })
-      .catch((err) => log('overlay clipboard error: ' + (err && err.message || err)))
+      .catch(reportError)
   }
   const pasteClipboard = () => {
     navigator.clipboard.readText()
       .then((t) => {
         if (!t) return
         log('IME 覆盖层 → Cmd+V 粘贴 / paste「' + (t.length > 20 ? t.slice(0, 20) + '…' : t) + '」')
-        return Promise.resolve(sendCommand('replace_selection', { text: t })).then(reposition)
+        return Promise.resolve(sendCommand('replace_selection', { text: t, clipboard: true })).then(checked).then(reposition)
       })
-      .catch((err) => log('overlay paste error: ' + (err && err.message || err)))
+      .catch(reportError)
   }
 
   // Control keys -> UNO (NOT into the single-line input). Only when NOT composing:
@@ -443,6 +456,14 @@ export function attachImeOverlay({ canvas, commit, getCursorRaw, onEnter, sendCo
       if (!e.repeat) onCommentRequested()
       return
     }
+    if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey
+      && (e.code === 'KeyS' || String(e.key).toLowerCase() === 's')
+      && typeof onSaveRequested === 'function') {
+      e.preventDefault()
+      e.stopPropagation()
+      if (!e.repeat) onSaveRequested()
+      return
+    }
     if (typeof onAssistanceKey === 'function' && onAssistanceKey(e)) return
     if (e.key === 'Enter') {
       e.preventDefault()
@@ -453,13 +474,13 @@ export function attachImeOverlay({ canvas, commit, getCursorRaw, onEnter, sendCo
       }
       if (typeof onEnter !== 'function') return
       log('IME 覆盖层 → 回车换行 / paragraph break')
-      try { Promise.resolve(onEnter()).then(reposition).catch((err) => log('overlay enter error: ' + (err && err.message || err))) }
-      catch (err) { log('overlay enter error: ' + (err && err.message || err)) }
+      try { Promise.resolve(onEnter()).then(checked).then(reposition).catch(reportError) }
+      catch (err) { reportError(err) }
       return
     }
     if (typeof sendCommand !== 'function') return
     // Desktop shortcuts (Cmd on mac / Ctrl on win). Unmatched mod-combos fall
-    // through UNPREVENTED so host-level accelerators (e.g. save) keep working.
+    // through UNPREVENTED so host-level accelerators keep working (Cmd/Ctrl+S is handled above).
     if (e.metaKey || e.ctrlKey) {
       const k = String(e.key).toLowerCase()
       if (k === 'z') {

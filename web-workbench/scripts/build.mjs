@@ -6,7 +6,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
-import {encodeFontRepresentations,mapFontRequests,mapFontFetching} from './asset-representations.mjs';
+import {encodeFontRepresentations,mapFontRequests,mapFontFetching,omitUnservedFonts} from './asset-representations.mjs';
 import {mapRuntimeTransport} from './runtime-transform.mjs';
 import {resourceSizes} from './progress-sizes.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
@@ -21,7 +21,7 @@ try{await fs.access(path.join(assetDir,'lowa/soffice.wasm'))}catch{throw Error('
 const assets=JSON.parse(await fs.readFile(path.join(root,'asset-manifest.json'),'utf8'));
 const sizes=await resourceSizes(assetDir,assets);
 await build({configFile:false,root,base:'/web/',build:{outDir:out,emptyOutDir:true,target:'es2022'}});
-await build({configFile:false,root:path.join(root,'vendor/core/frontend/src/zetaoffice'),base:'./',plugins:[{name:'web-editor-transport',transform(code,id){if(id===path.join(root,'vendor/core/frontend/src/zetaoffice/editor-main.js'))return `import {configureBootProgress} from ${JSON.stringify(path.join(root,'src/load-progress.js'))};\nconfigureBootProgress(${JSON.stringify(sizes)});\n`+mapFontRequests(code);if(id===path.join(root,'vendor/core/frontend/src/composables/zetaOfficeBoot.js'))return mapRuntimeTransport(mapFontFetching(code,path.join(root,'src/font-transport.js')),path.join(root,'src/runtime-transport.js'))}}],build:{outDir:path.join(out,'editor'),emptyOutDir:true,target:'esnext',rollupOptions:{input:path.join(root,'vendor/core/frontend/src/zetaoffice/editor.html')}}});
+await build({configFile:false,root:path.join(root,'vendor/core/frontend/src/zetaoffice'),base:'./',plugins:[{name:'web-editor-transport',transform(code,id){if(id===path.join(root,'vendor/core/frontend/src/zetaoffice/editor-main.js'))return `import {configureBootProgress} from ${JSON.stringify(path.join(root,'src/load-progress.js'))};\nconfigureBootProgress(${JSON.stringify(sizes)});\n`+mapFontRequests(omitUnservedFonts(code));if(id===path.join(root,'vendor/core/frontend/src/composables/zetaOfficeBoot.js'))return mapRuntimeTransport(mapFontFetching(code,path.join(root,'src/font-transport.js')),path.join(root,'src/runtime-transport.js'))}}],build:{outDir:path.join(out,'editor'),emptyOutDir:true,target:'esnext',rollupOptions:{input:path.join(root,'vendor/core/frontend/src/zetaoffice/editor.html')}}});
 await fs.cp(assetDir,path.join(out,'editor'),{recursive:true});
 await encodeFontRepresentations(out,assets);
 await fs.copyFile(path.join(root,'UPSTREAM.md'),path.join(out,'UPSTREAM.md'));
