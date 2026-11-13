@@ -29,6 +29,7 @@
     "test:bqt-admin": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && NEXT_PUBLIC_AWD_SITE=cn npx --yes tsx --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-bqt-admin.mts\"'",
     "live:bqt-e2e": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && NEXT_PUBLIC_AWD_SITE=cn \"$REPO/node_modules/.bin/tsx\" --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/live-bqt-e2e.mts\"'",
     "test:wxpay-app": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && npx --yes tsx --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-wxpay-app.mts\"'",
+    "test:googleplay": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && npx --yes tsx --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-googleplay.mts\"'",
     "test:fx-rate": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && npx --yes tsx --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-fx-rate.mts\"'",
     "build:web": "npm run build --prefix web-workbench",
     "test:web-api": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && \"$REPO/node_modules/.bin/tsx\" --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-web-ai.mts\"'",

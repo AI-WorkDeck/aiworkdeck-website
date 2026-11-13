@@ -373,7 +373,7 @@ try {
       db.prepare("UPDATE web_ai_request SET state='released',errorCode=NULL WHERE requestId=?").run(third.requestId);
     }
   });
-  await check('Existing migration37 receipts survive migrations38/39/40/41/42/43/44/45/46/47/48/49/50 and repeated database opens', () => {
+  await check('Existing migration37 receipts survive migrations38..51 and repeated database opens', () => {
     const requests = db.prepare('SELECT * FROM web_ai_request ORDER BY userId,requestId').all();
     const ledgers = db.prepare('SELECT COUNT(*) n FROM wallet_ledger').get();
     const laterTables = ['bqt_entitlement_snapshot', 'bqt_consume', 'bqt_settings_audit', 'bqt_settings', 'postpaid_shadow_event', 'postpaid_shadow_meter', 'postpaid_shadow_unmapped', 'postpaid_repayment_reversal', 'postpaid_repayment', 'postpaid_debt', 'postpaid_cleanup_claim', 'postpaid_case', 'postpaid_payment_review', 'postpaid_policy', 'postpaid_grant', 'postpaid_meter', 'postpaid_usage', 'postpaid_egress', 'postpaid_export', 'postpaid_external_budget', 'bqt_monthly_grant', 'bqt_user_binding', 'bqt_scan_session', 'user_circle_binding', 'circle_firms', 'appstore_subscription_transaction', 'appstore_subscription', 'appstore_subscription_account', 'skill_ai_request', 'platform_ai_request', 'bailian_retired_key', 'openrouter_rotated_key', 'plugin_submission_token', 'developer_review', 'developer_profile', 'captcha_challenge', 'web_ai_agent_run', 'password_setup_ticket', 'password_credential'];
@@ -385,12 +385,14 @@ try {
       db.exec('ALTER TABLE team_member DROP COLUMN title');
       // 迁移 50 给 openrouter_keys 加列（铸造账号指纹）
       db.exec('ALTER TABLE openrouter_keys DROP COLUMN mgmtAccount');
+      // 迁移 51 给 orders 加 Google Play 唯一索引
+      db.exec('DROP INDEX IF EXISTS idx_orders_googleplay_txn');
       db.exec('DELETE FROM schema_version WHERE version >= 38');
     })();
     try {
       assert.equal((db.prepare('SELECT MAX(version) v FROM schema_version').get() as {v:number}).v, 37);
       closeDb(); db = getDb();
-      assert.equal((db.prepare('SELECT MAX(version) v FROM schema_version').get() as {v:number}).v, 50);
+      assert.equal((db.prepare('SELECT MAX(version) v FROM schema_version').get() as {v:number}).v, 51);
       assert.deepEqual(db.prepare('SELECT * FROM web_ai_request ORDER BY userId,requestId').all(), requests);
       assert.deepEqual(db.prepare('SELECT COUNT(*) n FROM wallet_ledger').get(), ledgers);
       for (const table of laterTables) {

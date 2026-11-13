@@ -35,9 +35,12 @@ import {
   AppstoreVerificationError,
   appstoreAdapter,
   appstoreFaceValue,
+  confirmGooglePlayPurchase,
   describeSettleFailure,
   getAdapterForChannel,
   getPaymentAdapter,
+  googleplayAdapter,
+  googleplayFaceValue,
   settleFromChannel,
   settlementFromTransaction,
   verifyTransaction,
@@ -380,13 +383,16 @@ async function handleCreateRecharge(
     rawChannel !== null &&
     rawChannel !== 'wxvp' &&
     rawChannel !== 'appstore' &&
-    rawChannel !== 'wxpay-app'
+    rawChannel !== 'wxpay-app' &&
+    rawChannel !== 'googleplay'
   ) {
     return fail(400, 'unsupported_channel');
   }
   const isWxvp = rawChannel === 'wxvp';
   const isAppstore = rawChannel === 'appstore';
   const isWxpayApp = rawChannel === 'wxpay-app';
+  const isGooglePlay = rawChannel === 'googleplay';
+  const isNativeIap = isAppstore || isGooglePlay;
 
   // 安卓微信支付 APP 支付（dev-board#428）。金额口径与默认通道（Native 扫码）完全相同：
   // 上面那道正整数分 + 单笔上限，不设档位表。**未配 WXPAY_APP_APPID（或不是人民币站）
@@ -404,6 +410,12 @@ async function handleCreateRecharge(
     productId = typeof body.productId === 'string' ? body.productId : '';
     const expected = appstoreFaceValue(productId);
     if (expected === undefined || expected !== amountCents) {
+      return fail(400, 'product_mismatch');
+    }
+  } else if (isGooglePlay) {
+    productId = typeof body.productId === 'string' ? body.productId : '';
+    const expected = googleplayFaceValue(siteConfig.currency, productId);
+    if (expected === null || expected !== amountCents) {
       return fail(400, 'product_mismatch');
     }
   } else if (isWxvp) {
@@ -426,9 +438,11 @@ async function handleCreateRecharge(
     ? wxvpAdapter
     : isAppstore
       ? appstoreAdapter
-      : isWxpayApp
-        ? wxpayAppAdapter
-        : getPaymentAdapter();
+      : isGooglePlay
+        ? googleplayAdapter
+        : isWxpayApp
+          ? wxpayAppAdapter
+          : getPaymentAdapter();
 
   const existing = findOrderByIdempotencyKey(userId, idempotencyKey);
   if (existing) {
@@ -447,7 +461,7 @@ async function handleCreateRecharge(
       // 内购单的档位也钉在幂等键上：同一把键换个 productId，回来确认时
       // `productId == order.skuId` 那条校验必然失败，与其让它在付完钱之后炸，
       // 不如在这里就说清楚是键复用错了。
-      (isAppstore && existing.skuId !== productId)
+      (isNativeIap && existing.skuId !== productId)
     ) {
       return fail(409, 'idempotency_conflict', { outTradeNo: existing.outTradeNo });
     }
@@ -455,7 +469,7 @@ async function handleCreateRecharge(
     // **内购的重放必须回原来那个 appAccountToken**：客户端可能已经拿着它发起过
     // 购买（App 被杀、网络超时都会走到重放这条路）。换一个新 UUID 等于让那笔
     // 已经付掉的购买再也对不回这张单。
-    if (isAppstore && existing.providerRef) {
+    if (isNativeIap && existing.providerRef) {
       return NextResponse.json({
         present: 'native',
         outTradeNo: existing.outTradeNo,
@@ -486,8 +500,8 @@ async function handleCreateRecharge(
       // 通道与币种在建单时定死：回调/回查一律按订单上记的这两项校验与结算
       channel: adapter.id,
       currency: adapter.currency,
-      // 内购单把 productId 落进 skuId：确认时要拿它跟 JWS 里的 productId 对。
-      ...(isAppstore ? { skuId: productId } : {}),
+      // 内购单把 productId 落进 skuId：确认时要拿它跟回执里的 productId 对。
+      ...(isNativeIap ? { skuId: productId } : {}),
       idempotencyKey,
     });
   }
@@ -499,7 +513,7 @@ async function handleCreateRecharge(
     amountMinor: amountCents,
     baseUrl,
     ...(isWxvp ? { productId, wxCode } : {}),
-    ...(isAppstore ? { productId } : {}),
+    ...(isNativeIap ? { productId } : {}),
   });
 
   // 判别联合逼着三种形态各自显式展开，不用「哪个字段非空」反推
@@ -518,14 +532,14 @@ async function handleCreateRecharge(
     });
   }
 
-  if (charge.channel === 'appstore') {
+  if (charge.channel === 'appstore' || charge.channel === 'googleplay') {
     // appAccountToken 落 providerRef：确认时既按它校验、也能在客户端丢了单号时反查。
     updateOrder(outTradeNo, { providerRef: charge.appAccountToken });
     return NextResponse.json({
       present: 'native',
       outTradeNo,
       amountCents,
-      // iOS 端原样传给 `Product.PurchaseOption.appAccountToken(_:)`
+      // iOS 传给 appAccountToken(_:)；Android Google Play 传给 setObfuscatedAccountId(_:)
       appAccountToken: charge.appAccountToken,
     });
   }
@@ -717,6 +731,28 @@ async function handleConfirmAppstore(
 
   const settled = getOrder(order.outTradeNo);
   return NextResponse.json(queryBody(settled ?? order));
+}
+
+async function handleConfirmGooglePlay(
+  userId: string,
+  body: Record<string, unknown>
+): Promise<NextResponse> {
+  const productId = typeof body.productId === 'string' ? body.productId.trim() : '';
+  const purchaseToken = typeof body.purchaseToken === 'string' ? body.purchaseToken.trim() : '';
+  const requestedNo = typeof body.outTradeNo === 'string' ? body.outTradeNo.trim() : '';
+  if (!productId || !purchaseToken) {
+    return fail(400, 'transaction_invalid');
+  }
+  const outcome = await confirmGooglePlayPurchase({
+    userId,
+    productId,
+    purchaseToken,
+    ...(requestedNo ? { outTradeNo: requestedNo } : {}),
+  });
+  if (!outcome.ok) {
+    return fail(outcome.status, outcome.error);
+  }
+  return NextResponse.json(queryBody(outcome.order));
 }
 
 // ---------------------------------------------------------------------------
@@ -917,6 +953,13 @@ export async function POST(request: NextRequest) {
       beginPaymentReview(user.id,'appstore-confirm');
       const result=await handleConfirmAppstore(user.id,body);
       if(result.status<400||result.status===400)endPaymentReview(user.id,'appstore-confirm');
+      return result;
+    }
+
+    if (action === 'confirm-googleplay') {
+      beginPaymentReview(user.id, 'googleplay-confirm');
+      const result = await handleConfirmGooglePlay(user.id, body);
+      if (result.status !== 409) endPaymentReview(user.id, 'googleplay-confirm');
       return result;
     }
 

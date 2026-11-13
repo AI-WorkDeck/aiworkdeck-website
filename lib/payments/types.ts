@@ -12,7 +12,7 @@
 
 import type { AppPayParams } from '../wxpay';
 
-export type PaymentChannelId = 'wxpay' | 'stripe' | 'wxvp' | 'appstore' | 'wxpay-app';
+export type PaymentChannelId = 'wxpay' | 'stripe' | 'wxvp' | 'appstore' | 'wxpay-app' | 'googleplay';
 export type CurrencyCode = 'CNY' | 'USD';
 
 export interface CreateChargeInput {
@@ -67,6 +67,12 @@ export type CreateChargeResult =
        * 等它原样回传的**对单凭据**。名字不同是为了让消费点读一眼就知道这是
        * 要发给 iOS 的、而不是从通道拿回来的。
        */
+      appAccountToken: string;
+    }
+  | {
+      channel: 'googleplay';
+      present: 'native';
+      /** 传给 BillingFlowParams.setObfuscatedAccountId(_:) 的 UUID，落 `orders.providerRef`。 */
       appAccountToken: string;
     }
   | {

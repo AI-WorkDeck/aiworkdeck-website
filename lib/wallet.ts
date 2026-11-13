@@ -4,6 +4,7 @@ import { fulfillPurchase } from './purchases';
 import { fulfillProPayment, isLegacyProSku, isProSku } from './pro-products';
 import {
     APPSTORE_SOURCE_KIND,
+    GOOGLEPLAY_SOURCE_KIND,
     clawbackGrantedLots,
     grantCredits,
     rowToEntry,
@@ -33,6 +34,7 @@ import { bqtProRightsUntil } from './bqt-member';
 export type { LedgerEntry, LedgerKind };
 export {
     APPSTORE_SOURCE_KIND,
+    GOOGLEPLAY_SOURCE_KIND,
     clawbackGrantedLots,
     getBalance,
     getBalanceBreakdown,
@@ -100,25 +102,28 @@ export function settleOrderPaid(
             // （`getRefundableCents`），堵掉「用 Apple 付款、向平台要 100% 原路退现」
             // 的套利口（设计 §4.3）。批次仍是 topup —— 内购买来的 Credits
             // **不许设有效期**（App Store 审核指南 3.1.1 原文），而 reward 池必须带有效期。
-            const isAppstore = order.channel === 'appstore';
+            const iapSourceKind =
+                order.channel === 'appstore'
+                    ? APPSTORE_SOURCE_KIND
+                    : order.channel === 'googleplay'
+                      ? GOOGLEPLAY_SOURCE_KIND
+                      : undefined;
             grantCredits(db, {
                 userId: order.userId,
                 pool: 'topup',
                 amountCents: order.amount,
                 ledgerKind: 'recharge',
-                ...(isAppstore ? { sourceKind: APPSTORE_SOURCE_KIND } : {}),
+                ...(iapSourceKind ? { sourceKind: iapSourceKind } : {}),
                 refOrderId: order.id,
                 meta: {
                     outTradeNo: order.outTradeNo,
                     transactionId: order.transactionId ?? null,
-                    ...(isAppstore ? { channel: 'appstore' } : {}),
+                    ...(iapSourceKind ? { channel: iapSourceKind } : {}),
                 },
             });
-            // **内购单不发会员充值赠送**（设计 §4.3）：大陆版 IAP 实测净收 84.24%，
-            // 而 Credits 的综合毛利只有 15%~25%；再叠一档 10% 的赠送会把这笔单的
-            // 净利直接打成负数。这是一个显式的商业决定，不是遗漏——
-            // 别在读到下面这个 if 时「顺手补齐」。
-            if (isAppstore) return result;
+            // **商店内购单不发会员充值赠送**（设计 §4.3）：应用商店渠道抽成 15%~30%，
+            // 而 Credits 综合毛利仅 15%~25%；再叠会员赠送会把净利打成负数。
+            if (iapSourceKind) return result;
             // 会员充值赠送：按**含本笔后**的成长值定档（上面的 recharge 流水已落库）。
             // 赠送必须是 reward 批次（24 个月有效期、不可退现）——做成 topup 会被
             // 「退未消耗余额」变相提现。ledgerKind 复用既有 'gift'，不扩 kind 枚举；
