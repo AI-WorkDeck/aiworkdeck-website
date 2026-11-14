@@ -30,6 +30,36 @@ export type ReleaseNote = LegacyReleaseNote | {
 
 export const RELEASES: ReleaseNote[] = [
     {
+        version: '0.86.0',
+        date: '2026-11-15',
+        headline: {
+            zh: '律所管理员审计日志、客户管理与计时收费、投标提案，客户在门户里直接和律师沟通',
+            en: 'A firm audit log, client management and hourly billing, bids and proposals, and project chat for clients in the portal',
+        },
+        items: [
+            {
+                zh: '律所管理员可以在「设置 › 审计日志」查看本所的安全事件：登录与登录失败、设备连接与吊销、项目共享与成员变动、客户访问码与门户登录、文件下载、越权访问被拒，以及在官网上加入或退出律所、角色变更、官网登录失败。日志不记录文件内容、聊天内容和密码；记录只能追加，点「校验」可以发现被改动或删除的记录。',
+                en: 'Firm administrators can review their firm\'s security events in Settings › Audit Log: sign-ins and failed sign-ins, devices connected and revoked, project sharing and membership changes, client access codes and portal sign-ins, file downloads, refused access attempts, and, from the website, joining or leaving the firm, role changes and failed website sign-ins. The log never contains file content, chat text or passwords; entries can only be appended, and Verify detects any entry that was altered or deleted.',
+            },
+            {
+                zh: '律所管理插件 0.1.18：一个客户一张档案，登记股东、实际控制人等关系后，利冲检索会沿股权链命中并写明关系链；工作记录直接生成计时工时，合伙人按月审核、核减、出账单（先折扣后封顶），客户确认后进入原有开票台账。客户资料和工时汇总可以按律所开关在同所律师之间共享，收费金额始终只留在本机。',
+                en: 'Law Firm Management 0.1.18: one profile per client; once shareholders, controllers and other relationships are recorded, conflict checks follow the ownership chain and show it as the reason. Work records turn into billable time that partners review by month, write down and bill (discount first, then cap), and confirmed bills flow into the existing invoicing ledger. Client data and time collection can be shared within the firm by a firm switch; fees always stay on the local machine.',
+            },
+            {
+                zh: '新插件「投标与提案」0.2.1：从所里的业绩库、律师简历和 Word / PPT 模板生成投标书与提案初稿并算出报价；招标要求逐条对照原文，标出满足与缺材料；对外材料默认脱敏。项目做完可以一键整理成业绩，自行决定只给自己、团队还是全所使用。',
+                en: 'New plugin, Bids and Proposals 0.2.1: drafts tenders and proposals with a fee quote from the firm\'s credentials, lawyer profiles and Word or PowerPoint templates; checks tender requirements item by item against the source; desensitizes outward material by default. A finished matter can be turned into a credential, shared with only you, your team or the whole firm.',
+            },
+            {
+                zh: '客户门户新增「项目沟通」：被邀请的客户用访问码登录后，可以在所属项目的群里查看和发送消息，律师看到的客户消息带「客户」标记。客户进不了其他群、看不到成员名单；访问码撤销或过期即断开；能看多少历史消息由律师在邀请时决定。需要项目沟通插件 0.2.13。',
+                en: 'Project chat in the client portal: invited clients signed in with an access code can read and post in their project\'s chat, and lawyers see their messages marked "Client". Clients cannot enter other groups or see the member list; a revoked or expired code cuts access; the lawyer decides at invite time how much earlier history they see. Needs Project Chat plugin 0.2.13.',
+            },
+            {
+                zh: '更准、更快：法律意见书的独立核验只依据真实读到的文件和正文，没读到就如实说核验未完成；版本比对先接受原有修订，只显示两版之间的真实差异；约 2000 个文件的项目刷新版本状态从约 1 秒降到 0.04 秒；文档引擎更新，修复偶发的启动后卡住；英文界面多处残留中文已修正，正式安装包默认关闭开发者模式。',
+                en: 'More accurate and faster: the legal-opinion verifier relies only on files and text it actually read, and says so when the check did not complete; version compare accepts existing tracked changes first and shows only the real difference; version status in a 2,000-file project refreshes in 0.04 s instead of about 1 s; an updated document engine fixes an occasional hang after start-up; leftover Chinese in the English interface is fixed, and official installers default Developer mode to off.',
+            },
+        ],
+    },
+    {
         version: '0.85.3',
         date: '2026-11-15',
         headline: {
