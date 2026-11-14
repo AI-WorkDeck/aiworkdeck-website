@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveSessionOrKeyUser } from './account-auth';
 import { TeamError } from './team';
+import { withFirmAuditRequest } from './firm-audit';
 import type { User } from './users';
 
 /**
@@ -21,7 +22,8 @@ export async function withTeamAuth(
         return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
     try {
-        const body = await handler(user);
+        // 律所审计日志（S20）：期间上报的入所 / 角色 / 移出等事件带上本次请求的来源 IP 与 UA
+        const body = await withFirmAuditRequest(request, () => handler(user));
         return NextResponse.json(body === undefined ? { ok: true } : body);
     } catch (e) {
         // TeamError 之外的异常照常上抛成 500：那是服务端坏了，不是用户请求有问题。

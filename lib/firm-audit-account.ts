@@ -5,8 +5,7 @@
  * 不存在的账号没有律所可归（防爆破仍由 login-throttle 负责）。不报输入的口令与账号串。
  */
 import { orgOf } from './collab-directory';
-import { emitFirmAudit } from './firm-audit';
-import { clientIp } from './login-throttle';
+import { auditClientIp, emitFirmAudit } from './firm-audit';
 import { MAX_ACTIVE_KEYS } from './api-keys';
 import type { User } from './users';
 
@@ -21,7 +20,7 @@ export function auditWebsiteLoginFailure(user: User | null | undefined, via: 'pa
             failed: true,
             actor: { id: user.id, name: user.displayName },
             detail: { via },
-            ip: clientIp(request) || null,
+            ip: auditClientIp(request),
             userAgent: request.headers.get('user-agent'),
         });
     } catch {
@@ -52,7 +51,7 @@ export function auditAccountKey(
             actor: { id: user.id, name: user.displayName },
             target: { type: 'ACCOUNT_KEY', id: String(key.id), label: key.prefix ?? null },
             detail,
-            ip: request ? clientIp(request) || null : null,
+            ip: request ? auditClientIp(request) : null,
             userAgent: request ? request.headers.get('user-agent') : null,
         });
     } catch {

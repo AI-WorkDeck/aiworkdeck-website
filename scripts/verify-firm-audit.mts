@@ -51,6 +51,7 @@ const { NextRequest } = await import('next/server');
 const loginRoute = await import('@/app/api/auth/login/route');
 const exchangeRoute = await import('@/app/api/auth/exchange-key/route');
 const accountAudit = await import('@/lib/firm-audit-account');
+const memberRoute = await import('@/app/api/account/team/members/[accountId]/route');
 
 let passed = 0;
 const ok = (name: string) => { passed++; console.log('  PASS', name); };
@@ -157,6 +158,23 @@ assert.equal((await exchangeRoute.POST(exch('wrong-pass'))).status, 401);
 ev = await drain();
 assert.deepEqual(ev.map(e => [e.payload.action, e.payload.detail?.via]), [['WEBSITE_LOGIN_FAILED', 'exchange_key']]);
 ok('账户 Key：登录换 Key / 满额挤掉最旧 / 吊销各一条，只带行 id 与前缀；律所外的人不报；换 Key 口令错也算登录失败');
+
+// ---------- 3b. 团队路由：事件带本次请求的来源 IP 与 UA（取 X-Real-IP / XFF 最后一段，不信客户端填的第一段） ----------
+team.joinByCode(user(ids.admin), code('SELECT joinCode FROM team WHERE id = ?', head.id));
+await drain();
+const ownerKey = keys.issueLoginKey(ids.owner, null).plaintextKey;
+const patch = (role: string, headers: Record<string, string>) => memberRoute.PATCH(
+    new NextRequest(`http://localhost/api/account/team/members/${ids.admin}`, {
+        method: 'PATCH', body: JSON.stringify({ role }),
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${ownerKey}`, ...headers },
+    }), { params: Promise.resolve({ accountId: ids.admin }) });
+assert.equal((await patch('ADMIN', { 'x-real-ip': '198.51.100.4', 'x-forwarded-for': '6.6.6.6, 198.51.100.4', 'user-agent': 'Mozilla/5.0 (Firm IT)' })).status, 200);
+assert.equal((await patch('MEMBER', { 'x-forwarded-for': '6.6.6.6, 198.51.100.9', 'user-agent': 'desktop/0.85' })).status, 200);
+ev = await drain();
+assert.deepEqual(ev.map(e => [e.payload.action, e.payload.sourceIp, e.payload.userAgent]), [
+    ['FIRM_ROLE_CHANGED', '198.51.100.4', 'Mozilla/5.0 (Firm IT)'],
+    ['FIRM_ROLE_CHANGED', '198.51.100.9', 'desktop/0.85']]);
+ok('团队路由上报带操作人的来源 IP（X-Real-IP 优先，否则 XFF 最后一段，伪造的第一段不用）与 UA');
 
 // ---------- 4. 真 HTTP：重试、幂等键、放弃、不阻塞 ----------
 const hits: { status: number; body: { eventId: string }; secret: string | undefined }[] = [];

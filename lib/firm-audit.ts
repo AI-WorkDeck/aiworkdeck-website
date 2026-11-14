@@ -12,6 +12,7 @@
  * - **隐私**：只发动作、操作人展示名与账户 id、对象、少量白名单标量；绝不发口令、验证码、Key 明文或哈希。
  */
 import crypto from 'crypto';
+import { AsyncLocalStorage } from 'async_hooks';
 
 export type FirmAuditAction =
     | 'FIRM_MEMBER_JOINED'
@@ -71,6 +72,29 @@ const fetchTransport: Transport = async (url, secret, payload, timeoutMs) => {
     });
     return res.status;
 };
+
+/**
+ * 当前请求的来源（IP / UA）。团队与律所的 lib 函数拿不到 request，由路由外壳
+ * （lib/team-http.ts 的 withTeamAuth）用 {@link withFirmAuditRequest} 包住，emit 时取用。
+ */
+const requestContext = new AsyncLocalStorage<{ ip: string | null; userAgent: string | null }>();
+
+/**
+ * 审计用的客户端地址：优先 `X-Real-IP`（我们的 nginx 用 `$remote_addr` 覆盖写入，客户端带来的会被替换），
+ * 没有时取 `X-Forwarded-For` 的**最后一段**（nginx `$proxy_add_x_forwarded_for` 追加的那一段）。
+ * 不取第一段：第一段是客户端自己填的，可以随便伪造。
+ */
+export function auditClientIp(request: Request): string | null {
+    const real = request.headers.get('x-real-ip')?.trim();
+    if (real) return real;
+    const parts = (request.headers.get('x-forwarded-for') ?? '').split(',').map(p => p.trim()).filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : null;
+}
+
+/** 在一次请求的处理范围内运行 fn，期间上报的事件带上这次请求的来源 IP 与 UA。 */
+export function withFirmAuditRequest<T>(request: Request, fn: () => T): T {
+    return requestContext.run({ ip: auditClientIp(request), userAgent: request.headers.get('user-agent') }, fn);
+}
 
 let transport: Transport = fetchTransport;
 let retryDelays = RETRY_DELAYS_MS;
@@ -152,7 +176,8 @@ export function emitFirmAudit(input: FirmAuditInput): void {
         const base = (process.env.AWD_FIRM_AUDIT_URL ?? '').trim().replace(/\/+$/, '');
         const secret = (process.env.AWD_FIRM_AUDIT_SECRET ?? '').trim();
         if (!base || !secret) return;
-        const payload = buildFirmAuditPayload(input);
+        const ctx = requestContext.getStore();
+        const payload = buildFirmAuditPayload(ctx ? { ...input, ip: input.ip ?? ctx.ip, userAgent: input.userAgent ?? ctx.userAgent } : input);
         if (!payload) return;
         const job = deliver(`${base}/api/internal/firm-audit`, secret, payload).catch(() => {});
         pending.add(job);
