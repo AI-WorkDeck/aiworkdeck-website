@@ -6,7 +6,7 @@ import { loginAllowed, recordLoginFailure, clearLoginFailures, clientIp } from '
 import { grantTrialSafely } from '@/lib/trial';
 import { withTransaction } from '@/lib/db';
 import { bindCircleFirm } from '@/lib/circle-firms';
-import { auditWebsiteLoginFailure } from '@/lib/firm-audit-login';
+import { auditWebsiteLoginFailure } from '@/lib/firm-audit-account';
 
 export async function POST(request: NextRequest) {
   try {

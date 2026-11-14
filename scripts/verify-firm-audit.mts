@@ -49,6 +49,8 @@ const keys = await import('@/lib/api-keys');
 const fa = await import('@/lib/firm-audit');
 const { NextRequest } = await import('next/server');
 const loginRoute = await import('@/app/api/auth/login/route');
+const exchangeRoute = await import('@/app/api/auth/exchange-key/route');
+const accountAudit = await import('@/lib/firm-audit-account');
 
 let passed = 0;
 const ok = (name: string) => { passed++; console.log('  PASS', name); };
@@ -109,21 +111,6 @@ team.removeMember(ids.sub, ids.loner);
 assert.equal((await drain()).length, 0);
 ok('不在律所的团队：一条都不报');
 
-// ---------- 2. 账户 Key ----------
-const k = keys.generateApiKey(ids.owner).key!;
-keys.revokeApiKey(ids.owner, k.info.id);
-const login = keys.issueLoginKey(ids.owner, 'MacBook');
-keys.generateApiKey(ids.loner);
-ev = await drain();
-assert.deepEqual(ev.map(e => [e.payload.action, e.payload.detail?.via]), [
-    ['ACCOUNT_API_KEY_CREATED', 'account_page'], ['ACCOUNT_API_KEY_REVOKED', 'user'], ['ACCOUNT_API_KEY_CREATED', 'login']]);
-const raw = JSON.stringify(ev);
-assert.ok(!raw.includes(k.plaintextKey) && !raw.includes(login.plaintextKey), 'Key 明文绝不上报');
-assert.ok(!raw.includes(keys.hashApiKey(k.plaintextKey)), 'Key 哈希绝不上报');
-assert.equal(ev[0].payload.detail?.keyPrefix, k.info.prefix);
-assert.equal(ev[2].payload.detail?.label, 'MacBook');
-ok('账户 Key 签发 / 吊销 / 登录换 Key → 只带行 id 与前缀；律所外的人不报');
-
 // ---------- 3. 官网口令登录失败 ----------
 const pw = await users.hashPassword('Right-pass-123');
 const all = JSON.parse(fs.readFileSync(path.join(cwd, 'data', 'users.json'), 'utf8'));
@@ -143,6 +130,33 @@ assert.ok(!JSON.stringify(ev).includes('wrong-pass'), '口令绝不上报');
 assert.equal((await loginRoute.POST(req('Right-pass-123'))).status, 200);
 assert.equal((await drain()).length, 0, '登录成功不在这里报（案件库侧有自己的登录事件）');
 ok('官网口令登录失败 → WEBSITE_LOGIN_FAILED（带 IP / UA，不带口令）');
+
+// ---------- 2. 账户 Key（登录换 Key / 满额挤掉最旧 / 吊销） ----------
+const exch = (password: string) => new NextRequest('http://localhost/api/auth/exchange-key', {
+    method: 'POST', body: JSON.stringify({ account, password, deviceName: 'MacBook' }),
+    headers: { 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.8', 'user-agent': 'desktop' },
+});
+const r1 = await exchangeRoute.POST(exch('Right-pass-123'));
+assert.equal(r1.status, 200);
+const plain = (await r1.json()).key as string;
+ev = await drain();
+assert.deepEqual(ev.map(e => [e.payload.action, e.payload.detail?.via, e.payload.detail?.label]), [['ACCOUNT_API_KEY_CREATED', 'login', 'MacBook']]);
+assert.ok(!JSON.stringify(ev).includes(plain), 'Key 明文绝不上报');
+assert.ok(!JSON.stringify(ev).includes(keys.hashApiKey(plain)), 'Key 哈希绝不上报');
+assert.equal(ev[0].payload.detail?.keyPrefix, plain.slice(0, String(ev[0].payload.detail?.keyPrefix).length));
+for (let i = 0; i < keys.MAX_ACTIVE_KEYS; i++) keys.issueLoginKey(ids.owner, null);
+await drain();
+assert.equal((await exchangeRoute.POST(exch('Right-pass-123'))).status, 200);
+ev = await drain();
+assert.deepEqual(ev.map(e => [e.payload.action, e.payload.detail?.via]), [['ACCOUNT_API_KEY_CREATED', 'login'], ['ACCOUNT_API_KEY_REVOKED', 'evicted_by_login']]);
+accountAudit.auditAccountKey(user(ids.owner), 'ACCOUNT_API_KEY_REVOKED', { id: 7, prefix: 'awdk_abcdefg' }, 'user');
+accountAudit.auditAccountKey(user(ids.loner), 'ACCOUNT_API_KEY_REVOKED', { id: 8, prefix: 'awdk_zzz' }, 'user');
+ev = await drain();
+assert.deepEqual(ev.map(e => [e.payload.action, e.payload.targetId, e.payload.detail?.keyPrefix]), [['ACCOUNT_API_KEY_REVOKED', '7', 'awdk_abcdefg']]);
+assert.equal((await exchangeRoute.POST(exch('wrong-pass'))).status, 401);
+ev = await drain();
+assert.deepEqual(ev.map(e => [e.payload.action, e.payload.detail?.via]), [['WEBSITE_LOGIN_FAILED', 'exchange_key']]);
+ok('账户 Key：登录换 Key / 满额挤掉最旧 / 吊销各一条，只带行 id 与前缀；律所外的人不报；换 Key 口令错也算登录失败');
 
 // ---------- 4. 真 HTTP：重试、幂等键、放弃、不阻塞 ----------
 const hits: { status: number; body: { eventId: string }; secret: string | undefined }[] = [];
