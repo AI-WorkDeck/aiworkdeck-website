@@ -67,6 +67,8 @@ check('theme contribution with explicit empty views remains valid payload', () =
 function reject(label: string, mutate: (m: ReturnType<typeof fixture>) => void) {
   check(label, () => { const m = fixture(); mutate(m); assert.equal(submitPlugin(packageOf(m), AUTHOR).error, 'manifest_invalid'); });
 }
+check('worklog_read permission accepted (pitch-materials 0.2.1)', () => { const m = fixture(); m.permissions.push('worklog_read'); assert.equal(submitPlugin(packageOf(m), AUTHOR).plugin?.status, 'pending'); });
+reject('unknown permission rejected', m => m.permissions.push('worklog_write'));
 reject('encoded view path rejected', m => m.contributes.views[0].entry = 'web/%2e%2e/index.html');
 reject('missing view file rejected', m => m.contributes.views[0].entry = 'web/missing.html');
 reject('duplicate placement rejected', m => m.contributes.views.push({ ...m.contributes.views[0], id: 'second' }));
