@@ -6,9 +6,10 @@ import { phoneIsAccount } from '@/lib/phone-policy';
 import { NextRequest, NextResponse } from 'next/server';
 import { pollBqtScanSession } from '@/lib/bqt-auth';
 import { createSession, sessionCookieOptions, SESSION_COOKIE } from '@/lib/sessions';
-import { issueLoginKey } from '@/lib/api-keys';
+import { countActiveKeys, issueLoginKey } from '@/lib/api-keys';
 import { grantTrialSafely } from '@/lib/trial';
 import { withTransaction } from '@/lib/db';
+import { auditLoginKey } from '@/lib/firm-audit-account';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +30,9 @@ export async function GET(request: NextRequest) {
   grantTrialSafely(user.id);
 
   if (issueKey) {
+    const activeBefore = countActiveKeys(user.id);
     const key = withTransaction(() => issueLoginKey(user.id, rawDeviceName || null));
+    auditLoginKey(user, key.info, 'scan_login', activeBefore, request);
     return NextResponse.json(
       {
         status: 'confirmed',

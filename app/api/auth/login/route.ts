@@ -6,6 +6,7 @@ import { loginAllowed, recordLoginFailure, clearLoginFailures, clientIp } from '
 import { grantTrialSafely } from '@/lib/trial';
 import { withTransaction } from '@/lib/db';
 import { bindCircleFirm } from '@/lib/circle-firms';
+import { auditWebsiteLoginFailure } from '@/lib/firm-audit-account';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,6 +30,7 @@ export async function POST(request: NextRequest) {
     // 「该账号只能用手机号登录」之类的提示，那等于确认了号码的存在。
     if (!user || !(await verifyPassword(password, user.passwordHash))) {
       recordLoginFailure(account, ip);
+      auditWebsiteLoginFailure(user, 'password', request);
       return NextResponse.json({ error: 'invalid_credentials' }, { status: 401 });
     }
     clearLoginFailures(account);

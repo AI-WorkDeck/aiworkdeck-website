@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { allowTelemetryRequest, isDateStr, isUuid, upsertRollup } from '@/lib/telemetry-store';
+import { trustedClientIp } from '@/lib/client-ip';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,7 @@ function isNumericRecord(v: unknown): v is Record<string, number> {
 }
 
 function clientIp(request: NextRequest): string {
-  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  return trustedClientIp(request) || 'unknown';
 }
 
 /**

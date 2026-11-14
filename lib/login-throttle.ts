@@ -13,6 +13,7 @@
  */
 import { getDb } from './db';
 import { normalizeLoginAccount } from './users';
+import { trustedClientIp } from './client-ip';
 
 /** 同一账号在窗口内允许的失败次数。 */
 export const MAX_ACCOUNT_FAILURES = 10;
@@ -61,9 +62,10 @@ export function clearLoginFailures(account: string): void {
   getDb().prepare('DELETE FROM login_attempt WHERE scope = ? AND key = ?').run('account', acc);
 }
 
-/** 取客户端 IP。反代后面看 x-forwarded-for 的第一段。 */
+/**
+ * 取客户端 IP：X-Real-IP，否则 XFF 最后一段（见 lib/client-ip.ts）。
+ * 此前取 XFF 第一段——那是客户端自己写的，换着写就能绕过按 IP 的失败锁定。
+ */
 export function clientIp(request: Request): string {
-  const xff = request.headers.get('x-forwarded-for') || '';
-  const first = xff.split(',')[0]?.trim();
-  return first || request.headers.get('x-real-ip') || '';
+  return trustedClientIp(request);
 }

@@ -807,6 +807,24 @@ d2="$(mktemp -d)"
 没法靠联调兜底的部分**：签错了微信只回 `-15005` / `-15006` 两个数字，不会告诉你
 错在 uri、body 还是 AppKey 选错了环境。
 
+### 7.6b 律所审计日志上报（readiness S20，官网 → 案件库）
+
+方向与 §7.7 相反：入所/退所/被移出、角色变更、建所与重置律所码、官网口令登录失败、账户 Key 签发与吊销只在官网发生，
+官网把它们推给**同机案件库**的内部口 `POST {AWD_FIRM_AUDIT_URL}/api/internal/firm-audit`（`lib/firm-audit.ts`），
+写进律所管理员在桌面端「设置 → 审计日志」看的同一份日志。后台发送、不挡请求；失败按同一 `eventId` 重试 3 次，案件库按它去重。
+不报口令、验证码、Key 明文或哈希；没有律所的账号不报。
+
+```bash
+# 同机案件库地址（直连回环，不走公网）与共享密钥（openssl rand -base64 32）。
+# 密钥必须与名录 / 计费 / 中转的各把都不同；案件库侧 /opt/aiworkdeck/case/env 配 AWD_AUDIT_INGEST_SECRET=<同值>。
+# 两个变量任一未配 = 一条都不发（国际站与本地开发的默认态）。
+# AWD_FIRM_AUDIT_URL=http://127.0.0.1:9797
+# AWD_FIRM_AUDIT_SECRET=<随机长口令>
+```
+
+案件库那侧这条口子只在 case profile 打开，四道闸任一不过回裸 404（开关、密钥、常量时间比较、回环来源）；
+公网 nginx 的 `location ^~ /api/internal/ { return 404; }` 同样覆盖它。验证脚本：`npm run test:firm-audit`（CI 两站各跑一遍）。
+
 ### 7.7 协作加人的名录查询内部口（dev-board#550 #551，**仅大陆站**）
 
 官方案件库（`case.aiworkdeck.com`，backend.jar 的第二实例）「把同事加进案卷」时，

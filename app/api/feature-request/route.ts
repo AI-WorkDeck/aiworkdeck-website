@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { normalizeInput, submitFeatureRequest } from '@/lib/feature-request';
+import { trustedClientIp } from '@/lib/client-ip';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +24,7 @@ function rateLimited(ip: string): boolean {
 }
 
 function clientIp(request: NextRequest): string {
-  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  return trustedClientIp(request) || 'unknown';
 }
 
 export async function POST(request: NextRequest) {

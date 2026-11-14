@@ -3,10 +3,11 @@ import { verifyFirstContact, passwordError, reviewLoginUser } from '@/lib/passwo
 import { withTransaction } from '@/lib/db';
 import { findUserById, type User } from '@/lib/users';
 import { findUserByAccount, verifyPassword } from '@/lib/users';
-import { issueLoginKey } from '@/lib/api-keys';
+import { countActiveKeys, issueLoginKey } from '@/lib/api-keys';
 import { gateForUser, SUPPORT_EMAIL } from '@/lib/phone-policy';
 import { loginAllowed, recordLoginFailure, clearLoginFailures, clientIp } from '@/lib/login-throttle';
 import { bindCircleFirm } from '@/lib/circle-firms';
+import { auditLoginKey, auditWebsiteLoginFailure } from '@/lib/firm-audit-account';
 
 /** Password login issues the existing account key. First-contact OTP only grants a setup ticket. */
 export async function POST(request: NextRequest) {
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
     const found = findUserByAccount(account);
     if (!found || !(await verifyPassword(password, found.passwordHash))) {
       recordLoginFailure(account, ip);
+      auditWebsiteLoginFailure(found, 'exchange_key', request);
       // 与账号不存在同一个响应，不透露账号是否存在
       return NextResponse.json({ error: 'invalid_credentials' }, { status: 401 });
     }
@@ -79,11 +81,13 @@ export async function POST(request: NextRequest) {
   const rawDeviceName = typeof body.deviceName === 'string' ? body.deviceName.trim().slice(0, 64) : '';
   const deviceName = rawDeviceName || null;
 
+  const activeBefore = countActiveKeys(user.id);
   const key = withTransaction(() => {
     if (findUserById(user.id)?.passwordHash !== user.passwordHash) return null;
     return issueLoginKey(user.id, deviceName);
   });
   if (!key) return NextResponse.json({ error: 'invalid_credentials' }, { status: 401 });
+  auditLoginKey(user, key.info, 'login', activeBefore, request);
   return NextResponse.json({
     key: key.plaintextKey,
     user: { id: user.id, username: user.username, displayName: user.displayName, email: user.email },

@@ -15,6 +15,8 @@
     "test:team": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && npx --yes tsx --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-team.mts\"'",
     "test:skill-submit": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && NODE_OPTIONS=--conditions=react-server npx --yes tsx --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-skill-submit.mts\"'",
     "test:collab-directory": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && npx --yes tsx --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-collab-directory.mts\"'",
+    "test:firm-audit": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && npx --yes tsx --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-firm-audit.mts\"'",
+    "test:client-ip": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && npx --yes tsx --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-client-ip.mts\"'",
     "test:shared-memory": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && npx --yes tsx --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-shared-memory.mts\"'",
     "test:us-entity": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && npx --yes tsx --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-us-entity.mts\"'",
     "test:transparency": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && npx --yes tsx --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-transparency.mts\"'",
