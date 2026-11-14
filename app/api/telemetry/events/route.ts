@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { trustedClientIp } from '@/lib/client-ip';
 import {
   allowTelemetryRequest,
   EVENT_WHITELIST,
@@ -13,7 +14,7 @@ const MAX_BODY_BYTES = 2 * 1024 * 1024;
 const MAX_EVENTS = 5000;
 
 function clientIp(request: NextRequest): string {
-  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  return trustedClientIp(request) || 'unknown';
 }
 
 /**

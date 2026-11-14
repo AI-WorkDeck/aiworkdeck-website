@@ -13,6 +13,7 @@
  */
 import crypto from 'crypto';
 import { AsyncLocalStorage } from 'async_hooks';
+import { trustedClientIp } from './client-ip';
 
 export type FirmAuditAction =
     | 'FIRM_MEMBER_JOINED'
@@ -85,10 +86,7 @@ const requestContext = new AsyncLocalStorage<{ ip: string | null; userAgent: str
  * 不取第一段：第一段是客户端自己填的，可以随便伪造。
  */
 export function auditClientIp(request: Request): string | null {
-    const real = request.headers.get('x-real-ip')?.trim();
-    if (real) return real;
-    const parts = (request.headers.get('x-forwarded-for') ?? '').split(',').map(p => p.trim()).filter(Boolean);
-    return parts.length ? parts[parts.length - 1] : null;
+    return trustedClientIp(request) || null;
 }
 
 /** 在一次请求的处理范围内运行 fn，期间上报的事件带上这次请求的来源 IP 与 UA。 */
