@@ -2,6 +2,22 @@ import crypto from 'crypto';
 import type Database from 'better-sqlite3';
 import { getDb, withTransaction } from './db';
 import { findUserById, isDeletedUser, recordUserLogin, User } from './users';
+import { orgOf } from './collab-directory';
+import { emitFirmAudit, type FirmAuditAction } from './firm-audit';
+
+/** 律所审计日志（S20）：账户 Key 的签发与吊销。只报 Key 行 id 与前缀（列表上本来就展示的部分），绝不报明文或哈希。 */
+function auditKey(userId: string, action: FirmAuditAction, keyId: number | string, prefix: string | null, detail: Record<string, string | number>) {
+  const firmId = orgOf(userId).firmId;
+  if (!firmId) return;
+  const user = findUserById(userId);
+  emitFirmAudit({
+    firmId,
+    action,
+    actor: { id: userId, name: user?.displayName ?? null },
+    target: { type: 'ACCOUNT_KEY', id: String(keyId), label: prefix },
+    detail: prefix ? { ...detail, keyPrefix: prefix } : detail,
+  });
+}
 
 /**
  * AWD Key（PR-W1）：桌面端连接账户用的 Bearer 凭据。
@@ -51,6 +67,14 @@ export function countActiveKeys(userId: string): number {
 export function generateApiKey(
   userId: string
 ): { key?: { plaintextKey: string; info: ApiKeyInfo }; error?: 'key_limit_reached' } {
+  const out = generateApiKeyTx(userId);
+  if (out.key) auditKey(userId, 'ACCOUNT_API_KEY_CREATED', out.key.info.id, out.key.info.prefix, { via: 'account_page' });
+  return out;
+}
+
+function generateApiKeyTx(
+  userId: string
+): { key?: { plaintextKey: string; info: ApiKeyInfo }; error?: 'key_limit_reached' } {
   const plaintextKey = API_KEY_PREFIX + crypto.randomBytes(32).toString('base64url');
   return withTransaction((db) => {
     if (countActiveKeys(userId) >= MAX_ACTIVE_KEYS) {
@@ -91,11 +115,28 @@ export function issueLoginKey(
   userId: string,
   label?: string | null
 ): { plaintextKey: string; info: ApiKeyInfo } {
+  let evicted = 0;
+  const out = issueLoginKeyTx(userId, label, (n) => { evicted = n; });
+  auditKey(userId, 'ACCOUNT_API_KEY_CREATED', out.info.id, out.info.prefix,
+    out.info.label ? { via: 'login', label: out.info.label } : { via: 'login' });
+  if (evicted > 0) {
+    // 最旧淘汰：登录满上限后挤下线的那几枚
+    auditKey(userId, 'ACCOUNT_API_KEY_REVOKED', 'oldest', null, { via: 'evicted_by_login', reason: `evicted ${evicted}` });
+  }
+  return out;
+}
+
+function issueLoginKeyTx(
+  userId: string,
+  label: string | null | undefined,
+  onEvict: (n: number) => void
+): { plaintextKey: string; info: ApiKeyInfo } {
   const plaintextKey = API_KEY_PREFIX + crypto.randomBytes(32).toString('base64url');
   return withTransaction((db) => {
     // 淘汰与插入必须同一事务：分开做的话并发登录可能挤掉两枚只插进一枚
     const overflow = countActiveKeys(userId) - (MAX_ACTIVE_KEYS - 1);
     if (overflow > 0) {
+      onEvict(overflow);
       db.prepare(
         `UPDATE api_keys SET revokedAt = ?
          WHERE id IN (
@@ -155,6 +196,10 @@ export function revokeApiKey(userId: string, keyId: number): boolean {
       'UPDATE api_keys SET revokedAt = ? WHERE id = ? AND userId = ? AND revokedAt IS NULL'
     )
     .run(new Date().toISOString(), keyId, userId);
+  if (result.changes > 0) {
+    const row = getDb().prepare('SELECT prefix FROM api_keys WHERE id = ?').get(keyId) as { prefix: string } | undefined;
+    auditKey(userId, 'ACCOUNT_API_KEY_REVOKED', keyId, row?.prefix ?? null, { via: 'user' });
+  }
   return result.changes > 0;
 }
 

@@ -7,6 +7,7 @@ import { emailIsAccount } from './mail-policy';
 import { siteConfig } from './site-config';
 import { normalizePhone, SmsError } from './sms-auth';
 import { findUserByEmail, findUserByPhone, mapDisplayNamesByIds, User } from './users';
+import { emitFirmAudit, type FirmAuditAction, type FirmAuditDetail } from './firm-audit';
 
 /**
  * 团队 / 律所数据层（dev-board#496，设计稿 §4/§5/§6）。
@@ -202,6 +203,39 @@ function rowToInvite(r: InviteRow): TeamInvite {
 /* ------------------------------------------------------------------ *
  * 查询
  * ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ *
+ * 律所审计日志（readiness S20）：入所退所、角色、律所设置只在官网发生，上报给案件库的同一份日志。
+ * emitFirmAudit 立即返回、永不抛；没有律所的团队不报。
+ * ------------------------------------------------------------------ */
+
+function auditName(accountId: string): string | null {
+    return mapDisplayNamesByIds([accountId]).get(accountId) ?? null;
+}
+
+function auditFirm(
+    firmId: string | null | undefined,
+    action: FirmAuditAction,
+    actorId: string,
+    target: { type: string; id: string; label?: string | null },
+    detail?: FirmAuditDetail
+): void {
+    if (!firmId) return;
+    emitFirmAudit({
+        firmId,
+        action,
+        actor: { id: actorId, name: auditName(actorId) },
+        target: { ...target, label: target.label ?? (target.type === 'ACCOUNT' ? auditName(target.id) : null) },
+        detail,
+    });
+}
+
+/** 总部团队的 OWNER/ADMIN 才是律所管理员（与 collab-directory 的 firmAdmin 同一口径）。 */
+function isFirmAdminRole(team: Team | null, role: string): boolean {
+    if (!team?.firmId) return false;
+    const firm = getFirm(team.firmId);
+    return !!firm && firm.headTeamId === team.id && (role === 'OWNER' || role === 'ADMIN');
+}
 
 export function getTeam(teamId: string): Team | null {
     const row = getDb().prepare('SELECT * FROM team WHERE id = ?').get(teamId) as TeamRow | undefined;
@@ -450,6 +484,8 @@ export function joinByCode(user: User, rawCode: unknown): Team {
              VALUES (?, ?, 'MEMBER', ?, NULL)`
         )
         .run(row.id, user.id, now);
+    auditFirm(row.firmId, 'FIRM_MEMBER_JOINED', user.id, { type: 'ACCOUNT', id: user.id },
+        { via: 'team_code', teamId: row.id, teamName: row.name, role: 'MEMBER' });
     return rowToTeam(row);
 }
 
@@ -772,6 +808,8 @@ export function acceptInvite(user: User, inviteId: string): Team {
             'UPDATE team_invite SET acceptedAt = ?, acceptedAccountId = ? WHERE id = ?'
         ).run(now, user.id, inviteId);
     });
+    auditFirm(team.firmId, 'FIRM_MEMBER_JOINED', user.id, { type: 'ACCOUNT', id: user.id },
+        { via: 'invite', teamId: team.id, teamName: team.name, role: row.role, firmAdmin: isFirmAdminRole(team, row.role) });
     return team;
 }
 
@@ -809,6 +847,12 @@ export function changeMemberRole(
     getDb()
         .prepare('UPDATE team_member SET role = ? WHERE teamId = ? AND accountId = ?')
         .run(role, actor.teamId, targetAccountId);
+    if (role !== target.role) {
+        const team = getTeam(actor.teamId);
+        auditFirm(team?.firmId, 'FIRM_ROLE_CHANGED', actorAccountId, { type: 'ACCOUNT', id: targetAccountId },
+            { fromRole: target.role, toRole: role, teamId: actor.teamId, teamName: team?.name ?? null,
+              firmAdmin: isFirmAdminRole(team, role) });
+    }
     return { ...target, role };
 }
 
@@ -856,9 +900,15 @@ export function removeMember(actorAccountId: string, targetAccountId: string): v
     }
     // 使用数据留在库里：退队的人那几天的工作量仍然是团队当期的产出，
     // 抹掉会让历史 KPI 无声变小。summary 只按 teamId 聚合，不 JOIN team_member。
+    const targetName = auditName(targetAccountId);
     getDb()
         .prepare('DELETE FROM team_member WHERE teamId = ? AND accountId = ?')
         .run(actor.teamId, targetAccountId);
+    const team = getTeam(actor.teamId);
+    const self = actorAccountId === targetAccountId;
+    auditFirm(team?.firmId, self ? 'FIRM_MEMBER_LEFT' : 'FIRM_MEMBER_REMOVED', actorAccountId,
+        { type: 'ACCOUNT', id: targetAccountId, label: targetName },
+        { role: target.role, teamId: actor.teamId, teamName: team?.name ?? null });
 }
 
 /* ------------------------------------------------------------------ *
@@ -902,6 +952,8 @@ export function createFirm(accountId: string, rawName: unknown): Firm {
         ).run(firm.id, firm.name, firm.headTeamId, joinCode, now);
         d.prepare('UPDATE team SET firmId = ? WHERE id = ?').run(firm.id, me.teamId);
     });
+    auditFirm(firm.id, 'FIRM_CREATED', accountId, { type: 'FIRM', id: firm.id, label: firm.name },
+        { teamId: me.teamId, teamName: team.name });
     return firm;
 }
 
@@ -921,6 +973,8 @@ export function joinFirmByCode(accountId: string, rawCode: unknown): Firm {
         | undefined;
     if (!row) throw new TeamError(404, 'bad_code');
     getDb().prepare('UPDATE team SET firmId = ? WHERE id = ?').run(row.id, me.teamId);
+    auditFirm(row.id, 'FIRM_TEAM_JOINED', accountId, { type: 'TEAM', id: team.id, label: team.name },
+        { memberCount: listMembers(team.id).length });
     return rowToFirm(row);
 }
 
@@ -942,6 +996,7 @@ export function regenerateFirmJoinCode(accountId: string): string {
     const { firm } = requireFirmManager(accountId);
     const code = generateUniqueJoinCode(firmCodeTaken);
     getDb().prepare('UPDATE firm SET joinCode = ? WHERE id = ?').run(code, firm.id);
+    auditFirm(firm.id, 'FIRM_JOIN_CODE_REGENERATED', accountId, { type: 'FIRM', id: firm.id, label: firm.name });
     return code;
 }
 
@@ -972,6 +1027,8 @@ export function removeTeamFromFirm(accountId: string, teamId: string): void {
     if (!isSelfLeave && !isFirmManager) throw new TeamError(403, 'forbidden');
 
     getDb().prepare('UPDATE team SET firmId = NULL WHERE id = ?').run(teamId);
+    auditFirm(firm.id, isSelfLeave ? 'FIRM_TEAM_LEFT' : 'FIRM_TEAM_REMOVED', accountId,
+        { type: 'TEAM', id: target.id, label: target.name }, { memberCount: listMembers(target.id).length });
 }
 
 /* ------------------------------------------------------------------ *

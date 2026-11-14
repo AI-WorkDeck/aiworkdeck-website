@@ -7,6 +7,7 @@ import { issueLoginKey } from '@/lib/api-keys';
 import { gateForUser, SUPPORT_EMAIL } from '@/lib/phone-policy';
 import { loginAllowed, recordLoginFailure, clearLoginFailures, clientIp } from '@/lib/login-throttle';
 import { bindCircleFirm } from '@/lib/circle-firms';
+import { auditWebsiteLoginFailure } from '@/lib/firm-audit-login';
 
 /** Password login issues the existing account key. First-contact OTP only grants a setup ticket. */
 export async function POST(request: NextRequest) {
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
     const found = findUserByAccount(account);
     if (!found || !(await verifyPassword(password, found.passwordHash))) {
       recordLoginFailure(account, ip);
+      auditWebsiteLoginFailure(found, 'exchange_key', request);
       // 与账号不存在同一个响应，不透露账号是否存在
       return NextResponse.json({ error: 'invalid_credentials' }, { status: 401 });
     }
