@@ -30,7 +30,7 @@ export type ReleaseNote = LegacyReleaseNote | {
 
 export const RELEASES: ReleaseNote[] = [
     {
-        version: '0.85.0',
+        version: '0.85.1',
         date: '2026-11-14',
         headline: {
             zh: '带密码的文件也能直接改，PPT 和 Excel 明显更快，团队与客户协作更安全',
@@ -38,8 +38,8 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '带打开密码的 Word、Excel、PPT 现在可以直接打开、编辑和保存：保存后仍是加密文件，密码不会被保存，每次打开都要重新输入。旧格式（.doc / .xls / .ppt）以只读方式打开，要改时另存为同密码保护的新格式副本。',
-                en: 'Password-protected Word, Excel and PowerPoint files can now be opened, edited and saved directly. They stay encrypted after saving, and the password is never stored, so it is asked for each time. Old formats (.doc / .xls / .ppt) open read-only; to edit, save a copy in the new format protected with the same password.',
+                zh: '带打开密码的 Word、Excel、PPT 现在可以直接打开、编辑和保存：保存后仍是加密文件，密码不会被保存，每次打开都要重新输入。旧格式（.doc / .xls / .ppt）以只读方式打开，要改时另存为同密码保护的新格式副本。0.85.1 修复了一个会改动原件的问题：早于 Office 97 的 Word .doc 和 Excel 5/95 的 .xls 刚打开几秒就被自动存成新格式、覆盖了原文件；现在打开文件不会写盘，这类文件以只读方式打开，要改时另存为 .docx / .xlsx 副本，原件保持不变。',
+                en: 'Password-protected Word, Excel and PowerPoint files can now be opened, edited and saved directly. They stay encrypted after saving, and the password is never stored, so it is asked for each time. Old formats (.doc / .xls / .ppt) open read-only; to edit, save a copy in the new format protected with the same password. 0.85.1 fixes a bug that changed originals: a Word .doc older than Office 97 or an Excel 5/95 .xls was saved in the newer format over the original file a few seconds after it was opened. Opening a file no longer writes to it; these older files now open read-only, and to edit you save a .docx / .xlsx copy, leaving the original untouched.',
             },
             {
                 zh: 'PPT、Excel 更快也更稳：保存耗时降到原来的一半到三分之一，输入、翻页的响应快了数倍，大文稿不再每停一下就卡几秒。Excel 冷启动时先显示第一屏内容；文件树里按空格预览演示文稿改由编辑器同一引擎渲染，旧的 .ppt 也能看。修复了一个会丢改动的问题：PPT 第一次自动保存之后，AI 做的单步修改可能没有保存。',
