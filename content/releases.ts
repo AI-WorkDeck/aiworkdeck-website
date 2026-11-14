@@ -30,7 +30,7 @@ export type ReleaseNote = LegacyReleaseNote | {
 
 export const RELEASES: ReleaseNote[] = [
     {
-        version: '0.85.1',
+        version: '0.85.2',
         date: '2026-11-14',
         headline: {
             zh: '带密码的文件也能直接改，PPT 和 Excel 明显更快，团队与客户协作更安全',
@@ -42,8 +42,8 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Password-protected Word, Excel and PowerPoint files can now be opened, edited and saved directly. They stay encrypted after saving, and the password is never stored, so it is asked for each time. Old formats (.doc / .xls / .ppt) open read-only; to edit, save a copy in the new format protected with the same password. 0.85.1 fixes a bug that changed originals: a Word .doc older than Office 97 or an Excel 5/95 .xls was saved in the newer format over the original file a few seconds after it was opened. Opening a file no longer writes to it; these older files now open read-only, and to edit you save a .docx / .xlsx copy, leaving the original untouched.',
             },
             {
-                zh: 'PPT、Excel 更快也更稳：保存耗时降到原来的一半到三分之一，输入、翻页的响应快了数倍，大文稿不再每停一下就卡几秒。Excel 冷启动时先显示第一屏内容；文件树里按空格预览演示文稿改由编辑器同一引擎渲染，旧的 .ppt 也能看。修复了一个会丢改动的问题：PPT 第一次自动保存之后，AI 做的单步修改可能没有保存。',
-                en: 'PowerPoint and Excel are faster and steadier: saving takes a half to a third of the time it did, typing and paging respond several times faster, and large decks no longer freeze for seconds at every pause. On a cold start Excel shows the first screen straight away. Space-bar preview of presentations is rendered by the same engine as the editor, and old .ppt files can be previewed too. One data-loss bug is fixed: after the first autosave of a presentation, a single-step AI edit could go unsaved.',
+                zh: 'PPT、Excel 更快也更稳：保存耗时降到原来的一半到三分之一，输入、翻页的响应快了数倍，大文稿不再每停一下就卡几秒。Excel 冷启动时先显示第一屏内容；文件树里按空格预览演示文稿改由编辑器同一引擎渲染，旧的 .ppt 也能看。修复了一个会丢改动的问题：PPT 第一次自动保存之后，AI 做的单步修改可能没有保存。0.85.2 修复：长文档连续编辑约半小时到一小时后，文档引擎可能因内存耗尽停止，最近的改动保存不上；现在编辑占用的内存大幅减少，必要时会在内容全部保存后自动刷新引擎；万一引擎意外停止，会恢复到最近一次保存并写明之后哪些改动没能保存。',
+                en: 'PowerPoint and Excel are faster and steadier: saving takes a half to a third of the time it did, typing and paging respond several times faster, and large decks no longer freeze for seconds at every pause. On a cold start Excel shows the first screen straight away. Space-bar preview of presentations is rendered by the same engine as the editor, and old .ppt files can be previewed too. One data-loss bug is fixed: after the first autosave of a presentation, a single-step AI edit could go unsaved. 0.85.2 fixes another: after thirty minutes to an hour of continuous editing, a long document could exhaust the memory of the document engine and recent edits could not be saved. Editing now uses far less memory, the engine is refreshed automatically once everything is saved, and if it ever stops unexpectedly the app restores the last save and says which later changes were not saved.',
             },
             {
                 zh: 'AI 更靠谱、更像同行：没做却说「已添加」「已冻结」会被发现并纠正，仍没做就如实写明本轮没有修改。回答不再用表情符号，先说结论，少用加粗和标题。直接用平常的话问（如「所里哪些案子还有应收账款没收回」），AI 能找到已安装插件的工具和内置工作流，不再说「没有这个工具」。',
