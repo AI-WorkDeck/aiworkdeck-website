@@ -42,8 +42,8 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Firm administrators can review their firm\'s security events in Settings › Audit Log: sign-ins and failed sign-ins, devices connected and revoked, project sharing and membership changes, client access codes and portal sign-ins, file downloads, refused access attempts, and, from the website, joining or leaving the firm, role changes and failed website sign-ins. The log never contains file content, chat text or passwords; entries can only be appended, and Verify detects any entry that was altered or deleted.',
             },
             {
-                zh: '律所管理插件 0.1.18：一个客户一张档案，登记股东、实际控制人等关系后，利冲检索会沿股权链命中并写明关系链；工作记录直接生成计时工时，合伙人按月审核、核减、出账单（先折扣后封顶），客户确认后进入原有开票台账。客户资料和工时汇总可以按律所开关在同所律师之间共享，收费金额始终只留在本机。',
-                en: 'Law Firm Management 0.1.18: one profile per client; once shareholders, controllers and other relationships are recorded, conflict checks follow the ownership chain and show it as the reason. Work records turn into billable time that partners review by month, write down and bill (discount first, then cap), and confirmed bills flow into the existing invoicing ledger. Client data and time collection can be shared within the firm by a firm switch; fees always stay on the local machine.',
+                zh: '律所管理插件 0.1.18 起：一个客户一张档案，登记股东、实际控制人等关系后，利冲检索会沿股权链命中并写明关系链；工作记录直接生成计时工时，合伙人按月审核、核减、出账单（先折扣后封顶），客户确认后进入原有开票台账。客户资料和工时汇总可以按律所开关在同所律师之间共享，收费金额始终只留在本机。',
+                en: 'Law Firm Management 0.1.18 and later: one profile per client; once shareholders, controllers and other relationships are recorded, conflict checks follow the ownership chain and show it as the reason. Work records turn into billable time that partners review by month, write down and bill (discount first, then cap), and confirmed bills flow into the existing invoicing ledger. Client data and time collection can be shared within the firm by a firm switch; fees always stay on the local machine.',
             },
             {
                 zh: '新插件「投标与提案」0.2.1：从所里的业绩库、律师简历和 Word / PPT 模板生成投标书与提案初稿并算出报价；招标要求逐条对照原文，标出满足与缺材料；对外材料默认脱敏。项目做完可以一键整理成业绩，自行决定只给自己、团队还是全所使用。',
