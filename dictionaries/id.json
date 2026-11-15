@@ -524,7 +524,15 @@
       "file_read": "Baca file",
       "file_write": "Tulis file",
       "network": "Akses jaringan",
-      "editor": "Editor"
+      "editor": "Editor",
+      "ai": "Permintaan AI",
+      "im": "Obrolan, anggota percakapan, dan lampiran",
+      "notifications": "Notifikasi kotak masuk",
+      "lawfirm": "Informasi tim",
+      "speech": "Percakapan dan perekaman",
+      "tasks": "Kalender dan tugas",
+      "clipboard": "Papan Klip",
+      "worklog_read": "Ringkasan catatan kerja Anda sendiri"
     }
   },
   "developPage": {

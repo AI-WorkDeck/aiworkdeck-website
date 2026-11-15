@@ -524,7 +524,15 @@
       "file_read": "Dosyaları oku",
       "file_write": "Dosyalara yaz",
       "network": "Ağ erişimi",
-      "editor": "Düzenleyici"
+      "editor": "Düzenleyici",
+      "ai": "AI istekleri",
+      "im": "Sohbetler, konuşma üyeleri ve ekler",
+      "notifications": "Gelen kutusu bildirimleri",
+      "lawfirm": "Ekip bilgileri",
+      "speech": "Konuşma ve kayıt",
+      "tasks": "Takvim ve görevler",
+      "clipboard": "Pano",
+      "worklog_read": "Kendi çalışma kayıtlarınızın özeti"
     }
   },
   "developPage": {

@@ -524,7 +524,15 @@
       "file_read": "Bestanden lezen",
       "file_write": "Bestanden schrijven",
       "network": "Netwerktoegang",
-      "editor": "Editor"
+      "editor": "Editor",
+      "ai": "AI-verzoeken",
+      "im": "Chats, gespreksleden en bijlagen",
+      "notifications": "Inboxmeldingen",
+      "lawfirm": "Teaminformatie",
+      "speech": "Spraak en opname",
+      "tasks": "Agenda en taken",
+      "clipboard": "Klembord",
+      "worklog_read": "Overzicht van je eigen werkregistraties"
     }
   },
   "developPage": {

@@ -524,7 +524,15 @@
       "file_read": "Lettura file",
       "file_write": "Scrittura file",
       "network": "Accesso alla rete",
-      "editor": "Editor"
+      "editor": "Editor",
+      "ai": "Richieste AI",
+      "im": "Chat, membri della conversazione e allegati",
+      "notifications": "Notifiche della posta in arrivo",
+      "lawfirm": "Informazioni sul team",
+      "speech": "Voce e registrazione",
+      "tasks": "Calendario e attività",
+      "clipboard": "Appunti",
+      "worklog_read": "Riepilogo dei tuoi registri di lavoro"
     }
   },
   "developPage": {

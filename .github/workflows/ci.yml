@@ -54,6 +54,8 @@ jobs:
         run: node scripts/check-palette.mjs
       - name: Plugin platform template and submission contracts
         run: npm run test:plugin-platform
+      - name: Plugin permission list parity (pinned with aiworkdeck PluginPermissionParityTest)
+        run: npm run test:plugin-permissions
       - name: CN-signed plugin mirror display localization
         run: npx tsx --tsconfig tsconfig.json scripts/verify-plugin-mirror-l10n.mts
       - name: Developer eligibility and scoped submission tokens

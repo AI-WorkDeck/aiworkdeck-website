@@ -524,7 +524,15 @@
       "file_read": "Read files",
       "file_write": "Write files",
       "network": "Network access",
-      "editor": "Editor"
+      "editor": "Editor",
+      "ai": "AI requests",
+      "im": "Chats, conversation members and attachments",
+      "notifications": "Inbox notifications",
+      "lawfirm": "Team information",
+      "speech": "Speech and recording",
+      "tasks": "Calendar and tasks",
+      "clipboard": "Clipboard",
+      "worklog_read": "Summary of your own work records"
     }
   },
   "developPage": {

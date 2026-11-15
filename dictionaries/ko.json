@@ -524,7 +524,15 @@
       "file_read": "파일 읽기",
       "file_write": "파일 쓰기",
       "network": "네트워크 접근",
-      "editor": "에디터"
+      "editor": "에디터",
+      "ai": "AI 요청",
+      "im": "채팅, 대화 참여자 및 첨부 파일",
+      "notifications": "수신함 알림",
+      "lawfirm": "팀 정보",
+      "speech": "음성 및 녹음",
+      "tasks": "캘린더 및 작업",
+      "clipboard": "클립보드",
+      "worklog_read": "본인 작업 기록 요약"
     }
   },
   "developPage": {

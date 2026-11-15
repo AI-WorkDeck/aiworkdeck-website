@@ -526,7 +526,15 @@
       "file_read": "读取文件",
       "file_write": "写入文件",
       "network": "网络访问",
-      "editor": "编辑器"
+      "editor": "编辑器",
+      "ai": "AI 调用",
+      "im": "聊天、会话成员与聊天附件",
+      "notifications": "消息通知",
+      "lawfirm": "团队信息",
+      "speech": "语音合成与录音",
+      "tasks": "日程与事项",
+      "clipboard": "剪贴板",
+      "worklog_read": "本人工作记录汇总"
     }
   },
   "developPage": {

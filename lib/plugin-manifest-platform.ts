@@ -55,9 +55,15 @@ function entry(value: unknown, at: string, files: ReadonlyMap<string, Buffer>) {
 const VIEW_ID = /^[a-z][a-z0-9-]{0,49}$/;
 const OP_ID = /^[a-zA-Z][a-zA-Z0-9._-]{0,63}$/;
 const KEY = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/;
-const PERMISSIONS = ['file_read', 'file_write', 'network', 'editor', 'ai', 'im', 'notifications', 'lawfirm', 'speech', 'tasks', 'clipboard',
+/**
+ * Every manifest permission the desktop host knows and enforces. Pinned by scripts/verify-plugin-permissions.mts,
+ * which mirrors the main repo's backend/src/test/java/com/checkba/service/ai/PluginPermissionParityTest.java
+ * (host PluginService.KNOWN_PERMISSIONS + SDK schema). Change both repos together.
+ */
+export const PLUGIN_PERMISSIONS = ['file_read', 'file_write', 'network', 'editor', 'ai', 'im', 'notifications', 'lawfirm', 'speech', 'tasks', 'clipboard',
   // Host 0.86.0 (aiworkdeck #1565): read-only summary of the caller's own work log; older hosts warn and ignore it.
-  'worklog_read'];
+  'worklog_read'] as const;
+const PERMISSIONS: readonly string[] = PLUGIN_PERMISSIONS;
 
 /** Exact reviewed MCP schema subset supported by the host, not arbitrary JSON Schema. */
 export function validateMcpInputSchema(value: unknown, at = 'inputSchema', depth = 0): void {
