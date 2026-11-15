@@ -19,7 +19,7 @@ import path from 'path';
 // 打包成 CJS 跑（adm-zip 是 CJS，ESM 打包下 require 垫片会炸），所以这里用 require。
 declare const require: (m: string) => unknown;
 
-const AUTHOR = { id: 'awd-official', username: 'AI Workdeck' };
+const AUTHOR = { id: 'awd-official', username: 'AI WorkDeck' };
 
 const args = process.argv.slice(2);
 const zipPath = args.find((a) => !a.startsWith('--'));
