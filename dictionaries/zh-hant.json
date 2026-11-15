@@ -1421,7 +1421,15 @@
       "editor": "編輯器",
       "file_read": "讀取文件",
       "file_write": "寫入文件",
-      "network": "網絡訪問"
+      "network": "網絡訪問",
+      "ai": "AI 調用",
+      "im": "聊天、會話成員與聊天附件",
+      "notifications": "消息通知",
+      "lawfirm": "團隊信息",
+      "speech": "語音合成與錄音",
+      "tasks": "日程與事項",
+      "clipboard": "剪貼板",
+      "worklog_read": "本人工作紀錄彙總"
     },
     "signed": "已簽名",
     "submit": "提交外掛",

@@ -524,7 +524,15 @@
       "file_read": "Đọc tệp",
       "file_write": "Ghi tệp",
       "network": "Truy cập mạng",
-      "editor": "Trình soạn thảo"
+      "editor": "Trình soạn thảo",
+      "ai": "Yêu cầu AI",
+      "im": "Chat, thành viên hội thoại và tệp đính kèm",
+      "notifications": "Thông báo hộp thư đến",
+      "lawfirm": "Thông tin nhóm",
+      "speech": "Ghi âm và ghi hình",
+      "tasks": "Lịch và công việc",
+      "clipboard": "Bộ nhớ tạm (Clipboard)",
+      "worklog_read": "Tóm tắt nhật ký công việc của chính bạn"
     }
   },
   "developPage": {

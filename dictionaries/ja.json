@@ -524,7 +524,15 @@
       "file_read": "ファイルの読み取り",
       "file_write": "ファイルの書き込み",
       "network": "ネットワークアクセス",
-      "editor": "エディター"
+      "editor": "エディター",
+      "ai": "AIリクエスト",
+      "im": "チャット、会話メンバー、添付ファイル",
+      "notifications": "受信箱の通知",
+      "lawfirm": "チーム情報",
+      "speech": "音声と録音",
+      "tasks": "カレンダーとタスク",
+      "clipboard": "クリップボード",
+      "worklog_read": "自分の作業記録の集計"
     }
   },
   "developPage": {

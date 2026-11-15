@@ -524,7 +524,15 @@
       "file_read": "Dateien lesen",
       "file_write": "Dateien schreiben",
       "network": "Netzwerkzugriff",
-      "editor": "Editor"
+      "editor": "Editor",
+      "ai": "KI-Anfragen",
+      "im": "Chats, Unterhaltungsteilnehmer und Anhänge",
+      "notifications": "Posteingangs-Benachrichtigungen",
+      "lawfirm": "Team-Informationen",
+      "speech": "Sprache und Aufnahme",
+      "tasks": "Kalender und Aufgaben",
+      "clipboard": "Zwischenablage",
+      "worklog_read": "Zusammenfassung Ihrer eigenen Arbeitsprotokolle"
     }
   },
   "developPage": {

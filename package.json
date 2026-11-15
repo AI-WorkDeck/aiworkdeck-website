@@ -36,6 +36,7 @@
     "build:web": "npm run build --prefix web-workbench",
     "test:web-api": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && \"$REPO/node_modules/.bin/tsx\" --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-web-ai.mts\"'",
     "prebuild": "node scripts/web-assert-release.mjs",
+    "test:plugin-permissions": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && \"$REPO/node_modules/.bin/tsx\" --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-plugin-permissions.mts\"'",
     "test:plugin-platform": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && \"$REPO/node_modules/.bin/tsx\" --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-plugin-platform.mts\"'",
     "test:developers": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && \"$REPO/node_modules/.bin/tsx\" --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-developers.mts\"'",
     "test:openrouter-rotation": "REPO=\"$PWD\" D=\"$(mktemp -d)\" sh -c 'cd \"$D\" && NEXT_PUBLIC_AWD_SITE=intl \"$REPO/node_modules/.bin/tsx\" --tsconfig \"$REPO/tsconfig.json\" \"$REPO/scripts/verify-openrouter-rotation.mts\"'",

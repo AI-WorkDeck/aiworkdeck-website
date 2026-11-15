@@ -524,7 +524,15 @@
       "file_read": "Baca fail",
       "file_write": "Tulis fail",
       "network": "Akses rangkaian",
-      "editor": "Editor"
+      "editor": "Editor",
+      "ai": "Permintaan AI",
+      "im": "Sembang, ahli perbualan dan lampiran",
+      "notifications": "Pemberitahuan kotak masuk",
+      "lawfirm": "Maklumat pasukan",
+      "speech": "Pertuturan dan rakaman",
+      "tasks": "Kalendar dan tugasan",
+      "clipboard": "Papan keratan",
+      "worklog_read": "Ringkasan rekod kerja anda sendiri"
     }
   },
   "developPage": {
