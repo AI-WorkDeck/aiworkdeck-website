@@ -9,9 +9,10 @@ if (process.env.NEXT_PUBLIC_AWD_SITE === 'cn') {
     const location = new URL(response.headers.get('location')!);
     assert.equal(location.origin + location.pathname, CN_ANDROID_RELEASE.url);
     assert.match(location.searchParams.get('auth_key')!, /^\d+-[a-f0-9]+-0-[a-f0-9]{32}$/);
-    assert.equal(CN_ANDROID_RELEASE.version, '1.7.0');
+    assert.equal(CN_ANDROID_RELEASE.version, '1.7.1');
+    assert.equal(CN_ANDROID_RELEASE.versionCode, 13);
     assert.equal(CN_ANDROID_RELEASE.bytes, 43180526);
-    assert.equal(CN_ANDROID_RELEASE.sha256, '1caa3b9b7e797a4d050f17883bdfa36b1bc0d0bc5063a432aa740fd84aecc179');
+    assert.equal(CN_ANDROID_RELEASE.sha256, '97a0fe7916233e96bc04cfc2de6ec59f772ddf657953af9cbb52f84830df45c3');
 } else {
     assert.equal(response.status, 400);
     assert.equal(response.headers.get('location'), null);
