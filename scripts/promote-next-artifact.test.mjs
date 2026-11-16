@@ -80,6 +80,34 @@ test('legacy ci.yml deploy jobs still hard-fail first', () => {
   }
 });
 
+test('PM2 version warnings do not corrupt health JSON or bypass the Node version check', () => {
+  const health = server.match(/^local_health\(\) \{[\s\S]*?^\}/m)?.[0];
+  assert.ok(health, 'exercise the actual local_health function');
+  const script = `set -euo pipefail
+SITE=intl HOST=localhost PORT=3000 APP=. PM2_NAME=app
+lcurl() { printf 200; }
+sqlite_probe() { return 0; }
+pm2() {
+  [ "$1" = jlist ] || return 90
+  if [ "\${2:-}" != --silent ]; then
+    printf '\\n>>>> In-memory PM2 is out-of-date, do:\\n>>>> $ pm2 update\\n'
+  fi
+  printf '[{"name":"app","pm2_env":{"node_version":"%s"}}]\\n' "$PM2_FIXTURE_NODE_VERSION"
+}
+${health}
+local_health || exit 1
+`;
+  for (const [version, expected] of [['0.0.0', 1], [process.versions.node, 0]]) {
+    const result = spawnSync('bash', ['-c', script], {
+      encoding: 'utf8', env: {...process.env, PM2_FIXTURE_NODE_VERSION: version},
+    });
+    assert.equal(result.status, expected, `${version}: ${result.stdout}\n${result.stderr}`);
+    assert.doesNotMatch(result.stderr, /SyntaxError|JSON/);
+    assert.doesNotMatch(result.stdout, /did not report node_version/);
+    if (expected) assert.match(result.stdout, /pm2 node 0\.0\.0 !=/);
+  }
+});
+
 // ---------------------------------------------------------------------------
 // 行为：沙箱里的「服务器」。需要 Linux（/proc/meminfo、GNU coreutils、mv -T）。
 const linux = process.platform === 'linux';

@@ -107,7 +107,7 @@ local_health() {
   sqlite_probe "$APP" || return 1
   # pm2 实际解释器与上面探针用的 node 必须同版本（ABI 坑）；pm2 没报版本时只告警
   local pm2v
-  pm2v="$(pm2 jlist | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const p=JSON.parse(s).find(x=>x.name===process.argv[1]);process.stdout.write(String(p&&p.pm2_env&&p.pm2_env.node_version||""))})' "$PM2_NAME")"
+  pm2v="$(pm2 jlist --silent | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const p=JSON.parse(s).find(x=>x.name===process.argv[1]);process.stdout.write(String(p&&p.pm2_env&&p.pm2_env.node_version||""))})' "$PM2_NAME")"
   if [ -z "$pm2v" ]; then echo "WARN: pm2 did not report node_version"
   elif [ "v$pm2v" != "$(node -v)" ] && [ "$pm2v" != "$(node -v)" ]; then echo "pm2 node $pm2v != $(node -v)"; return 1; fi
 }
