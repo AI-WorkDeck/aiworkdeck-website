@@ -36,6 +36,13 @@ ok('去空格并转小写（否则同一地址会变成两个账号）');
 // 校验必须与 lib/users.ts createUser 的那条同样宽松：收紧只会误伤合法地址
 assert.strictEqual(normalizeEmail('user+tag@sub.example.co.uk'), 'user+tag@sub.example.co.uk');
 assert.strictEqual(normalizeEmail('a-b_c@my-domain.io'), 'a-b_c@my-domain.io');
+assert.strictEqual(normalizeEmail('a@b.c.'), 'a@b.c.');
+assert.strictEqual(normalizeEmail('a@b..'), 'a@b..');
+for (const domain of ['b.c', '.b', 'b.', 'b..', '..b', '.', '..', '...', 'a.b.c.', 'a b.c']) {
+  const value = `a@${domain}`;
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) assert.strictEqual(normalizeEmail(value), value);
+  else assert.throws(() => normalizeEmail(value), MailError);
+}
 ok('放行带 +tag / 连字符 / 多级域名的合法地址');
 throws(() => normalizeEmail('not-an-email'), '缺 @ 应拒绝');
 throws(() => normalizeEmail('a@b'), '缺顶级域应拒绝');
@@ -44,6 +51,7 @@ throws(() => normalizeEmail(''), '空应拒绝');
 throws(() => normalizeEmail(null), 'null 应拒绝');
 throws(() => normalizeEmail('x'.repeat(250) + '@example.com'), '超过 254 字符应拒绝');
 
+throws(() => normalizeEmail('a@' + '.'.repeat(100000) + '!'), '超长域名应快速拒绝');
 assert.strictEqual(maskEmail('alice@example.com'), 'a****@example.com');
 assert.strictEqual(maskEmail('a@example.com'), 'a*@example.com');
 assert.strictEqual(maskEmail('nope'), '');

@@ -158,14 +158,14 @@ export async function POST(request: NextRequest) {
     // 金额以回查为准，不采信推送体里的 GoodsInfo.ActualPrice
     const settlement = await adapter.queryCharge(outTradeNo);
     if (!settlement?.paid) {
-      console.error(`[wx-mini push] 回查未确认收款，等微信重推: ${outTradeNo}`);
+      console.error('[wx-mini push] 回查未确认收款，等微信重推:', outTradeNo);
       return ack(-1, 'not paid yet');
     }
 
     const result = settleFromChannel(settlement);
     if (!result.ok) {
       console.error(
-        `[wx-mini push] 拒绝结算 ${outTradeNo}: ${describeSettleFailure(result.reason)}`,
+        '[wx-mini push] 拒绝结算', { outTradeNo, reason: describeSettleFailure(result.reason) },
         { channelAmount: settlement.amountMinor, channelCurrency: settlement.currency }
       );
       return ack(-1, describeSettleFailure(result.reason));
@@ -173,13 +173,14 @@ export async function POST(request: NextRequest) {
 
     console.log(
       result.alreadyPaid
-        ? `[wx-mini push] 重复推送，订单已是已支付: ${outTradeNo}`
-        : `[wx-mini push] 订单已更新为已支付: ${outTradeNo}`
+        ? '[wx-mini push] 重复推送，订单已是已支付:'
+        : '[wx-mini push] 订单已更新为已支付:',
+      outTradeNo
     );
     return ack(0, 'success');
   } catch (error) {
     // 出站回查失败等瞬时故障：回非 0 让微信重推，别把一笔真到账丢在这里
-    console.error(`[wx-mini push] 处理失败 ${outTradeNo}:`, error);
+    console.error('[wx-mini push] 处理失败:', outTradeNo, error);
     return ack(-1, 'internal error');
   }
 }

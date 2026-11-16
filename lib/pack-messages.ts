@@ -79,7 +79,7 @@ export const PACK_ERROR_MESSAGES_EN: Record<PackError, string> = {
 };
 
 function localizePackDetail(detail: string, lang: Locale): string {
-    if (toBaseLocale(lang) !== 'en') return detail;
+    if (toBaseLocale(lang) !== 'en' || detail.length > 2048) return detail;
     return detail
         .replace(/^(.+) 平台键重复$/, '$1 has duplicate platform keys')
         .replace(/^已有版本 (.+)$/, 'existing version $1')

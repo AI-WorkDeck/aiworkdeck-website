@@ -8,7 +8,7 @@
  * 跑法：npx tsx --tsconfig <repo>/tsconfig.json <repo>/scripts/verify-plugin-scan.mts
  */
 import assert from 'assert';
-import { scanPluginPackage } from '@/lib/plugin-scan';
+const { scanPluginPackage } = await import('@/lib/plugin-scan');
 
 const cls = (s: string) => Buffer.from(s, 'latin1');
 // ScanInput.files 是 Map<string, Buffer>，这里收成对数组再转 Map（用例里写字面量更好读）
@@ -45,3 +45,24 @@ assert.ok(hitKeys([['a.jar!X.class', cls('setAccessible')]]).has('reflection_byp
 ok('setAccessible 仍然报 reflection_bypass');
 
 console.log(`\n${passed} 条通过`);
+
+// A namespace-looking substring must not hide an external endpoint.
+for (const url of [
+  'http://www.w3.org.evil.example/path',
+  'http://evil.example/www.w3.org',
+  'http://evil.example/?xmlns=x',
+  'http://schemas.evil.example/path',
+  'http://localhost.evil.example/path',
+  'http://127.evil.example/path',
+  'http://www.w3.org@evil.example/path',
+]) {
+  for (const file of ['a.jar!X.class', 'web/main.js']) {
+    const result = scanPluginPackage({ files: new Map([[file, cls(url)]]), declaredPermissions: [] });
+    assert.ok(result.findings.some(f => f.value === url), `${file} must report ${url}`);
+  }
+}
+for (const url of ['http://www.w3.org/2000/svg', 'http://schemas.xmlsoap.org/soap/envelope/', 'http://localhost:8080/api', 'http://127.0.0.1:8080/api']) {
+  const result = scanPluginPackage({ files: new Map([['web/main.js', cls(url)]]), declaredPermissions: [] });
+  assert.ok(!result.findings.some(f => f.value === url), `known namespace/loopback ${url}`);
+}
+console.log('URL authority adversarial cases passed');
