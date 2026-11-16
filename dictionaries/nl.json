@@ -1592,6 +1592,14 @@
       "title": "Wat er in elke versie is gewijzigd"
     },
     "mechanicsTitle": "Hoe updates werken",
+    "release0870": {
+      "headline": "Eenduidige bedrijfs- en juridische informatie",
+      "items": [
+        "De exploitant en auteursrechthebbende van AI WorkDeck is BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
+        "De informatie onder Over, auteursrechten en juridische informatie in de desktopapp, op de website en in de Office/WPS-invoegtoepassingen vermeldt nu hetzelfde bedrijf.",
+        "Deze update wordt geleverd met een nieuw volledig installatieprogramma. Na installatie toont de pagina Over de bijgewerkte bedrijfsgegevens."
+      ]
+    },
     "release0770": {
       "headline": "Herstelbescherming voor cloudsynchronisatie en accountcompatibiliteitsupdate",
       "items": [

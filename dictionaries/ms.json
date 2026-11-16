@@ -1592,6 +1592,14 @@
       "title": "Apa yang berubah pada setiap versi"
     },
     "mechanicsTitle": "Cara kemas kini berfungsi",
+    "release0870": {
+      "headline": "Penyelarasan pengendali dan maklumat undang-undang",
+      "items": [
+        "Pengendali dan pemegang hak cipta AI WorkDeck ialah BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
+        "Maklumat Perihal, hak cipta dan undang-undang dalam aplikasi desktop, laman web serta tambahan Office/WPS kini menyatakan syarikat yang sama.",
+        "Kemas kini ini menggunakan pemasang penuh yang baharu. Selepas pemasangan, halaman Perihal memaparkan maklumat syarikat yang dikemas kini."
+      ]
+    },
     "release0770": {
       "headline": "Perlindungan pemulihan segerak awan dan kemas kini keserasian akaun",
       "items": [

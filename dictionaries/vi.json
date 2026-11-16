@@ -1592,6 +1592,14 @@
       "title": "Những gì thay đổi trong từng phiên bản"
     },
     "mechanicsTitle": "Cách cập nhật hoạt động",
+    "release0870": {
+      "headline": "Thống nhất đơn vị vận hành và thông tin pháp lý",
+      "items": [
+        "Đơn vị vận hành và chủ sở hữu bản quyền AI WorkDeck là BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
+        "Thông tin Giới thiệu, bản quyền và pháp lý trong ứng dụng máy tính, trang web và phần bổ trợ Office/WPS hiện cùng ghi nhận một công ty.",
+        "Bản cập nhật này được cung cấp qua bộ cài đặt đầy đủ mới. Sau khi cài đặt, trang Giới thiệu hiển thị thông tin công ty đã cập nhật."
+      ]
+    },
     "release0770": {
       "headline": "Bảo vệ khôi phục đồng bộ đám mây và cập nhật tương thích tài khoản",
       "items": [

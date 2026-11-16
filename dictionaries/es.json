@@ -1592,6 +1592,14 @@
       "title": "Qué ha cambiado en cada versión"
     },
     "mechanicsTitle": "Cómo funcionan las actualizaciones",
+    "release0870": {
+      "headline": "Unificación de la entidad operadora y la información legal",
+      "items": [
+        "La entidad operadora y titular de los derechos de autor de AI WorkDeck es BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
+        "La información de Acerca de, derechos de autor y avisos legales de la aplicación de escritorio, el sitio web y los complementos de Office/WPS identifica ahora a la misma empresa.",
+        "Esta actualización se distribuye mediante un nuevo instalador completo. Tras instalarla, la página Acerca de muestra los datos actualizados de la empresa."
+      ]
+    },
     "release0770": {
       "headline": "Protección de recuperación de sincronización en la nube y actualización de compatibilidad de cuentas",
       "items": [

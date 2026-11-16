@@ -1592,6 +1592,14 @@
       "title": "Was sich in jeder Version geändert hat"
     },
     "mechanicsTitle": "So funktionieren Updates",
+    "release0870": {
+      "headline": "Einheitliche Betreiber- und Rechtsangaben",
+      "items": [
+        "Betreiber und Urheberrechtsinhaber von AI WorkDeck ist BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
+        "Die Angaben unter „Über“, zum Urheberrecht und zu rechtlichen Fragen nennen in der Desktop-App, auf der Website und in den Office/WPS-Add-ins dieselbe Gesellschaft.",
+        "Dieses Update wird als neues vollständiges Installationspaket bereitgestellt. Nach der Installation zeigt die Seite „Über“ die aktualisierten Unternehmensangaben."
+      ]
+    },
     "release0770": {
       "headline": "Wiederherstellungsschutz für Cloud-Sync und Kontokompatibilitäts-Update",
       "items": [

@@ -1592,6 +1592,14 @@
       "title": "Cosa è cambiato in ogni versione"
     },
     "mechanicsTitle": "Come funzionano gli aggiornamenti",
+    "release0870": {
+      "headline": "Unificazione del gestore e delle informazioni legali",
+      "items": [
+        "Il gestore e titolare del copyright di AI WorkDeck è BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
+        "Le informazioni su società, copyright e aspetti legali nell’app desktop, nel sito e nei componenti aggiuntivi Office/WPS indicano ora la stessa società.",
+        "Questo aggiornamento viene distribuito con un nuovo programma di installazione completo. Dopo l’installazione, la pagina Informazioni mostra i dati aggiornati della società."
+      ]
+    },
     "release0770": {
       "headline": "Protezione del recupero della sincronizzazione cloud e aggiornamento di compatibilità degli account",
       "items": [

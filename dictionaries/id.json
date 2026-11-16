@@ -1592,6 +1592,14 @@
       "title": "Apa yang berubah di setiap versi"
     },
     "mechanicsTitle": "Cara kerja pembaruan",
+    "release0870": {
+      "headline": "Penyelarasan operator dan informasi hukum",
+      "items": [
+        "Operator dan pemegang hak cipta AI WorkDeck adalah BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
+        "Informasi Tentang, hak cipta, dan hukum pada aplikasi desktop, situs web, serta add-in Office/WPS kini mencantumkan perusahaan yang sama.",
+        "Pembaruan ini menggunakan penginstal lengkap yang baru. Setelah pemasangan, halaman Tentang menampilkan informasi perusahaan yang diperbarui."
+      ]
+    },
     "release0770": {
       "headline": "Perlindungan pemulihan sinkronisasi cloud dan pembaruan kompatibilitas akun",
       "items": [
