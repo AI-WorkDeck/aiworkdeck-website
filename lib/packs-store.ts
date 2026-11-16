@@ -248,6 +248,7 @@ export function readPackInspection(
     id: string,
     version: string
 ): Record<string, TarInspection> | undefined {
+    if (!PACK_ID_RE.test(id) || !SEMVER_RE.test(version)) return undefined;
     const file = inspectionFile(id, version);
     if (!fs.existsSync(file)) return undefined;
     try {
@@ -259,6 +260,7 @@ export function readPackInspection(
 
 /** 审核时人工下载核查用的归档路径；只认该版本 manifest 里登记过的 archive */
 export function packArchivePath(id: string, version: string, archive: string): string | undefined {
+    if (!PACK_ID_RE.test(id) || !SEMVER_RE.test(version) || !ARCHIVE_NAME_RE.test(archive)) return undefined;
     const entry = getPack(id, version);
     if (!entry || !entry.manifest.components.some((c) => c.archive === archive)) return undefined;
     const target = path.join(submissionDir(id, version), archive);
@@ -486,6 +488,7 @@ export async function receiveUpload(
     const { draft, error } = findDraft(token);
     if (error || !draft) return { error };
     if (draft.authorId !== opts.authorId) return { error: 'not_owner' };
+    if (!ARCHIVE_NAME_RE.test(fileName)) return { error: 'file_not_declared', detail: fileName };
 
     const declared = draft.files.find((f) => f.name === fileName);
     if (!declared) return { error: 'file_not_declared', detail: fileName };

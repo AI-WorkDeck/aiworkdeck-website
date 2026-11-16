@@ -455,6 +455,7 @@ export function incrementDownloads(id: string, version: string) {
 
 /** 读取某版本包内的一个文件；path 必须是该版本 files 里登记过的键 */
 export function readPluginFile(id: string, version: string, relPath: string): Buffer | undefined {
+  if (!PLUGIN_ID_RE.test(id) || !SEMVER_RE.test(version) || !isSafeEntryPath(relPath)) return undefined;
   const entry = getPlugin(id, version);
   if (!entry || !Object.prototype.hasOwnProperty.call(entry.files, relPath)) return undefined;
   const target = path.join(FILES_ROOT, id, version, relPath);

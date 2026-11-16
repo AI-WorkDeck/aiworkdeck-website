@@ -1,6 +1,6 @@
 # Repository security checks
 
-This private repository uses the free scanning gate explicitly authorized by the owner on 2026-11-04 (dev-board#1700): Semgrep Community Edition, npm audit and Gitleaks. GitHub CodeQL/Advanced Security is not enabled on the Free organization plan. A passing check here must not be described as a CodeQL pass.
+Since 2026-11-11 this project is the public `AI-WorkDeck/aiworkdeck-website` repository with GitHub default CodeQL analysis enabled. The original private-repository gate (dev-board#1700) remains as additional coverage: Semgrep Community Edition, npm audit and Gitleaks. Verify CodeQL and these checks on the exact candidate commit; one scanner passing does not stand in for another.
 
 Source is scanned locally or on the repository's GitHub Actions runner, without a Semgrep cloud account or source upload. Scanner and community-rule versions are pinned in the workflow/scripts. All findings block the gate unless individually reviewed and documented. Scan errors also fail the check. Gitleaks reports redact matched values.
 

@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
       if (!result.ok) {
         // 与 webhook 路径同口径：对不上一律不结算，留人工核查（防御纵深）
         console.error(
-          `[payment query] 拒绝结算 ${outTradeNo}: ${describeSettleFailure(result.reason)}`,
+          '[payment query] 拒绝结算', { outTradeNo, reason: describeSettleFailure(result.reason) },
           { channelAmount: settlement.amountMinor, channelCurrency: settlement.currency }
         );
         return NextResponse.json(

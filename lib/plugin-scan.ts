@@ -116,14 +116,15 @@ function isWebAsset(name: string): boolean {
 
 /** 命名空间 URI、本机回环这类无信号的地址不进报告，否则真信号会被淹没 */
 function isBenignUrl(url: string): boolean {
-  return (
-    url.startsWith('http://localhost') ||
-    url.startsWith('https://localhost') ||
-    url.startsWith('http://127.') ||
-    url.includes('www.w3.org') ||
-    url.includes('xmlns') ||
-    url.includes('schemas.')
-  );
+  try {
+    const parsed = new URL(url);
+    if (parsed.username || parsed.password) return false;
+    const host = parsed.hostname;
+    return host === 'localhost' || /^127\.\d+\.\d+\.\d+$/.test(host) ||
+      host === 'www.w3.org' || host === 'schemas.xmlsoap.org' || host === 'www.w3.org.';
+  } catch {
+    return false;
+  }
 }
 
 /** 本地回环与内网段不算可疑出口 */
@@ -215,11 +216,8 @@ export function scanPluginPackage(input: ScanInput): ScanReport {
       }
     }
     for (const url of text.match(HTTP_URL_RE) || []) {
-      if (!url.startsWith('http://localhost') && !url.startsWith('http://127.') && findings.length < 50) {
-        // class 常量池里 XML 命名空间 URI 极常见，排掉以免淹没真实信号
-        if (!url.includes('www.w3.org') && !url.includes('xmlns') && !url.includes('schemas.')) {
-          findings.push({ kind: 'plaintext_http', value: url.slice(0, 120), file: path });
-        }
+      if (!isBenignUrl(url) && findings.length < 50) {
+        findings.push({ kind: 'plaintext_http', value: url.slice(0, 120), file: path });
       }
     }
   }
