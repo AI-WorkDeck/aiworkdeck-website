@@ -1592,6 +1592,14 @@
       "title": "Ce qui a changé dans chaque version"
     },
     "mechanicsTitle": "Comment fonctionnent les mises à jour",
+    "release0870": {
+      "headline": "Unification de l’exploitant et des informations juridiques",
+      "items": [
+        "L’exploitant et titulaire des droits d’auteur d’AI WorkDeck est BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
+        "Les rubriques À propos, droits d’auteur et informations juridiques de l’application de bureau, du site et des compléments Office/WPS désignent désormais la même société.",
+        "Cette mise à jour est distribuée via un nouveau programme d’installation complet. Après installation, la page À propos affiche les informations actualisées de la société."
+      ]
+    },
     "release0770": {
       "headline": "Protection de récupération de la synchronisation cloud et mise à jour de compatibilité des comptes",
       "items": [

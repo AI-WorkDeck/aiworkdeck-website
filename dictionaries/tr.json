@@ -1592,6 +1592,14 @@
       "title": "Her sürümde neler değişti"
     },
     "mechanicsTitle": "Güncellemeler nasıl çalışır",
+    "release0870": {
+      "headline": "İşletmeci ve yasal bilgilerin birleştirilmesi",
+      "items": [
+        "AI WorkDeck’in işletmecisi ve telif hakkı sahibi BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED şirketidir.",
+        "Masaüstü uygulaması, web sitesi ve Office/WPS eklentilerindeki Hakkında, telif hakkı ve yasal bilgiler artık aynı şirketi belirtir.",
+        "Bu güncelleme yeni bir tam kurulum paketiyle sunulur. Kurulumdan sonra Hakkında sayfasında güncel şirket bilgileri görüntülenir."
+      ]
+    },
     "release0770": {
       "headline": "Bulut eşitleme kurtarma koruması ve hesap uyumluluk güncellemesi",
       "items": [

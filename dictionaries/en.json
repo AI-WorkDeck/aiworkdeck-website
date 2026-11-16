@@ -1592,6 +1592,14 @@
       "title": "What changed in each version"
     },
     "mechanicsTitle": "How updates work",
+    "release0870": {
+      "headline": "Unified operator and legal information",
+      "items": [
+        "AI WorkDeck’s operator and copyright holder is BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
+        "About, copyright and legal information across the desktop app, website and Office/WPS add-ins now identify the same company.",
+        "This release uses a new full installer. After installation, the About page shows the updated company information."
+      ]
+    },
     "release0770": {
       "headline": "Cloud sync recovery protection and account compatibility update",
       "items": [
