@@ -1,7 +1,7 @@
 {
-  "scripts/plugin-dev.mjs": "94a0464fb65181f5c6c3e0e3b96ffff10346b9c1cddd8a95185517b3bc8c0b5c",
-  "sdk/plugin-sdk/awd-plugin-sdk.js": "e75b8e3415cccb516c1b4f796298ccb638e182c7ecfba38e9d79d12a0474a2bf",
-  "sdk/plugin-sdk/awd-plugin-sdk.d.ts": "66ceb6a6b7ec8f725da2ffb425dcf17217c5863e59ad1cf71eb5a11e76f5d993",
-  "sdk/plugin-sdk/manifest.d.ts": "65aeb614d93a594f8534d649d1311f73bb3db770217ea9f656a70357c2f02540",
-  "sdk/plugin-sdk/manifest.schema.json": "a838d34f16f6767c6f31f245fcb598c701f8d61e83c06a1de1dd1570d448e13e"
+  "scripts/plugin-dev.mjs": "0827abd66a1908d91916a9074dd35de41012e2ea1ce473a9765d492f074a62d1",
+  "sdk/plugin-sdk/awd-plugin-sdk.js": "4d974b5908e4a6d319a2e6848b6eaf4558dd892f8e10a5f43543d4f660600df6",
+  "sdk/plugin-sdk/awd-plugin-sdk.d.ts": "b16c854fddc7b76d8458e7b159a3a6c59a5ca0871a803f3643e2e1e5c3f187d4",
+  "sdk/plugin-sdk/manifest.d.ts": "c776f3834f8ae7a10887e10754f840ebd0491925e33e0fff0e58bfaead23b54d",
+  "sdk/plugin-sdk/manifest.schema.json": "50d2964b6babc927fcaa874177c1f495ac4f4447ba360d9681cac79ef42c081e"
 }
