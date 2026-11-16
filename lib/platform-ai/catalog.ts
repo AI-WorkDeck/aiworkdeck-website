@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { BAILIAN_CHAT_MODELS, bailianConfig, bailianAuthorizedModels, bailianAvailableModels, deepseekConfig, deepseekConfigured, platformProvider } from './config';
 export interface PriceTier { min: number; max: number; input: number; output: number; cache?: number; thinkingInput?: number; thinkingOutput?: number; thinkingCache?: number }

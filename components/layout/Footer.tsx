@@ -16,11 +16,11 @@ interface FooterProps {
 
 export async function Footer({ lang, dict }: FooterProps) {
     // 国际站的页脚主体按请求的 Host 取：同一个进程同时服务 workdeck.ai 与
-    // aiworkdeck.us，后者要露美国主体（见 lib/request-entity.ts）。
+    // aiworkdeck.us，后者保留美国域名联系资料（见 lib/request-entity.ts）。
     //
     // **国内站不读 Host 头**，虽然 publicEntityForHost 在 cn 构建下必然返回本站主体。
     // 原因是代价不在取值上：只要渲染期真的调了 `headers()`，整棵 `[lang]` 路由树就
-    // 从预渲染退成按请求渲染。国际站认了这个代价（换主体是这件事的目的），国内站
+    // 从预渲染退成按请求渲染。国际站认了这个代价（保留域名联系资料），国内站
     // 没有理由陪着退。`siteConfig.id` 是构建期常量，cn 的产物里这条分支直接消失。
     const publicEntity =
         siteConfig.id === 'intl'
@@ -149,14 +149,7 @@ export async function Footer({ lang, dict }: FooterProps) {
                         <p className="text-neutral-gray-medium">
                             {dict.common.footer.copyright.replace('{year}', new Date().getFullYear().toString())}
                         </p>
-                        {/* 国际站必须完整露出主体：注册机关登记的法定名 + 注册编号。
-                            境外服务（支付、平台入驻等）核验时按登记名逐字比对，
-                            只露英文名会对不上「真善美承澤有限公司」这条登记记录。
-                            aiworkdeck.us 这个 Host 上露的是美国主体（.us 域名登记在它名下，
-                            核验方按域名注册人找运营主体），它没有中文法定名，
-                            只渲染英文名——**不要为了版式对齐补一个中文译名**，
-                            译名在特拉华州的查册里对不上，等于把这一行作废。
-                            法律文本的缔约主体不受这里影响，仍是香港公司。 */}
+                        {/* 国际站同时展示中文法定名称、英文名称与统一社会信用代码。 */}
                         {siteConfig.id === 'intl' ? (
                             <p className="text-neutral-gray-medium">
                                 {publicEntity.nameZh

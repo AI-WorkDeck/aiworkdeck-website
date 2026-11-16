@@ -1,11 +1,21 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { LEGAL_ENTITY, LEGAL_EFFECTIVE_DATE } from '@/lib/legal-entity';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/nl.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'nl');
+
 const E = LEGAL_ENTITY;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_uscc: E.uscc,
@@ -32,8 +42,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "Juridisch",
   "title": "Privacybeleid",
-  "effectiveLabel": "Van kracht per {__T_LEGAL_EFFECTIVE_DATE__}",
-  "intro": "Dit beleid legt uit hoe  () persoonlijke informatie verzamelt, gebruikt, opslaat en openbaarmaakt wanneer u de AI WorkDeck-website en desktoptoepassing gebruikt, en welke rechten u heeft. Wij raden aan het volledig te lezen; als u alleen de kern wilt weten, dekt de samenvatting hieronder dat af.",
+  "effectiveLabel": "Van kracht per {__T_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
+  "intro": "Dit beleid legt uit hoe  {__T_E_nameEn__} ({__T_E_nameZh__}) persoonlijke informatie verzamelt, gebruikt, opslaat en openbaarmaakt wanneer u de AI WorkDeck-website en desktoptoepassing gebruikt, en welke rechten u heeft. Wij raden aan het volledig te lezen; als u alleen de kern wilt weten, dekt de samenvatting hieronder dat af.",
   "highlightsTitle": "De korte versie",
   "highlights": [
     "**De Office/WPS-add-in maakt gebruik van cloudverwerking.** Het huidige document, de nodige gespreksgeschiedenis en de referenties die u selecteert, bereiken onze gehoste backend, en daarna Alibaba Cloud Model Studio en de inferentieprovider die uw geselecteerde model verzorgt. De ruwe documentinhoud maakt gebruik van tijdelijk geheugen; gebruikersberichten, AI-antwoorden en redeneringen blijven bewaard totdat u het gesprek verwijdert. Zie clausules 6 en 8.",
@@ -52,7 +62,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "Verwerker van persoonlijke informatie:  (), unified social credit code ."
+          "text": "{__T_C_controller__}"
         },
         {
           "type": "p",

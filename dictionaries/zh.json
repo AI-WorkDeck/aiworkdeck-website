@@ -2679,5 +2679,35 @@
       "ep-ext-01": "Skill、插件、MCP，到底装哪个？",
       "ep-ext-02": "腾讯会议开完了，纪要怎么放进案卷？"
     }
+  },
+  "companyEntity": {
+    "about": {
+      "eyebrow": "关于我们",
+      "title": "AI WorkDeck 的运营主体",
+      "intro": "AI WorkDeck 是由{company}运营的开源 AI 工作台。",
+      "companyTitle": "主体资料",
+      "labels": {
+        "nameEn": "英文名称",
+        "nameZh": "公司名称",
+        "incorporated": "成立日期",
+        "registeredOffice": "住所",
+        "website": "网站",
+        "contact": "联系邮箱"
+      },
+      "registryLinkLabel": "国家企业信用信息公示系统",
+      "registrationAuthority": "登记机关",
+      "legalRepresentative": "法定代表人",
+      "registryText": "可按中文公司名称或统一社会信用代码查询核对公司登记信息。"
+    },
+    "operator": "服务运营者",
+    "controller": "个人信息处理者",
+    "identity": "{role}：{company}，在中国北京市注册成立，统一社会信用代码 {number}，住所：{address}。联系邮箱：{email}。",
+    "separateServices": "{site} 与 {otherSite} 由同一公司运营，但基础设施、数据库、账户、密码、余额、已购权益和账户 Key 仍各自独立，不能相互转移。使用另一站点须另行注册，并查阅该站点的条款和隐私政策。",
+    "crossBorder": "运营者及个人信息处理者位于中国内地；国际服务托管在新加坡，并使用其他国家的服务商。你若身处欧洲经济区、英国或其他有跨境传输规则的国家，个人信息会在以下情形被传输至该国以外：",
+    "controllerHosting": "中国内地（个人信息处理者）；新加坡（托管）",
+    "revision": "主体资料修订日期：{date}",
+    "financialRetention": "自相关财政年度结束起不少于7年；适用法律要求更长的，从其规定。注销账户不能缩短这一期限；这些记录以受限形式仅供记账之用。",
+    "mobileHostingCn": "中国区服务器和对象存储位于中国大陆。",
+    "mobileHostingIntl": "国际区服务器和对象存储位于新加坡。"
   }
 }

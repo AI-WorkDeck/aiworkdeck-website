@@ -1,11 +1,21 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { siteConfig, SITE_LEGAL_EFFECTIVE_DATE } from '@/lib/site-config';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/zh-hant.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'zh-hant');
+
 const E = siteConfig.legalEntity;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_contactEmail: E.contactEmail,
@@ -41,8 +51,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "法律資訊",
   "title": "服務條款",
-  "effectiveLabel": "生效日期：{__T_SITE_LEGAL_EFFECTIVE_DATE__}",
-  "intro": "本条款是你与 （下称「我们」）之间，就 {__T_siteConfig_host__}、AI WorkDeck 桌面端软件、Office 插件、Skill 广场与插件广场及相关服务（合称「本服务」）订立的协议。注册账户、生成账户 Key 或使用本服务，即表示你已阅读、理解并同意本条款全部内容。",
+  "effectiveLabel": "生效日期：{__T_SITE_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
+  "intro": "本条款是你与 {__T_E_nameEn__}（下称「我们」）之间，就 {__T_siteConfig_host__}、AI WorkDeck 桌面端软件、Office 插件、Skill 广场与插件广场及相关服务（合称「本服务」）订立的协议。注册账户、生成账户 Key 或使用本服务，即表示你已阅读、理解并同意本条款全部内容。",
   "highlightsTitle": "请先读这几条",
   "highlights": [
     "**AI 生成的内容不是法律意见。** 本服务不提供法律服务，也不与你建立委托代理或律师-当事人关系。AI 输出可能包含错误的事实、失效的法条与不存在的判例，必须经你本人独立核验后方可使用。",
@@ -53,7 +63,7 @@ export const legalDoc: LegalDocument = hydrate({
     "**如果你是欧盟、欧洲经济区或英国的消费者：购买 Credits 属于即时履行，该笔购买的 14 天撤销权自 Credits 到账时终止。** 结账时会请你确认这一点。即便如此，只要该笔充值的 Credits 你一点都没用过，我们仍然退款，见第七条。",
     "**我们的赔偿责任设有上限**，详见第十二条。该条不排除我们因故意、重大过失造成的责任，不排除人身伤亡责任，也不排除法律不允许排除的任何责任。",
     "**争议提交仲裁，适用**，详见第十六条。你以消费者身份订约的，该条不剥夺你所在地强制性法律给你的保护。",
-    "**本站与 {__T_siteConfig_otherSite_host__} 是两个独立的服务。** 缔约主体不同、账户不同、余额不同，你在那边持有的一切在这边都不能用，见第一条。"
+    "{__T_C_separateServices__}"
   ],
   "tocTitle": "目录",
   "sections": [
@@ -63,7 +73,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "本服务由 （）运营，该公司依《公司條例》（香港法例第 622 章）注册于中华人民共和国香港特别行政区， ，注册办事处地址：。联系邮箱：。"
+          "text": "{__T_C_operator__}"
         },
         {
           "type": "p",
@@ -71,7 +81,7 @@ export const legalDoc: LegalDocument = hydrate({
         },
         {
           "type": "callout",
-          "text": "**{__T_siteConfig_host__} 与 {__T_siteConfig_otherSite_host__} 是两个独立的服务。** 两站各自部署、各自建库，缔约主体不同、适用法律不同。账户、密码、Credits 余额、已购权益与账户 Key **互不相通**：在这边注册不会给你那边的账户，在那边的购买也不能在这边兑现。你若已有另一站的账户而想使用本站，需要重新注册。"
+          "text": "{__T_C_separateServices__}"
         },
         {
           "type": "callout",

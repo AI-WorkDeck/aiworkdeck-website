@@ -2677,5 +2677,35 @@
       "ep-ext-01": "Skills, Plugins oder MCP: Was installieren?",
       "ep-ext-02": "Besprechung vorbei: das Protokoll in die Akte"
     }
+  },
+  "companyEntity": {
+    "about": {
+      "eyebrow": "Über uns",
+      "title": "Das Unternehmen hinter AI WorkDeck",
+      "intro": "AI WorkDeck ist ein quelloffener KI-Arbeitsbereich, der von {company} betrieben wird.",
+      "companyTitle": "Unternehmensangaben",
+      "labels": {
+        "nameEn": "Englischer Name",
+        "nameZh": "Eingetragener Name (Chinesisch)",
+        "incorporated": "Gründungsdatum",
+        "registeredOffice": "Eingetragene Anschrift",
+        "website": "Website",
+        "contact": "Kontakt-E-Mail"
+      },
+      "registryLinkLabel": "Nationales Unternehmens-Kreditinformationssystem",
+      "registrationAuthority": "Registerbehörde",
+      "legalRepresentative": "Gesetzlicher Vertreter",
+      "registryText": "Suchen Sie nach dem chinesischen Firmennamen oder dem einheitlichen Sozialkreditcode, um die Registrierung zu prüfen."
+    },
+    "operator": "Dienstbetreiber",
+    "controller": "Verantwortlicher für die Datenverarbeitung",
+    "identity": "{role}: {company}, gegründet in Peking, China. Einheitlicher Sozialkreditcode: {number}. Eingetragene Anschrift: {address}. Kontakt: {email}.",
+    "separateServices": "{site} und {otherSite} werden vom selben Unternehmen betrieben. Infrastruktur, Datenbanken, Konten, Passwörter, Guthaben, erworbene Nutzungsrechte und Kontoschlüssel bleiben getrennt und sind nicht übertragbar. Für die andere Website müssen Sie sich gesondert registrieren und deren Bedingungen und Datenschutzerklärung beachten.",
+    "crossBorder": "Betreiber und Datenverantwortlicher befinden sich in Festlandchina; der internationale Dienst wird in Singapur gehostet und nutzt Anbieter in weiteren Ländern. Wenn Sie im EWR, im Vereinigten Königreich oder in einem anderen Land mit Übermittlungsvorschriften leben, werden Ihre Daten in folgenden Fällen außerhalb dieses Landes übertragen:",
+    "controllerHosting": "Festlandchina (Verantwortlicher); Singapur (Hosting)",
+    "revision": "Unternehmensangaben überarbeitet am {date}",
+    "financialRetention": "Mindestens 7 Jahre ab Ende des betreffenden Geschäftsjahres, bei gesetzlichen Vorgaben länger. Eine Kontoschließung verkürzt diese Frist nicht; die Unterlagen werden ausschließlich für Buchhaltungszwecke mit eingeschränktem Zugriff aufbewahrt.",
+    "mobileHostingCn": "Server und Objektspeicher des China-Dienstes befinden sich in Festlandchina.",
+    "mobileHostingIntl": "Server und Objektspeicher des internationalen Dienstes befinden sich in Singapur."
   }
 }

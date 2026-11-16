@@ -1,11 +1,21 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { LEGAL_ENTITY, LEGAL_EFFECTIVE_DATE } from '@/lib/legal-entity';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/fr.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'fr');
+
 const E = LEGAL_ENTITY;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_uscc: E.uscc,
@@ -32,8 +42,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "Mentions légales",
   "title": "Politique de confidentialité",
-  "effectiveLabel": "En vigueur à compter du {__T_LEGAL_EFFECTIVE_DATE__}",
-  "intro": "La présente politique explique comment  () collecte, utilise, stocke et divulgue les informations personnelles lorsque vous utilisez le site web et l'application de bureau AI WorkDeck, ainsi que les droits dont vous disposez. Nous vous conseillons de la lire dans son intégralité ; si vous ne souhaitez que l'essentiel, le résumé ci-dessous en donne un aperçu.",
+  "effectiveLabel": "En vigueur à compter du {__T_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
+  "intro": "La présente politique explique comment  {__T_E_nameEn__} ({__T_E_nameZh__}) collecte, utilise, stocke et divulgue les informations personnelles lorsque vous utilisez le site web et l'application de bureau AI WorkDeck, ainsi que les droits dont vous disposez. Nous vous conseillons de la lire dans son intégralité ; si vous ne souhaitez que l'essentiel, le résumé ci-dessous en donne un aperçu.",
   "highlightsTitle": "L'essentiel en bref",
   "highlights": [
     "**Le complément Office/WPS utilise un traitement dans le cloud.** Le document en cours, l'historique de conversation nécessaire et les références que vous sélectionnez sont transmis à notre backend hébergé, puis à Alibaba Cloud Model Studio et au fournisseur d'inférence qui dessert le modèle que vous avez choisi. Les corps de documents bruts utilisent une mémoire transitoire ; les messages des utilisateurs, les réponses de l'IA et les raisonnements sont conservés jusqu'à ce que vous supprimiez la conversation. Voir les clauses 6 et 8.",
@@ -52,7 +62,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "Responsable du traitement des informations personnelles :  (), code d'identification sociale unifié ."
+          "text": "{__T_C_controller__}"
         },
         {
           "type": "p",

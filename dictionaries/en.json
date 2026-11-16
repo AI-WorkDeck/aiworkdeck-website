@@ -2677,5 +2677,35 @@
       "ep-ext-01": "Skills, plugins or MCP: which should I install?",
       "ep-ext-02": "Meeting over: getting the minutes into the case file"
     }
+  },
+  "companyEntity": {
+    "about": {
+      "eyebrow": "About",
+      "title": "The company behind AI WorkDeck",
+      "intro": "AI WorkDeck is an open-source AI workspace operated by {company}.",
+      "companyTitle": "Company details",
+      "labels": {
+        "nameEn": "English name",
+        "nameZh": "Registered name (Chinese)",
+        "incorporated": "Incorporated",
+        "registeredOffice": "Registered address",
+        "website": "Website",
+        "contact": "Contact email"
+      },
+      "registryLinkLabel": "National Enterprise Credit Information Publicity System",
+      "registrationAuthority": "Registration authority",
+      "legalRepresentative": "Legal representative",
+      "registryText": "Search by the Chinese registered name or Unified Social Credit Code to verify the company registration."
+    },
+    "operator": "Service operator",
+    "controller": "Data controller",
+    "identity": "{role}: {company}, incorporated in Beijing, China. Unified Social Credit Code: {number}. Registered address: {address}. Contact: {email}.",
+    "separateServices": "{site} and {otherSite} are operated by the same company. Their infrastructure, databases, accounts, passwords, balances, purchased entitlements and account keys remain separate and are not transferable. To use the other site, register there and consult its terms and privacy policy.",
+    "crossBorder": "The operator and data controller is in mainland China; the international service is hosted in Singapore and uses providers in other countries. If you are in the EEA, the UK or another country with transfer rules, your personal data is transferred outside that country in the following cases:",
+    "controllerHosting": "Mainland China (controller); Singapore (hosting)",
+    "revision": "Company information revised {date}",
+    "financialRetention": "At least 7 years from the end of the relevant financial year, or longer where applicable law requires. Closing your account does not shorten this period; these records are kept in a restricted form for accounting only.",
+    "mobileHostingCn": "China service uses servers and object storage in mainland China.",
+    "mobileHostingIntl": "International service uses servers and object storage in Singapore."
   }
 }

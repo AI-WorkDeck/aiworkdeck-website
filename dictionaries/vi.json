@@ -2677,5 +2677,35 @@
       "ep-ext-01": "Skill, plugin hay MCP: nên cài cái nào?",
       "ep-ext-02": "Họp xong: đưa biên bản họp vào hồ sơ"
     }
+  },
+  "companyEntity": {
+    "about": {
+      "eyebrow": "Giới thiệu",
+      "title": "Công ty vận hành AI WorkDeck",
+      "intro": "AI WorkDeck là không gian làm việc AI mã nguồn mở do {company} vận hành.",
+      "companyTitle": "Thông tin công ty",
+      "labels": {
+        "nameEn": "Tên tiếng Anh",
+        "nameZh": "Tên đăng ký (tiếng Trung)",
+        "incorporated": "Ngày thành lập",
+        "registeredOffice": "Địa chỉ đăng ký",
+        "website": "Trang web",
+        "contact": "Email liên hệ"
+      },
+      "registryLinkLabel": "Hệ thống công khai thông tin tín dụng doanh nghiệp quốc gia",
+      "registrationAuthority": "Cơ quan đăng ký",
+      "legalRepresentative": "Người đại diện theo pháp luật",
+      "registryText": "Tra cứu bằng tên tiếng Trung hoặc mã tín dụng xã hội thống nhất để xác minh đăng ký công ty."
+    },
+    "operator": "Đơn vị vận hành dịch vụ",
+    "controller": "Bên kiểm soát dữ liệu",
+    "identity": "{role}: {company}, thành lập tại Bắc Kinh, Trung Quốc. Mã tín dụng xã hội thống nhất: {number}. Địa chỉ đăng ký: {address}. Liên hệ: {email}.",
+    "separateServices": "{site} và {otherSite} do cùng một công ty vận hành. Hạ tầng, cơ sở dữ liệu, tài khoản, mật khẩu, số dư, quyền đã mua và khóa tài khoản vẫn riêng biệt và không thể chuyển giữa hai trang. Để dùng trang còn lại, hãy đăng ký riêng và đọc điều khoản cùng chính sách quyền riêng tư của trang đó.",
+    "crossBorder": "Đơn vị vận hành và bên kiểm soát dữ liệu ở Trung Quốc đại lục; dịch vụ quốc tế được lưu trữ tại Singapore và sử dụng nhà cung cấp tại các quốc gia khác. Nếu bạn ở EEA, Vương quốc Anh hoặc quốc gia khác có quy định chuyển dữ liệu, dữ liệu được chuyển ra ngoài quốc gia đó trong các trường hợp sau:",
+    "controllerHosting": "Trung Quốc đại lục (bên kiểm soát); Singapore (lưu trữ)",
+    "revision": "Thông tin công ty sửa đổi ngày {date}",
+    "financialRetention": "Ít nhất 7 năm kể từ cuối năm tài chính liên quan, hoặc lâu hơn nếu pháp luật áp dụng yêu cầu. Đóng tài khoản không rút ngắn thời hạn này; hồ sơ được giữ với quyền truy cập hạn chế chỉ cho mục đích kế toán.",
+    "mobileHostingCn": "Máy chủ và kho lưu trữ đối tượng của dịch vụ Trung Quốc nằm tại Trung Quốc đại lục.",
+    "mobileHostingIntl": "Máy chủ và kho lưu trữ đối tượng của dịch vụ quốc tế nằm tại Singapore."
   }
 }

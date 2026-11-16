@@ -1,11 +1,21 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { siteConfig, SITE_LEGAL_EFFECTIVE_DATE } from '@/lib/site-config';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/ko.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'ko');
+
 const E = siteConfig.legalEntity;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_contactEmail: E.contactEmail,
@@ -41,8 +51,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "법적 고지",
   "title": "서비스 이용약관",
-  "effectiveLabel": "Effective {__T_SITE_LEGAL_EFFECTIVE_DATE__}",
-  "intro": "These Terms form an agreement between you and  (\"we\", \"us\") covering {__T_siteConfig_host__}, the AI WorkDeck desktop application, the Office add-ins, the Skill and plugin plazas and related services (together, the \"Service\"). By registering an account, generating an account key or otherwise using the Service, you confirm that you have read, understood and accepted these Terms.",
+  "effectiveLabel": "Effective {__T_SITE_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
+  "intro": "These Terms form an agreement between you and {__T_E_nameEn__} (\"we\", \"us\") covering {__T_siteConfig_host__}, the AI WorkDeck desktop application, the Office add-ins, the Skill and plugin plazas and related services (together, the \"Service\"). By registering an account, generating an account key or otherwise using the Service, you confirm that you have read, understood and accepted these Terms.",
   "highlightsTitle": "The short version",
   "highlights": [
     "**AI 출력은 법률 자문이 아닙니다.** 당사는 법률 서비스를 제공하지 않으며, 서비스 이용으로 인해 변호사-의뢰인 관계 또는 대리 관계가 성립하지 않습니다. AI 출력에는 부정확한 사실, 폐지된 조항, 실제로 존재하지 않는 판례가 포함될 수 있습니다. 이를 근거로 삼기 전에 반드시 독립적으로 검증하셔야 합니다.",
@@ -53,7 +63,7 @@ export const legalDoc: LegalDocument = hydrate({
     "**EU, EEA 또는 영국의 소비자인 경우, Credits 구매는 즉시 이행이 시작되는 것으로 해당 구매에 대한 14일 청약철회권이 소멸됩니다.** 결제 시 이에 대한 확인을 요청받게 됩니다. 단, 사용하지 않은 Credits의 구매분은 여전히 환불해 드립니다 — 제7조를 참조하세요.",
     "**당사의 책임은 제한됩니다** — 제12조를 참조하세요. 이 책임 한도는 당사의 고의 또는 중대한 과실에 대한 책임, 사망이나 신체 상해에 대한 책임, 또는 법률상 배제가 허용되지 않는 사항에 대한 책임에는 적용되지 않습니다.",
     "**분쟁은 중재로 해결됩니다** — 제16조를 참조하세요. 소비자인 경우, 해당 조항은 거주지의 강행법이 보장하는 보호를 박탈하지 않습니다.",
-    "**본 사이트와 {__T_siteConfig_otherSite_host__}는 별개입니다.** 계약 주체, 계정, 잔액이 모두 분리되어 있으며, 해당 사이트에 보유한 자산은 여기에서 사용할 수 없습니다 — 제1조를 참조하세요."
+    "{__T_C_separateServices__}"
   ],
   "tocTitle": "Contents",
   "sections": [
@@ -63,7 +73,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "본 서비스는  이 운영하며, 해당 회사는 홍콩 특별행정구에서 회사조례(제622장)에 따라 설립되었습니다. 등록 사무소: . 연락처: ."
+          "text": "{__T_C_operator__}"
         },
         {
           "type": "p",
@@ -71,7 +81,7 @@ export const legalDoc: LegalDocument = hydrate({
         },
         {
           "type": "callout",
-          "text": "**{__T_siteConfig_host__}와 {__T_siteConfig_otherSite_host__}는 서로 별개의 두 서비스입니다.** 두 서비스는 분리된 인프라와 데이터베이스에서 운영되며, 각기 다른 계약 주체가 서로 다른 준거법에 따라 운영합니다. 계정, 비밀번호, Credits 잔액, 구매한 권한 및 계정 키는 **상호 이전되지 않습니다**. 여기서 가입한다고 해당 사이트의 계정이 생기는 것이 아니며, 해당 사이트에서 구매한 것은 여기에서 사용할 수 없습니다. 반대 사이트에 이미 계정이 있고 이 사이트를 이용하려면 다시 가입해야 합니다."
+          "text": "{__T_C_separateServices__}"
         },
         {
           "type": "callout",

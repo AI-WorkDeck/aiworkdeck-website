@@ -9,8 +9,8 @@
 
 | 站点 | 地址 | 币种 | 支付 | 缔约主体 |
 |---|---|---|---|---|
-| 国内站 `cn` | `https://www.aiworkdeck.com` | CNY | 微信支付 | 北京京微资易科技有限公司 |
-| 国际站 `intl` | `https://www.workdeck.ai` | USD | Stripe | 香港实体 |
+| 国内站 `cn` | `https://www.aiworkdeck.com` | CNY | 微信支付 | 北京公富信息技术有限公司 |
+| 国际站 `intl` | `https://www.workdeck.ai` | USD | Stripe | 北京公富信息技术有限公司 |
 
 **两站的本契约逐字相同**——端点集合、字段名、类型、状态码语义完全一致，
 差异只体现在**值**上（`amountCents` 的币种含义、ai-usage 的 `exchangeRate` 与 `currency`）。
@@ -27,7 +27,7 @@
 
 ### 账户不互通
 
-两站是**独立的账户体系与独立的缔约主体**：各自一份 `data/`、一个 SQLite 库、一份 users.json。
+两站由**同一缔约主体运营，账户体系仍独立**：各自一份 `data/`、一个 SQLite 库、一份 users.json。
 `awdk_` Key、Credits 余额、entitlement、per-user 平台 AI 密钥全部按站。
 桌面端靠 `~/.aiworkdeck/site.json` 决定打向哪个站（机器级状态，与 license/account 同目录）。
 

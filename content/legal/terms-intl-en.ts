@@ -1,10 +1,14 @@
+import dictionary from '@/dictionaries/en.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'en');
+
 import { siteConfig, SITE_LEGAL_EFFECTIVE_DATE } from '@/lib/site-config';
 import type { LegalDocument } from './types';
 
 /**
  * 国际站（workdeck.ai）的服务条款——英文版，本站的准据文本。
  *
- * 与境内版同构、同 section id，但缔约主体是香港实体、适用香港法、争议提交 HKIAC。
+ * 与境内版同构、同 section id，缔约主体统一为公富，保留原适用香港法、争议提交 HKIAC 的约定。
  * 主体信息一律从 siteConfig.legalEntity 插值，**不在文本里写死任何公司名**。
  */
 
@@ -13,7 +17,7 @@ const E = siteConfig.legalEntity;
 export const termsIntlEn: LegalDocument = {
     eyebrow: 'Legal',
     title: 'Terms of Service',
-    effectiveLabel: `Effective ${SITE_LEGAL_EFFECTIVE_DATE}`,
+    effectiveLabel: `Effective ${SITE_LEGAL_EFFECTIVE_DATE} · ${C.revision}`,
     intro: `These Terms form an agreement between you and ${E.nameEn} ("we", "us") covering ${siteConfig.host}, the AI WorkDeck desktop application, the Office add-ins, the Skill and plugin plazas and related services (together, the "Service"). By registering an account, generating an account key or otherwise using the Service, you confirm that you have read, understood and accepted these Terms.`,
     highlightsTitle: 'The short version',
     highlights: [
@@ -25,7 +29,7 @@ export const termsIntlEn: LegalDocument = {
         '**If you are a consumer in the EU, EEA or UK, buying Credits starts immediate performance and ends your 14-day right of withdrawal for that purchase.** You are asked to confirm this at checkout. We still refund a purchase whose Credits you have not spent — see clause 7.',
         '**Our liability is capped** — see clause 12. The cap does not exclude liability for our wilful misconduct or gross negligence, for death or personal injury, or for anything the law does not allow us to exclude.',
         `**Disputes go to arbitration before ${E.forum.en} under ${E.governingLaw.en}** — see clause 16. If you are a consumer, that clause does not take away the protections of the mandatory law where you live.`,
-        `**This site and ${siteConfig.otherSite.host} are separate.** Separate contracting entities, separate accounts, separate balances. Nothing you hold there is usable here — see clause 1.`,
+        C.separateServices,
     ],
     tocTitle: 'Contents',
     sections: [
@@ -35,7 +39,7 @@ export const termsIntlEn: LegalDocument = {
             blocks: [
                 {
                     type: 'p',
-                    text: `The Service is operated by ${E.nameEn}, a company incorporated in the Hong Kong Special Administrative Region under the Companies Ordinance (Cap. 622), ${E.registrationLabel.en} ${E.registrationNo}. Registered office: ${E.registeredAddress.en}. Contact: ${E.contactEmail}.`,
+                    text: C.operator,
                 },
                 {
                     type: 'p',
@@ -43,7 +47,7 @@ export const termsIntlEn: LegalDocument = {
                 },
                 {
                     type: 'callout',
-                    text: `**${siteConfig.host} and ${siteConfig.otherSite.host} are two separate services.** They run on separate infrastructure with separate databases, and each is operated by a different contracting entity under different governing law. Accounts, passwords, Credits balances, purchased entitlements and account keys **do not carry across**. Registering here does not give you an account there, and a purchase made there cannot be redeemed here. If you already have an account on the other site and want to use this one, you have to register again.`,
+                    text: C.separateServices,
                 },
                 {
                     type: 'callout',

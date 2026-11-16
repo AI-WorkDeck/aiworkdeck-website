@@ -2677,5 +2677,35 @@
       "ep-ext-01": "Skill, eklenti mi MCP mi: hangisini kurmalı?",
       "ep-ext-02": "Toplantı bitti: tutanak dava dosyasına"
     }
+  },
+  "companyEntity": {
+    "about": {
+      "eyebrow": "Hakkımızda",
+      "title": "AI WorkDeck işletmecisi",
+      "intro": "AI WorkDeck, {company} tarafından işletilen açık kaynaklı bir yapay zekâ çalışma alanıdır.",
+      "companyTitle": "Şirket bilgileri",
+      "labels": {
+        "nameEn": "İngilizce ad",
+        "nameZh": "Tescilli ad (Çince)",
+        "incorporated": "Kuruluş tarihi",
+        "registeredOffice": "Kayıtlı adres",
+        "website": "Web sitesi",
+        "contact": "İletişim e-postası"
+      },
+      "registryLinkLabel": "Ulusal İşletme Kredi Bilgileri Kamuyu Aydınlatma Sistemi",
+      "registrationAuthority": "Tescil makamı",
+      "legalRepresentative": "Yasal temsilci",
+      "registryText": "Şirket kaydını doğrulamak için Çince tescilli ad veya birleşik sosyal kredi koduyla arayın."
+    },
+    "operator": "Hizmet işletmecisi",
+    "controller": "Veri sorumlusu",
+    "identity": "{role}: {company}, Pekin, Çin’de kurulmuştur. Birleşik sosyal kredi kodu: {number}. Kayıtlı adres: {address}. İletişim: {email}.",
+    "separateServices": "{site} ve {otherSite} aynı şirket tarafından işletilir. Altyapı, veritabanları, hesaplar, parolalar, bakiyeler, satın alınan haklar ve hesap anahtarları ayrı kalır ve aktarılamaz. Diğer siteyi kullanmak için ayrıca kayıt olun ve o sitenin koşullarını ve gizlilik politikasını inceleyin.",
+    "crossBorder": "İşletmeci ve veri sorumlusu Çin anakarasındadır; uluslararası hizmet Singapur’da barındırılır ve diğer ülkelerdeki sağlayıcıları kullanır. AEA, Birleşik Krallık veya aktarım kuralları olan başka bir ülkedeyseniz verileriniz şu durumlarda o ülkenin dışına aktarılır:",
+    "controllerHosting": "Çin anakarası (veri sorumlusu); Singapur (barındırma)",
+    "revision": "Şirket bilgileri güncellendi: {date}",
+    "financialRetention": "İlgili mali yılın sonundan itibaren en az 7 yıl veya yürürlükteki hukuk gerektiriyorsa daha uzun süre. Hesabın kapatılması bu süreyi kısaltmaz; kayıtlar yalnızca muhasebe amacıyla, erişimi sınırlandırılarak saklanır.",
+    "mobileHostingCn": "Çin hizmetinin sunucuları ve nesne depolaması Çin anakarasındadır.",
+    "mobileHostingIntl": "Uluslararası hizmetin sunucuları ve nesne depolaması Singapur’dadır."
   }
 }

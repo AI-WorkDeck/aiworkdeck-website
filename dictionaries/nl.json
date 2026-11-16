@@ -2677,5 +2677,35 @@
       "ep-ext-01": "Skills, plug-ins of MCP: wat installeer je?",
       "ep-ext-02": "Vergadering voorbij: de notulen in het dossier"
     }
+  },
+  "companyEntity": {
+    "about": {
+      "eyebrow": "Over ons",
+      "title": "Het bedrijf achter AI WorkDeck",
+      "intro": "AI WorkDeck is een opensource AI-werkruimte die wordt beheerd door {company}.",
+      "companyTitle": "Bedrijfsgegevens",
+      "labels": {
+        "nameEn": "Engelse naam",
+        "nameZh": "Geregistreerde naam (Chinees)",
+        "incorporated": "Oprichtingsdatum",
+        "registeredOffice": "Geregistreerd adres",
+        "website": "Website",
+        "contact": "Contact-e-mail"
+      },
+      "registryLinkLabel": "Nationaal openbaar informatiesysteem voor bedrijfskrediet",
+      "registrationAuthority": "Registratieautoriteit",
+      "legalRepresentative": "Wettelijke vertegenwoordiger",
+      "registryText": "Zoek op de Chinese bedrijfsnaam of de uniforme sociale kredietcode om de registratie te controleren."
+    },
+    "operator": "Dienstverlener",
+    "controller": "Verwerkingsverantwoordelijke",
+    "identity": "{role}: {company}, opgericht in Beijing, China. Uniforme sociale kredietcode: {number}. Geregistreerd adres: {address}. Contact: {email}.",
+    "separateServices": "{site} en {otherSite} worden door hetzelfde bedrijf beheerd. Infrastructuur, databases, accounts, wachtwoorden, tegoeden, gekochte rechten en accountsleutels blijven gescheiden en zijn niet overdraagbaar. Registreer u afzonderlijk voor de andere site en lees de voorwaarden en het privacybeleid daarvan.",
+    "crossBorder": "De dienstverlener en verwerkingsverantwoordelijke zijn gevestigd op het Chinese vasteland; de internationale dienst wordt gehost in Singapore en gebruikt aanbieders in andere landen. Als u in de EER, het VK of een ander land met overdrachtsregels woont, worden uw persoonsgegevens in de volgende gevallen buiten dat land doorgegeven:",
+    "controllerHosting": "Chinees vasteland (verantwoordelijke); Singapore (hosting)",
+    "revision": "Bedrijfsgegevens bijgewerkt op {date}",
+    "financialRetention": "Minimaal 7 jaar na het einde van het betreffende boekjaar, of langer indien de toepasselijke wet dit vereist. Het sluiten van uw account verkort deze termijn niet; de gegevens worden met beperkte toegang uitsluitend voor de boekhouding bewaard.",
+    "mobileHostingCn": "De servers en objectopslag van de Chinese dienst bevinden zich op het Chinese vasteland.",
+    "mobileHostingIntl": "De servers en objectopslag van de internationale dienst bevinden zich in Singapore."
   }
 }

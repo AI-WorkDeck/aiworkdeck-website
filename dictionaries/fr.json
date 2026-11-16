@@ -2677,5 +2677,35 @@
       "ep-ext-01": "Skills, plugins ou MCP : que faut-il installer ?",
       "ep-ext-02": "Fin de réunion : le compte rendu dans le dossier"
     }
+  },
+  "companyEntity": {
+    "about": {
+      "eyebrow": "À propos",
+      "title": "La société qui exploite AI WorkDeck",
+      "intro": "AI WorkDeck est un espace de travail IA open source exploité par {company}.",
+      "companyTitle": "Informations sur la société",
+      "labels": {
+        "nameEn": "Nom anglais",
+        "nameZh": "Dénomination enregistrée (chinois)",
+        "incorporated": "Date de constitution",
+        "registeredOffice": "Adresse enregistrée",
+        "website": "Site web",
+        "contact": "Adresse e-mail"
+      },
+      "registryLinkLabel": "Système national de publicité des informations de crédit des entreprises",
+      "registrationAuthority": "Autorité d’enregistrement",
+      "legalRepresentative": "Représentant légal",
+      "registryText": "Recherchez la dénomination chinoise ou le code unifié de crédit social pour vérifier l’enregistrement de la société."
+    },
+    "operator": "Exploitant du service",
+    "controller": "Responsable du traitement",
+    "identity": "{role} : {company}, société constituée à Pékin, en Chine. Code unifié de crédit social : {number}. Adresse enregistrée : {address}. Contact : {email}.",
+    "separateServices": "{site} et {otherSite} sont exploités par la même société. Leurs infrastructures, bases de données, comptes, mots de passe, soldes, droits achetés et clés de compte restent distincts et ne sont pas transférables. Pour utiliser l’autre site, inscrivez-vous séparément et consultez ses conditions et sa politique de confidentialité.",
+    "crossBorder": "L’exploitant et responsable du traitement se trouve en Chine continentale ; le service international est hébergé à Singapour et utilise des prestataires dans d’autres pays. Si vous résidez dans l’EEE, au Royaume-Uni ou dans un autre pays ayant des règles de transfert, vos données sont transférées hors de ce pays dans les cas suivants :",
+    "controllerHosting": "Chine continentale (responsable du traitement) ; Singapour (hébergement)",
+    "revision": "Informations sur la société révisées le {date}",
+    "financialRetention": "Au moins 7 ans à compter de la fin de l’exercice concerné, ou davantage si le droit applicable l’exige. La fermeture du compte ne réduit pas cette durée ; ces documents sont conservés avec un accès restreint à des fins comptables uniquement.",
+    "mobileHostingCn": "Les serveurs et le stockage objet du service Chine se trouvent en Chine continentale.",
+    "mobileHostingIntl": "Les serveurs et le stockage objet du service international se trouvent à Singapour."
   }
 }

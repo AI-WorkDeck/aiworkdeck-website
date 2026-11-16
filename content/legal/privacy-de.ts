@@ -1,11 +1,21 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { LEGAL_ENTITY, LEGAL_EFFECTIVE_DATE } from '@/lib/legal-entity';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/de.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'de');
+
 const E = LEGAL_ENTITY;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_uscc: E.uscc,
@@ -32,8 +42,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "Rechtliches",
   "title": "Datenschutzerklärung",
-  "effectiveLabel": "Wirksam ab {__T_LEGAL_EFFECTIVE_DATE__}",
-  "intro": "Diese Richtlinie erläutert, wie  () personenbezogene Daten erhebt, verwendet, speichert und offenlegt, wenn Sie die AI WorkDeck-Website und Desktop-Anwendung nutzen, und welche Rechte Sie haben. Wir empfehlen, sie vollständig zu lesen; wenn Sie nur die Kurzfassung möchten, deckt die folgende Zusammenfassung das Wesentliche ab.",
+  "effectiveLabel": "Wirksam ab {__T_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
+  "intro": "Diese Richtlinie erläutert, wie  {__T_E_nameEn__} ({__T_E_nameZh__}) personenbezogene Daten erhebt, verwendet, speichert und offenlegt, wenn Sie die AI WorkDeck-Website und Desktop-Anwendung nutzen, und welche Rechte Sie haben. Wir empfehlen, sie vollständig zu lesen; wenn Sie nur die Kurzfassung möchten, deckt die folgende Zusammenfassung das Wesentliche ab.",
   "highlightsTitle": "Die Kurzfassung",
   "highlights": [
     "**Das Office/WPS-Add-in nutzt Cloud-Verarbeitung.** Das aktuelle Dokument, der erforderliche Unterhaltungsverlauf und die von Ihnen ausgewählten Referenzen gelangen zu unserem gehosteten Backend und von dort zu Alibaba Cloud Model Studio sowie zum Inferenz-Anbieter des von Ihnen gewählten Modells. Rohdaten von Dokumenten werden nur flüchtig im Arbeitsspeicher vorgehalten; Nutzernachrichten, KI-Antworten und Begründungen bleiben gespeichert, bis Sie die Unterhaltung löschen. Siehe Ziffern 6 und 8.",
@@ -52,7 +62,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "Verarbeiter personenbezogener Daten:  (), einheitliche Gesellschaftskennnummer ."
+          "text": "{__T_C_controller__}"
         },
         {
           "type": "p",

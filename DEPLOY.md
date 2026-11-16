@@ -990,8 +990,8 @@ npm run seed
 
 ## 9. 国际站 workdeck.ai（新加坡 ECS）
 
-同一份代码、两个部署、**两份数据**。国际站不是国内站的镜像，是一个独立的商业实体：
-美元计价、Stripe 收款、香港主体、非中国法、无 ICP 备案、默认英文。
+同一份代码、两个部署、**两份数据**。两站的运营和缔约主体统一为北京公富信息技术有限公司：
+国际站保留美元计价、Stripe 支付通道、香港法及 HKIAC 约定、无 ICP 备案、默认英文。支付账户与域名等平台登记须另行迁移，不因展示主体改变而视为已过户。
 **两站账户不互通**（各自一份 `data/`、一个 SQLite 库、一份 users.json），这是接受的代价。
 
 设计文档在桌面仓 `docs/superpowers/specs/2026-08-08-dual-site-architecture.md`。
@@ -1129,8 +1129,8 @@ nginx vhost 的源本在本仓库 `doc/nginx-workdeck-ai.conf`（**已与线上�
 NEXT_PUBLIC_AWD_SITE=intl
 
 # 国际站对外联系邮箱（可选，默认 hi@workdeck.ai）
-# 缔约主体本身（真善美承澤有限公司 / Zhen Shan Mei Grace Legacy Limited、
-# 公司注册编号 79530779、注册办事处地址）已硬编码在 lib/site-config.ts——
+# 缔约主体本身（北京公富信息技术有限公司 / BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED、
+# 统一社会信用代码 911101053483482356、住所）已集中在 lib/site-config.ts——
 # 公司登记资料是公开记录不是密钥，与国内站主体同一形态。
 NEXT_PUBLIC_AWD_INTL_CONTACT_EMAIL=hi@workdeck.ai
 
@@ -1197,23 +1197,23 @@ curl -s --resolve www.workdeck.ai:443:8.219.94.204 https://www.workdeck.ai/ -o /
    桌面端 JDK HttpClient 默认不跟随重定向，一个 301 会被判成「预期外状态」。
    从境内 IP 复验这一条（这正是 geo 分流最容易做错的地方）。
 2. 页脚**不出现任何 ICP 备案号**（.ai 不可备案，渲染备案号是虚假标注）。
-3. `/en/legal/terms` 的缔约主体是香港实体、争议解决是 HKIAC，不是北京仲裁委员会。
+3. `/en/legal/terms` 的缔约主体是北京公富信息技术有限公司，国际站争议解决仍为 HKIAC；国内站保留北京仲裁委员会。
 4. 价格显示是 `$` 不是 `¥`。
 5. `GET https://workdeck.ai/api/registry/plugins` **返回非空**（与国内站条目一致）。
    空数组说明 §9.7 的镜像没挂或没跑过——国际站插件广场会是空的（dev-board#136）。
-6. **美国分站 aiworkdeck.us 也要过一遍**（§9.8）：`/en` 200、页脚是 `Zhen Shan Mei Grace Legacy US Limited`、
-   `/en/about` 是特拉华州主体；而 `/en/legal/terms` 的缔约主体**仍是香港实体**（这是有意的）。
+6. **美国分站 aiworkdeck.us 也要过一遍**（§9.8）：`/en` 200、页脚、`/en/about` 与 `/en/legal/terms` 均为公富；
+   公司登记号为 `911101053483482356`，不得残留旧香港/特拉华州公司地址、登记号或人员身份。
    两个 Host 打的是同一个进程，代码坏了两边一起坏，nginx 坏了只坏一边——所以要分别看。
 
 ### 9.8 美国分站 aiworkdeck.us（dev-board#569，2026-09-10 上线）
 
-**不是第三个站**。aiworkdeck.us 是美国公司（Zhen Shan Mei Grace Legacy US Limited）名下的域名，
+**不是第三个站**。aiworkdeck.us 现有注册登记仍在美国公司（Zhen Shan Mei Grace Legacy US Limited）名下，域名主体变更及 .us 注册资格须另行核验办理。其服务
 解析到新加坡机，nginx 第二个 vhost 反代**同一个** `workdeck-intl` 进程：同一份数据、同一套账户、
-同一个 `NEXT_PUBLIC_AWD_SITE=intl` 构建。与 workdeck.ai 的差别只有两处，全部按请求的 Host 判断
+同一个 `NEXT_PUBLIC_AWD_SITE=intl` 构建。与 workdeck.ai 的域名及联系邮箱差别按请求的 Host 判断
 （`lib/site-config.ts` 的 `publicEntityForHost` + `lib/request-entity.ts`）：
 
-- 页脚与公司页 `/{lang}/about` 展示美国主体与发起人信息（供美国来的合规核验当公开来源）。
-- 其余不变：法律文本的缔约主体仍是香港公司（Stripe 收款主体没变），canonical / hreflang /
+- 页脚、公司页与法律文本统一展示公富主体；.us 保留原联系邮箱，不再登载旧美国公司的发起人身份。
+- Stripe 实际账户仍待平台迁移；canonical / hreflang /
   sitemap / robots 全部仍指 workdeck.ai——.us 对搜索引擎是国际站的**别名**，不是第二个站。
 
 分流：`workdeck.ai` 对**美国 IP** 的访客 301 到 `www.aiworkdeck.us`（`/api/`、`/update/`、`/_next/`

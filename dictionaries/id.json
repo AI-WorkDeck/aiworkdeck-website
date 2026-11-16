@@ -2677,5 +2677,35 @@
       "ep-ext-01": "Skill, plugin, atau MCP: mana yang dipasang?",
       "ep-ext-02": "Rapat selesai: masukkan notulen ke berkas perkara"
     }
+  },
+  "companyEntity": {
+    "about": {
+      "eyebrow": "Tentang",
+      "title": "Perusahaan pengelola AI WorkDeck",
+      "intro": "AI WorkDeck adalah ruang kerja AI sumber terbuka yang dioperasikan oleh {company}.",
+      "companyTitle": "Informasi perusahaan",
+      "labels": {
+        "nameEn": "Nama bahasa Inggris",
+        "nameZh": "Nama terdaftar (bahasa Mandarin)",
+        "incorporated": "Tanggal pendirian",
+        "registeredOffice": "Alamat terdaftar",
+        "website": "Situs web",
+        "contact": "Email kontak"
+      },
+      "registryLinkLabel": "Sistem Publikasi Informasi Kredit Perusahaan Nasional",
+      "registrationAuthority": "Otoritas pendaftaran",
+      "legalRepresentative": "Perwakilan hukum",
+      "registryText": "Cari berdasarkan nama Mandarin terdaftar atau kode kredit sosial terpadu untuk memeriksa pendaftaran perusahaan."
+    },
+    "operator": "Operator layanan",
+    "controller": "Pengendali data",
+    "identity": "{role}: {company}, didirikan di Beijing, Tiongkok. Kode kredit sosial terpadu: {number}. Alamat terdaftar: {address}. Kontak: {email}.",
+    "separateServices": "{site} dan {otherSite} dioperasikan oleh perusahaan yang sama. Infrastruktur, basis data, akun, kata sandi, saldo, hak yang dibeli, dan kunci akun tetap terpisah serta tidak dapat dipindahkan. Untuk menggunakan situs lainnya, daftar secara terpisah dan baca ketentuan serta kebijakan privasinya.",
+    "crossBorder": "Operator dan pengendali data berada di Tiongkok daratan; layanan internasional dihosting di Singapura dan menggunakan penyedia dari negara lain. Jika Anda berada di EEA, Inggris, atau negara lain yang memiliki aturan transfer, data Anda ditransfer ke luar negara tersebut dalam keadaan berikut:",
+    "controllerHosting": "Tiongkok daratan (pengendali); Singapura (hosting)",
+    "revision": "Informasi perusahaan diperbarui {date}",
+    "financialRetention": "Minimal 7 tahun sejak akhir tahun keuangan terkait, atau lebih lama jika diwajibkan hukum yang berlaku. Penutupan akun tidak mempersingkat masa ini; catatan disimpan dengan akses terbatas hanya untuk pembukuan.",
+    "mobileHostingCn": "Server dan penyimpanan objek layanan Tiongkok berada di Tiongkok daratan.",
+    "mobileHostingIntl": "Server dan penyimpanan objek layanan internasional berada di Singapura."
   }
 }

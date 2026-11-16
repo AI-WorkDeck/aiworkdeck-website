@@ -6,7 +6,7 @@ import { mobilePrivacyLinks } from '@/content/legal/mobile-privacy';
 import { pageAlternates } from '@/lib/page-metadata';
 
 /**
- * 先按站点、再按语言。两站的数据控制者、法律框架（个人信息保护法 / GDPR）
+ * 先按站点、再按语言。两站的数据控制者相同，法律框架（个人信息保护法 / GDPR）
  * 与跨境传输事实都不同——`generateMetadata` 与页面本体必须走同一个出口。
  *
  * 四份文本的 section id 跨站点保持一致，尤其 `cross-border`：

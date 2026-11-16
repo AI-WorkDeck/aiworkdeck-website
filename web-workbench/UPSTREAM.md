@@ -1,8 +1,8 @@
-<!-- SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors -->
+<!-- SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 # Web workbench sources and licenses
 
-The workbench and editor integration are AGPL-3.0-or-later. Download the corresponding source from [source.zip](./source.zip) and rebuild using its README; the editor source snapshot comes from [AI WorkDeck](https://github.com/AI-WorkDeck/aiworkdeck/tree/989cc42c7b01ba001057a7bb22f9b77f483e8e2e), release 0.60.0. `source-manifest.json` records every vendored file and SHA-256. Build verifies the exact distributed vendor bytes, including explicitly recorded backports below. Original copyright/license headers are retained.
+The workbench and editor integration are AGPL-3.0-or-later. Download the corresponding source from [source.zip](./source.zip) and rebuild using its README; the editor source snapshot comes from [AI WorkDeck](https://github.com/AI-WorkDeck/aiworkdeck/tree/989cc42c7b01ba001057a7bb22f9b77f483e8e2e), release 0.60.0. `source-manifest.json` records every vendored file and SHA-256. Build verifies the exact distributed vendor bytes, including explicitly recorded backports below. Third-party copyright and all license identifiers are retained; first-party copyright-holder updates are recorded below.
 
 The editor includes zetajs (MIT) and AI WorkDeck's UNO worker (AGPL-3.0-or-later AND MIT). Details, upstream revision limitations, and local changes are preserved in `editor/UPSTREAM.md` and `vendor/core/frontend/src/zetaoffice/public/UPSTREAM.md`. The complete AGPL is available as `LICENSE` beside the deployed workbench.
 
@@ -26,6 +26,10 @@ For deployment/rollback overlap, the build also replaces exactly the pinned font
 
 ## Selected upstream backport (release 0.75.1)
 
-The base editor remains the 0.60.0 snapshot at `989cc42c7b01ba001057a7bb22f9b77f483e8e2e`. Only the change to `frontend/src/composables/zetaOfficeImeOverlay.js` from [PR #1275](https://github.com/AI-WorkDeck/aiworkdeck/pull/1275), commit `7726f734791391f8cbb562b0f7ac2f8f837f83e8`, is applied: the focused input displays native preedit text, caret, selection and horizontal scrolling during Chinese composition. `source-manifest.json` records the upstream patch, the original file hash and the distributed patched hash. This is not a full upgrade to the 0.75 editor. Website runtime/font delivery adapters are unchanged.
+The base editor remains the 0.60.0 snapshot at `989cc42c7b01ba001057a7bb22f9b77f483e8e2e`. Only the change to `frontend/src/composables/zetaOfficeImeOverlay.js` from [PR #1275](https://github.com/AI-WorkDeck/aiworkdeck/pull/1275), commit `7726f734791391f8cbb562b0f7ac2f8f837f83e8`, is applied: the focused input displays native preedit text, caret, selection and horizontal scrolling during Chinese composition. `source-manifest.json` records the upstream patch, the original file hash and the backported hash before the later copyright-only update below. This is not a full upgrade to the 0.75 editor. Website runtime/font delivery adapters are unchanged.
 
 The other editor changes in the 0.74-to-0.75 release range are not imported: legal-reference cards require the desktop host's writing configuration and lookup handlers, while slide structure and interaction changes require Impress. This browser workbench currently accepts DOCX only and supplies neither host capability.
+
+## First-party copyright update (2026-11-16)
+
+The AI WorkDeck copyright holder in first-party SPDX headers is now 北京公富信息技术有限公司 (BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED), reflecting the maintainer-confirmed company succession. `source-manifest.json` retains the pinned source revision and backport provenance; `localPatches` records the website change and pre-update hashes, while `files` pins the exact distributed bytes after this copyright-only change. No upstream functionality, third-party copyright or license identifier changed.

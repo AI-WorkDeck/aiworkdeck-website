@@ -1,11 +1,21 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { siteConfig, SITE_LEGAL_EFFECTIVE_DATE } from '@/lib/site-config';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/vi.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'vi');
+
 const E = siteConfig.legalEntity;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_contactEmail: E.contactEmail,
@@ -41,8 +51,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "Pháp lý",
   "title": "Điều khoản Dịch vụ",
-  "effectiveLabel": "Hiệu lực từ {__T_SITE_LEGAL_EFFECTIVE_DATE__}",
-  "intro": "Các Điều khoản này tạo thành một thỏa thuận giữa bạn và (\"chúng tôi\") về {__T_siteConfig_host__}, ứng dụng desktop AI WorkDeck, các tiện ích bổ sung Office, Skill và plugin plazas cùng các dịch vụ liên quan (gọi chung là \"Dịch vụ\"). Bằng việc đăng ký tài khoản, tạo khóa tài khoản hoặc sử dụng Dịch vụ bằng bất kỳ cách nào khác, bạn xác nhận rằng bạn đã đọc, hiểu và chấp nhận các Điều khoản này.",
+  "effectiveLabel": "Hiệu lực từ {__T_SITE_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
+  "intro": "Các Điều khoản này tạo thành một thỏa thuận giữa bạn và {__T_E_nameEn__} (\"chúng tôi\") về {__T_siteConfig_host__}, ứng dụng desktop AI WorkDeck, các tiện ích bổ sung Office, Skill và plugin plazas cùng các dịch vụ liên quan (gọi chung là \"Dịch vụ\"). Bằng việc đăng ký tài khoản, tạo khóa tài khoản hoặc sử dụng Dịch vụ bằng bất kỳ cách nào khác, bạn xác nhận rằng bạn đã đọc, hiểu và chấp nhận các Điều khoản này.",
   "highlightsTitle": "Bản tóm tắt",
   "highlights": [
     "**Kết quả đầu ra của AI không phải là tư vấn pháp lý.** Chúng tôi không cung cấp dịch vụ pháp lý và không phát sinh quan hệ luật sư-khách hàng hay quan hệ đại diện từ việc bạn sử dụng Dịch vụ. Kết quả đầu ra của AI có thể chứa các thông tin thực tế không chính xác, các điều khoản đã bị bãi bỏ và các án lệ không tồn tại. Bạn phải tự mình xác minh trước khi dựa vào nó.",
@@ -53,7 +63,7 @@ export const legalDoc: LegalDocument = hydrate({
     "**Nếu bạn là người tiêu dùng tại EU, EEA hoặc Vương quốc Anh, việc mua Credits đồng nghĩa với việc bắt đầu thực hiện ngay và chấm dứt quyền hủy bỏ trong 14 ngày đối với giao dịch mua đó.** Bạn sẽ được yêu cầu xác nhận điều này khi thanh toán. Chúng tôi vẫn hoàn tiền cho giao dịch mua mà bạn chưa dùng Credits — xem điều khoản 7.",
     "**Trách nhiệm của chúng tôi có giới hạn** — xem điều khoản 12. Giới hạn này không loại trừ trách nhiệm đối với hành vi cố ý hoặc sai sót nghiêm trọng của chúng tôi, đối với trường hợp tử vong hoặc thương tật cá nhân, hoặc đối với bất kỳ điều gì mà pháp luật không cho phép chúng tôi loại trừ.",
     "**Disputes go to arbitration before  under ** — see clause 16. If you are a consumer, that clause does not take away the protections of the mandatory law where you live.",
-    "**This site and {__T_siteConfig_otherSite_host__} are separate.** Separate contracting entities, separate accounts, separate balances. Nothing you hold there is usable here — see clause 1."
+    "{__T_C_separateServices__}"
   ],
   "tocTitle": "Mục lục",
   "sections": [
@@ -63,7 +73,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "The Service is operated by , a company incorporated in the Hong Kong Special Administrative Region under the Companies Ordinance (Cap. 622),  . Registered office: . Contact: ."
+          "text": "{__T_C_operator__}"
         },
         {
           "type": "p",
@@ -71,7 +81,7 @@ export const legalDoc: LegalDocument = hydrate({
         },
         {
           "type": "callout",
-          "text": "**{__T_siteConfig_host__} and {__T_siteConfig_otherSite_host__} are two separate services.** They run on separate infrastructure with separate databases, and each is operated by a different contracting entity under different governing law. Accounts, passwords, Credits balances, purchased entitlements and account keys **do not carry across**. Registering here does not give you an account there, and a purchase made there cannot be redeemed here. If you already have an account on the other site and want to use this one, you have to register again."
+          "text": "{__T_C_separateServices__}"
         },
         {
           "type": "callout",

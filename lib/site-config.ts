@@ -3,7 +3,7 @@
  *
  * 一套代码、两个部署、两份数据：
  * - `cn`   www.aiworkdeck.com   北京 ECS，ICP 备案，人民币 / 微信支付，中国法
- * - `intl` www.workdeck.ai      新加坡 ECS（.ai 不可备案，只能落境外），美元 / Stripe，香港主体
+ * - `intl` www.workdeck.ai      新加坡 ECS（.ai 不可备案，只能落境外），美元 / Stripe；两站均由公富运营
  *
  * 两站**账户体系完全独立**：各自一个 `data/` 目录、一个 SQLite 库、一份 users.json。
  * 这是接受的代价，不是待修的缺陷；用户面的说明见 `/start` 与账户页的站点提示。
@@ -33,11 +33,11 @@ export const SITE_ID: SiteId =
   process.env.NEXT_PUBLIC_AWD_SITE === 'intl' ? 'intl' : 'cn';
 
 export interface SiteLegalEntity {
-  /** 法定名称（中文）。境外主体没有中文法定名时为空串。 */
+  /** 法定名称（中文）。 */
   nameZh: string;
-  /** 法定名称（英文/拉丁字母）。 */
+  /** 用户确认的英文名称。 */
   nameEn: string;
-  /** 注册号：内地是统一社会信用代码，香港是公司注册编号。 */
+  /** 统一社会信用代码。 */
   registrationNo: string;
   /** 注册号在法律文本里的称呼。 */
   registrationLabel: { zh: string; en: string };
@@ -51,9 +51,11 @@ export interface SiteLegalEntity {
   contactEmail: string;
   /**
    * 注册成立日期（ISO `YYYY-MM-DD`）。仅在公司页登载，用于对外核验，缺省不渲染。
-   * 内地主体没有填——公开页只在国际站，别为了填满字段去猜。
    */
   incorporatedOn?: string;
+  /** 登记机关与法定代表人，依据用户提供的公司登记资料。 */
+  registrationAuthority: { zh: string; en: string };
+  legalRepresentative: { zh: string; en: string };
   /** 争议解决机构与规则，法律文本正文引用。 */
   forum: { zh: string; en: string };
   /** 适用法。 */
@@ -97,10 +99,30 @@ export interface SiteConfig {
   offersWpsAddin: boolean;
 }
 
-/** 两份法律文本的生效日期。分站维护——国际站的文本是新起草的，日期不同。 */
+/** 保留原条款生效日期；2026-11-16 主体资料修订不倒造新的签署或生效日期。 */
 export const LEGAL_EFFECTIVE_DATE: Record<SiteId, string> = {
   cn: '2026-08-08',
   intl: '2026-08-08',
+};
+
+/** 公司登记资料由用户于 2026-11-16 提供；英文名称采用用户指定写法。
+ * 软件权属与运营主体统一为公富，不代表域名、备案或支付账号迁移手续已完成。
+ */
+const GONGFU_ENTITY = {
+  nameZh: '北京公富信息技术有限公司',
+  nameEn: 'BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED',
+  registrationNo: '911101053483482356',
+  registrationLabel: { zh: '统一社会信用代码', en: 'Unified Social Credit Code' },
+  registeredAddress: {
+    zh: '北京市朝阳区东三环中路1号1幢1单元15层1501内15单元',
+    en: 'Unit 15 within Room 1501, Floor 15, Unit 1, Building 1, No. 1 East Third Ring Middle Road, Chaoyang District, Beijing, China',
+  },
+  incorporatedOn: '2015-06-16',
+  registrationAuthority: {
+    zh: '北京市朝阳区市场监督管理局',
+    en: 'Beijing Chaoyang District Administration for Market Regulation',
+  },
+  legalRepresentative: { zh: '李楠', en: 'Li Nan' },
 };
 
 const CN: SiteConfig = {
@@ -112,18 +134,12 @@ const CN: SiteConfig = {
   currencySymbol: '¥',
   paymentChannel: 'wxpay',
   // 《互联网信息服务管理办法》第十二条：境内服务器面向公众提供服务必须在首页底部标明
+  // 现有备案登记待办理主体变更；不得将此备案号视为公富已经取得的登记。
   icpFiling: '京ICP备2024096997号-8',
   publicSecurityFiling: '',
   showChineseEntityName: true,
   legalEntity: {
-    nameZh: '北京京微资易科技有限公司',
-    nameEn: 'Beijing Jingwei Ziyi Technology Co., Ltd.',
-    registrationNo: '91110106MA003EM95R',
-    registrationLabel: { zh: '统一社会信用代码', en: 'Unified Social Credit Code' },
-    registeredAddress: {
-      zh: '中国北京市',
-      en: 'Beijing, China',
-    },
+    ...GONGFU_ENTITY,
     contactEmail: 'hi@aiworkdeck.com',
     forum: { zh: '北京仲裁委员会', en: 'Beijing Arbitration Commission' },
     governingLaw: { zh: '中华人民共和国内地法律', en: 'the laws of mainland China' },
@@ -142,15 +158,8 @@ const CN: SiteConfig = {
   offersWpsAddin: true,
 };
 
-/**
- * 国际站的缔约主体：香港实体，2026-01-05 依《公司條例》（第 622 章）在香港成立。
- * 名称与编号取自公司注册证明书与商业登记证，**逐字照抄，不得意译或简写**——
- * 法律文本里的缔约主体是用户据以起诉的对象，也是我方主张权利的名义。
- * 中文名用证书上的繁体写法（承澤，不是承泽）。
- *
- * 与国内站的主体一样硬编码在这里：公司登记资料是**公开记录**不是密钥，
- * 而放进环境变量会多出一个「忘配就构建失败」的部署步骤，收益为零。
- * 下方仍有一道非空断言，防止将来有人把字段改空而无人察觉。
+/** 国际站采用同一运营主体，保留原有币种、支付、联系邮箱及争议解决约定。
+ * 账户实名、支付收款与域名登记的迁移须分别办理，不由展示信息替换完成。
  */
 const INTL: SiteConfig = {
   id: 'intl',
@@ -165,19 +174,8 @@ const INTL: SiteConfig = {
   publicSecurityFiling: '',
   showChineseEntityName: false,
   legalEntity: {
-    nameZh: '真善美承澤有限公司',
-    nameEn: 'Zhen Shan Mei Grace Legacy Limited',
-    // 公司注册证明书编号（Certificate of Incorporation No.）。
-    // 商业登记号是 79530779-000-01-26-8，两者前八位相同但不是一回事，别混用。
-    registrationNo: '79530779',
-    registrationLabel: { zh: '公司注册编号', en: 'Company Registration No.' },
-    registeredAddress: {
-      zh: '香港九龍尖沙咀梳士巴利道 3 號星光行 7 樓 721A 室',
-      en: 'Room 721A, 7/F, Star House, 3 Salisbury Road, Tsim Sha Tsui, Kowloon, Hong Kong',
-    },
+    ...GONGFU_ENTITY,
     contactEmail: process.env.NEXT_PUBLIC_AWD_INTL_CONTACT_EMAIL ?? 'hi@workdeck.ai',
-    // 公司注册证明书上的发出日期，与注册编号同属公开记录
-    incorporatedOn: '2026-01-05',
     forum: {
       zh: '香港国际仲裁中心（HKIAC）',
       en: 'the Hong Kong International Arbitration Centre (HKIAC)',
@@ -216,58 +214,16 @@ export function siteConfigOf(id: SiteId): SiteConfig {
   return ALL[id];
 }
 
-/**
- * 只用于对外展示的主体字段（页脚 + 公司页），不含 `forum` / `governingLaw`。
- *
- * 少掉的这两个字段正是分界线：争议解决机构与适用法只出现在法律文本里，而法律文本的
- * 缔约主体**永远是站点自己的 `legalEntity`**。类型上就不给美国主体这两个字段，
- * 谁想把它插进条款正文都会直接类型报错。
- */
+/** 页脚与公司页的资料不包含分站适用法和争议解决机构。 */
 export type SitePublicEntity = Omit<SiteLegalEntity, 'forum' | 'governingLaw'>;
 
-/** 美国主体名下的域名。与 workdeck.ai 是同一个国际站进程，不是第三个站点。 */
+/** 美国域名仍由国际站进程承载；域名登记手续另行办理。 */
 export const US_SITE_ORIGIN = 'https://www.aiworkdeck.us';
 
-/**
- * aiworkdeck.us 的展示主体：美国特拉华州公司。
- *
- * ## 为什么不是第三个 SiteId
- * aiworkdeck.us 由**同一个国际站进程**承载（新加坡那台机上 nginx 多挂一个 vhost，
- * 反代到同一个 127.0.0.1:3000），美国 IP 访问 workdeck.ai 时由 nginx 301 到这里。
- * 所以 `SITE_ID` 仍是 `intl`，币种、支付通道、账户体系、API 契约一个都不分叉——
- * 分出第三个站点就得再来一套构建、一份数据、一遍契约矩阵，为了「页脚换个公司名」
- * 付这个代价没有道理。
- *
- * ## 分的只有两处
- * 页脚的主体行，和公司页 `/{lang}/about` 的主体资料——这两处的用途是给支付/平台
- * 做合规核验：核验方按**域名注册人**去找运营主体，.us 域名登记在美国公司名下，
- * 页上却只有香港公司，就对不上。
- *
- * ## 不分的是什么（改这里之前先读完）
- * - **法律文本的缔约主体仍是香港公司**：条款与隐私政策是既有用户已经接受过的合同，
- *   美国公司不是那份合同的当事人，换掉等于单方面替换缔约主体。`content/legal/*`
- *   一个字都不动，`SitePublicEntity` 的类型也保证它插不进去。
- * - **canonical / hreflang / sitemap / JSON-LD 的 url 仍指 workdeck.ai**：
- *   .us 是国际站的别名域，两边内容逐字相同，各自自指 canonical 就是重复内容。
- *
- * 字段照抄公开记录（特拉华州州务卿的公司注册档案），与香港主体同一条规矩：
- * 登记资料是公开记录不是密钥，硬编码在这里，别搬进环境变量。
- */
+/** 保留美国域名联系邮箱；主体与其他站点一致。兼容现有 Host 路由导出名。 */
 export const INTL_US_LEGAL_ENTITY: SitePublicEntity = {
-  // 特拉华州的公司登记只有英文名，没有中文法定名——**留空串，不要填中文译名**：
-  // 这页存在的意义是每一条都能在州务卿的查册里对上，译名对不上就是噪声。
-  nameZh: '',
-  nameEn: 'Zhen Shan Mei Grace Legacy US Limited',
-  // Delaware File Number，法团成立证书（Certificate of Incorporation）上的档案编号
-  registrationNo: '10745170',
-  registrationLabel: { zh: '特拉华州公司档案编号', en: 'Delaware File Number' },
-  registeredAddress: {
-    zh: '美国特拉华州多佛市 The Green 8 号 STE A，邮编 19901',
-    en: '8 The Green, STE A, Dover, DE 19901, United States',
-  },
+  ...GONGFU_ENTITY,
   contactEmail: 'legal@aiworkdeck.us',
-  // 法团成立证书的提交日期
-  incorporatedOn: '2026-08-24',
 };
 
 /** 归一化 Host 头：小写、去端口、去末尾点。IPv6 字面量（`[::1]:3000`）也能正确剥端口。 */
@@ -294,7 +250,7 @@ export function isUsHost(host: string | null | undefined): boolean {
  * 读 Host 头的那一层在 `lib/request-entity.ts`。
  *
  * 国内站构建即使收到 aiworkdeck.us 的 Host 也返回本站主体：那种情况只可能是
- * 配错的反代，展示一个与本站无关的美国公司比展示自己错得更厉害。
+ * 配错的反代，应保留当前站点的联系邮箱。
  */
 export function publicEntityForHost(host: string | null | undefined): SitePublicEntity {
   if (SITE_ID === 'intl' && isUsHost(host)) return INTL_US_LEGAL_ENTITY;

@@ -1,11 +1,21 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { LEGAL_ENTITY, LEGAL_EFFECTIVE_DATE } from '@/lib/legal-entity';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/ko.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'ko');
+
 const E = LEGAL_ENTITY;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_uscc: E.uscc,
@@ -32,8 +42,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "법적 고지",
   "title": "서비스 이용약관",
-  "effectiveLabel": "{__T_LEGAL_EFFECTIVE_DATE__}부로 시행",
-  "intro": "본 약관은 이용자와  () (\"당사\", \"회사\") 간의 계약으로서, AI WorkDeck 웹사이트 (), 데스크톱 애플리케이션, 플러그인, Skill 광장 및 관련 서비스(이하 통칭하여 \"서비스\")에 적용됩니다. 계정을 등록하거나 계정 키를 생성하거나 기타 방법으로 서비스를 이용함으로써, 귀하는 본 약관을 읽고 이해했으며 이에 동의했음을 확인합니다.",
+  "effectiveLabel": "{__T_LEGAL_EFFECTIVE_DATE__}부로 시행 · {__T_C_revision__}",
+  "intro": "본 약관은 이용자와  {__T_E_nameEn__} ({__T_E_nameZh__}) (\"당사\", \"회사\") 간의 계약으로서, AI WorkDeck 웹사이트 {__T_E_nameEn__} ({__T_E_nameZh__}), 데스크톱 애플리케이션, 플러그인, Skill 광장 및 관련 서비스(이하 통칭하여 \"서비스\")에 적용됩니다. 계정을 등록하거나 계정 키를 생성하거나 기타 방법으로 서비스를 이용함으로써, 귀하는 본 약관을 읽고 이해했으며 이에 동의했음을 확인합니다.",
   "highlightsTitle": "먼저 읽어주세요",
   "highlights": [
     "**AI 출력물은 법률 자문이 아닙니다.** 당사는 법률 서비스를 제공하지 않으며, 서비스 이용으로 변호사-고객 또는 대리 관계가 성립되지 않습니다. AI 출력물에는 사실과 다른 내용, 폐지된 조항, 존재하지 않는 판례가 포함될 수 있습니다. 이를 활용하기 전에 반드시 독립적으로 검증하셔야 합니다.",
@@ -51,7 +61,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "본 서비스는  ()가 운영하며, 통일사회신용코드는  입니다. 연락처: ."
+          "text": "{__T_C_operator__}"
         },
         {
           "type": "p",
