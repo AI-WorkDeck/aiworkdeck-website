@@ -24,6 +24,7 @@ on:
 permissions:
   contents: read
   actions: read
+cache-mode: none
 jobs:
   build:
     runs-on: ubuntu-latest

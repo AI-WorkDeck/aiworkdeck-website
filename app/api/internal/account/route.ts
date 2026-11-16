@@ -796,7 +796,7 @@ async function handleQuery(userId: string, body: Record<string, unknown>): Promi
     if (!result.ok) {
       // 与 webhook / payment query 同口径：对不上一律不结算，留人工核查
       console.error(
-        `[internal account] 拒绝结算 ${outTradeNo}: ${describeSettleFailure(result.reason)}`,
+        '[internal account] 拒绝结算', { outTradeNo, reason: describeSettleFailure(result.reason) },
         { channelAmount: settlement.amountMinor, channelCurrency: settlement.currency }
       );
       return fail(409, 'settlement_mismatch');

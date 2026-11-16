@@ -51,11 +51,13 @@ export class MailError extends Error {}
  */
 export function normalizeEmail(raw: string | undefined | null): string {
   const trimmed = (raw ?? '').trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+  if (trimmed.length > 254) throw new MailError('Please enter a valid email address');
+  const parts = trimmed.split('@');
+  const domain = parts[1] ?? '';
+  if (/\s/.test(trimmed) || parts.length !== 2 ||
+      !parts[0] || !domain.slice(1, -1).includes('.')) {
     throw new MailError('Please enter a valid email address');
   }
-  // 上限挡住把超长串当输入塞进来的情况（RFC 5321 的地址上限是 254）
-  if (trimmed.length > 254) throw new MailError('Please enter a valid email address');
   return trimmed;
 }
 

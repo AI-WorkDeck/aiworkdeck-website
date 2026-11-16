@@ -14,7 +14,8 @@ import { NextRequest } from 'next/server';
 assert.ok(!fs.existsSync(path.join(process.cwd(), 'package.json')), '必须在隔离目录运行');
 const base = process.env.AWD_BQT_MEMBER_BASE_URL ?? '';
 const lawyerId = process.env.BQT_LIVE_LAWYER_ID ?? '';
-assert.ok(base && !base.includes('uat.bqt.com'), '只允许对包晴天测试环境运行');
+const target = new URL(base);
+assert.ok(target.origin === 'https://bqt-test.bqt.com' && !target.username && !target.password, '只允许对包晴天测试环境运行');
 assert.match(lawyerId, /^\d{1,19}$/, '需要 BQT_LIVE_LAWYER_ID');
 fs.mkdirSync('data'); fs.writeFileSync('data/users.json', '[]');
 
