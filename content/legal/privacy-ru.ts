@@ -1,11 +1,21 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { LEGAL_ENTITY, LEGAL_EFFECTIVE_DATE } from '@/lib/legal-entity';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/ru.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'ru');
+
 const E = LEGAL_ENTITY;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_uscc: E.uscc,
@@ -32,8 +42,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "Юридическая информация",
   "title": "Политика конфиденциальности",
-  "effectiveLabel": "Вступает в силу {__T_LEGAL_EFFECTIVE_DATE__}",
-  "intro": "В настоящей политике разъясняется, как  () собирает, использует, хранит и раскрывает личную информацию при использовании вами сайта и настольного приложения AI WorkDeck, а также какими правами вы обладаете. Рекомендуем прочитать её полностью; если вам нужна лишь суть, краткое изложение ниже её охватывает.",
+  "effectiveLabel": "Вступает в силу {__T_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
+  "intro": "В настоящей политике разъясняется, как  {__T_E_nameEn__} ({__T_E_nameZh__}) собирает, использует, хранит и раскрывает личную информацию при использовании вами сайта и настольного приложения AI WorkDeck, а также какими правами вы обладаете. Рекомендуем прочитать её полностью; если вам нужна лишь суть, краткое изложение ниже её охватывает.",
   "highlightsTitle": "Краткая версия",
   "highlights": [
     "**Надстройка для Office/WPS использует облачную обработку.** Текущий документ, необходимая история диалога и выбранные вами ссылки попадают на наш размещённый бэкенд, а затем в Alibaba Cloud Model Studio и к поставщику инференса, обслуживающему выбранную вами модель. Содержимое документов хранится во временной памяти; сообщения пользователей, ответы AI и рассуждения сохраняются, пока вы не удалите диалог. См. пункты 6 и 8.",
@@ -52,7 +62,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "Оператор личной информации:  (), единый код регистрации юридического лица ."
+          "text": "{__T_C_controller__}"
         },
         {
           "type": "p",

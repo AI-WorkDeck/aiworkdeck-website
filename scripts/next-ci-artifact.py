@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+# SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Build-only Next artifacts. No production environment, SSH, or deployment."""
 import argparse, hashlib, json, os, pathlib, re, shutil, socket, subprocess, tarfile, tempfile, time, urllib.request, urllib.error, urllib.parse, zipfile, stat

@@ -1,3 +1,7 @@
+import dictionary from '@/dictionaries/en.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'en');
+
 import { LEGAL_ENTITY, LEGAL_EFFECTIVE_DATE } from '@/lib/legal-entity';
 import type { LegalDocument } from './types';
 
@@ -6,7 +10,7 @@ const E = LEGAL_ENTITY;
 export const termsEn: LegalDocument = {
     eyebrow: 'Legal',
     title: 'Terms of Service',
-    effectiveLabel: `Effective ${LEGAL_EFFECTIVE_DATE}`,
+    effectiveLabel: `Effective ${LEGAL_EFFECTIVE_DATE} · ${C.revision}`,
     intro: `These Terms form an agreement between you and ${E.nameEn} (${E.nameZh}) ("we", "us") covering the AI WorkDeck website (${E.site}), the desktop application, plugins, the Skill plaza and related services (together, the "Service"). By registering an account, generating an account key or otherwise using the Service, you confirm that you have read, understood and accepted these Terms.`,
     highlightsTitle: 'Read these first',
     highlights: [
@@ -25,7 +29,7 @@ export const termsEn: LegalDocument = {
             blocks: [
                 {
                     type: 'p',
-                    text: `The Service is operated by ${E.nameEn} (${E.nameZh}), unified social credit code ${E.uscc}. Contact: ${E.contactEmail}.`,
+                    text: C.operator,
                 },
                 {
                     type: 'p',

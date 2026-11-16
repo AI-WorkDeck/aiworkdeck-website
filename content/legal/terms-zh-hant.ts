@@ -1,11 +1,21 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { LEGAL_ENTITY, LEGAL_EFFECTIVE_DATE } from '@/lib/legal-entity';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/zh-hant.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'zh-hant');
+
 const E = LEGAL_ENTITY;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_uscc: E.uscc,
@@ -32,8 +42,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "法律資訊",
   "title": "服務條款",
-  "effectiveLabel": "生效日期：{__T_LEGAL_EFFECTIVE_DATE__}",
-  "intro": "本条款是你与（下称「我们」）之间就 AI WorkDeck 官方网站（）及桌面端软件、插件、Skill 广场等相关服务（合称「本服务」）订立的协议。注册账户、生成账户 Key 或使用本服务，即表示你已阅读、理解并同意本条款全部内容。",
+  "effectiveLabel": "生效日期：{__T_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
+  "intro": "本条款是你与{__T_E_nameZh__}（下称「我们」）之间就 AI WorkDeck 官方网站（{__T_E_site__}）及桌面端软件、插件、Skill 广场等相关服务（合称「本服务」）订立的协议。注册账户、生成账户 Key 或使用本服务，即表示你已阅读、理解并同意本条款全部内容。",
   "highlightsTitle": "请先读这几条",
   "highlights": [
     "**AI 生成的内容不是法律意见。** 本服务不提供法律服务，也不与你建立委托代理或律师-当事人关系。AI 输出可能包含错误的事实、失效的法条与不存在的判例，必须经你本人独立核验后方可使用。",
@@ -51,7 +61,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "本服务由（统一社会信用代码 ）运营。联系邮箱：。"
+          "text": "{__T_C_operator__}"
         },
         {
           "type": "p",

@@ -2,7 +2,7 @@ import { platformProvider, bailianConfig } from '../platform-ai/config';
 import { platformModels } from '../platform-ai/catalog';
 import { withBailianCost } from '../platform-ai/usage-stream';
 import { getExchangeRateInfo } from '../ai-config';
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { LIMITS, PRICE_CAP, WEB_MODEL, WebError, messagesFor, validateAgentCall, type AgentToolCall, type WebInput, type WebPrice } from './contract';
 import { AGENT_LIMITS, AGENT_TOOLS } from '../../web-workbench/src/agent-contract.js';

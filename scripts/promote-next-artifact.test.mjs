@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 钉住 promoter 的安全性质：无服务器构建、审批门、输入校验、失败自动回滚、旧入口仍 exit 1。
 // 行为测试在临时沙箱里真跑 promote-next-artifact.sh（pm2 / npm / curl / systemd-run 为桩），

@@ -1,11 +1,22 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { siteConfig, SITE_LEGAL_EFFECTIVE_DATE } from '@/lib/site-config';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/zh-hant.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'zh-hant');
+
 const E = siteConfig.legalEntity;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
+  C_financialRetention: C.financialRetention,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_contactEmail: E.contactEmail,
@@ -41,8 +52,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "法律資訊",
   "title": "隱私權政策",
-  "effectiveLabel": "生效日期：{__T_SITE_LEGAL_EFFECTIVE_DATE__}",
-  "intro": "本政策说明  在你使用 {__T_siteConfig_host__} 与 AI WorkDeck 桌面端软件时，如何收集、使用、存储和对外提供个人数据，以及你享有哪些权利。我们建议你完整阅读；如果只想快速了解要点，看下面的「一句话摘要」即可。",
+  "effectiveLabel": "生效日期：{__T_SITE_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
+  "intro": "本政策说明 {__T_E_nameEn__} 在你使用 {__T_siteConfig_host__} 与 AI WorkDeck 桌面端软件时，如何收集、使用、存储和对外提供个人数据，以及你享有哪些权利。我们建议你完整阅读；如果只想快速了解要点，看下面的「一句话摘要」即可。",
   "highlightsTitle": "一句话摘要",
   "highlights": [
     "**Office/WPS 插件经云端处理。** 当前文档、必要的对话历史及你指定的参考内容会先到托管后端，再经 OpenRouter 发送给所选模型的实际推理供应商。正文仅作短期内存缓存；用户消息、AI 回复及思考记录保存至你删除会话。详见第六、八条。",
@@ -52,7 +63,7 @@ export const legalDoc: LegalDocument = hydrate({
     "**有三类数据会离开你所在的国家。** 你送入 AI 的内容会到达位于美国的 OpenRouter；付款数据会到达 Stripe；**你主动提交的产品反馈会到达我们在中国内地运营的服务器**——第七条解释了原因与后果。",
     "**你可以在账户页自助注销账户。** 我们在 30 日内删除或匿名化你的数据，法定必须留存的交易记录除外，见第八条。",
     "**你的权利**——访问、更正、删除、可携、限制处理、反对、撤回同意——列在第十条。请发邮件至 ，我们在一个月内答复。你也可以向你所在地的数据保护监管机构投诉。",
-    "**本站与 {__T_siteConfig_otherSite_host__} 各自存数据。** 控制者不同、数据库不同、所在国家不同，两边都看不到对方的账户。"
+    "{__T_C_separateServices__}"
   ],
   "tocTitle": "目录",
   "sections": [
@@ -62,7 +73,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "数据控制者为 （），该公司依《公司條例》（香港法例第 622 章）注册于中华人民共和国香港特别行政区， ，注册办事处地址：。"
+          "text": "{__T_C_controller__}"
         },
         {
           "type": "p",
@@ -74,7 +85,7 @@ export const legalDoc: LegalDocument = hydrate({
         },
         {
           "type": "callout",
-          "text": "**{__T_siteConfig_otherSite_host__} 是另一个服务，有各自的控制者与各自的数据库，托管在另一个国家、适用另一套法律。** 你在本站的账户在那边并不存在，本政策也不描述那个站点如何处理数据。你若是在那边注册的，请阅读那个站点的政策。"
+          "text": "{__T_C_separateServices__}"
         },
         {
           "type": "p",
@@ -330,7 +341,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "本服务由香港主体运营、部署在新加坡的基础设施上，并依赖位于其他国家的服务商。你若身处欧洲经济区、英国，或任何自有跨境传输规则的国家，你的个人数据会在下列情形下被传输出境："
+          "text": "{__T_C_crossBorder__}"
         },
         {
           "type": "table",
@@ -342,7 +353,7 @@ export const legalDoc: LegalDocument = hydrate({
           "rows": [
             [
               "运行你的账户、钱包与网站本身",
-              "香港特别行政区（控制者）与新加坡（托管）",
+              "{__T_C_controllerHosting__}",
               "履行你与我们之间合同所必需（GDPR 第 49(1)(b) 条）；与托管服务商的合同承诺"
             ],
             [
@@ -414,7 +425,7 @@ export const legalDoc: LegalDocument = hydrate({
             ],
             [
               "订单、账本、税务与发票记录",
-              "自相关财政年度结束起不少于 7 年（香港《税务条例》第 51C 条与《公司条例》第 373 条；你本国税法要求更长的，从其规定）。**注销账户不能缩短这一期限**——这些记录以受限形式仅供记账之用。"
+              "{__T_C_financialRetention__}"
             ],
             [
               "广场投稿",

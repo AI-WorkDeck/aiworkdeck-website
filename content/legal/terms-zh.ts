@@ -1,3 +1,7 @@
+import dictionary from '@/dictionaries/zh.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'zh');
+
 import { LEGAL_ENTITY, LEGAL_EFFECTIVE_DATE } from '@/lib/legal-entity';
 import type { LegalDocument } from './types';
 
@@ -6,7 +10,7 @@ const E = LEGAL_ENTITY;
 export const termsZh: LegalDocument = {
     eyebrow: '法律信息',
     title: '服务条款',
-    effectiveLabel: `生效日期：${LEGAL_EFFECTIVE_DATE}`,
+    effectiveLabel: `生效日期：${LEGAL_EFFECTIVE_DATE} · ${C.revision}`,
     intro: `本条款是你与${E.nameZh}（下称「我们」）之间就 AI WorkDeck 官方网站（${E.site}）及桌面端软件、插件、Skill 广场等相关服务（合称「本服务」）订立的协议。注册账户、生成账户 Key 或使用本服务，即表示你已阅读、理解并同意本条款全部内容。`,
     highlightsTitle: '请先读这几条',
     highlights: [
@@ -25,7 +29,7 @@ export const termsZh: LegalDocument = {
             blocks: [
                 {
                     type: 'p',
-                    text: `本服务由${E.nameZh}（统一社会信用代码 ${E.uscc}）运营。联系邮箱：${E.contactEmail}。`,
+                    text: C.operator,
                 },
                 {
                     type: 'p',

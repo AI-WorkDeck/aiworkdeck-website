@@ -1,11 +1,21 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { LEGAL_ENTITY, LEGAL_EFFECTIVE_DATE } from '@/lib/legal-entity';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/vi.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'vi');
+
 const E = LEGAL_ENTITY;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_uscc: E.uscc,
@@ -32,8 +42,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "Pháp lý",
   "title": "Điều khoản Dịch vụ",
-  "effectiveLabel": "Có hiệu lực từ {__T_LEGAL_EFFECTIVE_DATE__}",
-  "intro": "Các Điều khoản này tạo thành thỏa thuận giữa bạn và () (\"chúng tôi\") bao gồm website AI WorkDeck (), ứng dụng dành cho máy tính, các plugin, Skill plaza và các dịch vụ liên quan (gọi chung là \"Dịch vụ\"). Bằng việc đăng ký tài khoản, tạo khóa tài khoản hoặc sử dụng Dịch vụ theo cách khác, bạn xác nhận rằng bạn đã đọc, hiểu và chấp nhận các Điều khoản này.",
+  "effectiveLabel": "Có hiệu lực từ {__T_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
+  "intro": "Các Điều khoản này tạo thành thỏa thuận giữa bạn và {__T_E_nameEn__} ({__T_E_nameZh__}) (\"chúng tôi\") bao gồm website AI WorkDeck {__T_E_nameEn__} ({__T_E_nameZh__}), ứng dụng dành cho máy tính, các plugin, Skill plaza và các dịch vụ liên quan (gọi chung là \"Dịch vụ\"). Bằng việc đăng ký tài khoản, tạo khóa tài khoản hoặc sử dụng Dịch vụ theo cách khác, bạn xác nhận rằng bạn đã đọc, hiểu và chấp nhận các Điều khoản này.",
   "highlightsTitle": "Hãy đọc những nội dung này trước",
   "highlights": [
     "**Kết quả đầu ra của AI không phải là tư vấn pháp lý.** Chúng tôi không cung cấp dịch vụ pháp lý và không phát sinh mối quan hệ luật sư–khách hàng hoặc đại lý nào từ việc bạn sử dụng Dịch vụ. Kết quả đầu ra của AI có thể chứa các sự kiện không chính xác, các quy định đã bị bãi bỏ và các vụ việc không tồn tại. Bạn phải tự mình kiểm chứng trước khi dựa vào đó.",
@@ -51,7 +61,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "The Service is operated by  (), unified social credit code . Contact: ."
+          "text": "{__T_C_operator__}"
         },
         {
           "type": "p",

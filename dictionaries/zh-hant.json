@@ -2677,5 +2677,35 @@
       "ep-ext-01": "Skill、外掛、MCP，到底該裝哪個？",
       "ep-ext-02": "視訊會議開完了，會議紀錄怎麼放進卷宗？"
     }
+  },
+  "companyEntity": {
+    "about": {
+      "eyebrow": "關於我們",
+      "title": "AI WorkDeck 的營運主體",
+      "intro": "AI WorkDeck 是由{company}營運的開源 AI 工作台。",
+      "companyTitle": "主體資料",
+      "labels": {
+        "nameEn": "英文名稱",
+        "nameZh": "公司名稱",
+        "incorporated": "成立日期",
+        "registeredOffice": "住所",
+        "website": "網站",
+        "contact": "聯絡電郵"
+      },
+      "registryLinkLabel": "國家企業信用信息公示系統",
+      "registrationAuthority": "登記機關",
+      "legalRepresentative": "法定代表人",
+      "registryText": "可按中文公司名稱或統一社會信用代碼查詢核對公司登記資料。"
+    },
+    "operator": "服務營運者",
+    "controller": "個人資料處理者",
+    "identity": "{role}：{company}，在中國北京市註冊成立，統一社會信用代碼 {number}，住所：{address}。聯絡電郵：{email}。",
+    "separateServices": "{site} 與 {otherSite} 由同一公司營運，但基礎設施、資料庫、帳戶、密碼、餘額、已購權益和帳戶 Key 仍各自獨立，不能相互轉移。使用另一站點須另行註冊，並查閱該站點的條款及私隱政策。",
+    "crossBorder": "營運者及個人資料處理者位於中國內地；國際服務託管於新加坡，並使用其他國家的服務商。如你身處歐洲經濟區、英國或其他有跨境傳輸規則的國家，個人資料會在以下情形被傳輸至該國以外：",
+    "controllerHosting": "中國內地（個人資料處理者）；新加坡（託管）",
+    "revision": "主體資料修訂日期：{date}",
+    "financialRetention": "自相關財政年度結束起不少於7年；適用法律要求更長的，從其規定。註銷帳戶不能縮短這一期限；這些記錄以受限形式僅供記帳之用。",
+    "mobileHostingCn": "中國區伺服器和物件儲存位於中國大陸。",
+    "mobileHostingIntl": "國際區伺服器和物件儲存位於新加坡。"
   }
 }

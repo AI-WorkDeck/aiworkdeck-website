@@ -1,11 +1,21 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { LEGAL_ENTITY, LEGAL_EFFECTIVE_DATE } from '@/lib/legal-entity';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/ar.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'ar');
+
 const E = LEGAL_ENTITY;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_uscc: E.uscc,
@@ -32,8 +42,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "الشؤون القانونية",
   "title": "سياسة الخصوصية",
-  "effectiveLabel": "يسري هذا العمل اعتبارًا من {__T_LEGAL_EFFECTIVE_DATE__}",
-  "intro": "توضح هذه السياسة كيفية قيام () بجمع المعلومات الشخصية واستخدامها وتخزينها والكشف عنها عند استخدامك لموقع AI WorkDeck وتطبيق سطح المكتب، كما توضح الحقوق التي تملكها. ننصح بقراءتها كاملة؛ وإذا كنت ترغب في الاطلاع على الملخص فقط، فإن الملخص أدناه يغطي ذلك.",
+  "effectiveLabel": "يسري هذا العمل اعتبارًا من {__T_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
+  "intro": "توضح هذه السياسة كيفية قيام {__T_E_nameEn__} ({__T_E_nameZh__}) بجمع المعلومات الشخصية واستخدامها وتخزينها والكشف عنها عند استخدامك لموقع AI WorkDeck وتطبيق سطح المكتب، كما توضح الحقوق التي تملكها. ننصح بقراءتها كاملة؛ وإذا كنت ترغب في الاطلاع على الملخص فقط، فإن الملخص أدناه يغطي ذلك.",
   "highlightsTitle": "النسخة المختصرة",
   "highlights": [
     "**يعتمد الملحق Office/WPS على المعالجة السحابية.** يصل المستند الحالي وسجل المحادثات الضروري والمراجع التي تحددها إلى خادمنا المستضاف، ثم إلى Alibaba Cloud Model Studio ومزود خدمة الاستدلال الذي يخدم النموذج الذي اخترته. تُستخدم ذاكرة مؤقتة لنصوص المستندات الأصلية؛ أما رسائل المستخدم وردود الذكاء الاصطناعي وسلاسل الاستدلال فتبقى حتى تحذف المحادثة. راجع البندين 6 و8.",
@@ -52,7 +62,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "الجهة المسؤولة عن معالجة المعلومات الشخصية: ()، رمز الائتمان الاجتماعي الموحد ."
+          "text": "{__T_C_controller__}"
         },
         {
           "type": "p",

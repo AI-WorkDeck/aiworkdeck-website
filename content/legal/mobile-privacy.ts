@@ -1,3 +1,5 @@
+import type { Dictionary } from '@/get-dictionary';
+import { companyLegalContent } from './company-content';
 import { mobileAssistantPrivacy } from './mobile-assistant-privacy';
 import type { Locale } from '@/i18n-config';
 import { toBaseLocale } from '@/i18n-config';
@@ -21,19 +23,19 @@ export function mobilePrivacyLinks(lang: Locale) {
     };
 }
 
-export function mobilePrivacy(lang: Locale): LegalDocument {
+export function mobilePrivacy(lang: Locale, dictionary: Dictionary): LegalDocument {
+    const C = companyLegalContent(dictionary.companyEntity, lang);
     const assistant = mobileAssistantPrivacy[lang];
     const zh = toBaseLocale(lang) === 'zh';
     const intl = SITE_ID === 'intl';
     const e = siteConfig.legalEntity;
     const name = zh ? e.nameZh : e.nameEn;
-    const region = intl ? (zh ? '新加坡' : 'Singapore') : (zh ? '中国大陆' : 'mainland China');
     const response = intl ? (zh ? '一个月内' : 'within one month') : (zh ? '十五个工作日内' : 'within fifteen working days');
 
     if (zh) return {
         eyebrow: '隐私与数据',
         title: assistant.mobileTitle,
-        effectiveLabel: assistant.effective,
+        effectiveLabel: `${assistant.effective} · ${C.revision}`,
         intro: assistant.mobileIntro.replace('{operator}', name),
         highlightsTitle: '请先了解',
         highlights: [
@@ -46,8 +48,8 @@ export function mobilePrivacy(lang: Locale): LegalDocument {
         sections: [
             { id: 'operator', title: '一、运营者与适用区域', blocks: [
                 { type: 'p', text: assistant.platformDifferences },
-                { type: 'p', text: `本服务运营者及个人信息处理者为 ${name}（${e.nameEn}），注册编号 ${e.registrationNo}，联系邮箱 ${e.contactEmail}。服务基础设施位于${region}。` },
-                { type: 'p', text: `应用允许选择中国区或国际区。中国区由北京京微资易科技有限公司运营，国际区由 Zhen Shan Mei Grace Legacy Limited 运营，两区账户和存储相互独立。本页对应${intl ? '国际区' : '中国区'}；切换区域时，应同时查阅该区域政策。` },
+                { type: 'p', text: C.controller },
+                { type: 'p', text: C.separateServices },
             ] },
             { id: 'data', title: '二、处理哪些信息及用途', blocks: [
                 { type: 'table', head: ['使用场景', '信息与处理方式', '用途'], rows: [
@@ -70,7 +72,7 @@ export function mobilePrivacy(lang: Locale): LegalDocument {
                 ] },
             ] },
             { id: 'recipients', title: '四、信息接收方与跨境情形', blocks: [
-                { type: 'p', text: `文件和账户请求通过 HTTPS 传往你所选区域的服务。${intl ? '国际区由香港主体运营，服务器和对象存储位于新加坡。' : '中国区服务器和对象存储位于中国大陆。'} 阿里云提供基础设施与文件存储；适用的短信、邮件服务商为账户验证传送你请求的验证码或账户通知。服务商仅为提供这些服务处理必要信息。` },
+                { type: 'p', text: `文件和账户请求通过 HTTPS 传往你所选区域的服务。${C.mobileHosting} 阿里云提供基础设施与文件存储；适用的短信、邮件服务商为账户验证传送你请求的验证码或账户通知。服务商仅为提供这些服务处理必要信息。` },
                 { type: 'p', text: '收件桌面端必须与你的账户或授权项目对应。我们不公开你的现场资料，不出售个人信息，不将上述手机采集内容用于广告或模型训练；照片、录音与文件访问本身不会触发向 AI 模型提供商发送内容。' },
                 { type: 'p', text: '你在所在地以外选择服务区域时，账户和上传文件会传至该区域。国内、国际服务不是同一数据存储库。我们依适用法律处理必要的跨境手续，并在需要时另行取得同意；法律要求的披露、争议处理或企业重组中的转移将限于必要范围。' },
             ] },
@@ -105,7 +107,7 @@ export function mobilePrivacy(lang: Locale): LegalDocument {
     return {
         eyebrow: 'Privacy and data',
         title: assistant.mobileTitle,
-        effectiveLabel: assistant.effective,
+        effectiveLabel: `${assistant.effective} · ${C.revision}`,
         intro: assistant.mobileIntro.replace('{operator}', name),
         highlightsTitle: 'What to know first',
         highlights: [
@@ -118,8 +120,8 @@ export function mobilePrivacy(lang: Locale): LegalDocument {
         sections: [
             { id: 'operator', title: '1. Operator and service region', blocks: [
                 { type: 'p', text: assistant.platformDifferences },
-                { type: 'p', text: `The operator and data controller is ${name}, registration number ${e.registrationNo}. Contact ${e.contactEmail}. Service infrastructure is located in ${region}.` },
-                { type: 'p', text: `The app supports a choice of China or International service. Beijing Jingwei Ziyi Technology Co., Ltd. operates China service; Zhen Shan Mei Grace Legacy Limited operates International service. Their accounts and storage are separate. This page describes ${intl ? 'International' : 'China'} service; consult the other region’s notice if you select that region.` },
+                { type: 'p', text: C.controller },
+                { type: 'p', text: C.separateServices },
             ] },
             { id: 'data', title: '2. Data and purposes', blocks: [
                 { type: 'table', head: ['Feature', 'Data and processing', 'Purpose'], rows: [
@@ -142,7 +144,7 @@ export function mobilePrivacy(lang: Locale): LegalDocument {
                 ] },
             ] },
             { id: 'recipients', title: '4. Recipients and international transfers', blocks: [
-                { type: 'p', text: `Files and account requests use HTTPS to reach the region you select. ${intl ? 'International service is operated from Hong Kong, with servers and object storage in Singapore.' : 'China service uses servers and object storage in mainland China.'} Alibaba Cloud provides hosting and file storage. Where used, SMS and email providers deliver verification or account messages you request, processing only the data needed for those services.` },
+                { type: 'p', text: `Files and account requests use HTTPS to reach the region you select. ${C.mobileHosting} Alibaba Cloud provides hosting and file storage. Where used, SMS and email providers deliver verification or account messages you request, processing only the data needed for those services.` },
                 { type: 'p', text: 'Delivery is to a desktop associated with your account or authorised project. We do not publish your captures, sell personal data or use these mobile captures for advertising or model training. Capture and project-file access do not themselves send content to AI model providers.' },
                 { type: 'p', text: 'If you select a service region outside your location, your account requests and uploaded files are transferred there. The two regions are separate data stores. Applicable transfer requirements and any required separate consent still apply. Legally required disclosures, dispute handling and business transfers are limited to necessary information.' },
             ] },

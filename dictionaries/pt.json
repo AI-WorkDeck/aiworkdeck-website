@@ -2677,5 +2677,35 @@
       "ep-ext-01": "Skills, plugins ou MCP: qual instalar?",
       "ep-ext-02": "Reunião encerrada: a ata direto nos autos"
     }
+  },
+  "companyEntity": {
+    "about": {
+      "eyebrow": "Sobre",
+      "title": "A empresa responsável pelo AI WorkDeck",
+      "intro": "AI WorkDeck é um espaço de trabalho de IA de código aberto operado por {company}.",
+      "companyTitle": "Dados da empresa",
+      "labels": {
+        "nameEn": "Nome em inglês",
+        "nameZh": "Nome registado (chinês)",
+        "incorporated": "Data de constituição",
+        "registeredOffice": "Endereço registado",
+        "website": "Website",
+        "contact": "E-mail de contacto"
+      },
+      "registryLinkLabel": "Sistema Nacional de Divulgação de Informações de Crédito Empresarial",
+      "registrationAuthority": "Autoridade de registo",
+      "legalRepresentative": "Representante legal",
+      "registryText": "Pesquise pelo nome chinês registado ou pelo código unificado de crédito social para verificar o registo da empresa."
+    },
+    "operator": "Operador do serviço",
+    "controller": "Responsável pelo tratamento",
+    "identity": "{role}: {company}, constituída em Pequim, China. Código unificado de crédito social: {number}. Endereço registado: {address}. Contacto: {email}.",
+    "separateServices": "{site} e {otherSite} são operados pela mesma empresa. As infraestruturas, bases de dados, contas, palavras-passe, saldos, direitos adquiridos e chaves de conta permanecem separados e não são transferíveis. Para utilizar o outro site, registe-se nele e consulte os seus termos e política de privacidade.",
+    "crossBorder": "O operador e responsável pelo tratamento encontra-se na China continental; o serviço internacional está alojado em Singapura e utiliza fornecedores de outros países. Se estiver no EEE, no Reino Unido ou noutro país com regras de transferência, os seus dados são transferidos para fora desse país nos seguintes casos:",
+    "controllerHosting": "China continental (responsável); Singapura (alojamento)",
+    "revision": "Dados da empresa revistos em {date}",
+    "financialRetention": "Pelo menos 7 anos após o fim do exercício relevante, ou mais se a lei aplicável o exigir. O encerramento da conta não reduz este prazo; os registos são conservados com acesso restrito apenas para fins contabilísticos.",
+    "mobileHostingCn": "Os servidores e o armazenamento de objetos do serviço da China estão na China continental.",
+    "mobileHostingIntl": "Os servidores e o armazenamento de objetos do serviço internacional estão em Singapura."
   }
 }

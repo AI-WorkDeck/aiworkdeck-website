@@ -1,11 +1,21 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { LEGAL_ENTITY, LEGAL_EFFECTIVE_DATE } from '@/lib/legal-entity';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/ru.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'ru');
+
 const E = LEGAL_ENTITY;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_uscc: E.uscc,
@@ -32,8 +42,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "Юридическая информация",
   "title": "Условия использования",
-  "effectiveLabel": "Вступает в силу {__T_LEGAL_EFFECTIVE_DATE__}",
-  "intro": "Настоящие Условия представляют собой соглашение между вами и  () («мы»), охватывающее сайт AI WorkDeck (), настольное приложение, плагины, площадь Skill и связанные услуги (вместе — «Сервис»). Регистрируя учётную запись, генерируя ключ учётной записи или иным образом используя Сервис, вы подтверждаете, что прочитали, поняли и приняли настоящие Условия.",
+  "effectiveLabel": "Вступает в силу {__T_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
+  "intro": "Настоящие Условия представляют собой соглашение между вами и  {__T_E_nameEn__} ({__T_E_nameZh__}) («мы»), охватывающее сайт AI WorkDeck {__T_E_nameEn__} ({__T_E_nameZh__}), настольное приложение, плагины, площадь Skill и связанные услуги (вместе — «Сервис»). Регистрируя учётную запись, генерируя ключ учётной записи или иным образом используя Сервис, вы подтверждаете, что прочитали, поняли и приняли настоящие Условия.",
   "highlightsTitle": "Прочтите это в первую очередь",
   "highlights": [
     "**Результаты работы ИИ не являются юридической консультацией.** Мы не предоставляем юридических услуг, и использование Сервиса не порождает отношений «адвокат — клиент» или агентских отношений. Результаты ИИ могут содержать неверные факты, утратившие силу положения и несуществующие судебные дела. Вы обязаны самостоятельно проверять их, прежде чем на них полагаться.",
@@ -51,7 +61,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "Сервисом управляет  (), единый код социального кредита . Контакт: ."
+          "text": "{__T_C_operator__}"
         },
         {
           "type": "p",

@@ -1,11 +1,21 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { LEGAL_ENTITY, LEGAL_EFFECTIVE_DATE } from '@/lib/legal-entity';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/zh-hant.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'zh-hant');
+
 const E = LEGAL_ENTITY;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_uscc: E.uscc,
@@ -32,8 +42,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "法律資訊",
   "title": "隱私權政策",
-  "effectiveLabel": "生效日期：{__T_LEGAL_EFFECTIVE_DATE__}",
-  "intro": "本政策说明在你使用 AI WorkDeck 官方网站与桌面端软件时，如何收集、使用、存储和对外提供个人信息，以及你享有哪些权利。我们建议你完整阅读；如果只想快速了解要点，看下面的「一句话摘要」即可。",
+  "effectiveLabel": "生效日期：{__T_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
+  "intro": "本政策说明{__T_E_nameZh__}在你使用 AI WorkDeck 官方网站与桌面端软件时，如何收集、使用、存储和对外提供个人信息，以及你享有哪些权利。我们建议你完整阅读；如果只想快速了解要点，看下面的「一句话摘要」即可。",
   "highlightsTitle": "一句话摘要",
   "highlights": [
     "**Office/WPS 插件经云端处理。** 当前文档、必要的对话历史及你指定的参考内容会先到托管后端，再经 阿里雲百煉 发送给所选模型的实际推理供应商。正文仅作短期内存缓存；用户消息、AI 回复及思考记录保存至你删除会话。详见第六、八条。",
@@ -52,7 +62,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "个人信息处理者：，统一社会信用代码 。"
+          "text": "{__T_C_controller__}"
         },
         {
           "type": "p",

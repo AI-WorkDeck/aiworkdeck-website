@@ -1,3 +1,7 @@
+import dictionary from '@/dictionaries/zh.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'zh');
+
 import { siteConfig, SITE_LEGAL_EFFECTIVE_DATE } from '@/lib/site-config';
 import type { LegalDocument } from './types';
 
@@ -5,10 +9,9 @@ import type { LegalDocument } from './types';
  * 国际站（workdeck.ai）的服务条款——中文版。
  *
  * 与英文版同构、同 section id。国际站的准据文本是英文版，本文为便利翻译，
- * 歧义时以英文版为准（与境内版「以中文版为准」的口径相反，因为缔约主体在香港）。
+ * 歧义时以英文版为准（保留国际站原有语言优先约定）。
  *
- * 主体信息一律从 siteConfig.legalEntity 插值。香港实体可能没有中文法定名称
- * （`nameZh` 允许为空串），所以中文文本里也用 `E.nameEn`。
+ * 主体信息一律从 siteConfig.legalEntity 插值。公司名称采用用户确认的中英文写法。
  */
 
 const E = siteConfig.legalEntity;
@@ -16,7 +19,7 @@ const E = siteConfig.legalEntity;
 export const termsIntlZh: LegalDocument = {
     eyebrow: '法律信息',
     title: '服务条款',
-    effectiveLabel: `生效日期：${SITE_LEGAL_EFFECTIVE_DATE}`,
+    effectiveLabel: `生效日期：${SITE_LEGAL_EFFECTIVE_DATE} · ${C.revision}`,
     intro: `本条款是你与 ${E.nameEn}（下称「我们」）之间，就 ${siteConfig.host}、AI WorkDeck 桌面端软件、Office 插件、Skill 广场与插件广场及相关服务（合称「本服务」）订立的协议。注册账户、生成账户 Key 或使用本服务，即表示你已阅读、理解并同意本条款全部内容。`,
     highlightsTitle: '请先读这几条',
     highlights: [
@@ -28,7 +31,7 @@ export const termsIntlZh: LegalDocument = {
         '**如果你是欧盟、欧洲经济区或英国的消费者：购买 Credits 属于即时履行，该笔购买的 14 天撤销权自 Credits 到账时终止。** 结账时会请你确认这一点。即便如此，只要该笔充值的 Credits 你一点都没用过，我们仍然退款，见第七条。',
         '**我们的赔偿责任设有上限**，详见第十二条。该条不排除我们因故意、重大过失造成的责任，不排除人身伤亡责任，也不排除法律不允许排除的任何责任。',
         `**争议提交${E.forum.zh}仲裁，适用${E.governingLaw.zh}**，详见第十六条。你以消费者身份订约的，该条不剥夺你所在地强制性法律给你的保护。`,
-        `**本站与 ${siteConfig.otherSite.host} 是两个独立的服务。** 缔约主体不同、账户不同、余额不同，你在那边持有的一切在这边都不能用，见第一条。`,
+        C.separateServices,
     ],
     tocTitle: '目录',
     sections: [
@@ -38,7 +41,7 @@ export const termsIntlZh: LegalDocument = {
             blocks: [
                 {
                     type: 'p',
-                    text: `本服务由 ${E.nameEn}（${E.nameZh}）运营，该公司依《公司條例》（香港法例第 622 章）注册于中华人民共和国香港特别行政区，${E.registrationLabel.zh} ${E.registrationNo}，注册办事处地址：${E.registeredAddress.zh}。联系邮箱：${E.contactEmail}。`,
+                    text: C.operator,
                 },
                 {
                     type: 'p',
@@ -46,7 +49,7 @@ export const termsIntlZh: LegalDocument = {
                 },
                 {
                     type: 'callout',
-                    text: `**${siteConfig.host} 与 ${siteConfig.otherSite.host} 是两个独立的服务。** 两站各自部署、各自建库，缔约主体不同、适用法律不同。账户、密码、Credits 余额、已购权益与账户 Key **互不相通**：在这边注册不会给你那边的账户，在那边的购买也不能在这边兑现。你若已有另一站的账户而想使用本站，需要重新注册。`,
+                    text: C.separateServices,
                 },
                 {
                     type: 'callout',

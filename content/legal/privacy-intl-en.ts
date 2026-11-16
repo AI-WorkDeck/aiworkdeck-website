@@ -1,3 +1,7 @@
+import dictionary from '@/dictionaries/en.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'en');
+
 import { siteConfig, SITE_LEGAL_EFFECTIVE_DATE } from '@/lib/site-config';
 import type { LegalDocument } from './types';
 
@@ -16,7 +20,7 @@ const E = siteConfig.legalEntity;
 export const privacyIntlEn: LegalDocument = {
     eyebrow: 'Legal',
     title: 'Privacy Policy',
-    effectiveLabel: `Effective ${SITE_LEGAL_EFFECTIVE_DATE}`,
+    effectiveLabel: `Effective ${SITE_LEGAL_EFFECTIVE_DATE} · ${C.revision}`,
     summaryLead: 'Desktop documents, projects and work history stay on your own machine; content leaves it only when you choose to use online features such as AI or the Office/WPS add-in. We do not use your content to train models and we do not sell personal data.',
     intro: `This policy explains how ${E.nameEn} collects, uses, stores and discloses personal data when you use ${siteConfig.host} and the AI WorkDeck desktop application, and what rights you have. We suggest reading it in full; if you only want the gist, the summary below covers it.`,
     highlightsTitle: 'The short version',
@@ -28,7 +32,7 @@ export const privacyIntlEn: LegalDocument = {
         '**Three things leave the country you are in.** Content you send to the AI goes to OpenRouter in the United States. Payments go to Stripe. **Product feedback you choose to send goes to a server we operate in mainland China** — clause 7 explains why and what that means.',
         '**You can delete your account yourself** from your account page. We delete or anonymise your data within 30 days, except transaction records we are legally required to keep — see clause 8.',
         `**Your rights** — access, rectification, erasure, portability, restriction, objection, withdrawal of consent — are set out in clause 10. Write to ${E.contactEmail}; we respond within one month. You may also complain to the data protection authority where you live.`,
-        `**This site and ${siteConfig.otherSite.host} hold separate data.** Different controller, different database, different country. Neither can see the other's accounts.`,
+        C.separateServices,
     ],
     tocTitle: 'Contents',
     sections: [
@@ -38,7 +42,7 @@ export const privacyIntlEn: LegalDocument = {
             blocks: [
                 {
                     type: 'p',
-                    text: `The data controller is ${E.nameEn}, a company incorporated in the Hong Kong Special Administrative Region under the Companies Ordinance (Cap. 622), ${E.registrationLabel.en} ${E.registrationNo}, registered office ${E.registeredAddress.en}.`,
+                    text: C.controller,
                 },
                 {
                     type: 'p',
@@ -50,7 +54,7 @@ export const privacyIntlEn: LegalDocument = {
                 },
                 {
                     type: 'callout',
-                    text: `**${siteConfig.otherSite.host} is a separate service with a separate controller and a separate database, hosted in a different country under different law.** Your account here does not exist there, and nothing in this policy describes how that site handles data. If you registered there, read that site's policy instead.`,
+                    text: C.separateServices,
                 },
                 {
                     type: 'p',
@@ -281,7 +285,7 @@ export const privacyIntlEn: LegalDocument = {
             blocks: [
                 {
                     type: 'p',
-                    text: 'This service is operated from Hong Kong on infrastructure in Singapore, and it depends on providers elsewhere. If you are in the EEA, the UK, or any country with transfer rules of its own, your personal data is transferred outside that country in the following cases:',
+                    text: C.crossBorder,
                 },
                 {
                     type: 'table',
@@ -289,7 +293,7 @@ export const privacyIntlEn: LegalDocument = {
                     rows: [
                         [
                             'Running your account, wallet and the website itself',
-                            'Hong Kong SAR (controller) and Singapore (hosting)',
+                            C.controllerHosting,
                             'Necessary for performance of your contract with us (Art. 49(1)(b) GDPR); contractual commitments with the hosting provider',
                         ],
                         [
@@ -348,7 +352,7 @@ export const privacyIntlEn: LegalDocument = {
                         ['Account key hashes', 'Deleted on revocation or account closure'],
                         [
                             'Orders, ledger, tax and invoicing records',
-                            'At least 7 years from the end of the relevant financial year (Hong Kong Inland Revenue Ordinance s.51C and Companies Ordinance s.373; longer where the tax law of your own country requires it). **Closing your account does not shorten this** — these records are kept in a restricted form for accounting only.',
+                            C.financialRetention,
                         ],
                         ['Plaza submissions', 'Deleted within 90 days of removal; copies already distributed are unaffected'],
                         [

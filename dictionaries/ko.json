@@ -2677,5 +2677,35 @@
       "ep-ext-01": "Skill, 플러그인, MCP: 무엇을 설치할까?",
       "ep-ext-02": "회의가 끝나면 회의록을 사건 기록으로"
     }
+  },
+  "companyEntity": {
+    "about": {
+      "eyebrow": "회사 소개",
+      "title": "AI WorkDeck 운영 회사",
+      "intro": "AI WorkDeck은 {company}에서 운영하는 오픈 소스 AI 작업 공간입니다.",
+      "companyTitle": "회사 정보",
+      "labels": {
+        "nameEn": "영문 명칭",
+        "nameZh": "등록 명칭(중국어)",
+        "incorporated": "설립일",
+        "registeredOffice": "등록 주소",
+        "website": "웹사이트",
+        "contact": "연락 이메일"
+      },
+      "registryLinkLabel": "국가기업신용정보공시시스템",
+      "registrationAuthority": "등록 기관",
+      "legalRepresentative": "법정 대표자",
+      "registryText": "중국어 등록 명칭 또는 통합사회신용코드로 회사 등록 정보를 확인할 수 있습니다."
+    },
+    "operator": "서비스 운영자",
+    "controller": "개인정보 처리자",
+    "identity": "{role}: {company}. 중국 베이징에 설립되었습니다. 통합사회신용코드: {number}. 등록 주소: {address}. 연락처: {email}.",
+    "separateServices": "{site} 및 {otherSite}는 동일한 회사에서 운영하지만 인프라, 데이터베이스, 계정, 비밀번호, 잔액, 구매한 이용 권한 및 계정 키는 분리되어 있으며 이전할 수 없습니다. 다른 사이트를 이용하려면 별도로 가입하고 해당 이용약관과 개인정보 처리방침을 확인하세요.",
+    "crossBorder": "운영자 및 개인정보 처리자는 중국 본토에 있으며 국제 서비스는 싱가포르에서 호스팅되고 다른 국가의 공급업체도 이용합니다. EEA, 영국 또는 이전 규정이 있는 다른 국가에 거주하는 경우 다음과 같은 상황에서 개인정보가 국외로 이전됩니다.",
+    "controllerHosting": "중국 본토(처리자); 싱가포르(호스팅)",
+    "revision": "회사 정보 수정일: {date}",
+    "financialRetention": "해당 회계연도 말일부터 최소 7년간 보관하며, 적용 법률이 요구하면 더 오래 보관합니다. 계정을 폐쇄해도 이 기간은 단축되지 않습니다. 기록은 회계 목적으로만 접근을 제한하여 보관합니다.",
+    "mobileHostingCn": "중국 서비스의 서버와 객체 저장소는 중국 본토에 있습니다.",
+    "mobileHostingIntl": "국제 서비스의 서버와 객체 저장소는 싱가포르에 있습니다."
   }
 }

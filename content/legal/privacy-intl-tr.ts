@@ -1,11 +1,22 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { siteConfig, SITE_LEGAL_EFFECTIVE_DATE } from '@/lib/site-config';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/tr.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'tr');
+
 const E = siteConfig.legalEntity;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
+  C_financialRetention: C.financialRetention,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_contactEmail: E.contactEmail,
@@ -41,7 +52,7 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "Yasal",
   "title": "Gizlilik Politikası",
-  "effectiveLabel": "{__T_SITE_LEGAL_EFFECTIVE_DATE__} tarihinde yürürlüktedir",
+  "effectiveLabel": "{__T_SITE_LEGAL_EFFECTIVE_DATE__} tarihinde yürürlüktedir · {__T_C_revision__}",
   "intro": "Bu politika, {__T_siteConfig_host__} ve AI WorkDeck masaüstü uygulamasını kullandığınızda kişisel verilerinizin nasıl toplandığını, kullanıldığını, saklandığını ve açıklandığını ve hangi haklara sahip olduğunuzu açıklar. Tamamını okumanızı öneririz; yalnızca özetini istiyorsanız aşağıdaki özet konuyu kapsamaktadır.",
   "highlightsTitle": "Kısa versiyon",
   "highlights": [
@@ -52,7 +63,7 @@ export const legalDoc: LegalDocument = hydrate({
     "**Üç şey bulunduğunuz ülkenin dışına çıkar.** AI'ya gönderdiğiniz içerik, ABD'deki OpenRouter'a gider. Ödemeler Stripe'a gider. **Göndermeyi seçtiğiniz ürün geri bildirimleri, ana ithinde işlettiğimiz bir sunucuya gider** — 7. madde nedenini ve bunun ne anlama geldiğini açıklar.",
     "**Hesabınızı kendiniz silebilirsiniz**, hesap sayfanızdan. Yasal olarak saklamamız gereken işlem kayıtları hariç, verilerinizi 30 gün içinde siler veya anonimleştiririz — 8. maddeye bakın.",
     "**Haklarınız** — erişim, düzeltme, silme, taşınabilirlik, kısıtlama, itiraz, onayın geri çekilmesi — 10. maddede belirtilmiştir. Adresine yazın; bir ay içinde yanıt veriyoruz. Ayrıca yaşadığınız yerdeki veri koruma makamına şikayette bulunabilirsiniz.",
-    "**Bu site ve {__T_siteConfig_otherSite_host__} ayrı veriler tutar.** Farklı veri sorumlusu, farklı veritabanı, farklı ülke. Hiçbiri diğerinin hesaplarını göremez."
+    "{__T_C_separateServices__}"
   ],
   "tocTitle": "İçindekiler",
   "sections": [
@@ -62,7 +73,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "Veri sorumlusu, Hong Kong Özel İdari Bölgesi'nde Şirketler Yönetmeliği (Cap. 622) uyarınca kurulmuş bir şirket olan , kayıtlı adresi 'dir."
+          "text": "{__T_C_controller__}"
         },
         {
           "type": "p",
@@ -74,7 +85,7 @@ export const legalDoc: LegalDocument = hydrate({
         },
         {
           "type": "callout",
-          "text": "**{__T_siteConfig_otherSite_host__}, farklı bir veri sorumlusuna ve farklı bir veritabanına sahip, farklı bir ülkede ve farklı hukuk altında barındırılan ayrı bir hizmettir.** Buradaki hesabınız orada mevcut değildir ve bu politikadaki hiçbir şey o sitenin verileri nasıl işlediğini açıklamaz. Orada kaydolduysanız, bunun yerine o sitenin politikasını okuyun."
+          "text": "{__T_C_separateServices__}"
         },
         {
           "type": "p",
@@ -330,7 +341,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "This service is operated from Hong Kong on infrastructure in Singapore, and it depends on providers elsewhere. If you are in the EEA, the UK, or any country with transfer rules of its own, your personal data is transferred outside that country in the following cases:"
+          "text": "{__T_C_crossBorder__}"
         },
         {
           "type": "table",
@@ -342,7 +353,7 @@ export const legalDoc: LegalDocument = hydrate({
           "rows": [
             [
               "Running your account, wallet and the website itself",
-              "Hong Kong SAR (controller) and Singapore (hosting)",
+              "{__T_C_controllerHosting__}",
               "Necessary for performance of your contract with us (Art. 49(1)(b) GDPR); contractual commitments with the hosting provider"
             ],
             [
@@ -410,7 +421,7 @@ export const legalDoc: LegalDocument = hydrate({
             ],
             [
               "Orders, ledger, tax and invoicing records",
-              "At least 7 years from the end of the relevant financial year (Hong Kong Inland Revenue Ordinance s.51C and Companies Ordinance s.373; longer where the tax law of your own country requires it). **Closing your account does not shorten this** — these records are kept in a restricted form for accounting only."
+              "{__T_C_financialRetention__}"
             ],
             [
               "Plaza submissions",

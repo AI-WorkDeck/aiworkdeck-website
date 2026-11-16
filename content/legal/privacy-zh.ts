@@ -1,3 +1,7 @@
+import dictionary from '@/dictionaries/zh.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'zh');
+
 import { LEGAL_ENTITY, LEGAL_EFFECTIVE_DATE } from '@/lib/legal-entity';
 import type { LegalDocument } from './types';
 
@@ -6,7 +10,7 @@ const E = LEGAL_ENTITY;
 export const privacyZh: LegalDocument = {
     eyebrow: '法律信息',
     title: '隐私政策',
-    effectiveLabel: `生效日期：${LEGAL_EFFECTIVE_DATE}`,
+    effectiveLabel: `生效日期：${LEGAL_EFFECTIVE_DATE} · ${C.revision}`,
     summaryLead: '桌面端的文档、项目和记录保存在本机；只有你主动使用平台 AI、Office/WPS 插件等联网功能时，必要内容才会经我们的服务器发出。我们不将你的内容用于训练模型，也不向第三方出售个人信息。',
     intro: `本政策说明${E.nameZh}在你使用 AI WorkDeck 官方网站与桌面端软件时，如何收集、使用、存储和对外提供个人信息，以及你享有哪些权利。我们建议你完整阅读；如果只想快速了解要点，看下面的「一句话摘要」即可。`,
     highlightsTitle: '一句话摘要',
@@ -27,7 +31,7 @@ export const privacyZh: LegalDocument = {
             blocks: [
                 {
                     type: 'p',
-                    text: `个人信息处理者：${E.nameZh}，统一社会信用代码 ${E.uscc}。`,
+                    text: C.controller,
                 },
                 {
                     type: 'p',

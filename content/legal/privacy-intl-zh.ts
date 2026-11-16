@@ -1,3 +1,7 @@
+import dictionary from '@/dictionaries/zh.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'zh');
+
 import { siteConfig, SITE_LEGAL_EFFECTIVE_DATE } from '@/lib/site-config';
 import type { LegalDocument } from './types';
 
@@ -14,7 +18,7 @@ const E = siteConfig.legalEntity;
 export const privacyIntlZh: LegalDocument = {
     eyebrow: '法律信息',
     title: '隐私政策',
-    effectiveLabel: `生效日期：${SITE_LEGAL_EFFECTIVE_DATE}`,
+    effectiveLabel: `生效日期：${SITE_LEGAL_EFFECTIVE_DATE} · ${C.revision}`,
     summaryLead: '桌面端的文档、项目和记录保存在你自己的电脑上；只有你主动使用 AI、Office/WPS 插件等联网功能时，内容才会发出。我们不将你的内容用于训练模型，也不出售个人数据。',
     intro: `本政策说明 ${E.nameEn} 在你使用 ${siteConfig.host} 与 AI WorkDeck 桌面端软件时，如何收集、使用、存储和对外提供个人数据，以及你享有哪些权利。我们建议你完整阅读；如果只想快速了解要点，看下面的「一句话摘要」即可。`,
     highlightsTitle: '一句话摘要',
@@ -26,7 +30,7 @@ export const privacyIntlZh: LegalDocument = {
         '**有三类数据会离开你所在的国家。** 你送入 AI 的内容会到达位于美国的 OpenRouter；付款数据会到达 Stripe；**你主动提交的产品反馈会到达我们在中国内地运营的服务器**——第七条解释了原因与后果。',
         '**你可以在账户页自助注销账户。** 我们在 30 日内删除或匿名化你的数据，法定必须留存的交易记录除外，见第八条。',
         `**你的权利**——访问、更正、删除、可携、限制处理、反对、撤回同意——列在第十条。请发邮件至 ${E.contactEmail}，我们在一个月内答复。你也可以向你所在地的数据保护监管机构投诉。`,
-        `**本站与 ${siteConfig.otherSite.host} 各自存数据。** 控制者不同、数据库不同、所在国家不同，两边都看不到对方的账户。`,
+        C.separateServices,
     ],
     tocTitle: '目录',
     sections: [
@@ -36,7 +40,7 @@ export const privacyIntlZh: LegalDocument = {
             blocks: [
                 {
                     type: 'p',
-                    text: `数据控制者为 ${E.nameEn}（${E.nameZh}），该公司依《公司條例》（香港法例第 622 章）注册于中华人民共和国香港特别行政区，${E.registrationLabel.zh} ${E.registrationNo}，注册办事处地址：${E.registeredAddress.zh}。`,
+                    text: C.controller,
                 },
                 {
                     type: 'p',
@@ -48,7 +52,7 @@ export const privacyIntlZh: LegalDocument = {
                 },
                 {
                     type: 'callout',
-                    text: `**${siteConfig.otherSite.host} 是另一个服务，有各自的控制者与各自的数据库，托管在另一个国家、适用另一套法律。** 你在本站的账户在那边并不存在，本政策也不描述那个站点如何处理数据。你若是在那边注册的，请阅读那个站点的政策。`,
+                    text: C.separateServices,
                 },
                 {
                     type: 'p',
@@ -279,7 +283,7 @@ export const privacyIntlZh: LegalDocument = {
             blocks: [
                 {
                     type: 'p',
-                    text: '本服务由香港主体运营、部署在新加坡的基础设施上，并依赖位于其他国家的服务商。你若身处欧洲经济区、英国，或任何自有跨境传输规则的国家，你的个人数据会在下列情形下被传输出境：',
+                    text: C.crossBorder,
                 },
                 {
                     type: 'table',
@@ -287,7 +291,7 @@ export const privacyIntlZh: LegalDocument = {
                     rows: [
                         [
                             '运行你的账户、钱包与网站本身',
-                            '香港特别行政区（控制者）与新加坡（托管）',
+                            C.controllerHosting,
                             '履行你与我们之间合同所必需（GDPR 第 49(1)(b) 条）；与托管服务商的合同承诺',
                         ],
                         [
@@ -347,7 +351,7 @@ export const privacyIntlZh: LegalDocument = {
                         ['账户 Key 哈希', '吊销或账户注销后删除'],
                         [
                             '订单、账本、税务与发票记录',
-                            '自相关财政年度结束起不少于 7 年（香港《税务条例》第 51C 条与《公司条例》第 373 条；你本国税法要求更长的，从其规定）。**注销账户不能缩短这一期限**——这些记录以受限形式仅供记账之用。',
+                            C.financialRetention,
                         ],
                         ['广场投稿', '下架后 90 日内删除；已分发的副本不受影响'],
                         [

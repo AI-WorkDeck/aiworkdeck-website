@@ -2677,5 +2677,35 @@
       "ep-ext-01": "Skill、プラグイン、MCP：どれを入れる？",
       "ep-ext-02": "会議が終わったら、議事録を事件記録へ"
     }
+  },
+  "companyEntity": {
+    "about": {
+      "eyebrow": "会社情報",
+      "title": "AI WorkDeck の運営会社",
+      "intro": "AI WorkDeck は {company} が運営するオープンソースの AI ワークスペースです。",
+      "companyTitle": "会社概要",
+      "labels": {
+        "nameEn": "英語名称",
+        "nameZh": "登記名称（中国語）",
+        "incorporated": "設立日",
+        "registeredOffice": "登記住所",
+        "website": "ウェブサイト",
+        "contact": "連絡先メール"
+      },
+      "registryLinkLabel": "国家企業信用情報公示システム",
+      "registrationAuthority": "登記機関",
+      "legalRepresentative": "法定代表者",
+      "registryText": "中国語の登記名称または統一社会信用コードで会社の登記情報を確認できます。"
+    },
+    "operator": "サービス運営者",
+    "controller": "個人データ管理者",
+    "identity": "{role}：{company}。中国北京市に設立。統一社会信用コード：{number}。登記住所：{address}。連絡先：{email}。",
+    "separateServices": "{site} と {otherSite} は同じ会社が運営しますが、インフラ、データベース、アカウント、パスワード、残高、購入済み権利およびアカウントキーは別々で、移転できません。他方のサイトを利用するには別途登録し、その利用規約とプライバシーポリシーをご確認ください。",
+    "crossBorder": "運営者およびデータ管理者は中国本土に所在し、国際サービスはシンガポールでホストされ、他国の事業者も利用します。EEA、英国、その他移転規則のある国にお住まいの場合、次の場合に個人データが国外へ移転されます。",
+    "controllerHosting": "中国本土（管理者）；シンガポール（ホスティング）",
+    "revision": "会社情報の改訂日：{date}",
+    "financialRetention": "該当会計年度末から最低7年間、適用法が求める場合はそれ以上保持します。アカウントの閉鎖によりこの期間は短縮されません。記録は会計目的に限り、アクセスを制限して保管します。",
+    "mobileHostingCn": "中国向けサービスのサーバーとオブジェクトストレージは中国本土にあります。",
+    "mobileHostingIntl": "国際サービスのサーバーとオブジェクトストレージはシンガポールにあります。"
   }
 }

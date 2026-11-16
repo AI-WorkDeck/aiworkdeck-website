@@ -1,11 +1,21 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { siteConfig, SITE_LEGAL_EFFECTIVE_DATE } from '@/lib/site-config';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/pt.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'pt');
+
 const E = siteConfig.legalEntity;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_contactEmail: E.contactEmail,
@@ -41,8 +51,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "Legal",
   "title": "Termos de Serviço",
-  "effectiveLabel": "Effective {__T_SITE_LEGAL_EFFECTIVE_DATE__}",
-  "intro": "These Terms form an agreement between you and  (\"we\", \"us\") covering {__T_siteConfig_host__}, the AI WorkDeck desktop application, the Office add-ins, the Skill and plugin plazas and related services (together, the \"Service\"). By registering an account, generating an account key or otherwise using the Service, you confirm that you have read, understood and accepted these Terms.",
+  "effectiveLabel": "Effective {__T_SITE_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
+  "intro": "These Terms form an agreement between you and {__T_E_nameEn__} (\"we\", \"us\") covering {__T_siteConfig_host__}, the AI WorkDeck desktop application, the Office add-ins, the Skill and plugin plazas and related services (together, the \"Service\"). By registering an account, generating an account key or otherwise using the Service, you confirm that you have read, understood and accepted these Terms.",
   "highlightsTitle": "The short version",
   "highlights": [
     "**AI output is not legal advice.** We do not provide legal services and no lawyer-client or agency relationship arises from your use of the Service. AI output may contain incorrect facts, repealed provisions and cases that do not exist. You must verify it independently before relying on it.",
@@ -53,7 +63,7 @@ export const legalDoc: LegalDocument = hydrate({
     "**If you are a consumer in the EU, EEA or UK, buying Credits starts immediate performance and ends your 14-day right of withdrawal for that purchase.** You are asked to confirm this at checkout. We still refund a purchase whose Credits you have not spent — see clause 7.",
     "**Our liability is capped** — see clause 12. The cap does not exclude liability for our wilful misconduct or gross negligence, for death or personal injury, or for anything the law does not allow us to exclude.",
     "**Disputes go to arbitration before  under ** — see clause 16. If you are a consumer, that clause does not take away the protections of the mandatory law where you live.",
-    "**This site and {__T_siteConfig_otherSite_host__} are separate.** Separate contracting entities, separate accounts, separate balances. Nothing you hold there is usable here — see clause 1."
+    "{__T_C_separateServices__}"
   ],
   "tocTitle": "Contents",
   "sections": [
@@ -63,7 +73,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "O Serviço é operado por , uma empresa constituída na Região Administrativa Especial de Hong Kong nos termos da Ordenança de Sociedades (Cap. 622),  . Sede registrada: . Contato: ."
+          "text": "{__T_C_operator__}"
         },
         {
           "type": "p",
@@ -71,7 +81,7 @@ export const legalDoc: LegalDocument = hydrate({
         },
         {
           "type": "callout",
-          "text": "**{__T_siteConfig_host__} e {__T_siteConfig_otherSite_host__} são dois serviços separados.** Eles funcionam em infraestruturas separadas, com bancos de dados separados, e cada um é operado por uma entidade contratante diferente, sob legislação aplicável distinta. Contas, senhas, saldos de Credits, direitos adquiridos e chaves de conta **não são transferíveis entre eles**. Registrar-se aqui não lhe concede uma conta lá, e uma compra feita lá não pode ser resgatada aqui. Se você já tem uma conta no outro site e quer usar este, é necessário registrar-se novamente."
+          "text": "{__T_C_separateServices__}"
         },
         {
           "type": "callout",

@@ -2677,5 +2677,35 @@
       "ep-ext-01": "Skill, pemalam atau MCP: yang mana patut dipasang?",
       "ep-ext-02": "Mesyuarat selesai: masukkan minit ke dalam fail kes"
     }
+  },
+  "companyEntity": {
+    "about": {
+      "eyebrow": "Perihal",
+      "title": "Syarikat pengendali AI WorkDeck",
+      "intro": "AI WorkDeck ialah ruang kerja AI sumber terbuka yang dikendalikan oleh {company}.",
+      "companyTitle": "Maklumat syarikat",
+      "labels": {
+        "nameEn": "Nama bahasa Inggeris",
+        "nameZh": "Nama berdaftar (bahasa Cina)",
+        "incorporated": "Tarikh penubuhan",
+        "registeredOffice": "Alamat berdaftar",
+        "website": "Laman web",
+        "contact": "E-mel hubungan"
+      },
+      "registryLinkLabel": "Sistem Pendedahan Maklumat Kredit Perusahaan Kebangsaan",
+      "registrationAuthority": "Pihak berkuasa pendaftaran",
+      "legalRepresentative": "Wakil sah",
+      "registryText": "Cari nama berdaftar dalam bahasa Cina atau kod kredit sosial bersepadu untuk menyemak pendaftaran syarikat."
+    },
+    "operator": "Pengendali perkhidmatan",
+    "controller": "Pengawal data",
+    "identity": "{role}: {company}, ditubuhkan di Beijing, China. Kod kredit sosial bersepadu: {number}. Alamat berdaftar: {address}. Hubungan: {email}.",
+    "separateServices": "{site} dan {otherSite} dikendalikan oleh syarikat yang sama. Infrastruktur, pangkalan data, akaun, kata laluan, baki, hak yang dibeli dan kunci akaun kekal berasingan dan tidak boleh dipindahkan. Untuk menggunakan laman lain, daftar secara berasingan dan rujuk terma serta dasar privasinya.",
+    "crossBorder": "Pengendali dan pengawal data berada di tanah besar China; perkhidmatan antarabangsa dihoskan di Singapura dan menggunakan pembekal dari negara lain. Jika anda berada di EEA, United Kingdom atau negara lain dengan peraturan pemindahan, data anda dipindahkan ke luar negara tersebut dalam keadaan berikut:",
+    "controllerHosting": "Tanah besar China (pengawal); Singapura (pengehosan)",
+    "revision": "Maklumat syarikat disemak {date}",
+    "financialRetention": "Sekurang-kurangnya 7 tahun dari akhir tahun kewangan berkaitan, atau lebih lama jika dikehendaki undang-undang yang terpakai. Penutupan akaun tidak memendekkan tempoh ini; rekod disimpan dengan akses terhad untuk tujuan perakaunan sahaja.",
+    "mobileHostingCn": "Pelayan dan storan objek perkhidmatan China berada di tanah besar China.",
+    "mobileHostingIntl": "Pelayan dan storan objek perkhidmatan antarabangsa berada di Singapura."
   }
 }

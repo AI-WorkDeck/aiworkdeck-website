@@ -1,11 +1,21 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { LEGAL_ENTITY, LEGAL_EFFECTIVE_DATE } from '@/lib/legal-entity';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/it.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'it');
+
 const E = LEGAL_ENTITY;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_uscc: E.uscc,
@@ -32,8 +42,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "Note legali",
   "title": "Informativa sulla privacy",
-  "effectiveLabel": "Con effetto dal {__T_LEGAL_EFFECTIVE_DATE__}",
-  "intro": "La presente informativa spiega come  () raccoglie, utilizza, archivia e divulghe le informazioni personali quando utilizzi il sito web e l'applicazione desktop di AI WorkDeck, e quali diritti ti spettano. Ti consigliamo di leggerla per intero; se desideri solo i punti essenziali, il riepilogo riportato di seguito li copre.",
+  "effectiveLabel": "Con effetto dal {__T_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
+  "intro": "La presente informativa spiega come  {__T_E_nameEn__} ({__T_E_nameZh__}) raccoglie, utilizza, archivia e divulghe le informazioni personali quando utilizzi il sito web e l'applicazione desktop di AI WorkDeck, e quali diritti ti spettano. Ti consigliamo di leggerla per intero; se desideri solo i punti essenziali, il riepilogo riportato di seguito li copre.",
   "highlightsTitle": "La versione breve",
   "highlights": [
     "**Il componente aggiuntivo per Office/WPS utilizza l'elaborazione nel cloud.** Il documento corrente, la cronologia delle conversazioni necessaria e i riferimenti selezionati arrivano al nostro backend ospitato, quindi a Alibaba Cloud Model Studio e al fornitore di inferenza che serve il modello da te selezionato. I corpi grezzi dei documenti utilizzano memoria temporanea; i messaggi degli utenti, le risposte dell'AI e il ragionamento restano memorizzati finché non elimini la conversazione. Vedi le clausole 6 e 8.",
@@ -52,7 +62,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "Titolare del trattamento delle informazioni personali:  (), codice identificativo unificato di impresa ."
+          "text": "{__T_C_controller__}"
         },
         {
           "type": "p",

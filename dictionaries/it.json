@@ -2677,5 +2677,35 @@
       "ep-ext-01": "Skill, plugin o MCP: cosa installare?",
       "ep-ext-02": "Riunione finita: il verbale nel fascicolo"
     }
+  },
+  "companyEntity": {
+    "about": {
+      "eyebrow": "Informazioni",
+      "title": "La società che gestisce AI WorkDeck",
+      "intro": "AI WorkDeck è uno spazio di lavoro IA open source gestito da {company}.",
+      "companyTitle": "Dati societari",
+      "labels": {
+        "nameEn": "Nome in inglese",
+        "nameZh": "Denominazione registrata (cinese)",
+        "incorporated": "Data di costituzione",
+        "registeredOffice": "Sede registrata",
+        "website": "Sito web",
+        "contact": "E-mail di contatto"
+      },
+      "registryLinkLabel": "Sistema nazionale di pubblicità delle informazioni sul credito delle imprese",
+      "registrationAuthority": "Autorità di registrazione",
+      "legalRepresentative": "Rappresentante legale",
+      "registryText": "Cerca la denominazione cinese o il codice unificato di credito sociale per verificare la registrazione della società."
+    },
+    "operator": "Gestore del servizio",
+    "controller": "Titolare del trattamento",
+    "identity": "{role}: {company}, costituita a Pechino, Cina. Codice unificato di credito sociale: {number}. Sede registrata: {address}. Contatto: {email}.",
+    "separateServices": "{site} e {otherSite} sono gestiti dalla stessa società. Infrastrutture, banche dati, account, password, saldi, diritti acquistati e chiavi degli account restano separati e non sono trasferibili. Per utilizzare l’altro sito, registrati separatamente e consulta le sue condizioni e la sua informativa sulla privacy.",
+    "crossBorder": "Il gestore e titolare del trattamento si trova nella Cina continentale; il servizio internazionale è ospitato a Singapore e utilizza fornitori in altri paesi. Se risiedi nel SEE, nel Regno Unito o in un altro paese con norme sui trasferimenti, i tuoi dati vengono trasferiti fuori da quel paese nei seguenti casi:",
+    "controllerHosting": "Cina continentale (titolare); Singapore (hosting)",
+    "revision": "Dati societari aggiornati il {date}",
+    "financialRetention": "Almeno 7 anni dalla fine dell’esercizio pertinente, o più a lungo se richiesto dalla legge applicabile. La chiusura dell’account non riduce questo periodo; i documenti sono conservati con accesso limitato solo per finalità contabili.",
+    "mobileHostingCn": "I server e lo storage a oggetti del servizio Cina si trovano nella Cina continentale.",
+    "mobileHostingIntl": "I server e lo storage a oggetti del servizio internazionale si trovano a Singapore."
   }
 }

@@ -1,3 +1,7 @@
+import dictionary from '@/dictionaries/en.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'en');
+
 import { LEGAL_ENTITY, LEGAL_EFFECTIVE_DATE } from '@/lib/legal-entity';
 import type { LegalDocument } from './types';
 
@@ -6,7 +10,7 @@ const E = LEGAL_ENTITY;
 export const privacyEn: LegalDocument = {
     eyebrow: 'Legal',
     title: 'Privacy Policy',
-    effectiveLabel: `Effective ${LEGAL_EFFECTIVE_DATE}`,
+    effectiveLabel: `Effective ${LEGAL_EFFECTIVE_DATE} · ${C.revision}`,
     summaryLead: 'Desktop documents, projects and work history stay on your device; necessary content leaves it through our servers only when you use online features such as platform AI or the Office/WPS add-in. We do not use your content to train models and do not sell personal information to third parties.',
     intro: `This policy explains how ${E.nameEn} (${E.nameZh}) collects, uses, stores and discloses personal information when you use the AI WorkDeck website and desktop application, and what rights you have. We suggest reading it in full; if you only want the gist, the summary below covers it.`,
     highlightsTitle: 'The short version',
@@ -27,7 +31,7 @@ export const privacyEn: LegalDocument = {
             blocks: [
                 {
                     type: 'p',
-                    text: `Personal information handler: ${E.nameEn} (${E.nameZh}), unified social credit code ${E.uscc}.`,
+                    text: C.controller,
                 },
                 {
                     type: 'p',

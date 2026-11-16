@@ -1,3 +1,4 @@
+import { getDictionary } from '@/get-dictionary';
 import { type Locale } from '@/i18n-config';
 import { LegalDoc } from '@/components/legal/LegalDoc';
 import { mobilePrivacy, mobilePrivacyLinks } from '@/content/legal/mobile-privacy';
@@ -12,7 +13,7 @@ export default async function MobilePrivacyPage({ params, searchParams }: {
     const { scope } = await searchParams;
     const { doc, referenceNotice } = scope === 'general'
         ? await loadLegalDoc('privacy', lang)
-        : { doc: mobilePrivacy(lang), referenceNotice: undefined };
+        : { doc: mobilePrivacy(lang, await getDictionary(lang)), referenceNotice: undefined };
     const links = mobilePrivacyLinks(lang);
     return <LegalDoc doc={doc} referenceNotice={referenceNotice} relatedResources={
         <nav aria-label={links.related} className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white">

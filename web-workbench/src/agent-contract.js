@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 /** Shared browser/server allowlist. Never dispatch arbitrary model-supplied editor actions. */
 export const AGENT_LIMITS = Object.freeze({ maxGenerations: 4, maxToolCalls: 1, maxEditsPerBatch: 12, maxEditsPerRun: 24, contextBytes: 96000, bodyBytes: 128000, toolArgumentsBytes: 32000, toolResultBytes: 24000, runTimeoutMs: 600000 });

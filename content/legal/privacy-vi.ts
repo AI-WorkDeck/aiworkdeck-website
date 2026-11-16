@@ -1,11 +1,21 @@
-// SPDX-FileCopyrightText: 2026 北京京微资易科技有限公司 and AI WorkDeck contributors
+// SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { LEGAL_ENTITY, LEGAL_EFFECTIVE_DATE } from '@/lib/legal-entity';
 import type { LegalDocument } from './types';
 
+import dictionary from '@/dictionaries/vi.json';
+import { companyLegalContent } from './company-content';
+const C = companyLegalContent(dictionary.companyEntity, 'vi');
+
 const E = LEGAL_ENTITY;
 const TOKENS: Record<string, string> = {
+  C_operator: C.operator,
+  C_controller: C.controller,
+  C_separateServices: C.separateServices,
+  C_crossBorder: C.crossBorder,
+  C_controllerHosting: C.controllerHosting,
+  C_revision: C.revision,
   E_nameEn: E.nameEn,
   E_nameZh: E.nameZh,
   E_uscc: E.uscc,
@@ -32,8 +42,8 @@ function hydrate<T>(val: T): T {
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "Pháp lý",
   "title": "Chính sách Bảo mật",
-  "effectiveLabel": "Có hiệu lực từ {__T_LEGAL_EFFECTIVE_DATE__}",
-  "intro": "Chính sách này giải thích cách  () thu thập, sử dụng, lưu trữ và tiết lộ thông tin cá nhân khi bạn sử dụng website AI WorkDeck và ứng dụng desktop, cũng như các quyền mà bạn có. Chúng tôi khuyên bạn nên đọc toàn bộ; nếu chỉ muốn nắm ý chính, phần tóm tắt bên dưới sẽ bao quát nội dung này.",
+  "effectiveLabel": "Có hiệu lực từ {__T_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
+  "intro": "Chính sách này giải thích cách  {__T_E_nameEn__} ({__T_E_nameZh__}) thu thập, sử dụng, lưu trữ và tiết lộ thông tin cá nhân khi bạn sử dụng website AI WorkDeck và ứng dụng desktop, cũng như các quyền mà bạn có. Chúng tôi khuyên bạn nên đọc toàn bộ; nếu chỉ muốn nắm ý chính, phần tóm tắt bên dưới sẽ bao quát nội dung này.",
   "highlightsTitle": "Phiên bản tóm tắt",
   "highlights": [
     "**Add-in Office/WPS sử dụng xử lý trên đám mây.** Tài liệu hiện tại, lịch sử hội thoại cần thiết và các tài liệu tham chiếu bạn chọn sẽ được gửi đến backend do chúng tôi vận hành, sau đó đến Alibaba Cloud Model Studio và nhà cung cấp suy luận (inference) phục vụ mô hình bạn đã chọn. Nội dung thô của tài liệu chỉ dùng bộ nhớ tạm thời; tin nhắn của người dùng, phản hồi của AI và quá trình suy luận được lưu giữ cho đến khi bạn xóa hội thoại. Xem điều khoản 6 và 8.",
@@ -52,7 +62,7 @@ export const legalDoc: LegalDocument = hydrate({
       "blocks": [
         {
           "type": "p",
-          "text": "Bên xử lý thông tin cá nhân:  (), mã số thuế doanh nghiệp thống nhất ."
+          "text": "{__T_C_controller__}"
         },
         {
           "type": "p",
