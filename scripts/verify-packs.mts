@@ -218,6 +218,11 @@ ok('第一步只收 JSON 草案，返回 uploadToken 与待传文件清单');
 assert.strictEqual((await upload(draft1.draft!.token, 'not-declared.tar.gz', litvizTar)).error, 'file_not_declared');
 ok('未在 manifest 声明的文件名被拒');
 
+for (const name of ['../outside.tar.gz', '../../outside.tar.gz', '/tmp/outside.tar.gz', '..\\outside.tar.gz', '%2e%2e%2foutside.tar.gz', 'litviz-1.0.0.tar.gz/../outside.tar.gz']) {
+    assert.strictEqual((await upload(draft1.draft!.token, name, litvizTar)).error, 'file_not_declared');
+}
+ok('上传入口拒绝六类未声明/穿越文件名');
+
 assert.strictEqual((await upload(draft1.draft!.token, 'litviz-1.0.0.tar.gz', litvizTar, { authorId: other.id })).error, 'not_owner');
 ok('别人的令牌传不了文件');
 
@@ -260,6 +265,26 @@ ok('受理通过 → pending，组件摘要落在 packs.json');
 const inspection = store.readPackInspection('acme-pack', '1.0.0');
 assert.ok(inspection && inspection['litviz-1.0.0.tar.gz'].entries.length === 1);
 ok('逐条目清单落在 .inspection.json（不进 packs.json，审核台按需读）');
+
+const validArchive = store.packArchivePath('acme-pack', '1.0.0', 'litviz-1.0.0.tar.gz');
+assert.ok(validArchive);
+assert.deepStrictEqual(fs.readFileSync(validArchive), litvizTar);
+const outsideInspectionDir = path.join(cwd, 'data', 'outside', '1.0.0');
+fs.mkdirSync(outsideInspectionDir, { recursive: true });
+fs.writeFileSync(path.join(outsideInspectionDir, '.inspection.json'), JSON.stringify({ privateFixture: true }));
+for (const [id, version] of [
+    ['../outside', '1.0.0'], ['acme-pack', '../../outside/1.0.0'],
+    ['..\\outside', '1.0.0'], ['%2e%2e%2foutside', '1.0.0'],
+    ['/tmp/outside', '1.0.0'], ['acme-pack', '..'],
+]) {
+    assert.strictEqual(store.readPackInspection(id, version), undefined);
+    assert.strictEqual(store.packArchivePath(id, version, 'litviz-1.0.0.tar.gz'), undefined);
+}
+for (const archive of ['../outside.tar.gz', '/tmp/outside.tar.gz', '..\\outside.tar.gz', '%2e%2e%2foutside.tar.gz', 'not-declared.tar.gz']) {
+    assert.strictEqual(store.packArchivePath('acme-pack', '1.0.0', archive), undefined);
+}
+assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(outsideInspectionDir, '.inspection.json'), 'utf8')), { privateFixture: true });
+ok('读取入口拒绝越界 id/version/archive；正常归档可读，外部夹具未读取或改写');
 
 /* ---------- 4. sha256 / 缺文件对账 ---------- */
 console.log('\n[4] 受理检查与实物对账');
