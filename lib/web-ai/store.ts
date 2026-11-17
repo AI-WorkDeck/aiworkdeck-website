@@ -52,7 +52,6 @@ export function reserveRequest(userId: string, input: WebInput, exchangeRate: nu
   return withTransaction(db => {
     const prior = getRequest(userId, input.requestId);
     if (prior) throw new WebError(prior.payloadHash === hash ? 'request_exists' : 'request_conflict', 409);
-    if (db.prepare("SELECT 1 FROM web_ai_request WHERE state='refunded_pending' OR errorCode='cost_cap_exceeded' LIMIT 1").get()) throw new WebError('reconciliation_paused',503);
     const globalActive = db.prepare("SELECT COUNT(*) n FROM web_ai_request WHERE state IN ('reserved','submitted','usage_pending')").get() as { n:number };
     if (globalActive.n >= 8) throw new WebError('busy',429);
     if (db.prepare("SELECT 1 FROM web_ai_request WHERE userId=? AND state IN ('reserved','submitted','usage_pending')").get(userId)) throw new WebError('busy', 409);
@@ -125,9 +124,8 @@ export function receipt(row: WebRequestRow) {
     ...(['released','refunded_pending'].includes(row.state) ? {chargedCents:0} : {}), ...(row.errorCode ? {errorCode:row.errorCode} : {}),updatedAt:row.updatedAt };
 }
 
-/** Finite recovery: after 15 minutes without a trustworthy receipt, return user funds,
- * retain an incident, and stop ALL new Web AI requests until operators reconcile it.
- * At most eight requests can be in flight globally; this is a failure circuit, no free tier.
+/** Finite recovery: after 15 minutes without a trustworthy receipt, return user funds and retain an incident.
+ * The platform absorbs unresolved cost; reconciliation never blocks new user requests.
  * This intentionally does not retry upstream or retrospectively charge refunded funds.
  */
 export const RECONCILIATION_DEADLINE_MS=15*60_000;

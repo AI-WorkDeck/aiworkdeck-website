@@ -207,7 +207,7 @@ function renderMessages(){
  for(const node of document.querySelectorAll('.document-toolbar button,.document-toolbar select'))node.disabled=!!activeAgentRun;
 }
 const money=(cents,currency)=>Number.isFinite(cents)&&typeof currency==='string'?`${currency} ${(cents/100).toFixed(2)}`:t('金额待核对','Amount unverified');
-const reasonText=code=>({unauthorized:t('登录后使用 AI；编辑和下载无需登录。','Sign in for AI. Editing and download work without sign-in.'),no_credits:t('可用额度不足。请在账户页查看 Credits / Pro。','Insufficient funds. Check Credits / Pro in your account.'),busy:t('已有请求处理中或待结算，请先查看状态。','A request is processing or awaiting settlement. Check its status.'),reconciliation_paused:t('AI 暂停，等待异常费用核对。编辑和下载可继续。','AI paused for billing reconciliation. Editing and download remain available.'),ai_unavailable:t('AI 暂未启用。编辑和下载可继续。','AI is unavailable. Editing and download remain available.')})[code]||t('AI 状态暂不可用，请刷新状态后重试。','AI status unavailable. Refresh its status to try again.');
+const reasonText=code=>({unauthorized:t('登录后使用 AI；编辑和下载无需登录。','Sign in for AI. Editing and download work without sign-in.'),no_credits:t('可用额度不足。请在账户页查看 Credits / Pro。','Insufficient funds. Check Credits / Pro in your account.'),busy:t('已有请求处理中或待结算，请先查看状态。','A request is processing or awaiting settlement. Check its status.'),ai_unavailable:t('AI 暂未启用。编辑和下载可继续。','AI is unavailable. Editing and download remain available.')})[code]||t('AI 状态暂不可用，请刷新状态后重试。','AI status unavailable. Refresh its status to try again.');
 function renderCapabilities(){
  const c=state.capabilities,box=$('#ai-account-status'),enabled=mode==='agent'?c?.agentEnabled:c?.aiEnabled;
  const reason=mode==='agent'?c?.agentReason:c?.reason;
@@ -223,7 +223,7 @@ async function refreshCapabilities(){
 }
 function receiptHTML(m){
  if(!m.requestId)return '';const r=m.receipt;
- const names={reserved:t('已预留，等待处理','Reserved; waiting'),submitted:t('处理中，费用待核对','Processing; charge unverified'),usage_pending:t('用量待核对；15 分钟后可刷新结算状态','Usage pending; refresh status after 15 minutes'),settled:t('已结算','Settled'),released:t('预留已释放','Reservation released'),refunded_pending:t('预留已退回，AI 暂停待核对','Reservation refunded; AI paused for reconciliation')};
+ const names={reserved:t('已预留，等待处理','Reserved; waiting'),submitted:t('处理中，费用待核对','Processing; charge unverified'),usage_pending:t('用量待核对；15 分钟后可刷新结算状态','Usage pending; refresh status after 15 minutes'),settled:t('已结算','Settled'),released:t('预留已释放','Reservation released'),refunded_pending:t('预留已退回，可继续发起新请求','Reservation refunded; new requests remain available')};
  const status=r?names[r.state]||t('状态待核对','Status unverified'):t('费用状态待核对','Billing status unverified');
  const amount=r&&Number.isFinite(r.chargedCents)?money(r.chargedCents,r.currency):t('金额待核对','Amount unverified');
  return `<div class="request-receipt" data-receipt="${esc(m.requestId)}"><span>${esc(status)} · ${esc(amount)}</span>${r&&Number.isFinite(r.reservedCents)?`<small>${t('预留','Reserved')}: ${esc(money(r.reservedCents,r.currency))}</small>`:''}<small>${t('请求','Request')}: ${esc(m.requestId)}</small><button type="button" data-check-request="${esc(m.requestId)}">${t('刷新费用状态','Refresh billing status')}</button>${m.receiptError?`<small>${esc(m.receiptError)}</small>`:''}</div>`;
@@ -283,7 +283,7 @@ function agentFailure(record){
   upstream_failed:t('AI 服务响应中断且自动重试未成功。已完成的改动已保存，请稍后再试。','The AI service interrupted after automatic retries. Completed changes are saved; please try again.'),
   price_changed:t('报价已变化，后续调用未发送。请刷新额度状态。','The quote changed; no further call was sent. Refresh billing status.')
  };
- return known[code]||(['no_credits','busy','unauthorized','reconciliation_paused','ai_unavailable'].includes(code)?reasonText(code):t('本轮未完成。请先检查操作记录、文档和费用；不会自动重试。','This run did not finish. Check the operation log, document and billing first; it will not retry automatically.'));
+ return known[code]||(['no_credits','busy','unauthorized','ai_unavailable'].includes(code)?reasonText(code):t('本轮未完成。请先检查操作记录、文档和费用；不会自动重试。','This run did not finish. Check the operation log, document and billing first; it will not retry automatically.'));
 }
 async function sendAgent(message){
  if(state.aiRunning||state.busy||importing||historyBusy||!message.trim())return;

@@ -345,7 +345,7 @@ try {
       db.prepare("UPDATE web_ai_request SET state='released' WHERE userId=?").run(a.id);
     }
   });
-  await check('Deletion tombstones settled/released/refunded Web receipts and retains accounting links and incident pause', async () => {
+  await check('Deletion tombstones settled/released/refunded Web receipts and retains accounting links and incident audit', async () => {
     const a=user(),before=providerCalls;
     withTransaction(d=>grantCredits(d,{userId:a.id,pool:'reward',amountCents:100,ledgerKind:'gift'}));
     const first=input();reserveRequest(a.id,first,1,1);markSubmitted(a.id,first.requestId);settleRequest(a.id,first.requestId,0.01);
@@ -365,11 +365,12 @@ try {
       const ledgerCount=(db.prepare('SELECT COUNT(*) n FROM wallet_ledger').get() as {n:number}).n;
       assert.throws(()=>settleRequest(tombstone,third.requestId,0.01),/not been submitted/,'Incident refund must never be retrospectively charged');
       assert.equal((db.prepare('SELECT COUNT(*) n FROM wallet_ledger').get() as {n:number}).n,ledgerCount);
-      const other=user(100);
-      assert.throws(()=>reserveRequest(other.id,input(),1,1),(e:unknown)=>e instanceof WebError&&e.code==='reconciliation_paused','Anonymization must preserve the operator incident pause');
+      const other=user(100),continued=input();
+      assert.equal(reserveRequest(other.id,continued,1,1).state,'reserved','Anonymized incidents must not block another user');
+      releaseRequest(other.id,continued.requestId,'synthetic-release');
       assert.equal(providerCalls,before);
     } finally {
-      // Close only the synthetic incident so subsequent cases can reserve normally.
+      // Restore the synthetic incident state after the deletion assertions.
       db.prepare("UPDATE web_ai_request SET state='released',errorCode=NULL WHERE requestId=?").run(third.requestId);
     }
   });
@@ -636,12 +637,13 @@ try {
     markSubmitted(a.id, b.requestId); const result = settleRequest(a.id, b.requestId, 100);
     assert.equal(result.state, 'usage_pending'); assert.equal(result.errorCode, 'cost_cap_exceeded'); assert.equal(result.chargedCents, null); assert.equal(getBalance(a.id), 100 - row.reserveCents);
     assert.throws(() => releaseRequest(a.id, b.requestId, 'timeout'), /uncertain/);
-    const other = user(100);
-    assert.throws(() => reserveRequest(other.id, input(), 1, 1), (e: unknown) => e instanceof WebError && e.code === 'reconciliation_paused');
+    const other = user(100),continued=input();
+    assert.equal(reserveRequest(other.id,continued,1,1).state,'reserved','A platform pricing incident must not block another user');
+    releaseRequest(other.id,continued.requestId,'synthetic-release');
     // A corrected provider receipt permits reconciliation without deleting synthetic records.
     assert.equal(settleRequest(a.id, b.requestId, 0.02).state, 'settled');
   });
-  await check('Unknown usage refunds once at 15 minutes and globally pauses new requests', async () => {
+  await check('Unknown usage refunds once at 15 minutes without blocking new requests', async () => {
     assert.equal(RECONCILIATION_DEADLINE_MS, 15 * 60_000);
     const a = user(100), other = user(100), b = validateInput(input()), before = providerCalls;
     const createdMs = Date.now() - RECONCILIATION_DEADLINE_MS - 1000;
@@ -659,10 +661,11 @@ try {
     assert.equal(getBalance(a.id), 100);
     assert.equal((db.prepare("SELECT COUNT(*) n FROM wallet_ledger WHERE json_extract(meta,'$.refundOf')=?").get(row.reserveLedgerId) as { n: number }).n, 1);
     await errorIs(await POST(request(b, a)), 'request_exists', 409);
-    await errorIs(await POST(request(input(), other)), 'reconciliation_paused', 503);
+    const continued=input(),continuedRow=reserveRequest(other.id,continued,1,1);
+    assert.equal(continuedRow.state,'reserved');releaseRequest(other.id,continued.requestId,'synthetic-release');
     const cap = await (await capabilities(getReq('/api/web/capabilities', other))).json();
-    assert.equal(cap.aiEnabled, false, 'Capabilities must reflect the global incident pause');
-    assert.equal(cap.reason, 'reconciliation_paused');
+    assert.equal(cap.aiEnabled, true, 'Platform reconciliation must not disable user AI');
+    assert.equal(cap.reason, null);
     assert.equal(getBalance(other.id), 100); assert.equal(providerCalls, before);
     assert.throws(() => settleRequest(a.id, b.requestId, 0.01), /submitted/, 'A late receipt must not silently charge a refunded user');
   });
