@@ -1600,8 +1600,7 @@
       "items": [
         "L’exploitant et titulaire des droits d’auteur d’AI WorkDeck est BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
         "Les rubriques À propos, droits d’auteur et informations juridiques de l’application de bureau, du site et des compléments Office/WPS désignent désormais la même société.",
-        "Cette mise à jour est distribuée via un nouveau programme d’installation complet. Après installation, la page À propos affiche les informations actualisées de la société.",
-        "Les paramètres proposent désormais un lien vers un annuaire public qui reconnaît les contributeurs à l’application, aux Skills et aux plugins. Les connexions réseau des plugins et les réponses aux actions rapides sont également plus fiables."
+        "Cette mise à jour est distribuée via un nouveau programme d’installation complet. Après installation, la page À propos affiche les informations actualisées de la société."
       ]
     },
     "release0770": {
@@ -1633,6 +1632,14 @@
         "Correction des connexions expirées ; sauvegarde et liaison des données de restauration d’anonymisation. Enregistrement depuis l’accueil, saisie chinoise et titres traduits améliorés.",
         "Electron 45.1.0 et dépendances de sécurité actualisés. Mise à jour complète du bureau ; applications mobiles publiées séparément.",
         "Puce Apple uniquement ; macOS 13 ou ultérieur requis"
+      ]
+    },
+    "release0880": {
+      "headline": "Révision juridique, reconnaissance des contributeurs et fiabilité des plugins",
+      "items": [
+        "Un nouveau Skill de révision des actualités juridiques vérifie les textes, les affaires, les dates, les liens et les attributions avant publication, fournit des constats sourcés et signale les points non résolus à confirmer.",
+        "Les paramètres proposent désormais un lien vers un annuaire public qui reconnaît les contributeurs à l’application, aux Skills et aux plugins.",
+        "Les connexions réseau des plugins et les réponses aux actions rapides sont plus fiables."
       ]
     }
   },

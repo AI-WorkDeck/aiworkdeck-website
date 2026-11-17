@@ -1600,8 +1600,7 @@
       "items": [
         "Operator dan pemegang hak cipta AI WorkDeck adalah BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
         "Informasi Tentang, hak cipta, dan hukum pada aplikasi desktop, situs web, serta add-in Office/WPS kini mencantumkan perusahaan yang sama.",
-        "Pembaruan ini menggunakan penginstal lengkap yang baru. Setelah pemasangan, halaman Tentang menampilkan informasi perusahaan yang diperbarui.",
-        "Pengaturan kini memiliki tautan ke direktori publik yang mengakui kontributor aplikasi, Skill, dan plugin. Koneksi jaringan plugin dan balasan tindakan cepat juga menjadi lebih andal."
+        "Pembaruan ini menggunakan penginstal lengkap yang baru. Setelah pemasangan, halaman Tentang menampilkan informasi perusahaan yang diperbarui."
       ]
     },
     "release0770": {
@@ -1633,6 +1632,14 @@
         "Status login kedaluwarsa diperbaiki; data pemulihan anonimisasi disimpan dan ditautkan otomatis. Rekaman dari halaman awal, masukan Tionghoa dan judul terjemahan ditingkatkan.",
         "Electron 45.1.0 dan dependensi keamanan diperbarui. Pembaruan desktop penuh; aplikasi seluler dirilis terpisah.",
         "Hanya Apple Silicon; memerlukan macOS 13 atau lebih baru"
+      ]
+    },
+    "release0880": {
+      "headline": "Tinjauan berita hukum, pengakuan kontributor, dan keandalan plugin",
+      "items": [
+        "Skill Tinjauan Berita Hukum baru memeriksa peraturan, kasus, tanggal, tautan, dan atribusi sebelum publikasi, menyediakan temuan bersumber, serta menandai hal yang belum terselesaikan untuk dikonfirmasi.",
+        "Pengaturan kini memiliki tautan ke direktori publik yang mengakui kontributor aplikasi, Skill, dan plugin.",
+        "Koneksi jaringan plugin dan balasan tindakan cepat kini lebih andal."
       ]
     }
   },

@@ -1600,8 +1600,7 @@
       "items": [
         "Đơn vị vận hành và chủ sở hữu bản quyền AI WorkDeck là BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
         "Thông tin Giới thiệu, bản quyền và pháp lý trong ứng dụng máy tính, trang web và phần bổ trợ Office/WPS hiện cùng ghi nhận một công ty.",
-        "Bản cập nhật này được cung cấp qua bộ cài đặt đầy đủ mới. Sau khi cài đặt, trang Giới thiệu hiển thị thông tin công ty đã cập nhật.",
-        "Cài đặt hiện có liên kết đến danh bạ công khai ghi nhận những người đóng góp cho ứng dụng, Skill và plugin. Kết nối mạng của plugin và phản hồi thao tác nhanh cũng đáng tin cậy hơn."
+        "Bản cập nhật này được cung cấp qua bộ cài đặt đầy đủ mới. Sau khi cài đặt, trang Giới thiệu hiển thị thông tin công ty đã cập nhật."
       ]
     },
     "release0770": {
@@ -1633,6 +1632,14 @@
         "Sửa trạng thái đăng nhập hết hạn; tự động lưu và liên kết dữ liệu khôi phục ẩn danh. Ghi âm từ trang đầu, nhập tiếng Trung và tiêu đề dịch được cải thiện.",
         "Nâng lên Electron 45.1.0 và cập nhật phụ thuộc bảo mật. Bản cập nhật máy tính đầy đủ; ứng dụng di động phát hành riêng.",
         "Chỉ Apple Silicon; yêu cầu macOS 13 trở lên"
+      ]
+    },
+    "release0880": {
+      "headline": "Cập nhật thẩm định tin pháp luật, ghi nhận người đóng góp và độ tin cậy plugin",
+      "items": [
+        "Skill Thẩm định Tin Pháp luật mới kiểm tra quy định, án lệ, ngày tháng, liên kết và thông tin tác giả trước khi xuất bản, cung cấp phát hiện có nguồn và giữ các vấn đề chưa xác minh ở trạng thái cần xác nhận.",
+        "Cài đặt hiện có liên kết đến danh bạ công khai ghi nhận những người đóng góp cho ứng dụng, Skill và plugin.",
+        "Kết nối mạng của plugin và phản hồi thao tác nhanh đã trở nên đáng tin cậy hơn."
       ]
     }
   },

@@ -1600,8 +1600,7 @@
       "items": [
         "La entidad operadora y titular de los derechos de autor de AI WorkDeck es BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
         "La información de Acerca de, derechos de autor y avisos legales de la aplicación de escritorio, el sitio web y los complementos de Office/WPS identifica ahora a la misma empresa.",
-        "Esta actualización se distribuye mediante un nuevo instalador completo. Tras instalarla, la página Acerca de muestra los datos actualizados de la empresa.",
-        "Configuración ahora enlaza con un directorio público que reconoce a los colaboradores de la aplicación, Skills y plugins. Las conexiones de red de los plugins y las respuestas a acciones rápidas también son más fiables."
+        "Esta actualización se distribuye mediante un nuevo instalador completo. Tras instalarla, la página Acerca de muestra los datos actualizados de la empresa."
       ]
     },
     "release0770": {
@@ -1633,6 +1632,14 @@
         "Corregida la sesión caducada; guardado y vinculación de datos de restauración de anonimización. Grabación desde el inicio, entrada en chino y títulos traducidos mejorados.",
         "Electron 45.1.0 y dependencias de seguridad actualizados. Actualización completa de escritorio; aplicaciones móviles publicadas por separado.",
         "Solo chip Apple; requiere macOS 13 o posterior"
+      ]
+    },
+    "release0880": {
+      "headline": "Revisión de noticias jurídicas, reconocimiento de colaboradores y fiabilidad de plugins",
+      "items": [
+        "Una nueva Skill de revisión de noticias jurídicas comprueba normas, casos, fechas, enlaces y atribuciones antes de publicar, ofrece hallazgos con fuentes y deja los puntos sin resolver marcados para confirmación.",
+        "Configuración ahora enlaza con un directorio público que reconoce a los colaboradores de la aplicación, Skills y plugins.",
+        "Las conexiones de red de los plugins y las respuestas a acciones rápidas son más fiables."
       ]
     }
   },
