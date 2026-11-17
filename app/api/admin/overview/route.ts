@@ -7,6 +7,9 @@ import { findUserById, type User } from '@/lib/users';
 import { getAiConfig, getExchangeRateAdminView, maskKey } from '@/lib/ai-config';
 import { platformProvider } from '@/lib/platform-ai/config';
 import { SITE_ID } from '@/lib/site-config';
+import { listDevelopers } from '@/lib/developers';
+import { listPlugins } from '@/lib/plugins-store';
+import { listPacks } from '@/lib/packs-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,6 +87,9 @@ export async function GET(request: NextRequest) {
       users: users.length,
       downloads: skills.reduce((sum, s) => sum + s.downloads, 0),
       failedSubmissions: failedSubmissions.length,
+      pendingDevelopers: listDevelopers().filter(p => p.status === 'pending').length,
+      pendingPlugins: listPlugins({ status: 'pending' }).length,
+      pendingPacks: listPacks({ status: 'pending' }).length,
     },
     skills,
     users,

@@ -684,8 +684,8 @@
     "ctaBody": "Packen Sie es als ZIP und reichen Sie es ein — wir prüfen es so bald wie möglich.",
     "ctaBtn": "Plugin einreichen",
     "devEligibilityTitle": "Wer Plugins veröffentlichen darf",
-    "devEligibilityP1": "Kostenlose Open-Source-Plugins: registrieren und einreichen.",
-    "devEligibilityP2": "Kostenpflichtige oder Closed-Source-Plugins erfordern zuvor eine Entwicklerverifizierung.",
+    "devEligibilityP1": "Kostenlose Open-Source-Plugins können nach dem Login ohne Token eingereicht werden.",
+    "devEligibilityP2": "Kostenpflichtige oder Closed-Source-Einreichungen erfordern eine Entwicklerfreigabe.",
     "devEligibilityLink": "Entwicklerzentrum"
   },
   "pluginSubmitPage": {
@@ -746,9 +746,11 @@
     "eyebrow": "Mitwirken",
     "pageTitle": "Plugin oder Pack einreichen",
     "pageLead": "Plugins und Packs enthalten ausführbaren Code: Jede Version wird von einer Person geprüft, dann von der Plattform signiert und verteilt.",
-    "developerNoticeBody": "Kostenlose Open-Source-Plugins können von jedem angemeldeten Konto eingereicht werden. Um einen Preis festzulegen oder ein Closed-Source-Plugin zu veröffentlichen, beantragen Sie dies zuerst im",
+    "developerNoticeBody": "Kostenlose Open-Source-Plugins können nach dem Login ohne Token eingereicht werden. manifest.homepage muss die öffentliche HTTPS-Quelladresse enthalten. Kostenpflichtige oder Closed-Source-Einreichungen erfordern eine Entwicklerfreigabe. ",
     "developerNoticeLink": "Entwicklerbereich",
-    "attributionNotice": "Nach der Freigabe deines Plugins erscheinen dein öffentlicher Anzeigename und dein Autorenprofil auf seiner Marketplace-Seite und im Verzeichnis der Mitwirkenden."
+    "attributionNotice": "Nach der Freigabe deines Plugins erscheinen dein öffentlicher Anzeigename und dein Autorenprofil auf seiner Marketplace-Seite und im Verzeichnis der Mitwirkenden.",
+    "submissionRegionNotice": "Die internationale Website spiegelt nur geprüfte Plugins und nimmt keine lokalen Einreichungen an. Reiche über die China-Website ein; die Konten sind getrennt, melde dich daher bei Bedarf an.",
+    "submissionRegionLink": "Auf der China-Website einreichen"
   },
   "packSubmitPage": {
     "tabPlugin": "JAR-Plugin",
@@ -2405,8 +2407,8 @@
     "title": "Entwicklerzentrum",
     "subtitle": "Bewerben Sie sich, verwalten Sie Ihre Einreichungsdaten und verfolgen Sie die Prüfungen.",
     "signInToContinue": "Melden Sie sich an, um fortzufahren",
-    "gateStep1": "Entwicklerzugang beantragen",
-    "gateStep2": "Einreichungs-Token erzeugen",
+    "gateStep1": "Kostenpflichtige oder Closed-Source-Einreichungen erfordern eine Entwicklerfreigabe.",
+    "gateStep2": "ZIP direkt hochladen oder bei Bedarf ein CLI-Token erstellen",
     "gateStep3": "Plugins und Prüfstatus verfolgen",
     "errors": {
       "version_conflict": "Das Profil hat sich geändert. Aktualisieren und versuchen Sie es erneut.",
@@ -2418,7 +2420,7 @@
       "token_limit": "Widerrufen Sie ein altes Token; es können höchstens 10 aktiv sein."
     },
     "working": "Wird verarbeitet…",
-    "savedNotice": "Gespeichert. Reichen Sie den Antrag ein, wenn Sie bereit sind.",
+    "savedNotice": "Dein Profil wurde zur Prüfung eingereicht.",
     "savingProfile": "Profil wird gespeichert…",
     "status": {
       "draft": "Entwurf",
@@ -2428,13 +2430,13 @@
       "suspended": "Ausgesetzt"
     },
     "introP1": "Die Überprüfung von Entwickleranwendungen und Berechtigungen ist zunächst kostenlos. Identitätsangaben erfolgen durch Selbsterklärung; die Kontaktverifizierung ist keine Identitätsprüfung oder KYC.",
-    "introP2": "Kontaktdaten sind nur für Sie und Administratoren sichtbar. Jedes Plugin erfordert weiterhin eine separate Sicherheitsprüfung und Signierung; die Plugin-Preise bleiben unverändert.",
+    "introP2": "Kostenlose Open-Source-Plugins können nach dem Login ohne Token eingereicht werden. Dieses Center ist für kostenpflichtige und Closed-Source-Veröffentlichungen. Kontaktdaten sehen nur du und Admins; jede Plugin-Version wird geprüft und signiert.",
     "guideLink": "Leitfaden und Agent-Anweisungen",
     "submitLink": "Plugin einreichen",
     "loadFailedRetry": "Laden fehlgeschlagen; erneut versuchen",
     "loadingProfile": "Profil wird geladen…",
     "profileHeading": "Entwicklerprofil",
-    "profileNotice": "Das Speichern von Änderungen erfordert eine neue Berechtigungsprüfung. Ein ausgesetzter Zugriff kann nur mit Genehmigung eines Administrators wiederhergestellt werden. Bereits veröffentlichte Versionen bleiben verfügbar.",
+    "profileNotice": "Änderungen lösen eine neue Qualifikationsprüfung aus. Gesperrter Zugang kann nur durch Admins wiederhergestellt werden. Veröffentlichte Versionen bleiben gelistet.",
     "contactVerificationPrefix": "Kontaktverifizierung: ",
     "contactVerificationPending": "Ausstehend (ein Administrator kann den Kontakt manuell verifizieren)",
     "identityTypeLabel": "Selbsterklärte Identität",
@@ -2450,10 +2452,10 @@
     "planLabel": "Was Sie planen zu entwickeln und warum diese Berechtigungen benötigt werden",
     "permissionsLegend": "Geplante Plugin-Berechtigungen",
     "permissionsHint": "Die tatsächlichen Plugin-Berechtigungen müssen innerhalb Ihres genehmigten Antrags liegen. Das Hinzufügen von Berechtigungen erfordert eine erneute Prüfung.",
-    "saveProfileBtn": "Profil speichern",
+    "saveProfileBtn": "Speichern und Antrag einreichen",
     "submittingApplication": "Antrag wird eingereicht …",
     "applyBtn": "Mit gespeichertem Profil beantragen",
-    "tokensHeading": "Agent-Submission-Tokens",
+    "tokensHeading": "CLI-/Automatisierungs-Tokens (erweitert)",
     "tokensIntro": "Tokens listen nur Ihre Einreichungen auf und reichen Plugin-Pakete ein. Sie können nicht auf Konto-, Zahlungs- oder Admin-APIs zugreifen. Ein Token wird nur einmal angezeigt: Bewahren Sie es in der lokalen Umgebungsvariablen AWD_PLUGIN_TOKEN auf, niemals im Quellcode, in Prompts oder Paketen.",
     "newTokenLabel": "Neues Token (wird einmal angezeigt)",
     "hideTokenBtn": "Gespeichert; Token ausblenden",
@@ -2467,7 +2469,7 @@
     "revokingToken": "Token wird widerrufen…",
     "revokeBtn": "Widerrufen",
     "myPluginsHeading": "Meine Plugins und deklarierten Berechtigungen",
-    "myPluginsIntro": "Das Eigentum folgt dem einreichenden Konto, nicht einem Autorennamen im Paket. Legacy-Autoren können Einreichungen weiterhin anzeigen; neue Versionen erfordern eine Berechtigungsprüfung.",
+    "myPluginsIntro": "Kostenlose Open-Source-Plugins können nach dem Login ohne Token eingereicht werden. Kostenpflichtige oder Closed-Source-Einreichungen erfordern eine Entwicklerfreigabe.",
     "noPermissions": "Keine Berechtigungen",
     "noSubmissionsYet": "Noch keine Einreichungen.",
     "historySummary": "Berechtigungsverlauf"

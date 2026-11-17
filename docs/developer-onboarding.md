@@ -3,7 +3,9 @@
 
 # 开发者申请与投稿凭据
 
-开发者中心：`/{lang}/plugins/developer`。使用现有网站账号登录，保存自行声明的个人/组织信息、私有联系渠道、已开发作品或学习经历、计划功能和权限理由，再提交资格申请。初期申请免费；这不改变插件原有定价，也没有新增自动收费。
+免费开源插件可直接在 `/{lang}/plugins/submit` 用网站账号上传 ZIP，无需开发者资格或投稿令牌，但 `manifest.homepage` 必须是公开源码的 HTTPS 地址，供作者与审核员核查。闭源或收费插件仍需先通过资格审核；所有版本仍须人工审核与签名。
+
+开发者中心：`/{lang}/plugins/developer`，用于收费或闭源投稿。CLI 与网页遵循同一开源/闭源和定价规则；专用 Bearer 投稿令牌只签发给已获资格的开发者，免费开源投稿也可沿用网页 Cookie 通道。使用现有网站账号登录，自动带出显示名和已验证联系方式；填写自行声明的个人/组织信息、已开发作品或学习经历、计划功能和权限理由后，一次点击即可保存并提交资格申请。初期申请免费；这不改变插件原有定价，也没有新增自动收费。
 
 身份是申请人自行声明，不代表实名或 KYC。联系渠道若与已验证账号邮箱/已绑定手机号一致，可沿用账号验证；其他渠道由管理员实际联系后明确勾选确认。管理员界面不发送验证码、邮件或消息。开发者资格和每个插件的安全审核、签名相互独立。
 
@@ -13,7 +15,7 @@
 
 每个写操作携带 `expectedVersion`；资料发生变化返回 `409 version_conflict`。历史记录和私有联系只在本人及管理员接口返回。账号注销同步删除资料、私有审核快照及全部投稿令牌；已发布插件保留原有 `authorId` 墓碑关联。
 
-作品以真实投稿账号 `authorId` 关联，包内 `author` 不能用来认领其他作者作品。存量作者可继续用 Cookie 查询旧提交；已有上架版本不会自动下架。新投稿/更新和新审批都要求当前资格为 `approved`，包内实际权限不得超出已审核申请范围。修改资料、暂停资格不会替代管理员原有插件封禁动作。
+作品以真实投稿账号 `authorId` 关联，包内 `author` 不能用来认领其他作者作品。存量作者可继续用 Cookie 查询旧提交；已有上架版本不会自动下架。带公开源码 HTTPS 地址的免费 Cookie 网页投稿标记 `requiresDeveloperReview=false`，管理员可直接进行版本安全审核。收费、闭源及 Bearer 投稿要求当前资格为 `approved`，包内实际权限不得超出已审核申请范围；旧记录缺少该标记时仍按需要资格审核处理。修改资料、暂停资格不会替代管理员原有插件封禁动作。
 
 ## API
 
@@ -22,7 +24,7 @@
 | 入口 | 请求 | 结果 |
 | --- | --- | --- |
 | `GET /api/developers` | Cookie | `profile, history, tokens, plugins`；令牌仅元信息，无原文/哈希 |
-| `PUT /api/developers` | `{profile,expectedVersion}` | `{profile}`；首次版本为 `0` |
+| `PUT /api/developers` | `{profile,expectedVersion,apply?}` | `{profile}`；首次版本为 `0`，`apply:true` 时一次保存并进入 `pending` |
 | `POST /api/developers/apply` | `{expectedVersion}` | `{profile}` |
 | `POST /api/developers/token` | `{label,expiresInDays}` | 一次性 `{token,id,label,createdAt,expiresAt,scope}` |
 | `DELETE /api/developers/token` | `{id}` | `{ok:true}`，仅本人可撤销 |
@@ -33,7 +35,7 @@
 
 投稿令牌为密码学随机 256 位，只持久化 SHA256，默认 30 天，允许 1–90 天，最多 10 个同时有效令牌。元信息有到期、最后使用、撤销时间。只在 `/api/plugins` 的 GET/POST 解析 Bearer，分别查询本人提交和提交新版本。令牌不能操作账户资料、支付、管理员审核或再次签发令牌。撤销、到期、资格失效、账号注销即时阻止后续请求；等待上传体时会再次检查，不能用先通过的授权继续落盘。
 
-显式 `Authorization` 存在但格式/令牌无效时返回 `401 invalid_plugin_token`，不会回退 Cookie。未登录为 `401 unauthorized`，资格未通过为 `403 developer_approval_required`，包权限超过申请为 `403 developer_permissions_required`。成功投稿维持 `{plugin:{id,version,status,scan}}`，`status` 为 `pending`，仍等人工安全审核与签名。
+显式 `Authorization` 存在但格式/令牌无效时返回 `401 invalid_plugin_token`，不会回退 Cookie。未登录为 `401 unauthorized`；收费、闭源或 Bearer 投稿资格未通过为 `403 developer_approval_required`，包权限超过申请为 `403 developer_permissions_required`。只有带公开源码地址的免费 Cookie 投稿不要求资格。国际站不接收投稿，统一返回 `409 submission_region_unavailable`，避免 pending 记录被北京镜像覆盖。成功投稿维持 `{plugin:{id,version,status,scan}}`，`status` 为 `pending`，仍等人工安全审核与签名。
 
 ## 交给 Agent
 

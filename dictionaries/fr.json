@@ -684,8 +684,8 @@
     "ctaBody": "Compressez-le en ZIP et soumettez-le — nous l'examinerons dès que possible.",
     "ctaBtn": "Soumettre le plugin",
     "devEligibilityTitle": "Qui peut publier des plugins",
-    "devEligibilityP1": "Plugins open source gratuits : inscrivez-vous et soumettez.",
-    "devEligibilityP2": "Les plugins payants ou à code fermé exigent d’abord une vérification de développeur.",
+    "devEligibilityP1": "Les plugins gratuits open source peuvent être soumis après connexion, sans jeton.",
+    "devEligibilityP2": "Les soumissions payantes ou closed source nécessitent un accès développeur approuvé.",
     "devEligibilityLink": "Centre des développeurs"
   },
   "pluginSubmitPage": {
@@ -746,9 +746,11 @@
     "eyebrow": "Contribuer",
     "pageTitle": "Soumettre un plugin ou un pack",
     "pageLead": "Les plugins et les packs contiennent du code exécutable : chaque version est examinée par un humain, puis signée et distribuée par la plateforme.",
-    "developerNoticeBody": "Les plugins gratuits et open source peuvent être soumis par n'importe quel compte connecté. Pour fixer un prix ou publier un plugin closed source, faites d'abord une demande dans le",
+    "developerNoticeBody": "Les plugins gratuits open source peuvent être soumis après connexion, sans jeton. manifest.homepage doit contenir l’URL HTTPS publique du code source. Les soumissions payantes ou closed source nécessitent un accès développeur approuvé. ",
     "developerNoticeLink": "Centre des développeurs",
-    "attributionNotice": "Lorsque votre plugin est approuvé, votre nom d’affichage public et votre profil d’auteur apparaissent sur sa page du marketplace et dans l’annuaire des contributeurs."
+    "attributionNotice": "Lorsque votre plugin est approuvé, votre nom d’affichage public et votre profil d’auteur apparaissent sur sa page du marketplace et dans l’annuaire des contributeurs.",
+    "submissionRegionNotice": "Le site international ne fait que refléter les plugins examinés et n’accepte pas les soumissions locales. Soumettez sur le site chinois ; les comptes sont distincts, connectez-vous lorsque demandé.",
+    "submissionRegionLink": "Soumettre sur le site chinois"
   },
   "packSubmitPage": {
     "tabPlugin": "Plugin JAR",
@@ -2405,8 +2407,8 @@
     "title": "Centre des développeurs",
     "subtitle": "Postulez, gérez vos identifiants de soumission et suivez les examens.",
     "signInToContinue": "Connectez-vous pour continuer",
-    "gateStep1": "Demander l’accès développeur",
-    "gateStep2": "Générer un jeton de soumission",
+    "gateStep1": "Les soumissions payantes ou closed source nécessitent un accès développeur approuvé.",
+    "gateStep2": "Téléverser un ZIP sur le web ou créer un jeton CLI si nécessaire",
     "gateStep3": "Suivre vos plugins et l’état de la revue",
     "errors": {
       "version_conflict": "Le profil a changé. Actualisez et réessayez.",
@@ -2418,7 +2420,7 @@
       "token_limit": "Révoquez un ancien token ; 10 au maximum peuvent être actifs."
     },
     "working": "Traitement en cours…",
-    "savedNotice": "Enregistré. Soumettez la candidature quand vous êtes prêt.",
+    "savedNotice": "Votre profil a été soumis pour examen.",
     "savingProfile": "Enregistrement du profil…",
     "status": {
       "draft": "Brouillon",
@@ -2428,13 +2430,13 @@
       "suspended": "Suspendu"
     },
     "introP1": "L'inscription des développeurs et l'examen d'éligibilité sont gratuits dans un premier temps. Les informations d'identité sont auto-déclarées ; la vérification du contact ne constitue ni une vérification d'identité ni un KYC.",
-    "introP2": "Les coordonnées sont privées et visibles uniquement par vous et les administrateurs. Chaque plugin nécessite toujours un examen de sécurité et une signature distincts ; la tarification des plugins reste inchangée.",
+    "introP2": "Les plugins gratuits open source peuvent être soumis après connexion, sans jeton. Ce centre concerne les publications payantes ou closed source. Vos coordonnées restent privées ; chaque version est examinée et signée.",
     "guideLink": "Instructions du Guide et de l'Agent",
     "submitLink": "Soumettre un plugin",
     "loadFailedRetry": "Échec du chargement ; réessayez",
     "loadingProfile": "Chargement du profil…",
     "profileHeading": "Profil développeur",
-    "profileNotice": "L'enregistrement des modifications nécessite un nouvel examen d'éligibilité. Un accès suspendu nécessite l'approbation d'un administrateur pour être rétabli. Les versions publiées existantes restent disponibles.",
+    "profileNotice": "Toute modification soumise déclenche un nouvel examen. Seul un administrateur peut rétablir un accès suspendu. Les versions publiées restent en ligne.",
     "contactVerificationPrefix": "Vérification du contact : ",
     "contactVerificationPending": "En attente (un administrateur peut vérifier le contact manuellement)",
     "identityTypeLabel": "Identité auto-déclarée",
@@ -2450,10 +2452,10 @@
     "planLabel": "Ce que vous prévoyez de développer et pourquoi ces autorisations sont nécessaires",
     "permissionsLegend": "Autorisations prévues du plugin",
     "permissionsHint": "Les autorisations réelles du plugin doivent rester dans le cadre de votre application approuvée. Toute ajout d'autorisation nécessite une nouvelle révision.",
-    "saveProfileBtn": "Enregistrer le profil",
+    "saveProfileBtn": "Enregistrer et soumettre la demande",
     "submittingApplication": "Envoi de la candidature…",
     "applyBtn": "Candidater avec le profil enregistré",
-    "tokensHeading": "Jetons de soumission des agents",
+    "tokensHeading": "Jetons de soumission CLI / automatisation (avancé)",
     "tokensIntro": "Les jetons permettent uniquement de lister vos soumissions et de soumettre des packages de plugins. Ils ne peuvent pas accéder aux API de compte, de paiement ou d'administration. Un jeton n'est affiché qu'une seule fois : conservez-le dans la variable d'environnement locale AWD_PLUGIN_TOKEN, jamais dans le code source, les prompts ou les packages.",
     "newTokenLabel": "Nouveau jeton (affiché une seule fois)",
     "hideTokenBtn": "Enregistré ; masquer le jeton",
@@ -2467,7 +2469,7 @@
     "revokingToken": "Révocation du jeton…",
     "revokeBtn": "Révoquer",
     "myPluginsHeading": "Mes plugins et autorisations déclarées",
-    "myPluginsIntro": "La propriété est liée au compte de soumission, et non au nom d'auteur figurant dans un package. Les auteurs existants peuvent toujours consulter leurs soumissions ; les nouvelles versions nécessitent une approbation d'éligibilité.",
+    "myPluginsIntro": "Les plugins gratuits open source peuvent être soumis après connexion, sans jeton. Les soumissions payantes ou closed source nécessitent un accès développeur approuvé.",
     "noPermissions": "Aucune autorisation",
     "noSubmissionsYet": "Aucune soumission pour le moment.",
     "historySummary": "Historique d'éligibilité"

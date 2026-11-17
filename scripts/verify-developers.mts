@@ -2,12 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import { NextRequest } from 'next/server';
 import AdmZip from 'adm-zip';
 assert.equal(fs.readdirSync(process.cwd()).length, 0, 'Run in a new empty temporary directory');
 const users = ['author-a', 'author-b'].map(id => ({ id, username: id, displayName: id, email: `${id}@example.invalid`, emailVerifiedAt: new Date().toISOString(), passwordHash: '', createdAt: new Date().toISOString() }));
 fs.mkdirSync('data'); fs.writeFileSync('data/users.json', JSON.stringify(users));
 process.env.AWD_ADMIN_TOKEN = 'synthetic-admin-only-testing';
+process.env.AWD_PLUGIN_SIGNING_KEY = String(crypto.generateKeyPairSync('ed25519').privateKey.export({ type: 'pkcs8', format: 'pem' }));
 const { createSession } = await import('@/lib/sessions');
 const { getDb, closeDb } = await import('@/lib/db');
 const store = await import('@/lib/developers');
@@ -69,11 +71,37 @@ r = await tokens.POST(req('/api/developers/token', 'POST', {}, 0, bearer)); chec
 r = await plugins.GET(req('/api/plugins', 'GET', undefined, 0, { Authorization: 'Bearer invalid' })); check('invalid bearer never falls back to valid cookie', () => assert.equal(r.status, 401));
 r = await plugins.GET(req('/api/plugins', 'GET', undefined, 'none', bearer)); check('valid bearer lists own submissions', () => assert.equal(r.status, 200));
 check('lastUsedAt updated', () => assert.ok((store.listSubmissionTokens(users[0].id)[0] as any).lastUsedAt));
-function zip(id: string, permissions = ['file_read']) { const z = new AdmZip(); z.addFile('manifest.json', Buffer.from(JSON.stringify({ id, name: 'Synthetic', version: '1.0.0', frontendEntry: 'web/index.html', permissions }))); z.addFile('web/index.html', Buffer.from('<!doctype html><html><body>Test</body></html>')); return z.toBuffer(); }
-function postZip(id: string, auth = bearer, permissions?: string[]) { const f = new FormData(); f.append('file', new File([new Uint8Array(zip(id, permissions))], 'plugin.zip')); return plugins.POST(new NextRequest('http://localhost/api/plugins', { method: 'POST', headers: auth, body: f })); }
+function zip(id: string, permissions = ['file_read'], version = '1.0.0', homepage = 'https://example.invalid/source') { const z = new AdmZip(); z.addFile('manifest.json', Buffer.from(JSON.stringify({ id, name: 'Synthetic', version, frontendEntry: 'web/index.html', permissions, ...(homepage ? { homepage } : {}) }))); z.addFile('web/index.html', Buffer.from('<!doctype html><html><body>Test</body></html>')); return z.toBuffer(); }
+function postZip(id: string, auth: Record<string, string> = bearer, permissions?: string[], priceCents?: number, version?: string, homepage?: string) { const f = new FormData(); f.append('file', new File([new Uint8Array(zip(id, permissions, version, homepage))], 'plugin.zip')); if (priceCents !== undefined) f.append('priceCents', String(priceCents)); return plugins.POST(new NextRequest('http://localhost/api/plugins', { method: 'POST', headers: auth, body: f })); }
 r = await postZip('developer-fixture'); check('bearer package accepted pending', () => assert.equal(r.status, 200)); assert.equal((await r.json()).plugin.status, 'pending');
+r = await postZip('inherited-price', bearer, undefined, 100); check('approved developer can submit paid fixture', () => assert.equal(r.status, 200));
 r = await postZip('excess-permissions', bearer, ['network']); check('unapproved permission refused before persistence', () => assert.equal(r.status, 403)); assert.equal((await import('@/lib/plugins-store')).getPlugin('excess-permissions'), undefined);
 r = await plugins.GET(req('/api/plugins', 'GET', undefined, 1)); check('legacy account can list own submissions without qualification', () => assert.equal(r.status, 200)); assert.deepEqual((await r.json()).plugins, []);
+r = await own.PUT(req('/api/developers', 'PUT', { profile: { ...profile, displayName: 'Second developer', contact: users[1].email }, expectedVersion: 0, apply: true }, 1));
+check('one action saves and submits developer application', () => assert.equal(r.status, 200));
+const secondProfile = (await r.json()).profile; assert.equal(secondProfile.status, 'pending');
+r = await own.PUT(req('/api/developers', 'PUT', { profile: { ...profile, displayName: 'Second developer', contact: users[1].email }, expectedVersion: secondProfile.version, apply: true }, 1));
+check('duplicate one-action application cannot advance a pending profile', () => assert.equal(r.status, 409)); assert.equal(store.getDeveloper(users[1].id)!.version, secondProfile.version);
+const communityCookie = { Cookie: `awd_session=${sessions[1]}` };
+const pluginStore = await import('@/lib/plugins-store');
+r = await postZip('community-paid', communityCookie, undefined, 100);
+check('unqualified paid web submission refused before persistence', () => assert.equal(r.status, 403)); assert.equal(pluginStore.getPlugin('community-paid'), undefined);
+r = await postZip('closed-free', communityCookie, undefined, undefined, undefined, '');
+check('unqualified closed-source free submission requires review', () => assert.equal(r.status, 403)); assert.equal(pluginStore.getPlugin('closed-free'), undefined);
+r = await postZip('local-source', communityCookie, undefined, undefined, undefined, 'https://127.0.0.1/private');
+check('loopback URL cannot impersonate public source', () => assert.equal(r.status, 403)); assert.equal(pluginStore.getPlugin('local-source'), undefined);
+r = await postZip('community-free', communityCookie);
+check('free open-source web submission needs neither developer approval nor token', () => assert.equal(r.status, 200));
+const community = (await r.json()).plugin; assert.equal(community.status, 'pending');
+check('free web submission marked for community review', () => assert.equal(pluginStore.getPlugin('community-free')!.requiresDeveloperReview, false));
+r = await adminPlugins.POST(req('/api/admin/plugins/community-free', 'POST', { version: '1.0.0', action: 'approve' }, 'admin'), { params: Promise.resolve({ id: 'community-free' }) });
+check('admin can approve free community submission without developer profile gate', () => assert.equal(r.status, 200)); assert.equal(pluginStore.getPlugin('community-free')!.status, 'approved');
+const bomb = new AdmZip();
+bomb.addFile('manifest.json', Buffer.from(JSON.stringify({ id: 'zip-bomb', name: 'Bomb', version: '1.0.0', frontendEntry: 'web/index.html' })));
+bomb.addFile('web/index.html', Buffer.from('fixture'));
+for (const name of ['a.bin', 'b.bin', 'c.bin']) bomb.addFile(name, Buffer.alloc(40 * 1024 * 1024));
+check('cumulative uncompressed zip size is capped before decompression bomb', () => assert.equal(pluginStore.submitPlugin(bomb.toBuffer(), { id: 'bomb-author', username: 'bomb-author' }).error, 'unpacked_too_large'));
+assert.equal(pluginStore.getPlugin('zip-bomb'), undefined);
 const racing = store.issueSubmissionToken(users[0].id, 'Revoked during body upload', 1);
 const racingForm = new FormData(); racingForm.append('file', new File([new Uint8Array(zip('upload-revocation'))], 'plugin.zip'));
 const racingRequest = new NextRequest('http://localhost/api/plugins', { method: 'POST', headers: { Authorization: `Bearer ${racing.token}` }, body: racingForm });
@@ -87,8 +115,11 @@ assert.equal((await import('@/lib/plugins-store')).getPlugin('upload-revocation'
 r = await tokens.DELETE(req('/api/developers/token', 'DELETE', { id: issued.id }, 1)); check('another owner cannot revoke token', () => assert.equal(r.status, 404));
 r = await admin.POST(req('/api/admin/developers', 'POST', { userId: users[0].id, expectedVersion: p.version, action: 'suspend', note: 'Synthetic suspension' }, 'admin')); p = (await r.json()).profile;
 r = await plugins.GET(req('/api/plugins', 'GET', undefined, 'none', bearer)); check('suspension immediately blocks existing bearer', () => assert.equal(r.status, 403));
+r = await postZip('inherited-price', { Cookie: `awd_session=${sessions[0]}` }, undefined, undefined, '1.0.1');
+check('inherited paid price cannot bypass qualification on a new web version', () => assert.equal(r.status, 403)); assert.equal(pluginStore.getPlugin('inherited-price', '1.0.1'), undefined);
 r = await adminPlugins.POST(req('/api/admin/plugins/developer-fixture', 'POST', { version: '1.0.0', action: 'approve' }, 'admin'), { params: Promise.resolve({ id: 'developer-fixture' }) }); check('suspension blocks plugin approval before notification/signing', () => assert.equal(r.status, 403));
 r = await own.PUT(req('/api/developers', 'PUT', { profile, expectedVersion: p.version })); p = (await r.json()).profile; check('save cannot self-unsuspend', () => assert.equal(p.status, 'suspended'));
+r = await own.PUT(req('/api/developers', 'PUT', { profile, expectedVersion: p.version, apply: true })); check('one-action apply cannot self-unsuspend', () => assert.equal(r.status, 409));
 r = await apply.POST(req('/api/developers/apply', 'POST', { expectedVersion: p.version })); check('suspended author cannot reapply to bypass review', () => assert.equal(r.status, 409));
 r = await admin.POST(req('/api/admin/developers', 'POST', { userId: users[0].id, expectedVersion: p.version, action: 'approve' }, 'admin')); p = (await r.json()).profile;
 r = await tokens.DELETE(req('/api/developers/token', 'DELETE', { id: issued.id })); check('owner revokes token', () => assert.equal(r.status, 200));

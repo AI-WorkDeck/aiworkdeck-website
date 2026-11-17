@@ -684,8 +684,8 @@
     "ctaBody": "Padatkan sebagai zip dan hantar — kami akan menyemak secepat mungkin.",
     "ctaBtn": "Hantar pemalam",
     "devEligibilityTitle": "Siapa yang boleh menerbitkan pemalam",
-    "devEligibilityP1": "Plugin sumber terbuka yang percuma: daftar dan hantar sahaja.",
-    "devEligibilityP2": "Plugin berharga atau sumber tertutup perlu pengesahan pembangun terlebih dahulu.",
+    "devEligibilityP1": "Plugin sumber terbuka percuma boleh dihantar selepas log masuk tanpa token.",
+    "devEligibilityP2": "Penghantaran berbayar atau sumber tertutup memerlukan akses pembangun yang diluluskan.",
     "devEligibilityLink": "Pusat pembangun"
   },
   "pluginSubmitPage": {
@@ -746,9 +746,11 @@
     "eyebrow": "Menyumbang",
     "pageTitle": "Hantar pemalam atau Pack",
     "pageLead": "Plugin dan pack membawa payload boleh laku: setiap versi disemak oleh manusia, kemudian ditandatangani dan diedarkan oleh platform.",
-    "developerNoticeBody": "Plugin sumber terbuka percuma boleh dihantar oleh mana-mana akaun yang telah log masuk. Untuk menetapkan harga atau menerbitkan plugin sumber tertutup, mohon dahulu di",
+    "developerNoticeBody": "Plugin sumber terbuka percuma boleh dihantar selepas log masuk tanpa token. manifest.homepage mesti mengandungi URL HTTPS sumber awam. Penghantaran berbayar atau sumber tertutup memerlukan akses pembangun yang diluluskan. ",
     "developerNoticeLink": "Pusat pembangun",
-    "attributionNotice": "Apabila pemalam anda diluluskan, nama paparan awam dan profil pengarang anda akan dipaparkan pada halaman marketplace serta dalam direktori penyumbang."
+    "attributionNotice": "Apabila pemalam anda diluluskan, nama paparan awam dan profil pengarang anda akan dipaparkan pada halaman marketplace serta dalam direktori penyumbang.",
+    "submissionRegionNotice": "Laman antarabangsa hanya mencerminkan plugin yang telah disemak dan tidak menerima penghantaran tempatan. Hantar melalui laman China; akaun adalah berasingan, jadi log masuk apabila diminta.",
+    "submissionRegionLink": "Hantar di laman China"
   },
   "packSubmitPage": {
     "tabPlugin": "Plugin JAR",
@@ -2405,8 +2407,8 @@
     "title": "Pusat pembangun",
     "subtitle": "Mohon, urus kelayakan penyerahan anda dan pantau semakan.",
     "signInToContinue": "Log masuk untuk teruskan",
-    "gateStep1": "Mohon kelayakan pembangun",
-    "gateStep2": "Jana token penghantaran",
+    "gateStep1": "Penghantaran berbayar atau sumber tertutup memerlukan akses pembangun yang diluluskan.",
+    "gateStep2": "Muat naik ZIP terus melalui web atau jana token CLI jika perlu",
     "gateStep3": "Lihat karya dan kemajuan semakan",
     "errors": {
       "version_conflict": "Profil telah berubah. Muar semula dan cuba lagi.",
@@ -2418,7 +2420,7 @@
       "token_limit": "Batalkan token lama; maksimum 10 sahaja boleh aktif."
     },
     "working": "Sedang diproses…",
-    "savedNotice": "Disimpan. Hantar permohonan apabila sedia.",
+    "savedNotice": "Profil anda telah dihantar untuk semakan.",
     "savingProfile": "Menyimpan profil…",
     "status": {
       "draft": "Draf",
@@ -2428,13 +2430,13 @@
       "suspended": "Digantung"
     },
     "introP1": "Permohonan pembangun dan semakan kelayakan adalah percuma pada peringkat awal. Maklumat identiti diisytiharkan sendiri; pengesahan kenalan bukan pengesahan identiti atau KYC.",
-    "introP2": "Maklumat kenalan adalah peribadi antara anda dan pentadbir. Setiap pemalam masih memerlukan semakan keselamatan dan penandatanganan berasingan; harga pemalam tidak berubah.",
+    "introP2": "Plugin sumber terbuka percuma boleh dihantar selepas log masuk tanpa token. Pusat ini untuk penerbitan berbayar atau sumber tertutup. Maklumat hubungan hanya kelihatan kepada anda dan pentadbir; setiap versi disemak dan ditandatangani.",
     "guideLink": "Arahan Guide dan Agent",
     "submitLink": "Hantar pemalam",
     "loadFailedRetry": "Gagal dimuatkan; cuba lagi",
     "loadingProfile": "Memuatkan profil…",
     "profileHeading": "Profil pembangun",
-    "profileNotice": "Menyimpan perubahan memerlukan semakan kelayakan baharu. Akses yang digantung memerlukan kelulusan pentadbir untuk dipulihkan. Versi yang telah diterbitkan kekal tersedia.",
+    "profileNotice": "Menghantar perubahan memulakan semakan kelayakan baharu. Hanya pentadbir boleh memulihkan akses yang digantung. Versi yang telah diterbitkan kekal disenaraikan.",
     "contactVerificationPrefix": "Pengesahan kenalan: ",
     "contactVerificationPending": "Menunggu (pentadbir boleh mengesahkan kenalan secara manual)",
     "identityTypeLabel": "Identiti diisytiharkan sendiri",
@@ -2450,10 +2452,10 @@
     "planLabel": "Apa yang anda rancang untuk bina dan mengapa kebenaran ini diperlukan",
     "permissionsLegend": "Kebenaran pemalam yang dirancang",
     "permissionsHint": "Kebenaran pemalam sebenar mesti berada dalam lingkungan permohonan yang diluluskan. Menambah kebenaran memerlukan semakan semula.",
-    "saveProfileBtn": "Simpan profil",
+    "saveProfileBtn": "Simpan dan hantar permohonan",
     "submittingApplication": "Menghantar permohonan…",
     "applyBtn": "Mohon menggunakan profil tersimpan",
-    "tokensHeading": "Token penghantaran ejen",
+    "tokensHeading": "Token penghantaran CLI / automasi (lanjutan)",
     "tokensIntro": "Token hanya menyenaraikan penghantaran anda dan menghantar pakej pemalam. Token tidak boleh mengakses API akaun, pembayaran atau pentadbir. Token ditunjukkan sekali sahaja: simpan dalam pembolehubah persekitaran AWD_PLUGIN_TOKEN setempat, jangan sekali-kali dalam source, prompt atau pakej.",
     "newTokenLabel": "Token baharu (ditunjukkan sekali)",
     "hideTokenBtn": "Disimpan; sembunyikan token",
@@ -2467,7 +2469,7 @@
     "revokingToken": "Menarik balik token…",
     "revokeBtn": "Batalkan",
     "myPluginsHeading": "Plugin saya dan kebenaran yang diisytiharkan",
-    "myPluginsIntro": "Pemilikan mengikut akaun yang menghantar, bukan nama penulis dalam pakej. Penulis lama masih boleh melihat penghantaran; versi baharu memerlukan kelulusan kelayakan.",
+    "myPluginsIntro": "Plugin sumber terbuka percuma boleh dihantar selepas log masuk tanpa token. Penghantaran berbayar atau sumber tertutup memerlukan akses pembangun yang diluluskan.",
     "noPermissions": "Tiada kebenaran",
     "noSubmissionsYet": "Tiada penghantaran lagi.",
     "historySummary": "Sejarah kelayakan"

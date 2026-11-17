@@ -19,7 +19,7 @@ export default async function Page({ params }: { params: Promise<{ lang: Locale 
   return <main className="min-h-screen bg-neutral-gray-pale pb-24">
     <PageHero eyebrow={t.eyebrow} title={t.title} subtitle={t.subtitle} size="compact" width="3xl" />
     <div className="container mx-auto max-w-3xl px-4 pt-8 md:px-8">
-      {user ? <DeveloperDashboard lang={lang} t={t} /> : <div className="mx-auto max-w-md text-center">
+      {user ? <DeveloperDashboard lang={lang} t={t} account={{ displayName: user.displayName, email: user.email, emailVerifiedAt: user.emailVerifiedAt, phone: user.phone }} /> : <div className="mx-auto max-w-md text-center">
         <div className="rounded-xl border border-neutral-gray-light bg-white p-10">
           <Lock className="mx-auto mb-5 h-9 w-9 text-king-forest/60" strokeWidth={1.5} />
           <p className="mb-6 text-neutral-gray-dark">{t.signInToContinue}</p>

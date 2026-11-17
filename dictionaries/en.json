@@ -684,8 +684,8 @@
     "ctaBody": "Zip it up and submit — we’ll review it as soon as we can.",
     "ctaBtn": "Submit plugin",
     "devEligibilityTitle": "Who can publish plugins",
-    "devEligibilityP1": "Free, open-source plugins: sign in and submit.",
-    "devEligibilityP2": "Priced or closed-source plugins need developer verification first.",
+    "devEligibilityP1": "Free open-source plugins can be submitted by any signed-in account, with no token required.",
+    "devEligibilityP2": "Paid or closed-source submissions require approved developer access.",
     "devEligibilityLink": "Developer center"
   },
   "pluginSubmitPage": {
@@ -746,9 +746,11 @@
     "eyebrow": "Contribute",
     "pageTitle": "Submit a plugin or pack",
     "pageLead": "Plugins and packs carry executable payloads: every version is reviewed by a human, then signed and distributed by the platform.",
-    "developerNoticeBody": "Free, open-source plugins can be submitted by any signed-in account. To set a price or publish a closed-source plugin, apply first in the",
+    "developerNoticeBody": "Free open-source plugins can be submitted by any signed-in account, with no token required. manifest.homepage must contain the public HTTPS source URL. Paid or closed-source submissions require approved developer access. ",
     "developerNoticeLink": "Developer center",
-    "attributionNotice": "When your plugin is approved, your public display name and author profile will appear on its marketplace page and in the contributor directory."
+    "attributionNotice": "When your plugin is approved, your public display name and author profile will appear on its marketplace page and in the contributor directory.",
+    "submissionRegionNotice": "The international site only mirrors reviewed plugins and does not accept local submissions. Submit through the China site; accounts are separate, so sign in when prompted.",
+    "submissionRegionLink": "Submit on the China site"
   },
   "packSubmitPage": {
     "tabPlugin": "JAR plugin",
@@ -2405,8 +2407,8 @@
     "title": "Developer center",
     "subtitle": "Apply, manage your submission credentials and follow reviews.",
     "signInToContinue": "Sign in to continue",
-    "gateStep1": "Apply for developer access",
-    "gateStep2": "Generate a submission token",
+    "gateStep1": "Paid or closed-source submissions require approved developer access.",
+    "gateStep2": "Upload a ZIP on the web, or create a CLI token if needed",
     "gateStep3": "Track your plugins and review status",
     "errors": {
       "version_conflict": "The profile changed. Refresh and try again.",
@@ -2418,7 +2420,7 @@
       "token_limit": "Revoke an old token; at most 10 may be active."
     },
     "working": "Working…",
-    "savedNotice": "Saved. Submit the application when ready.",
+    "savedNotice": "Your profile has been submitted for review.",
     "savingProfile": "Saving profile…",
     "status": {
       "draft": "Draft",
@@ -2428,13 +2430,13 @@
       "suspended": "Suspended"
     },
     "introP1": "Developer applications and eligibility review are initially free. Identity details are self-declared; contact verification is not identity verification or KYC.",
-    "introP2": "Contact details are private to you and administrators. Every plugin still requires separate security review and signing; plugin pricing is unchanged.",
+    "introP2": "Free open-source plugins can be submitted by any signed-in account, with no token required. Use this center for paid or closed-source publishing. Contact details stay private to you and admins; every plugin version still requires security review and signing.",
     "guideLink": "Guide and Agent instructions",
     "submitLink": "Submit a plugin",
     "loadFailedRetry": "Loading failed; retry",
     "loadingProfile": "Loading profile…",
     "profileHeading": "Developer profile",
-    "profileNotice": "Saving changes requires a new eligibility review. Suspended access needs administrator approval to restore. Existing published versions remain available.",
+    "profileNotice": "Submitting changes starts a new qualification review. Suspended access can only be restored by an admin. Published versions stay listed.",
     "contactVerificationPrefix": "Contact verification: ",
     "contactVerificationPending": "Pending (an administrator can verify contact manually)",
     "identityTypeLabel": "Self-declared identity",
@@ -2450,10 +2452,10 @@
     "planLabel": "What you plan to build and why these permissions are needed",
     "permissionsLegend": "Planned plugin permissions",
     "permissionsHint": "Actual plugin permissions must be within your approved application. Adding permissions requires another review.",
-    "saveProfileBtn": "Save profile",
+    "saveProfileBtn": "Save and submit application",
     "submittingApplication": "Submitting application…",
     "applyBtn": "Apply using saved profile",
-    "tokensHeading": "Agent submission tokens",
+    "tokensHeading": "CLI / automation submission tokens (advanced)",
     "tokensIntro": "Tokens only list your submissions and submit plugin packages. They cannot access account, payment or admin APIs. A token is shown once: keep it in the local AWD_PLUGIN_TOKEN environment variable, never source, prompts or packages.",
     "newTokenLabel": "New token (shown once)",
     "hideTokenBtn": "Saved; hide token",
@@ -2467,7 +2469,7 @@
     "revokingToken": "Revoking token…",
     "revokeBtn": "Revoke",
     "myPluginsHeading": "My plugins and declared permissions",
-    "myPluginsIntro": "Ownership follows the submitting account, not an author name in a package. Legacy authors can still view submissions; new versions require eligibility approval.",
+    "myPluginsIntro": "Free open-source plugins can be submitted by any signed-in account, with no token required. Paid or closed-source submissions require approved developer access.",
     "noPermissions": "No permissions",
     "noSubmissionsYet": "No submissions yet.",
     "historySummary": "Eligibility history"

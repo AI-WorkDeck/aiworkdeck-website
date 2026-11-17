@@ -1,4 +1,4 @@
-import { validatePluginPlatformManifest } from './plugin-manifest-platform';
+import { publicHttpsUrl, validatePluginPlatformManifest } from './plugin-manifest-platform';
 import fs from 'fs';
 import path from 'path';
 import AdmZip from 'adm-zip';
@@ -29,6 +29,7 @@ export const LIMITS = {
   packageBytes: 20 * 1024 * 1024,
   entryCount: 2000,
   singleFileBytes: 50 * 1024 * 1024,
+  unpackedBytes: 100 * 1024 * 1024,
 };
 
 export type PluginStatus = 'pending' | 'approved' | 'rejected' | 'revoked';
@@ -67,6 +68,8 @@ export interface PluginEntry {
   updatedAt: string;
   priceCents?: number; // 定价（分），缺省/0 = 免费（PR-W3）
   pricingModel?: 'once'; // 预留字段，本轮只有一次性买断
+  /** 免费开源网页投稿不依赖开发者资格；收费、闭源及令牌投稿仍需资格与声明权限复核。 */
+  requiresDeveloperReview?: boolean;
 }
 
 /** 定价上限：¥1999，与 lib/products.ts 保持一致 */
@@ -121,10 +124,12 @@ export function compareSemver(a: string, b: string): number {
 }
 
 export type SubmitError =
+  | 'developer_approval_required'
   | 'developer_permissions_required'
   | 'package_too_large'
   | 'too_many_entries'
   | 'file_too_large'
+  | 'unpacked_too_large'
   | 'bad_zip'
   | 'unsafe_path'
   | 'manifest_missing'
@@ -192,7 +197,7 @@ export function getPluginDisplay(entry: PluginEntry, language?: string): Pick<Pl
 export function submitPlugin(
   zipBuffer: Buffer,
   author: { id: string; username: string },
-  opts?: { priceCents?: number; allowedPermissions?: readonly string[] }
+  opts?: { priceCents?: number; allowedPermissions?: readonly string[]; communitySubmission?: boolean; developerApproved?: boolean }
 ): { plugin?: PluginEntry; error?: SubmitError; detail?: string } {
   if (zipBuffer.length > LIMITS.packageBytes) return { error: 'package_too_large' };
 
@@ -208,12 +213,15 @@ export function submitPlugin(
 
   // 逐条目做 zip slip 与体积检查，同时读进内存
   const files = new Map<string, Buffer>();
+  let unpackedBytes = 0;
   for (const entry of entries) {
     if (entry.isDirectory) continue;
     const name = entry.entryName;
     if (name.split('/').some(part => /^\.awd-(?:dev|service-trust|bundled)(?:$|[.-])/i.test(part)) || files.has(name) || ((entry.attr >>> 16) & 0o170000) === 0o120000) return { error: 'unsafe_path', detail: name };
     if (!isSafeEntryPath(name)) return { error: 'unsafe_path', detail: name };
     if (entry.header.size > LIMITS.singleFileBytes) return { error: 'file_too_large', detail: name };
+    if (unpackedBytes + entry.header.size > LIMITS.unpackedBytes) return { error: 'unpacked_too_large', detail: name };
+    unpackedBytes += entry.header.size;
     try {
       files.set(name, entry.getData());
     } catch {
@@ -258,6 +266,13 @@ export function submitPlugin(
     const prev = [...existing].sort((a, b) => compareSemver(a.version, b.version)).pop()!;
     priceCents = prev.priceCents ?? 0;
   }
+  let openSource = false;
+  try {
+    publicHttpsUrl(manifest.homepage);
+    openSource = true;
+  } catch { /* A public source link is required for unqualified community submissions. */ }
+  const requiresDeveloperReview = !opts?.communitySubmission || (priceCents ?? 0) > 0 || !openSource;
+  if (requiresDeveloperReview && opts?.communitySubmission && !opts.developerApproved) return { error: 'developer_approval_required' };
 
   const backendJars = Array.isArray(manifest.backendJars) ? (manifest.backendJars as string[]) : [];
   for (const jarName of backendJars) {
@@ -307,10 +322,13 @@ export function submitPlugin(
 
   const permissions = Array.isArray(manifest.permissions) ? (manifest.permissions as string[]) : [];
   if (opts?.allowedPermissions && permissions.some(p => !opts.allowedPermissions!.includes(p))) return { error: 'developer_permissions_required' };
-  const scan = scanPluginPackage({
-    files: expandJarClasses(files, backendJars),
-    declaredPermissions: permissions,
-  });
+  let scan: ScanReport;
+  try {
+    scan = scanPluginPackage({ files: expandJarClasses(files, backendJars), declaredPermissions: permissions });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'unpacked_too_large') return { error: 'unpacked_too_large' };
+    throw error;
+  }
 
   const fileHashes: Record<string, string> = {};
   let size = 0;
@@ -342,6 +360,7 @@ export function submitPlugin(
     // 0 = 免费不落字段；pricingModel 固定 once（预留）
     priceCents: priceCents && priceCents > 0 ? priceCents : undefined,
     pricingModel: 'once',
+    requiresDeveloperReview,
   };
 
   // 落盘：data/plugin-files/<id>/<version>/...
@@ -379,15 +398,19 @@ function isInside(root: string, target: string): boolean {
  */
 function expandJarClasses(files: Map<string, Buffer>, jarNames: string[]): Map<string, Buffer> {
   const expanded = new Map(files);
+  let expandedBytes = 0;
   for (const jarName of jarNames) {
     const jarBuf = files.get(jarName);
     if (!jarBuf) continue;
     try {
       for (const e of new AdmZip(jarBuf).getEntries()) {
         if (e.isDirectory || !e.entryName.endsWith('.class')) continue;
+        expandedBytes += e.header.size;
+        if (expandedBytes > LIMITS.unpackedBytes) throw new Error('unpacked_too_large');
         expanded.set(`${jarName}!${e.entryName}`, e.getData());
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.message === 'unpacked_too_large') throw error;
       // JAR 解不开时交给人工审核判断，不在此拦截
     }
   }

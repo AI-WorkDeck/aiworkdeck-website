@@ -6,10 +6,11 @@ import { useAdminSite } from './AdminWorkspace';
 import { useCallback, useEffect, useState } from 'react';
 import type { DeveloperProfile } from '@/lib/developer-contract';
 type Entry = DeveloperProfile & { plugins: { id: string; name: string; version: string; permissions: string[]; status: string }[]; history: { version: number; action: string; note: string; createdAt: string }[] };
-export function DeveloperReview() {
+export function DeveloperReview({ onReviewed }: { onReviewed?: () => Promise<void> }) {
     const { fetch } = useAdminSite();
   const [entries, setEntries] = useState<Entry[]>([]); const [loading, setLoading] = useState(true); const [loaded, setLoaded] = useState(false); const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
   const [notes, setNotes] = useState<Record<string, string>>({}); const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [filter, setFilter] = useState<'pending' | 'all'>('pending');
   const load = useCallback(async () => { setLoading(true); try { const r = await fetch('/api/admin/developers', { cache: 'no-store' }); const data = await r.json(); if (!r.ok) throw new Error(data.error); setEntries(data.developers); setChecked({}); setNotes({}); setLoaded(true); setError(''); } finally { setLoading(false); } }, []);
   useEffect(() => { load().catch(e => setError(e.message)); }, [load]);
   async function review(p: Entry, action: string) {
@@ -17,12 +18,17 @@ export function DeveloperReview() {
     try {
       const r = await fetch('/api/admin/developers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: p.userId, expectedVersion: p.version, action, note: notes[p.userId] || '', contactChecked: checked[p.userId] === true }) });
       const data = await r.json(); if (!r.ok) throw new Error(data.error);
-      setChecked({}); await load();
+      setChecked({}); await load(); await onReviewed?.();
     } catch (e) { setError(e instanceof Error ? e.message : '审核失败'); } finally { setBusy(false); }
   }
-  return <section className="space-y-5"><h2 className="text-2xl font-semibold">开发者资格审核</h2><p>初期免费。核对自行声明的身份、作品计划、权限理由与联系渠道；这不是实名 / KYC 认证，也不替代逐个插件安全审核。联系方式仅管理员和本人可见。</p><p role="status" aria-live="polite">{busy ? '正在保存审核决定…' : loading ? '正在读取开发者申请…' : error}</p><button disabled={loading || busy} className="underline" onClick={() => load().catch(e => setError(e.message))}>刷新</button>
-    {loaded && !loading && !entries.length && <p>暂无申请。</p>}
-    {entries.map(p => <article key={p.userId} className="space-y-3 rounded-xl border border-neutral-gray-light bg-white p-5">
+  const visibleEntries = filter === 'pending' ? entries.filter(p => p.status === 'pending') : entries;
+  return <section className="space-y-5"><h2 className="text-2xl font-semibold">开发者资格审核</h2><p>仅收费或闭源投稿需要资格审核；免费开源投稿不在这里重复设卡。核对自行声明的身份、作品计划、权限理由与联系渠道；这不是实名 / KYC 认证，也不替代逐个插件安全审核。联系方式仅管理员和本人可见。</p><p role="status" aria-live="polite">{busy ? '正在保存审核决定…' : loading ? '正在读取开发者申请…' : error}</p>
+    <div className="flex items-center gap-5 border-b border-neutral-gray-light pb-2">
+      {(['pending', 'all'] as const).map(value => <button key={value} className={filter === value ? 'font-semibold text-king-forest' : 'text-neutral-gray-medium'} onClick={() => setFilter(value)}>{value === 'pending' ? `待审核（${entries.filter(p => p.status === 'pending').length}）` : `全部（${entries.length}）`}</button>)}
+      <button disabled={loading || busy} className="ml-auto underline" onClick={() => load().catch(e => setError(e.message))}>刷新</button>
+    </div>
+    {loaded && !loading && !visibleEntries.length && <p>{filter === 'pending' ? '暂无待审核的开发者申请。' : '暂无申请。'}</p>}
+    {visibleEntries.map(p => <article key={p.userId} className="space-y-3 rounded-xl border border-neutral-gray-light bg-white p-5">
       <h3 className="text-lg font-semibold">{p.displayName} · {p.status}</h3><p className="text-sm">账号 ID：{p.userId} · 资料版本 {p.version}</p>
       <dl className="grid gap-2 text-sm"><div><dt className="font-medium">自行声明身份</dt><dd>{p.kind === 'organization' ? `组织：${p.organization}` : '个人'}</dd></div><div><dt className="font-medium">私有联系方式</dt><dd>{p.contactType}：{p.contact} · 核验：{p.contactVerification || '待核验'}</dd></div><div><dt className="font-medium">开发经历</dt><dd className="whitespace-pre-wrap">{p.experience}</dd></div><div><dt className="font-medium">开发计划与权限理由</dt><dd className="whitespace-pre-wrap">{p.plan}</dd></div><div><dt className="font-medium">申请权限</dt><dd>{p.permissions.join(', ') || '无'}</dd></div></dl>
       {p.reviewNote && <p>上次意见：{p.reviewNote}</p>}

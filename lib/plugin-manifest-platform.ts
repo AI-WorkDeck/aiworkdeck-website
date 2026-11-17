@@ -45,6 +45,9 @@ function https(value: unknown, at: string, originOnly = false): URL {
       (originOnly && url.pathname !== '/')) throw new Error(`${at}: public HTTPS ${originOnly ? 'origin' : 'URL'} required`);
   return url;
 }
+export function publicHttpsUrl(value: unknown): URL {
+  return https(value, 'manifest.homepage');
+}
 function entry(value: unknown, at: string, files: ReadonlyMap<string, Buffer>) {
   const rel = string(value, at, 255);
   if (!rel.startsWith('web/') || /[\\%?#:\x00-\x1f\x7f]/.test(rel) ||

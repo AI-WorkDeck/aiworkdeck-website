@@ -684,8 +684,8 @@
     "ctaBody": "Nén thành file zip và gửi — chúng tôi sẽ xem xét trong thời gian sớm nhất.",
     "ctaBtn": "Gửi plugin",
     "devEligibilityTitle": "Ai có thể xuất bản plugin",
-    "devEligibilityP1": "Plugin mã nguồn mở miễn phí: đăng ký là gửi được.",
-    "devEligibilityP2": "Plugin có định giá hoặc mã nguồn đóng cần xác minh nhà phát triển trước.",
+    "devEligibilityP1": "Plugin mã nguồn mở miễn phí có thể được gửi sau khi đăng nhập mà không cần token.",
+    "devEligibilityP2": "Gửi trả phí hoặc mã nguồn đóng cần quyền nhà phát triển đã được phê duyệt.",
     "devEligibilityLink": "Trung tâm nhà phát triển"
   },
   "pluginSubmitPage": {
@@ -746,9 +746,11 @@
     "eyebrow": "Đóng góp",
     "pageTitle": "Nộp plugin hoặc Pack",
     "pageLead": "Plugin và pack chứa payload có thể thực thi: mọi phiên bản đều được con người xem xét, sau đó được nền tảng ký và phân phối.",
-    "developerNoticeBody": "Plugin mã nguồn mở miễn phí có thể được gửi bởi bất kỳ tài khoản nào đã đăng nhập. Để đặt giá hoặc xuất bản plugin mã nguồn đóng, hãy nộp đơn trước tại",
+    "developerNoticeBody": "Plugin mã nguồn mở miễn phí có thể được gửi sau khi đăng nhập mà không cần token. manifest.homepage phải chứa URL HTTPS công khai của mã nguồn. Gửi trả phí hoặc mã nguồn đóng cần quyền nhà phát triển đã được phê duyệt. ",
     "developerNoticeLink": "Trung tâm nhà phát triển",
-    "attributionNotice": "Khi plugin của bạn được phê duyệt, tên hiển thị công khai và hồ sơ tác giả sẽ xuất hiện trên trang marketplace và trong danh bạ người đóng góp."
+    "attributionNotice": "Khi plugin của bạn được phê duyệt, tên hiển thị công khai và hồ sơ tác giả sẽ xuất hiện trên trang marketplace và trong danh bạ người đóng góp.",
+    "submissionRegionNotice": "Trang quốc tế chỉ phản chiếu plugin đã rà soát và không nhận gửi tại chỗ. Hãy gửi qua trang Trung Quốc; tài khoản độc lập, vui lòng đăng nhập khi được nhắc.",
+    "submissionRegionLink": "Gửi trên trang Trung Quốc"
   },
   "packSubmitPage": {
     "tabPlugin": "Plugin JAR",
@@ -2405,8 +2407,8 @@
     "title": "Trung tâm nhà phát triển",
     "subtitle": "Đăng ký, quản lý thông tin gửi đăng ký và theo dõi quá trình xem xét.",
     "signInToContinue": "Đăng nhập để tiếp tục",
-    "gateStep1": "Đăng ký tư cách nhà phát triển",
-    "gateStep2": "Tạo mã thông báo gửi bài",
+    "gateStep1": "Gửi trả phí hoặc mã nguồn đóng cần quyền nhà phát triển đã được phê duyệt.",
+    "gateStep2": "Tải ZIP trực tiếp trên web hoặc tạo token CLI khi cần",
     "gateStep3": "Xem tác phẩm và tiến độ duyệt",
     "errors": {
       "version_conflict": "Hồ sơ đã thay đổi. Hãy làm mới và thử lại.",
@@ -2418,7 +2420,7 @@
       "token_limit": "Hãy thu hồi một token cũ; tối đa chỉ có 10 token có thể hoạt động."
     },
     "working": "Đang xử lý…",
-    "savedNotice": "Đã lưu. Gửi đơn đăng ký khi bạn sẵn sàng.",
+    "savedNotice": "Hồ sơ của bạn đã được gửi để rà soát.",
     "savingProfile": "Đang lưu hồ sơ…",
     "status": {
       "draft": "Bản nháp",
@@ -2428,13 +2430,13 @@
       "suspended": "Bị đình chỉ"
     },
     "introP1": "Đơn đăng ký nhà phát triển và xét duyệt điều kiện tham gia ban đầu đều miễn phí. Thông tin danh tính là tự khai; xác minh thông tin liên hệ không phải là xác minh danh tính hay KYC.",
-    "introP2": "Thông tin liên hệ chỉ hiển thị với bạn và quản trị viên. Mọi plugin vẫn yêu cầu xem xét bảo mật và ký số riêng; giá plugin không thay đổi.",
+    "introP2": "Plugin mã nguồn mở miễn phí có thể được gửi sau khi đăng nhập mà không cần token. Trung tâm này dành cho xuất bản trả phí hoặc mã nguồn đóng. Thông tin liên hệ chỉ bạn và quản trị viên xem được; mọi phiên bản đều phải rà soát và ký.",
     "guideLink": "Hướng dẫn và chỉ dẫn cho Agent",
     "submitLink": "Gửi plugin",
     "loadFailedRetry": "Tải thất bại; thử lại",
     "loadingProfile": "Đang tải hồ sơ…",
     "profileHeading": "Hồ sơ nhà phát triển",
-    "profileNotice": "Lưu thay đổi yêu cầu xét duyệt điều kiện tham gia mới. Quyền truy cập bị đình chỉ cần quản trị viên phê duyệt để khôi phục. Các phiên bản đã xuất bản vẫn khả dụng.",
+    "profileNotice": "Gửi thay đổi sẽ bắt đầu rà soát tư cách mới. Chỉ quản trị viên mới có thể khôi phục quyền bị tạm ngừng. Các phiên bản đã xuất bản vẫn được hiển thị.",
     "contactVerificationPrefix": "Xác minh thông tin liên hệ: ",
     "contactVerificationPending": "Đang chờ (quản trị viên có thể xác minh thông tin liên hệ thủ công)",
     "identityTypeLabel": "Danh tính tự khai",
@@ -2450,10 +2452,10 @@
     "planLabel": "Bạn dự định xây dựng gì và tại sao cần các quyền này",
     "permissionsLegend": "Quyền plugin dự kiến",
     "permissionsHint": "Quyền thực tế của plugin phải nằm trong phạm vi đã được phê duyệt trong đơn của bạn. Việc thêm quyền yêu cầu xét duyệt lại.",
-    "saveProfileBtn": "Lưu hồ sơ",
+    "saveProfileBtn": "Lưu và gửi đơn đăng ký",
     "submittingApplication": "Đang gửi đơn đăng ký…",
     "applyBtn": "Đăng ký bằng hồ sơ đã lưu",
-    "tokensHeading": "Token gửi của tác tử",
+    "tokensHeading": "Token gửi qua CLI / tự động hóa (nâng cao)",
     "tokensIntro": "Token chỉ liệt kê các lần gửi của bạn và gửi gói plugin. Chúng không thể truy cập API tài khoản, thanh toán hoặc quản trị. Token chỉ hiển thị một lần: hãy lưu trong biến môi trường AWD_PLUGIN_TOKEN cục bộ, không bao giờ đặt trong mã nguồn, prompt hay gói.",
     "newTokenLabel": "Token mới (chỉ hiển thị một lần)",
     "hideTokenBtn": "Đã lưu; ẩn token",
@@ -2467,7 +2469,7 @@
     "revokingToken": "Đang thu hồi token…",
     "revokeBtn": "Thu hồi",
     "myPluginsHeading": "Plugin của tôi và quyền đã khai báo",
-    "myPluginsIntro": "Quyền sở hữu thuộc về tài khoản gửi, không phải tên tác giả trong gói. Tác giả cũ vẫn có thể xem các bản gửi; phiên bản mới cần được phê duyệt điều kiện đủ.",
+    "myPluginsIntro": "Plugin mã nguồn mở miễn phí có thể được gửi sau khi đăng nhập mà không cần token. Gửi trả phí hoặc mã nguồn đóng cần quyền nhà phát triển đã được phê duyệt.",
     "noPermissions": "Không có quyền",
     "noSubmissionsYet": "Chưa có bản gửi nào.",
     "historySummary": "Lịch sử điều kiện đủ"

@@ -1,20 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { toBaseLocale } from '@/i18n-config';
 import { pluginAuthor, developerApiError, privateJson } from '@/lib/developer-api';
-import { getDeveloper, requireApprovedDeveloper } from '@/lib/developers';
+import { getDeveloper } from '@/lib/developers';
 import { withTransaction } from '@/lib/db';
 import { listPlugins, submitPlugin, LIMITS, MAX_PLUGIN_PRICE_CENTS, type SubmitError } from '@/lib/plugins-store';
 import { pickLangText, resolveRequestLocale } from '@/lib/api-locale';
+import { SITE_ID } from '@/lib/site-config';
 
 export const dynamic = 'force-dynamic';
 // 插件包最大 20MB，默认 body 上限不够
 export const maxDuration = 60;
 
 const ERROR_MESSAGES: Record<SubmitError, string> = {
+  developer_approval_required: '免费开源插件可直接提交，但 manifest.homepage 必须是公开源码 HTTPS 地址；收费或闭源插件需要先完成开发者资格审核',
   developer_permissions_required: '插件使用了开发者资料尚未批准的权限，请更新资料并重新申请',
   package_too_large: `插件包超过 ${LIMITS.packageBytes / 1024 / 1024} MB 上限`,
   too_many_entries: `压缩包条目超过 ${LIMITS.entryCount} 个上限`,
   file_too_large: '包内存在超大文件（解压后单文件上限 50 MB）',
+  unpacked_too_large: `插件包解压后总大小超过 ${LIMITS.unpackedBytes / 1024 / 1024} MB 上限`,
   bad_zip: '无法解析的压缩包，请确认是标准 zip 格式',
   unsafe_path: '压缩包内存在非法路径（不得含 .. 或绝对路径）',
   manifest_missing: '压缩包根目录缺少 manifest.json（不要多套一层目录）',
@@ -30,10 +33,12 @@ const ERROR_MESSAGES: Record<SubmitError, string> = {
 };
 
 const ERROR_MESSAGES_EN: Record<SubmitError, string> = {
+  developer_approval_required: 'Free open-source plugins can be submitted directly when manifest.homepage is a public HTTPS source URL. Paid or closed-source plugins require approved developer access.',
   developer_permissions_required: 'This plugin uses permissions not yet approved on your developer profile. Please update your profile and reapply.',
   package_too_large: `Plugin package exceeds the ${LIMITS.packageBytes / 1024 / 1024} MB limit`,
   too_many_entries: `Archive exceeds the ${LIMITS.entryCount}-entry limit`,
   file_too_large: 'Archive contains an oversized file (50 MB per-file unzipped limit)',
+  unpacked_too_large: `Plugin archive exceeds the ${LIMITS.unpackedBytes / 1024 / 1024} MB total unzipped size limit`,
   bad_zip: 'Invalid ZIP archive. Please ensure it is a standard .zip file.',
   unsafe_path: 'Archive contains unsafe paths (.. or absolute paths are not allowed)',
   manifest_missing: 'manifest.json is missing from the archive root (do not wrap files in an extra top-level folder)',
@@ -61,10 +66,16 @@ export async function GET(request: NextRequest) {
  * 受理成功后状态为 pending，需人工审核通过并签名才会出现在 registry。
  */
 export async function POST(request: NextRequest) {
-  try { requireApprovedDeveloper(pluginAuthor(request).id); }
+  try { pluginAuthor(request); }
   catch (e) { return developerApiError(e); }
 
   let lang = resolveRequestLocale(request);
+  if (SITE_ID !== 'cn') {
+    return NextResponse.json({
+      error: 'submission_region_unavailable',
+      message: pickLangText(lang, '请前往国内站 www.aiworkdeck.com 提交插件。国际站只镜像已审核插件，不接收本地投稿。', 'Submit plugins through www.aiworkdeck.com. The international site mirrors reviewed plugins and does not accept local submissions.'),
+    }, { status: 409 });
+  }
   let buffer: Buffer;
   // undefined = 未传价格（新版本继承上一版本标价，见 submitPlugin）；显式传 0 才是改为免费
   let priceCents: number | undefined;
@@ -111,8 +122,14 @@ export async function POST(request: NextRequest) {
   try {
     result = withTransaction(() => {
       const user = pluginAuthor(request, true);
-      requireApprovedDeveloper(user.id);
-      return submitPlugin(buffer, { id: user.id, username: user.username }, { priceCents, allowedPermissions: getDeveloper(user.id)!.permissions });
+      const profile = getDeveloper(user.id);
+      const developerApproved = profile?.status === 'approved';
+      return submitPlugin(buffer, { id: user.id, username: user.username }, {
+        priceCents,
+        allowedPermissions: developerApproved ? profile!.permissions : undefined,
+        communitySubmission: !request.headers.has('authorization'),
+        developerApproved,
+      });
     });
   } catch (e) { return developerApiError(e); }
   const { plugin, error, detail } = result;
@@ -136,7 +153,7 @@ export async function POST(request: NextRequest) {
             : `${message}（${localizedDetail}）`
           : message,
       },
-      { status: error === 'developer_permissions_required' ? 403 : 400 }
+      { status: error === 'developer_permissions_required' || error === 'developer_approval_required' ? 403 : 400 }
     );
   }
   return privateJson({

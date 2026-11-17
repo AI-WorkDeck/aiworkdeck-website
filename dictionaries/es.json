@@ -684,8 +684,8 @@
     "ctaBody": "Comprímalo en ZIP y envíelo — lo revisaremos lo antes posible.",
     "ctaBtn": "Enviar plugin",
     "devEligibilityTitle": "Quién puede publicar plugins",
-    "devEligibilityP1": "Plugins gratuitos de código abierto: regístrate y envíalos.",
-    "devEligibilityP2": "Los plugins de pago o de código cerrado requieren antes la verificación de desarrollador.",
+    "devEligibilityP1": "Los plugins gratuitos de código abierto se pueden enviar tras iniciar sesión, sin token.",
+    "devEligibilityP2": "Los envíos de pago o de código cerrado requieren acceso de desarrollador aprobado.",
     "devEligibilityLink": "Centro para desarrolladores"
   },
   "pluginSubmitPage": {
@@ -746,9 +746,11 @@
     "eyebrow": "Contribuir",
     "pageTitle": "Enviar un plugin o pack",
     "pageLead": "Los plugins y los packs contienen código ejecutable: cada versión es revisada por una persona y luego firmada y distribuida por la plataforma.",
-    "developerNoticeBody": "Los plugins gratuitos y de código abierto pueden ser enviados por cualquier cuenta con sesión iniciada. Para fijar un precio o publicar un plugin de código cerrado, solicítelo primero en el",
+    "developerNoticeBody": "Los plugins gratuitos de código abierto se pueden enviar tras iniciar sesión, sin token. manifest.homepage debe contener la URL HTTPS pública del código fuente. Los envíos de pago o de código cerrado requieren acceso de desarrollador aprobado. ",
     "developerNoticeLink": "Centro para desarrolladores",
-    "attributionNotice": "Cuando se apruebe tu plugin, tu nombre público y tu perfil de autor aparecerán en su página del marketplace y en el directorio de colaboradores."
+    "attributionNotice": "Cuando se apruebe tu plugin, tu nombre público y tu perfil de autor aparecerán en su página del marketplace y en el directorio de colaboradores.",
+    "submissionRegionNotice": "El sitio internacional solo refleja plugins revisados y no acepta envíos locales. Envía desde el sitio de China; las cuentas son independientes, inicia sesión cuando se te pida.",
+    "submissionRegionLink": "Enviar en el sitio de China"
   },
   "packSubmitPage": {
     "tabPlugin": "Plugin JAR",
@@ -2405,8 +2407,8 @@
     "title": "Centro para desarrolladores",
     "subtitle": "Solicite, gestione sus credenciales de envío y siga las revisiones.",
     "signInToContinue": "Inicie sesión para continuar",
-    "gateStep1": "Solicitar acceso de desarrollador",
-    "gateStep2": "Generar un token de envío",
+    "gateStep1": "Los envíos de pago o de código cerrado requieren acceso de desarrollador aprobado.",
+    "gateStep2": "Sube un ZIP desde la web o crea un token CLI si lo necesitas",
     "gateStep3": "Seguir tus plugins y el estado de la revisión",
     "errors": {
       "version_conflict": "El perfil ha cambiado. Actualice e inténtelo de nuevo.",
@@ -2418,7 +2420,7 @@
       "token_limit": "Revogue un token antiguo; como máximo pueden haber 10 activos."
     },
     "working": "Trabajando…",
-    "savedNotice": "Guardado. Envíe la solicitud cuando esté listo.",
+    "savedNotice": "Tu perfil se ha enviado para revisión.",
     "savingProfile": "Guardando perfil…",
     "status": {
       "draft": "Borrador",
@@ -2428,13 +2430,13 @@
       "suspended": "Suspendido"
     },
     "introP1": "La revisión de solicitudes de desarrolladores y de elegibilidad es inicialmente gratuita. Los datos de identidad son autodeclarados; la verificación de contacto no constituye verificación de identidad ni KYC.",
-    "introP2": "Los datos de contacto son privados para usted y los administradores. Cada plugin sigue requiriendo una revisión de seguridad y firma independientes; los precios de los plugins no cambian.",
+    "introP2": "Los plugins gratuitos de código abierto se pueden enviar tras iniciar sesión, sin token. Este centro es para publicación de pago o de código cerrado. Tus datos de contacto solo los ves tú y los administradores; cada versión requiere revisión y firma.",
     "guideLink": "Guía e instrucciones del agente",
     "submitLink": "Enviar un plugin",
     "loadFailedRetry": "Error al cargar; reintentar",
     "loadingProfile": "Cargando perfil…",
     "profileHeading": "Perfil de desarrollador",
-    "profileNotice": "Guardar cambios requiere una nueva revisión de elegibilidad. El acceso suspendido necesita la aprobación de un administrador para restaurarse. Las versiones publicadas siguen estando disponibles.",
+    "profileNotice": "Enviar cambios inicia una nueva revisión de cualificación. Solo un administrador puede restaurar un acceso suspendido. Las versiones publicadas siguen listadas.",
     "contactVerificationPrefix": "Verificación de contacto: ",
     "contactVerificationPending": "Pendiente (un administrador puede verificar el contacto manualmente)",
     "identityTypeLabel": "Identidad autodeclarada",
@@ -2450,10 +2452,10 @@
     "planLabel": "Qué planea crear y por qué se necesitan estos permisos",
     "permissionsLegend": "Permisos previstos del plugin",
     "permissionsHint": "Los permisos reales del plugin deben estar dentro de su solicitud aprobada. Añadir permisos requiere otra revisión.",
-    "saveProfileBtn": "Guardar perfil",
+    "saveProfileBtn": "Guardar y enviar solicitud",
     "submittingApplication": "Enviando solicitud…",
     "applyBtn": "Solicitar con el perfil guardado",
-    "tokensHeading": "Tokens de envío de agentes",
+    "tokensHeading": "Tokens para envíos por CLI o automatización (avanzado)",
     "tokensIntro": "Los tokens solo listan sus envíos y envían paquetes de plugins. No pueden acceder a las API de cuenta, pagos ni administración. Un token se muestra una sola vez: guárdelo en la variable de entorno local AWD_PLUGIN_TOKEN, nunca en el código fuente, prompts ni paquetes.",
     "newTokenLabel": "Nuevo token (se muestra una vez)",
     "hideTokenBtn": "Guardado; ocultar token",
@@ -2467,7 +2469,7 @@
     "revokingToken": "Revocando token…",
     "revokeBtn": "Revocar",
     "myPluginsHeading": "Mis plugins y permisos declarados",
-    "myPluginsIntro": "La propiedad sigue a la cuenta que realiza el envío, no al nombre de autor del paquete. Los autores heredados aún pueden ver los envíos; las nuevas versiones requieren una aprobación de elegibilidad.",
+    "myPluginsIntro": "Los plugins gratuitos de código abierto se pueden enviar tras iniciar sesión, sin token. Los envíos de pago o de código cerrado requieren acceso de desarrollador aprobado.",
     "noPermissions": "Sin permisos",
     "noSubmissionsYet": "Aún no hay envíos.",
     "historySummary": "Historial de elegibilidad"
