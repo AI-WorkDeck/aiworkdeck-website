@@ -22,6 +22,7 @@ export interface PlatformRequest {
 }
 export const requestRow=(userId:string,id:string)=>getDb().prepare('SELECT * FROM platform_ai_request WHERE userId=? AND requestId=?').get(userId,id) as PlatformRequest|undefined;
 const retirement = new Map<string,Promise<void>>();
+const INCIDENT_PAUSE_MS=15*60_000;
 /** Stop the old credential first; keep rereading retired receipts so late OR usage is not lost. */
 export function retireOpenRouter(userId:string,includeRetired=false):Promise<void> {
   const prior=retirement.get(userId);
@@ -43,13 +44,13 @@ export function retireOpenRouter(userId:string,includeRetired=false):Promise<voi
   });
   retirement.set(userId,next);void next.finally(()=>{if(retirement.get(userId)===next)retirement.delete(userId);}).catch(()=>undefined);return next;
 }
-/** Unknown accepted calls are never assumed free. After 15 minutes an incident refund trips a global circuit. */
+/** Unknown accepted calls are never assumed free. After 15 minutes an incident refund trips a bounded global circuit. */
 export function recoverPending(now=new Date().toISOString()) {
   return withTransaction(db=>{
     const rows=db.prepare("SELECT * FROM platform_ai_request WHERE state IN ('reserved','submitted','usage_pending') AND createdAt<?")
-      .all(new Date(Date.parse(now)-15*60_000).toISOString()) as PlatformRequest[];
+      .all(new Date(Date.parse(now)-INCIDENT_PAUSE_MS).toISOString()) as PlatformRequest[];
     for(const row of rows) {
-      // BQT rows never debited the wallet; same state transitions (and global circuit), nothing to refund locally.
+      // BQT rows never debited the wallet; same state transitions (and bounded global circuit), nothing to refund locally.
       if(!bqtFunding(row.fundingJson))refundSpend(db,row.reserveLedgerId,{meta:{service:'platform_ai',phase:'incident_refund',requestId:row.requestId,reason:'unverified_usage'}});
       db.prepare('UPDATE platform_ai_request SET state=?,chargedCents=0,errorCode=?,updatedAt=? WHERE userId=? AND requestId=?')
         .run(row.state==='reserved'?'released':'refunded_pending',row.state==='reserved'?'not_submitted':'refunded_unverified',now,row.userId,row.requestId);
@@ -97,7 +98,8 @@ export function reserveCostCny(userId:string,id:string,payload:unknown,modelId:s
   return withTransaction(db=>{
     const previous=requestRow(userId,id);
     if(previous)throw new Error(previous.payloadHash===hash?'request_already_submitted':'request_id_conflict');
-    if(db.prepare("SELECT 1 FROM platform_ai_request WHERE state='refunded_pending' LIMIT 1").get())throw new Error('reconciliation_required');
+    const pauseCutoff=new Date(Date.now()-INCIDENT_PAUSE_MS).toISOString();
+    if(db.prepare("SELECT 1 FROM platform_ai_request WHERE state='refunded_pending' AND updatedAt>=? LIMIT 1").get(pauseCutoff))throw new Error('reconciliation_required');
     const active=db.prepare("SELECT COUNT(*) n FROM platform_ai_request WHERE state IN ('reserved','submitted','usage_pending')").get() as {n:number};
     const own=db.prepare("SELECT COUNT(*) n FROM platform_ai_request WHERE userId=? AND state IN ('reserved','submitted','usage_pending')").get(userId) as {n:number};
     if(active.n>=32||own.n>=4)throw new Error('busy');

@@ -1570,7 +1570,7 @@ NEXT_PUBLIC_AWD_SITE=cn "$task_review_root/node_modules/.bin/tsx" --tsconfig "$t
 
 验证范围：上述顺序与恢复边界基于 `ai-key`、额度同步和 `retireOpenRouter` 的源码契约核查，不是生产迁移完成的证明。实际部署、退役/结清、隔离付费验收和旧手机重新登录恢复的已验/未验范围，应分别记录在当次发布回执；没有真实回执不得标为已验证。
 
-运维工具必须在目标站原 cwd 和环境运行（不输出供应商凭据）：`list` 查看未决记录，`reconcile` 回收超时预占并复查旧 Key；已发上游但 15 分钟没有可核实回执的请求原路退款并记 `refunded_pending`，所有新平台 AI 请求暂停，禁止把未知用量认作零。维护者核实供应商账单后，用 `close-refunded-incident USER_ID REQUEST_ID INCIDENT_REFERENCE` 留审计引用解除；此动作不追扣已退款用户。旧 Web AI 的独立有限恢复和熔断机制继续保留。
+运维工具必须在目标站原 cwd 和环境运行（不输出供应商凭据）：`list` 查看未决记录，`reconcile` 回收超时预占并复查旧 Key；已发上游但 15 分钟没有可核实回执的请求原路退款并记 `refunded_pending`，所有新平台 AI 请求暂停 15 分钟，随后自动恢复，审计记录继续保留，禁止把未知用量认作零。维护者核实供应商账单后，用 `close-refunded-incident USER_ID REQUEST_ID INCIDENT_REFERENCE` 留审计引用提前解除并关闭记录；此动作不追扣已退款用户。旧 Web AI 的独立有限恢复和熔断机制继续保留。
 
 北京接入点不等于所有模型均只在中国大陆推理；数据处理范围按百炼各模型当前服务说明，不对用户承诺全模型境内或零留存。
 
