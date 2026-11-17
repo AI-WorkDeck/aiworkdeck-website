@@ -1639,7 +1639,8 @@
       "items": [
         "Un nouveau Skill de révision des actualités juridiques vérifie les textes, les affaires, les dates, les liens et les attributions avant publication, fournit des constats sourcés et signale les points non résolus à confirmer.",
         "Les paramètres proposent désormais un lien vers un annuaire public qui reconnaît les contributeurs à l’application, aux Skills et aux plugins.",
-        "Les connexions réseau des plugins et les réponses aux actions rapides sont plus fiables."
+        "Les connexions réseau des plugins et les réponses aux actions rapides sont plus fiables.",
+        "L’ouverture de dossiers imbriqués contenant des fichiers pas encore téléchargés depuis iCloud ne bloque plus l’initialisation de la version ; la version initiale est créée une fois les fichiers disponibles localement."
       ]
     }
   },

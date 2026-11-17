@@ -1639,7 +1639,8 @@
       "items": [
         "Una nuova Skill per la revisione delle notizie giuridiche controlla norme, casi, date, collegamenti e attribuzioni prima della pubblicazione, fornisce risultati con fonti e lascia i punti irrisolti da confermare.",
         "Le Impostazioni ora includono un collegamento a un elenco pubblico che riconosce i collaboratori di app, Skill e plugin.",
-        "Le connessioni di rete dei plugin e le risposte alle azioni rapide sono più affidabili."
+        "Le connessioni di rete dei plugin e le risposte alle azioni rapide sono più affidabili.",
+        "L'apertura di cartelle annidate con file non ancora scaricati da iCloud non si blocca più durante l'inizializzazione della versione; la versione iniziale viene creata quando i file sono disponibili localmente."
       ]
     }
   },

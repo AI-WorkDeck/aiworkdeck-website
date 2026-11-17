@@ -1639,7 +1639,8 @@
       "items": [
         "Skill Semakan Berita Undang-undang baharu menyemak undang-undang, kes, tarikh, pautan dan atribusi sebelum penerbitan, menyediakan penemuan bersumber, dan menandakan perkara yang belum disahkan untuk pengesahan.",
         "Tetapan kini mempunyai pautan ke direktori awam yang mengiktiraf penyumbang aplikasi, Skill dan pemalam.",
-        "Sambungan rangkaian pemalam dan balasan tindakan pantas kini lebih stabil."
+        "Sambungan rangkaian pemalam dan balasan tindakan pantas kini lebih stabil.",
+        "Membuka folder bersarang dengan fail yang belum dimuat turun dari iCloud tidak lagi tergantung semasa inisialisasi versi; versi awal dibuat apabila fail tersedia secara setempat."
       ]
     }
   },
