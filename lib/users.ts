@@ -469,6 +469,16 @@ export function mapDisplayNamesByIds(ids: Iterable<string>): Map<string, string>
   return result;
 }
 
+export function mapPublicUsersByIds(ids: Iterable<string>): Map<string, PublicUser> {
+  const wanted = new Set(ids);
+  const result = new Map<string, PublicUser>();
+  if (wanted.size === 0) return result;
+  for (const user of readUsers()) {
+    if (wanted.has(user.id)) result.set(user.id, toPublicUser(user));
+  }
+  return result;
+}
+
 export function findUserByUsername(username: string): User | undefined {
   const key = username.trim().toLowerCase();
   return readUsers().find(u => u.username === key);

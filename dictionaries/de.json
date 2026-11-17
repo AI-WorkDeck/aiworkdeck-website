@@ -313,7 +313,8 @@
       "communityEdition": "Community-Edition",
       "deployment": "Deployment-Planer",
       "faq": "FAQ",
-      "developerCenter": "Entwicklerzentrum"
+      "developerCenter": "Entwicklerzentrum",
+      "contributors": "Mitwirkende"
     },
     "skillsSpotlight": {
       "badge": "Von der Community · Mit einem Klick installieren",
@@ -746,7 +747,8 @@
     "pageTitle": "Plugin oder Pack einreichen",
     "pageLead": "Plugins und Packs enthalten ausführbaren Code: Jede Version wird von einer Person geprüft, dann von der Plattform signiert und verteilt.",
     "developerNoticeBody": "Kostenlose Open-Source-Plugins können von jedem angemeldeten Konto eingereicht werden. Um einen Preis festzulegen oder ein Closed-Source-Plugin zu veröffentlichen, beantragen Sie dies zuerst im",
-    "developerNoticeLink": "Entwicklerbereich"
+    "developerNoticeLink": "Entwicklerbereich",
+    "attributionNotice": "Nach der Freigabe deines Plugins erscheinen dein öffentlicher Anzeigename und dein Autorenprofil auf seiner Marketplace-Seite und im Verzeichnis der Mitwirkenden."
   },
   "packSubmitPage": {
     "tabPlugin": "JAR-Plugin",
@@ -957,7 +959,8 @@
     },
     "advanced": {
       "title": "Erweiterte Einstellungen"
-    }
+    },
+    "attributionNotice": "Nach der Veröffentlichung deines Skills erscheinen dein öffentlicher Anzeigename und dein Autorenprofil auf dessen Seite und im Verzeichnis der Mitwirkenden."
   },
   "authPage": {
     "loginTitle": "Anmelden",
@@ -2715,5 +2718,27 @@
     "financialRetention": "Mindestens 7 Jahre ab Ende des betreffenden Geschäftsjahres, bei gesetzlichen Vorgaben länger. Eine Kontoschließung verkürzt diese Frist nicht; die Unterlagen werden ausschließlich für Buchhaltungszwecke mit eingeschränktem Zugriff aufbewahrt.",
     "mobileHostingCn": "Server und Objektspeicher des China-Dienstes befinden sich in Festlandchina.",
     "mobileHostingIntl": "Server und Objektspeicher des internationalen Dienstes befinden sich in Singapur."
+  },
+  "contributorsPage": {
+    "metaTitle": "Mitwirkende | AI WorkDeck",
+    "metaDescription": "Wir würdigen alle, die AI WorkDeck mit Code, Skills und Plugins weiterentwickeln.",
+    "eyebrow": "Community · Mitwirkende",
+    "title": "Jeder Beitrag hat einen Namen",
+    "intro": "AI WorkDeck wird von Maintainers und der Community entwickelt. Hier stehen GitHub-Nutzer mit übernommenen Codebeiträgen und Autoren veröffentlichter Skills oder Plugins.",
+    "codeTitle": "Code-Mitwirkende",
+    "codeIntro": "Sobald dein Pull Request im Hauptrepository übernommen wird, erscheint dein GitHub-Benutzername hier. Die Liste wird regelmäßig aus dem öffentlichen Verlauf aktualisiert.",
+    "mergedContributions": "{count} Commits",
+    "githubProfile": "GitHub-Profil ansehen",
+    "marketplaceTitle": "Autoren von Skills und Plugins",
+    "marketplaceIntro": "Nach der Veröffentlichung deines Skills oder der Freigabe deines Plugins erscheinen dein öffentlicher Name, dein Profil und deine Werksanzahl automatisch hier.",
+    "skillCount": "{count} Skills",
+    "pluginCount": "{count} Plugins",
+    "emptyMarketplace": "Autoren erscheinen hier, sobald ihre Skills oder Plugins veröffentlicht wurden.",
+    "viewProfile": "Autorenprofil ansehen",
+    "joinTitle": "Gestalte den nächsten Beitrag",
+    "joinText": "Verbessere die App oder veröffentliche einen Skill oder ein Plugin. Nach Übernahme oder Veröffentlichung zeigen wir deinen Namen hier.",
+    "contributeCode": "Code beisteuern",
+    "submitSkill": "Skill veröffentlichen",
+    "submitPlugin": "Plugin einreichen"
   }
 }

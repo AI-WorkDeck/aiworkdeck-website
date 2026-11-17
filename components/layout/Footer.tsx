@@ -67,6 +67,7 @@ export async function Footer({ lang, dict }: FooterProps) {
             title: nav.community,
             links: [
                 { href: `/${lang}/community`, label: f.forum },
+                { href: `/${lang}/contributors`, label: f.contributors },
                 { href: `/${lang}/community/chat`, label: nav.chatroom },
                 { href: `/${lang}/membership`, label: f.membership },
                 { href: `/${lang}/quiz`, label: f.quiz },

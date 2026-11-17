@@ -8,6 +8,7 @@ import { getSkill } from '@/lib/skills-store';
 import { Button } from '@/components/ui/button';
 import { PageHero } from '@/components/layout/PageHero';
 import { SubmitForm } from './SubmitForm';
+import { AttributionNotice } from '@/components/contributors/AttributionNotice';
 import { NOINDEX } from '@/lib/page-metadata';
 
 export const dynamic = 'force-dynamic';
@@ -66,6 +67,7 @@ export default async function SubmitSkillPage({
                         <SubmitForm lang={lang} dict={dict} initial={initial} />
                     </>
                 )}
+                <AttributionNotice lang={lang} text={t.attributionNotice} linkLabel={dict.contributorsPage.title} />
             </div>
         </div>
     );

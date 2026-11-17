@@ -313,7 +313,8 @@
       "communityEdition": "Edisi Komunitas",
       "deployment": "Perencana Deployment",
       "faq": "FAQ",
-      "developerCenter": "Pusat pengembang"
+      "developerCenter": "Pusat pengembang",
+      "contributors": "Kontributor"
     },
     "skillsSpotlight": {
       "badge": "Dibangun komunitas · Instal satu klik",
@@ -746,7 +747,8 @@
     "pageTitle": "Kirim plugin atau Pack",
     "pageLead": "Plugin dan pack membawa payload yang dapat dieksekusi: setiap versi ditinjau oleh manusia, kemudian ditandatangani dan didistribusikan oleh platform.",
     "developerNoticeBody": "Plugin open-source gratis dapat dikirimkan oleh akun mana pun yang telah masuk. Untuk menetapkan harga atau menerbitkan plugin closed-source, ajukan permohonan terlebih dahulu di",
-    "developerNoticeLink": "Pusat pengembang"
+    "developerNoticeLink": "Pusat pengembang",
+    "attributionNotice": "Saat plugin Anda disetujui, nama tampilan publik dan profil penulis Anda akan muncul di halaman marketplace dan direktori kontributor."
   },
   "packSubmitPage": {
     "tabPlugin": "Plugin JAR",
@@ -957,7 +959,8 @@
     },
     "advanced": {
       "title": "Pengaturan lanjutan"
-    }
+    },
+    "attributionNotice": "Saat Skill Anda diterbitkan, nama tampilan publik dan profil penulis Anda akan muncul di halamannya dan di direktori kontributor."
   },
   "authPage": {
     "loginTitle": "Masuk",
@@ -2715,5 +2718,27 @@
     "financialRetention": "Minimal 7 tahun sejak akhir tahun keuangan terkait, atau lebih lama jika diwajibkan hukum yang berlaku. Penutupan akun tidak mempersingkat masa ini; catatan disimpan dengan akses terbatas hanya untuk pembukuan.",
     "mobileHostingCn": "Server dan penyimpanan objek layanan Tiongkok berada di Tiongkok daratan.",
     "mobileHostingIntl": "Server dan penyimpanan objek layanan internasional berada di Singapura."
+  },
+  "contributorsPage": {
+    "metaTitle": "Kontributor | AI WorkDeck",
+    "metaDescription": "Menghargai semua orang yang membangun AI WorkDeck melalui kode, Skill, dan plugin.",
+    "eyebrow": "Komunitas · Kontributor",
+    "title": "Setiap kontribusi layak memiliki nama",
+    "intro": "AI WorkDeck dibangun oleh pengelola dan komunitas. Kenali pengguna GitHub dengan kontribusi kode yang telah digabungkan serta penulis yang menerbitkan Skill atau plugin di situs ini.",
+    "codeTitle": "Kontributor kode",
+    "codeIntro": "Saat pull request Anda digabungkan ke repositori utama, nama pengguna GitHub Anda akan muncul di sini.",
+    "mergedContributions": "{count} commit",
+    "githubProfile": "Lihat profil GitHub",
+    "marketplaceTitle": "Penulis Skill dan plugin",
+    "marketplaceIntro": "Setelah Skill Anda diterbitkan atau plugin Anda disetujui, nama tampilan publik, profil penulis, dan jumlah karya Anda akan muncul di sini secara otomatis.",
+    "skillCount": "{count} Skill",
+    "pluginCount": "{count} plugin",
+    "emptyMarketplace": "Penulis akan muncul di sini setelah Skill atau plugin mereka diterbitkan.",
+    "viewProfile": "Lihat profil penulis",
+    "joinTitle": "Bangun kontribusi berikutnya",
+    "joinText": "Ubah aplikasi itu sendiri atau terbitkan Skill atau plugin. Setelah kontribusi Anda digabungkan atau karya Anda diterbitkan, kami akan menampilkan nama Anda di sini.",
+    "contributeCode": "Kontribusikan kode",
+    "submitSkill": "Terbitkan Skill",
+    "submitPlugin": "Kirim plugin"
   }
 }

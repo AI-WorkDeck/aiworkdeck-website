@@ -313,7 +313,8 @@
       "communityEdition": "Edisi Komuniti",
       "deployment": "Perancang Pelaksanaan",
       "faq": "Soalan Lazim",
-      "developerCenter": "Pusat pembangun"
+      "developerCenter": "Pusat pembangun",
+      "contributors": "Penyumbang"
     },
     "skillsSpotlight": {
       "badge": "Dibina komuniti · Pemasangan satu klik",
@@ -746,7 +747,8 @@
     "pageTitle": "Hantar pemalam atau Pack",
     "pageLead": "Plugin dan pack membawa payload boleh laku: setiap versi disemak oleh manusia, kemudian ditandatangani dan diedarkan oleh platform.",
     "developerNoticeBody": "Plugin sumber terbuka percuma boleh dihantar oleh mana-mana akaun yang telah log masuk. Untuk menetapkan harga atau menerbitkan plugin sumber tertutup, mohon dahulu di",
-    "developerNoticeLink": "Pusat pembangun"
+    "developerNoticeLink": "Pusat pembangun",
+    "attributionNotice": "Apabila pemalam anda diluluskan, nama paparan awam dan profil pengarang anda akan dipaparkan pada halaman marketplace serta dalam direktori penyumbang."
   },
   "packSubmitPage": {
     "tabPlugin": "Plugin JAR",
@@ -957,7 +959,8 @@
     },
     "advanced": {
       "title": "Tetapan lanjutan"
-    }
+    },
+    "attributionNotice": "Apabila Skill anda diterbitkan, nama paparan awam dan profil pengarang anda akan dipaparkan pada halamannya serta dalam direktori penyumbang."
   },
   "authPage": {
     "loginTitle": "Daftar masuk",
@@ -2715,5 +2718,27 @@
     "financialRetention": "Sekurang-kurangnya 7 tahun dari akhir tahun kewangan berkaitan, atau lebih lama jika dikehendaki undang-undang yang terpakai. Penutupan akaun tidak memendekkan tempoh ini; rekod disimpan dengan akses terhad untuk tujuan perakaunan sahaja.",
     "mobileHostingCn": "Pelayan dan storan objek perkhidmatan China berada di tanah besar China.",
     "mobileHostingIntl": "Pelayan dan storan objek perkhidmatan antarabangsa berada di Singapura."
+  },
+  "contributorsPage": {
+    "metaTitle": "Penyumbang | AI WorkDeck",
+    "metaDescription": "Menghargai semua yang membina AI WorkDeck melalui kod, Skill dan pemalam.",
+    "eyebrow": "Komuniti · Penyumbang",
+    "title": "Setiap sumbangan layak mempunyai nama",
+    "intro": "AI WorkDeck dibina oleh penyelenggara dan komuniti. Temui pengguna GitHub dengan sumbangan kod yang telah digabungkan serta pengarang yang menerbitkan Skill atau pemalam di laman ini.",
+    "codeTitle": "Penyumbang kod",
+    "codeIntro": "Apabila pull request anda digabungkan ke repositori utama, nama pengguna GitHub anda akan muncul di sini.",
+    "mergedContributions": "{count} commit",
+    "githubProfile": "Lihat profil GitHub",
+    "marketplaceTitle": "Pengarang Skill dan pemalam",
+    "marketplaceIntro": "Setelah Skill anda diterbitkan atau pemalam anda diluluskan, nama paparan awam, profil pengarang dan bilangan karya anda akan muncul di sini secara automatik.",
+    "skillCount": "{count} Skill",
+    "pluginCount": "{count} pemalam",
+    "emptyMarketplace": "Pengarang akan muncul di sini apabila Skill atau pemalam mereka diterbitkan.",
+    "viewProfile": "Lihat profil pengarang",
+    "joinTitle": "Bina sumbangan seterusnya",
+    "joinText": "Ubah suai aplikasi itu sendiri atau terbitkan Skill atau pemalam. Setelah sumbangan anda digabungkan atau karya anda diterbitkan, kami akan memaparkan nama anda di sini.",
+    "contributeCode": "Sumbang kod",
+    "submitSkill": "Terbitkan Skill",
+    "submitPlugin": "Hantar pemalam"
   }
 }

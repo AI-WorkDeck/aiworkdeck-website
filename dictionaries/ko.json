@@ -313,7 +313,8 @@
       "communityEdition": "커뮤니티 에디션",
       "deployment": "배포 플래너",
       "faq": "자주 묻는 질문",
-      "developerCenter": "개발자 센터"
+      "developerCenter": "개발자 센터",
+      "contributors": "기여자"
     },
     "skillsSpotlight": {
       "badge": "커뮤니티 제작 · 원클릭 설치",
@@ -746,7 +747,8 @@
     "pageTitle": "플러그인 또는 Pack 제출",
     "pageLead": "플러그인과 팩은 실행 가능한 페이로드를 포함합니다. 모든 버전은 사람이 검토한 후 플랫폼이 서명하고 배포합니다.",
     "developerNoticeBody": "무료 오픈소스 플러그인은 로그인한 계정이라면 누구나 제출할 수 있습니다. 가격을 설정하거나 클로즈드소스 플러그인을 게시하려면 먼저 다음에서 신청하세요:",
-    "developerNoticeLink": "개발자 센터"
+    "developerNoticeLink": "개발자 센터",
+    "attributionNotice": "플러그인이 승인되면 공개 표시 이름과 작성자 프로필이 마켓플레이스 페이지와 기여자 명부에 표시됩니다."
   },
   "packSubmitPage": {
     "tabPlugin": "JAR 플러그인",
@@ -957,7 +959,8 @@
     },
     "advanced": {
       "title": "고급 설정"
-    }
+    },
+    "attributionNotice": "Skill이 게시되면 공개 표시 이름과 작성자 프로필이 작품 페이지와 기여자 명부에 표시됩니다."
   },
   "authPage": {
     "loginTitle": "로그인",
@@ -2715,5 +2718,27 @@
     "financialRetention": "해당 회계연도 말일부터 최소 7년간 보관하며, 적용 법률이 요구하면 더 오래 보관합니다. 계정을 폐쇄해도 이 기간은 단축되지 않습니다. 기록은 회계 목적으로만 접근을 제한하여 보관합니다.",
     "mobileHostingCn": "중국 서비스의 서버와 객체 저장소는 중국 본토에 있습니다.",
     "mobileHostingIntl": "국제 서비스의 서버와 객체 저장소는 싱가포르에 있습니다."
+  },
+  "contributorsPage": {
+    "metaTitle": "기여자 | AI WorkDeck",
+    "metaDescription": "코드, Skill, 플러그인으로 AI WorkDeck을 만드는 모든 기여자를 소개합니다.",
+    "eyebrow": "커뮤니티 · 기여자",
+    "title": "모든 기여에 이름을 남깁니다",
+    "intro": "AI WorkDeck은 유지관리자와 커뮤니티가 함께 만듭니다. 병합된 코드 기여자와 이 사이트에 Skill이나 플러그인을 게시한 작성자를 소개합니다.",
+    "codeTitle": "코드 기여자",
+    "codeIntro": "풀 리퀘스트가 메인 저장소에 병합되면 GitHub 사용자 이름이 여기에 표시됩니다. 공개 기여 기록에서 정기적으로 업데이트됩니다.",
+    "mergedContributions": "커밋 {count}개",
+    "githubProfile": "GitHub 프로필 보기",
+    "marketplaceTitle": "Skill 및 플러그인 작성자",
+    "marketplaceIntro": "Skill이 게시되거나 플러그인이 승인되면 공개 표시 이름, 작성자 프로필, 작품 수가 자동으로 표시됩니다.",
+    "skillCount": "Skill {count}개",
+    "pluginCount": "플러그인 {count}개",
+    "emptyMarketplace": "Skill이나 플러그인이 게시되면 작성자가 여기에 표시됩니다.",
+    "viewProfile": "작성자 프로필 보기",
+    "joinTitle": "다음 기여를 함께 만들어 보세요",
+    "joinText": "앱 자체를 수정하거나 Skill이나 플러그인을 게시할 수 있습니다. 기여가 병합되거나 작품이 게시되면 이곳에 이름을 표시합니다.",
+    "contributeCode": "코드 기여하기",
+    "submitSkill": "Skill 게시하기",
+    "submitPlugin": "플러그인 제출하기"
   }
 }

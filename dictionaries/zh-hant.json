@@ -653,7 +653,8 @@
       "submitPlugin": "提交外掛",
       "terms": "服務條款",
       "transparency": "帳目公開",
-      "updates": "更新說明"
+      "updates": "更新說明",
+      "contributors": "貢獻者"
     },
     "grant": {
       "noDeadline": "註冊即得 {amount} 贈額",
@@ -1496,7 +1497,8 @@
     "webBody2": "桌面端用 sandbox iframe 承載它，刻意不與應用同源：能力全部經 postMessage 橋、按 permissions 逐一呼叫校驗。範本裡帶一份 SDK 與一個宿主模擬器，瀏覽器裡就能開發除錯，不需要裝桌面端。",
     "webDocLink": "SDK 快速上手",
     "webTemplateBtn": "下載 Web 外掛範本",
-    "webTitle": "Web 外掛：不寫 Java 也能做介面"
+    "webTitle": "Web 外掛：不寫 Java 也能做介面",
+    "attributionNotice": "外掛審核上架後，你的公開顯示名稱與作者主頁將展示在廣場作品頁和貢獻者名錄中。"
   },
   "pricingPage": {
     "cardsAria": "訂閱檔位",
@@ -2244,7 +2246,8 @@
       "summary": "已選 {n} 個工具。此外「讀取文檔、列出文件、檢索記憶」始終可用，無需勾選。",
       "viewTools": "查看這 {n} 個工具"
     },
-    "updateBtn": "保存更新"
+    "updateBtn": "保存更新",
+    "attributionNotice": "Skill 發佈後，你的公開顯示名稱與作者主頁將展示在作品頁和貢獻者名錄中。"
   },
   "supportDialog": {
     "amountLabel": "支持金額",
@@ -2715,5 +2718,27 @@
     "financialRetention": "自相關財政年度結束起不少於7年；適用法律要求更長的，從其規定。註銷帳戶不能縮短這一期限；這些記錄以受限形式僅供記帳之用。",
     "mobileHostingCn": "中國區伺服器和物件儲存位於中國大陸。",
     "mobileHostingIntl": "國際區伺服器和物件儲存位於新加坡。"
+  },
+  "contributorsPage": {
+    "metaTitle": "貢獻者｜AI WorkDeck",
+    "metaDescription": "感謝透過程式碼、Skill 和外掛建設 AI WorkDeck 的每一位貢獻者。",
+    "eyebrow": "社群 · 貢獻者",
+    "title": "讓每一份貢獻被看見",
+    "intro": "AI WorkDeck 由維護者與社群共同建設。這裡列出已有合併程式碼貢獻的 GitHub 使用者，以及在本站發佈 Skill 或外掛的作者。",
+    "codeTitle": "程式碼貢獻者",
+    "codeIntro": "當你的 Pull Request 合併進主倉後，你的 GitHub 使用者名稱會出現在這裡。名單定期從公開貢獻記錄更新。",
+    "mergedContributions": "{count} 次程式碼貢獻",
+    "githubProfile": "查看 GitHub 主頁",
+    "marketplaceTitle": "Skill 與外掛作者",
+    "marketplaceIntro": "Skill 發佈或外掛審核上架後，你的公開顯示名稱、作者主頁和作品數量會自動出現在這裡。",
+    "skillCount": "{count} 個 Skill",
+    "pluginCount": "{count} 個外掛",
+    "emptyMarketplace": "Skill 與外掛發佈後，作者會出現在這裡。",
+    "viewProfile": "查看作者主頁",
+    "joinTitle": "也來做一位建設者",
+    "joinText": "可以修改應用本身，也可以發佈一個 Skill 或外掛。貢獻被合併或作品發佈後，我們就會在這裡展示你的名字。",
+    "contributeCode": "貢獻程式碼",
+    "submitSkill": "發佈 Skill",
+    "submitPlugin": "提交外掛"
   }
 }

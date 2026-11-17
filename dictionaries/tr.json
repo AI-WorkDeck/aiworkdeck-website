@@ -313,7 +313,8 @@
       "communityEdition": "Topluluk Sürümü",
       "deployment": "Dağıtım planlayıcısı",
       "faq": "SSS",
-      "developerCenter": "Geliştirici merkezi"
+      "developerCenter": "Geliştirici merkezi",
+      "contributors": "Katkıda bulunanlar"
     },
     "skillsSpotlight": {
       "badge": "Topluluk tarafından geliştirildi · Tek tıkla kurulum",
@@ -746,7 +747,8 @@
     "pageTitle": "Eklenti veya pack gönder",
     "pageLead": "Eklentiler ve pack'ler çalıştırılabilir yükler içerir: her sürüm insan tarafından incelenir, ardından platform tarafından imzalanır ve dağıtılır.",
     "developerNoticeBody": "Ücretsiz, açık kaynak eklentiler oturum açmış herhangi bir hesap tarafından gönderilebilir. Fiyat belirlemek veya kapalı kaynaklı bir eklenti yayınlamak için önce şu bölümden başvurun:",
-    "developerNoticeLink": "Geliştirici merkezi"
+    "developerNoticeLink": "Geliştirici merkezi",
+    "attributionNotice": "Eklentiniz onaylandığında herkese açık görünen adınız ve yazar profiliniz, marketplace sayfasında ve katkıda bulunanlar dizininde gösterilir."
   },
   "packSubmitPage": {
     "tabPlugin": "JAR eklentisi",
@@ -957,7 +959,8 @@
     },
     "advanced": {
       "title": "Gelişmiş ayarlar"
-    }
+    },
+    "attributionNotice": "Skill’iniz yayımlandığında herkese açık görünen adınız ve yazar profiliniz, eser sayfasında ve katkıda bulunanlar dizininde gösterilir."
   },
   "authPage": {
     "loginTitle": "Giriş yap",
@@ -2715,5 +2718,27 @@
     "financialRetention": "İlgili mali yılın sonundan itibaren en az 7 yıl veya yürürlükteki hukuk gerektiriyorsa daha uzun süre. Hesabın kapatılması bu süreyi kısaltmaz; kayıtlar yalnızca muhasebe amacıyla, erişimi sınırlandırılarak saklanır.",
     "mobileHostingCn": "Çin hizmetinin sunucuları ve nesne depolaması Çin anakarasındadır.",
     "mobileHostingIntl": "Uluslararası hizmetin sunucuları ve nesne depolaması Singapur’dadır."
+  },
+  "contributorsPage": {
+    "metaTitle": "Katkıda bulunanlar | AI WorkDeck",
+    "metaDescription": "Kod, Skill ve eklentilerle AI WorkDeck’i geliştiren herkesi takdir ediyoruz.",
+    "eyebrow": "Topluluk · Katkıda bulunanlar",
+    "title": "Her katkı bir adı hak eder",
+    "intro": "AI WorkDeck, maintainers ve topluluk tarafından geliştirilir. Birleştirilmiş kod katkıları olan GitHub kullanıcılarıyla ve bu sitede Skill veya eklenti yayımlayan yazarlarla tanışın.",
+    "codeTitle": "Kod katkıcıları",
+    "codeIntro": "Pull request’iniz ana depoya birleştirildiğinde GitHub kullanıcı adınız burada görünür.",
+    "mergedContributions": "{count} commit",
+    "githubProfile": "GitHub profilini görüntüle",
+    "marketplaceTitle": "Skill ve eklenti yazarları",
+    "marketplaceIntro": "Skill’iniz yayımlandığında veya eklentiniz onaylandığında herkese açık adınız, yazar profiliniz ve eser sayınız burada otomatik olarak görünür.",
+    "skillCount": "{count} Skill",
+    "pluginCount": "{count} eklenti",
+    "emptyMarketplace": "Skill’leri veya eklentileri yayımlandığında yazarlar burada görünecek.",
+    "viewProfile": "Yazar profilini görüntüle",
+    "joinTitle": "Sonraki katkıyı oluşturun",
+    "joinText": "Uygulamanın kendisini değiştirin veya bir Skill ya da eklenti yayımlayın. Katkınız birleştirildiğinde ya da eseriniz yayımlandığında adınızı burada göstereceğiz.",
+    "contributeCode": "Koda katkıda bulunun",
+    "submitSkill": "Skill yayımlayın",
+    "submitPlugin": "Eklenti gönderin"
   }
 }
