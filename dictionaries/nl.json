@@ -1639,7 +1639,8 @@
       "items": [
         "Een nieuwe Skill voor juridische-nieuwscontrole controleert wetgeving, zaken, datums, links en toeschrijvingen vóór publicatie, levert bevindingen met bronnen en markeert onopgeloste punten ter bevestiging.",
         "Instellingen bevat nu een link naar een openbare gids die bijdragers aan de app, Skills en plugins erkent.",
-        "Netwerkverbindingen van plugins en reacties op snelle acties zijn betrouwbaarder."
+        "Netwerkverbindingen van plugins en reacties op snelle acties zijn betrouwbaarder.",
+        "Het openen van geneste mappen met bestanden die nog niet uit iCloud zijn gedownload, loopt niet meer vast tijdens het initialiseren van de versie; de eerste versie wordt gemaakt zodra de bestanden lokaal beschikbaar zijn."
       ]
     }
   },

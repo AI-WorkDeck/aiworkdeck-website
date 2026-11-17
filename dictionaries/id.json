@@ -1639,7 +1639,8 @@
       "items": [
         "Skill Tinjauan Berita Hukum baru memeriksa peraturan, kasus, tanggal, tautan, dan atribusi sebelum publikasi, menyediakan temuan bersumber, serta menandai hal yang belum terselesaikan untuk dikonfirmasi.",
         "Pengaturan kini memiliki tautan ke direktori publik yang mengakui kontributor aplikasi, Skill, dan plugin.",
-        "Koneksi jaringan plugin dan balasan tindakan cepat kini lebih andal."
+        "Koneksi jaringan plugin dan balasan tindakan cepat kini lebih andal.",
+        "Membuka folder bersarang dengan file yang belum diunduh dari iCloud tidak lagi macet saat inisialisasi versi; versi awal dibuat setelah file tersedia di perangkat."
       ]
     }
   },
