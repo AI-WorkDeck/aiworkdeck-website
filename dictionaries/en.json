@@ -313,7 +313,8 @@
       "communityEdition": "Community Edition",
       "deployment": "Deployment planner",
       "faq": "FAQ",
-      "developerCenter": "Developer center"
+      "developerCenter": "Developer center",
+      "contributors": "Contributors"
     },
     "skillsSpotlight": {
       "badge": "Community-built · One-click install",
@@ -746,7 +747,8 @@
     "pageTitle": "Submit a plugin or pack",
     "pageLead": "Plugins and packs carry executable payloads: every version is reviewed by a human, then signed and distributed by the platform.",
     "developerNoticeBody": "Free, open-source plugins can be submitted by any signed-in account. To set a price or publish a closed-source plugin, apply first in the",
-    "developerNoticeLink": "Developer center"
+    "developerNoticeLink": "Developer center",
+    "attributionNotice": "When your plugin is approved, your public display name and author profile will appear on its marketplace page and in the contributor directory."
   },
   "packSubmitPage": {
     "tabPlugin": "JAR plugin",
@@ -957,7 +959,8 @@
     },
     "advanced": {
       "title": "Advanced settings"
-    }
+    },
+    "attributionNotice": "When your Skill is published, your public display name and author profile will appear on its page and in the contributor directory."
   },
   "authPage": {
     "loginTitle": "Sign in",
@@ -2715,5 +2718,27 @@
     "financialRetention": "At least 7 years from the end of the relevant financial year, or longer where applicable law requires. Closing your account does not shorten this period; these records are kept in a restricted form for accounting only.",
     "mobileHostingCn": "China service uses servers and object storage in mainland China.",
     "mobileHostingIntl": "International service uses servers and object storage in Singapore."
+  },
+  "contributorsPage": {
+    "metaTitle": "Contributors | AI WorkDeck",
+    "metaDescription": "Recognizing everyone who builds AI WorkDeck through code, Skills, and plugins.",
+    "eyebrow": "Community · Contributors",
+    "title": "Every contribution deserves a name",
+    "intro": "AI WorkDeck is built by maintainers and its community. Meet the GitHub users with merged code contributions and the authors who have published Skills or plugins on this site.",
+    "codeTitle": "Code contributors",
+    "codeIntro": "When your pull request is merged into the main repository, your GitHub username appears here. The list refreshes regularly from public contribution history.",
+    "mergedContributions": "{count} commits",
+    "githubProfile": "View GitHub profile",
+    "marketplaceTitle": "Skill and plugin authors",
+    "marketplaceIntro": "Once your Skill is published or your plugin is approved, your public display name, author profile, and work count appear here automatically.",
+    "skillCount": "{count} Skills",
+    "pluginCount": "{count} plugins",
+    "emptyMarketplace": "Authors will appear here when their Skills or plugins are published.",
+    "viewProfile": "View author profile",
+    "joinTitle": "Build the next contribution",
+    "joinText": "Modify the app itself, or publish a Skill or plugin. Once your contribution is merged or your work is published, we will feature your name here.",
+    "contributeCode": "Contribute code",
+    "submitSkill": "Publish a Skill",
+    "submitPlugin": "Submit a plugin"
   }
 }

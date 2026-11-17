@@ -313,7 +313,8 @@
       "communityEdition": "社区版",
       "deployment": "本地部署与预算",
       "faq": "常见问题",
-      "developerCenter": "开发者中心"
+      "developerCenter": "开发者中心",
+      "contributors": "贡献者"
     },
     "skillsSpotlight": {
       "badge": "社区共建 · 桌面端一键安装",
@@ -748,7 +749,8 @@
     "pageTitle": "提交插件与资源包",
     "pageLead": "插件与资源包都含可执行载荷：逐版本人工审核，通过后由平台签名分发。",
     "developerNoticeBody": "开源的免费插件，任何登录账号都能直接提交。如果要设置价格收款，或上传闭源插件，需要先在",
-    "developerNoticeLink": "开发者中心"
+    "developerNoticeLink": "开发者中心",
+    "attributionNotice": "插件审核上架后，你的公开显示名与作者主页将展示在广场作品页和贡献者名录中。"
   },
   "packSubmitPage": {
     "tabPlugin": "JAR 插件",
@@ -959,7 +961,8 @@
     },
     "advanced": {
       "title": "高级设置"
-    }
+    },
+    "attributionNotice": "Skill 发布后，你的公开显示名与作者主页将展示在作品页和贡献者名录中。"
   },
   "authPage": {
     "loginTitle": "登录",
@@ -2717,5 +2720,27 @@
     "financialRetention": "自相关财政年度结束起不少于7年；适用法律要求更长的，从其规定。注销账户不能缩短这一期限；这些记录以受限形式仅供记账之用。",
     "mobileHostingCn": "中国区服务器和对象存储位于中国大陆。",
     "mobileHostingIntl": "国际区服务器和对象存储位于新加坡。"
+  },
+  "contributorsPage": {
+    "metaTitle": "贡献者｜AI WorkDeck",
+    "metaDescription": "感谢通过代码、Skill 和插件建设 AI WorkDeck 的每一位贡献者。",
+    "eyebrow": "社区 · 贡献者",
+    "title": "让每一份贡献被看见",
+    "intro": "AI WorkDeck 由维护者与社区共同建设。这里列出已有合并代码贡献的 GitHub 用户，以及在本站发布 Skill 或插件的作者。",
+    "codeTitle": "代码贡献者",
+    "codeIntro": "当你的 Pull Request 合并进主仓后，你的 GitHub 用户名会出现在这里。名单定期从公开贡献记录更新。",
+    "mergedContributions": "{count} 次代码贡献",
+    "githubProfile": "查看 GitHub 主页",
+    "marketplaceTitle": "Skill 与插件作者",
+    "marketplaceIntro": "Skill 发布或插件审核上架后，你的公开显示名、作者主页和作品数量会自动出现在这里。",
+    "skillCount": "{count} 个 Skill",
+    "pluginCount": "{count} 个插件",
+    "emptyMarketplace": "Skill 与插件发布后，作者会出现在这里。",
+    "viewProfile": "查看作者主页",
+    "joinTitle": "也来做一位建设者",
+    "joinText": "可以修改应用本身，也可以发布一个 Skill 或插件。贡献被合并或作品发布后，我们就会在这里展示你的名字。",
+    "contributeCode": "贡献代码",
+    "submitSkill": "发布 Skill",
+    "submitPlugin": "提交插件"
   }
 }

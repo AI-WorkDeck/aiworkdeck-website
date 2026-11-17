@@ -313,7 +313,8 @@
       "communityEdition": "Edição Comunitária",
       "deployment": "Planejador de implantação",
       "faq": "Perguntas frequentes",
-      "developerCenter": "Central do desenvolvedor"
+      "developerCenter": "Central do desenvolvedor",
+      "contributors": "Colaboradores"
     },
     "skillsSpotlight": {
       "badge": "Criado pela comunidade · Instalação com um clique",
@@ -746,7 +747,8 @@
     "pageTitle": "Enviar um plugin ou pacote",
     "pageLead": "Plugins e pacotes contêm código executável: cada versão é revisada por uma pessoa e depois assinada e distribuída pela plataforma.",
     "developerNoticeBody": "Plugins gratuitos e de código aberto podem ser enviados por qualquer conta conectada. Para definir um preço ou publicar um plugin de código fechado, solicite primeiro no",
-    "developerNoticeLink": "Central do desenvolvedor"
+    "developerNoticeLink": "Central do desenvolvedor",
+    "attributionNotice": "Quando seu plugin for aprovado, seu nome de exibição público e seu perfil de autor aparecerão na página do marketplace e no diretório de colaboradores."
   },
   "packSubmitPage": {
     "tabPlugin": "Plugin JAR",
@@ -957,7 +959,8 @@
     },
     "advanced": {
       "title": "Configurações avançadas"
-    }
+    },
+    "attributionNotice": "Quando sua Skill for publicada, seu nome de exibição público e seu perfil de autor aparecerão na página da obra e no diretório de colaboradores."
   },
   "authPage": {
     "loginTitle": "Entrar",
@@ -2715,5 +2718,27 @@
     "financialRetention": "Pelo menos 7 anos após o fim do exercício relevante, ou mais se a lei aplicável o exigir. O encerramento da conta não reduz este prazo; os registos são conservados com acesso restrito apenas para fins contabilísticos.",
     "mobileHostingCn": "Os servidores e o armazenamento de objetos do serviço da China estão na China continental.",
     "mobileHostingIntl": "Os servidores e o armazenamento de objetos do serviço internacional estão em Singapura."
+  },
+  "contributorsPage": {
+    "metaTitle": "Colaboradores | AI WorkDeck",
+    "metaDescription": "Reconhecemos todos que constroem o AI WorkDeck com código, Skills e plugins.",
+    "eyebrow": "Comunidade · Colaboradores",
+    "title": "Toda contribuição merece um nome",
+    "intro": "O AI WorkDeck é criado por mantenedores e pela comunidade. Conheça os colaboradores de código e os autores que publicaram Skills ou plugins neste site.",
+    "codeTitle": "Colaboradores de código",
+    "codeIntro": "Quando seu pull request for integrado ao repositório principal, seu nome de usuário do GitHub aparecerá aqui. A lista é atualizada regularmente com o histórico público.",
+    "mergedContributions": "{count} commits",
+    "githubProfile": "Ver perfil no GitHub",
+    "marketplaceTitle": "Autores de Skills e plugins",
+    "marketplaceIntro": "Quando sua Skill for publicada ou seu plugin for aprovado, seu nome público, perfil e quantidade de obras aparecerão aqui automaticamente.",
+    "skillCount": "{count} Skills",
+    "pluginCount": "{count} plugins",
+    "emptyMarketplace": "Os autores aparecerão aqui quando suas Skills ou plugins forem publicados.",
+    "viewProfile": "Ver perfil do autor",
+    "joinTitle": "Crie a próxima contribuição",
+    "joinText": "Modifique o aplicativo ou publique uma Skill ou plugin. Quando sua contribuição for integrada ou sua obra publicada, mostraremos seu nome aqui.",
+    "contributeCode": "Contribuir com código",
+    "submitSkill": "Publicar uma Skill",
+    "submitPlugin": "Enviar um plugin"
   }
 }

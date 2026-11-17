@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { PageHero } from '@/components/layout/PageHero';
 import { getDeveloper } from '@/lib/developers';
 import { SubmitTabs } from './SubmitTabs';
+import { AttributionNotice } from '@/components/contributors/AttributionNotice';
 import { NOINDEX } from '@/lib/page-metadata';
 
 export const dynamic = 'force-dynamic';
@@ -57,6 +58,7 @@ export default async function SubmitPluginPage({ params }: { params: Promise<{ l
                 ) : (
                     <SubmitTabs developerApproved={getDeveloper(user.id)?.status === 'approved'} lang={lang} pluginT={t} packT={packT} />
                 )}
+                <AttributionNotice lang={lang} text={t.attributionNotice} linkLabel={dict.contributorsPage.title} />
             </div>
         </div>
     );

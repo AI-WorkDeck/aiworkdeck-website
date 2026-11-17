@@ -1,5 +1,5 @@
 {
-  "scripts/plugin-dev.mjs": "0827abd66a1908d91916a9074dd35de41012e2ea1ce473a9765d492f074a62d1",
+  "scripts/plugin-dev.mjs": "3a966e0cad34247d90a3cf699a5a5d48ca6a7e17253fe68fe4602b1e7191b92d",
   "sdk/plugin-sdk/awd-plugin-sdk.js": "4d974b5908e4a6d319a2e6848b6eaf4558dd892f8e10a5f43543d4f660600df6",
   "sdk/plugin-sdk/awd-plugin-sdk.d.ts": "b16c854fddc7b76d8458e7b159a3a6c59a5ca0871a803f3643e2e1e5c3f187d4",
   "sdk/plugin-sdk/manifest.d.ts": "c776f3834f8ae7a10887e10754f840ebd0491925e33e0fff0e58bfaead23b54d",

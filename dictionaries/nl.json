@@ -313,7 +313,8 @@
       "communityEdition": "Community-editie",
       "deployment": "Implementatieplanner",
       "faq": "Veelgestelde vragen",
-      "developerCenter": "Ontwikkelaarscentrum"
+      "developerCenter": "Ontwikkelaarscentrum",
+      "contributors": "Bijdragers"
     },
     "skillsSpotlight": {
       "badge": "Door de community gebouwd · Installatie met één klik",
@@ -746,7 +747,8 @@
     "pageTitle": "Een plugin of Pack indienen",
     "pageLead": "Plugins en Packs bevatten uitvoerbare code: elke versie wordt door een mens beoordeeld, vervolgens ondertekend en door het platform gedistribueerd.",
     "developerNoticeBody": "Gratis, open-source plugins kunnen door elk ingelogd account worden ingediend. Om een prijs te zetten of een closed-source plugin te publiceren, moet je eerst een aanvraag doen in het",
-    "developerNoticeLink": "Ontwikkelaarscentrum"
+    "developerNoticeLink": "Ontwikkelaarscentrum",
+    "attributionNotice": "Wanneer je plugin wordt goedgekeurd, verschijnen je openbare weergavenaam en auteursprofiel op de marketplacepagina en in de bijdragersgids."
   },
   "packSubmitPage": {
     "tabPlugin": "JAR-plugin",
@@ -957,7 +959,8 @@
     },
     "advanced": {
       "title": "Geavanceerde instellingen"
-    }
+    },
+    "attributionNotice": "Wanneer je Skill wordt gepubliceerd, verschijnen je openbare weergavenaam en auteursprofiel op de pagina ervan en in de bijdragersgids."
   },
   "authPage": {
     "loginTitle": "Inloggen",
@@ -2715,5 +2718,27 @@
     "financialRetention": "Minimaal 7 jaar na het einde van het betreffende boekjaar, of langer indien de toepasselijke wet dit vereist. Het sluiten van uw account verkort deze termijn niet; de gegevens worden met beperkte toegang uitsluitend voor de boekhouding bewaard.",
     "mobileHostingCn": "De servers en objectopslag van de Chinese dienst bevinden zich op het Chinese vasteland.",
     "mobileHostingIntl": "De servers en objectopslag van de internationale dienst bevinden zich in Singapore."
+  },
+  "contributorsPage": {
+    "metaTitle": "Bijdragers | AI WorkDeck",
+    "metaDescription": "Waardering voor iedereen die AI WorkDeck bouwt met code, Skills en plugins.",
+    "eyebrow": "Community · Bijdragers",
+    "title": "Elke bijdrage verdient een naam",
+    "intro": "AI WorkDeck wordt gebouwd door maintainers en de community. Maak kennis met codebijdragers en auteurs die op deze site Skills of plugins publiceren.",
+    "codeTitle": "Codebijdragers",
+    "codeIntro": "Zodra je pull request in de hoofdrepository is samengevoegd, verschijnt je GitHub-gebruikersnaam hier. De lijst wordt regelmatig bijgewerkt uit de openbare geschiedenis.",
+    "mergedContributions": "{count} commits",
+    "githubProfile": "GitHub-profiel bekijken",
+    "marketplaceTitle": "Auteurs van Skills en plugins",
+    "marketplaceIntro": "Zodra je Skill is gepubliceerd of je plugin is goedgekeurd, verschijnen je openbare naam, profiel en aantal werken hier automatisch.",
+    "skillCount": "{count} Skills",
+    "pluginCount": "{count} plugins",
+    "emptyMarketplace": "Auteurs verschijnen hier zodra hun Skills of plugins zijn gepubliceerd.",
+    "viewProfile": "Auteursprofiel bekijken",
+    "joinTitle": "Bouw aan de volgende bijdrage",
+    "joinText": "Pas de app aan of publiceer een Skill of plugin. Na samenvoeging of publicatie tonen we je naam hier.",
+    "contributeCode": "Draag code bij",
+    "submitSkill": "Publiceer een Skill",
+    "submitPlugin": "Dien een plugin in"
   }
 }

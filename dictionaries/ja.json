@@ -313,7 +313,8 @@
       "communityEdition": "コミュニティエディション",
       "deployment": "デプロイメントプランナー",
       "faq": "よくある質問",
-      "developerCenter": "開発者センター"
+      "developerCenter": "開発者センター",
+      "contributors": "貢献者"
     },
     "skillsSpotlight": {
       "badge": "コミュニティ制作 · ワンクリックインストール",
@@ -746,7 +747,8 @@
     "pageTitle": "プラグインまたはPackを提出",
     "pageLead": "プラグインとパックには実行可能なペイロードが含まれています。すべてのバージョンは人間によるレビューを受けた後、プラットフォームによって署名・配布されます。",
     "developerNoticeBody": "無料のオープンソースプラグインは、サインイン済みのアカウントなら誰でも提出できます。価格の設定やクローズドソースプラグインの公開には、まず",
-    "developerNoticeLink": "開発者センター"
+    "developerNoticeLink": "開発者センター",
+    "attributionNotice": "プラグインが承認されると、公開表示名と作者プロフィールがマーケットプレイスのページと貢献者名簿に表示されます。"
   },
   "packSubmitPage": {
     "tabPlugin": "JARプラグイン",
@@ -957,7 +959,8 @@
     },
     "advanced": {
       "title": "詳細設定"
-    }
+    },
+    "attributionNotice": "Skill を公開すると、公開表示名と作者プロフィールが作品ページと貢献者名簿に表示されます。"
   },
   "authPage": {
     "loginTitle": "サインイン",
@@ -2715,5 +2718,27 @@
     "financialRetention": "該当会計年度末から最低7年間、適用法が求める場合はそれ以上保持します。アカウントの閉鎖によりこの期間は短縮されません。記録は会計目的に限り、アクセスを制限して保管します。",
     "mobileHostingCn": "中国向けサービスのサーバーとオブジェクトストレージは中国本土にあります。",
     "mobileHostingIntl": "国際サービスのサーバーとオブジェクトストレージはシンガポールにあります。"
+  },
+  "contributorsPage": {
+    "metaTitle": "貢献者 | AI WorkDeck",
+    "metaDescription": "コード、Skill、プラグインを通じて AI WorkDeck を支えるすべての貢献者を紹介します。",
+    "eyebrow": "コミュニティ · 貢献者",
+    "title": "すべての貢献に名前を",
+    "intro": "AI WorkDeck はメンテナーとコミュニティが共に作っています。マージされたコードの貢献者と、このサイトで Skill やプラグインを公開した作者を紹介します。",
+    "codeTitle": "コード貢献者",
+    "codeIntro": "プルリクエストがメインリポジトリにマージされると、GitHub ユーザー名がここに表示されます。公開履歴から定期的に更新されます。",
+    "mergedContributions": "{count} 件のコミット",
+    "githubProfile": "GitHub プロフィールを見る",
+    "marketplaceTitle": "Skill・プラグイン作者",
+    "marketplaceIntro": "Skill の公開またはプラグインの承認後、公開表示名、作者プロフィール、作品数が自動的に表示されます。",
+    "skillCount": "{count} 件の Skill",
+    "pluginCount": "{count} 件のプラグイン",
+    "emptyMarketplace": "Skill やプラグインが公開されると、作者がここに表示されます。",
+    "viewProfile": "作者プロフィールを見る",
+    "joinTitle": "あなたも一緒に作りませんか",
+    "joinText": "アプリ本体の改良、Skill やプラグインの公開ができます。貢献のマージや作品の公開後、お名前をここに掲載します。",
+    "contributeCode": "コードに貢献",
+    "submitSkill": "Skill を公開",
+    "submitPlugin": "プラグインを提出"
   }
 }

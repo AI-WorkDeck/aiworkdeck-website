@@ -313,7 +313,8 @@
       "communityEdition": "Bản Cộng đồng",
       "deployment": "Trình lập kế hoạch triển khai",
       "faq": "Câu hỏi thường gặp",
-      "developerCenter": "Trung tâm nhà phát triển"
+      "developerCenter": "Trung tâm nhà phát triển",
+      "contributors": "Người đóng góp"
     },
     "skillsSpotlight": {
       "badge": "Do cộng đồng xây dựng · Cài đặt một chạm",
@@ -746,7 +747,8 @@
     "pageTitle": "Nộp plugin hoặc Pack",
     "pageLead": "Plugin và pack chứa payload có thể thực thi: mọi phiên bản đều được con người xem xét, sau đó được nền tảng ký và phân phối.",
     "developerNoticeBody": "Plugin mã nguồn mở miễn phí có thể được gửi bởi bất kỳ tài khoản nào đã đăng nhập. Để đặt giá hoặc xuất bản plugin mã nguồn đóng, hãy nộp đơn trước tại",
-    "developerNoticeLink": "Trung tâm nhà phát triển"
+    "developerNoticeLink": "Trung tâm nhà phát triển",
+    "attributionNotice": "Khi plugin của bạn được phê duyệt, tên hiển thị công khai và hồ sơ tác giả sẽ xuất hiện trên trang marketplace và trong danh bạ người đóng góp."
   },
   "packSubmitPage": {
     "tabPlugin": "Plugin JAR",
@@ -957,7 +959,8 @@
     },
     "advanced": {
       "title": "Cài đặt nâng cao"
-    }
+    },
+    "attributionNotice": "Khi Skill của bạn được xuất bản, tên hiển thị công khai và hồ sơ tác giả sẽ xuất hiện trên trang tác phẩm và trong danh bạ người đóng góp."
   },
   "authPage": {
     "loginTitle": "Đăng nhập",
@@ -2715,5 +2718,27 @@
     "financialRetention": "Ít nhất 7 năm kể từ cuối năm tài chính liên quan, hoặc lâu hơn nếu pháp luật áp dụng yêu cầu. Đóng tài khoản không rút ngắn thời hạn này; hồ sơ được giữ với quyền truy cập hạn chế chỉ cho mục đích kế toán.",
     "mobileHostingCn": "Máy chủ và kho lưu trữ đối tượng của dịch vụ Trung Quốc nằm tại Trung Quốc đại lục.",
     "mobileHostingIntl": "Máy chủ và kho lưu trữ đối tượng của dịch vụ quốc tế nằm tại Singapore."
+  },
+  "contributorsPage": {
+    "metaTitle": "Người đóng góp | AI WorkDeck",
+    "metaDescription": "Ghi nhận những người xây dựng AI WorkDeck thông qua mã, Skill và plugin.",
+    "eyebrow": "Cộng đồng · Người đóng góp",
+    "title": "Mọi đóng góp đều xứng đáng có tên",
+    "intro": "AI WorkDeck được xây dựng bởi những người bảo trì và cộng đồng. Hãy gặp gỡ người dùng GitHub có đóng góp mã đã được hợp nhất và các tác giả đã xuất bản Skill hoặc plugin trên trang này.",
+    "codeTitle": "Người đóng góp mã",
+    "codeIntro": "Khi pull request của bạn được hợp nhất vào kho chính, tên người dùng GitHub của bạn sẽ xuất hiện ở đây.",
+    "mergedContributions": "{count} commit",
+    "githubProfile": "Xem hồ sơ GitHub",
+    "marketplaceTitle": "Tác giả Skill và plugin",
+    "marketplaceIntro": "Khi Skill của bạn được xuất bản hoặc plugin được phê duyệt, tên hiển thị công khai, hồ sơ tác giả và số lượng tác phẩm sẽ tự động xuất hiện tại đây.",
+    "skillCount": "{count} Skill",
+    "pluginCount": "{count} plugin",
+    "emptyMarketplace": "Tác giả sẽ xuất hiện tại đây khi Skill hoặc plugin của họ được xuất bản.",
+    "viewProfile": "Xem hồ sơ tác giả",
+    "joinTitle": "Xây dựng đóng góp tiếp theo",
+    "joinText": "Hãy sửa đổi ứng dụng hoặc xuất bản một Skill hay plugin. Khi đóng góp được hợp nhất hoặc tác phẩm được xuất bản, chúng tôi sẽ giới thiệu tên bạn tại đây.",
+    "contributeCode": "Đóng góp mã",
+    "submitSkill": "Xuất bản Skill",
+    "submitPlugin": "Gửi plugin"
   }
 }
