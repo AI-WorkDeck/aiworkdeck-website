@@ -26,9 +26,8 @@ export async function GET(request:NextRequest) {
     const {maxChargeCents,agentMaxChargeCents,common}=quote(config.marginMultiplier);
     let user;
     try {user=authorize(request);}catch(e){if(e instanceof WebError && e.code==='unauthorized')return json({...common,authenticated:false,aiEnabled:false,agentEnabled:false,reason:'unauthorized',agentReason:'unauthorized'});throw e;}
-    const paused=!!getDb().prepare("SELECT 1 FROM web_ai_request WHERE state='refunded_pending' OR errorCode='cost_cap_exceeded' LIMIT 1").get();
     const spendableCents=getSpendableBalance(user.id);
     const active=getDb().prepare("SELECT requestId,state FROM web_ai_request WHERE userId=? AND state IN ('reserved','submitted','usage_pending')").get(user.id);
-    return json({...common,authenticated:true,agentEnabled:enabled&&!paused&&spendableCents>=agentMaxChargeCents&&!active,agentReason:paused?'reconciliation_paused':!enabled?'ai_unavailable':active?'busy':spendableCents<agentMaxChargeCents?'no_credits':null,aiEnabled:enabled&&!paused&&spendableCents>=maxChargeCents&&!active,reason:paused?'reconciliation_paused':!enabled?'ai_unavailable':active?'busy':spendableCents<maxChargeCents?'no_credits':null,spendableCents,trial:getTrialBalance(user.id),activeRequest:active??null});
+    return json({...common,authenticated:true,agentEnabled:enabled&&spendableCents>=agentMaxChargeCents&&!active,agentReason:!enabled?'ai_unavailable':active?'busy':spendableCents<agentMaxChargeCents?'no_credits':null,aiEnabled:enabled&&spendableCents>=maxChargeCents&&!active,reason:!enabled?'ai_unavailable':active?'busy':spendableCents<maxChargeCents?'no_credits':null,spendableCents,trial:getTrialBalance(user.id),activeRequest:active??null});
   }catch(e){return failure(e,lang);}
 }

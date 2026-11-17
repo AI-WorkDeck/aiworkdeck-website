@@ -19,9 +19,8 @@ export async function connectBailianSkill(req:UpstreamRequest,service:string):Pr
     const {body}=validateChat({model:req.model,messages:req.messages,max_tokens:req.maxTokens,temperature:req.temperature,stream:true,enable_thinking:false},model);
     const createdAt=new Date().toISOString(),funding=captureServiceFunding(userId),margin=getUserMarginMultiplier(userId);
     withTransaction(db=>{
-      // Accepted requests without a receipt remain visible and pause new free calls until an operator resolves them.
+      // Accepted requests without a receipt remain visible for operators without blocking users.
       db.prepare("UPDATE skill_ai_request SET state='usage_pending' WHERE state='submitted' AND createdAt<?").run(new Date(Date.now()-15*60_000).toISOString());
-      if(db.prepare("SELECT 1 FROM skill_ai_request WHERE state='usage_pending' LIMIT 1").get())throw new Error('usage_pending');
       const total=db.prepare("SELECT COUNT(*) n FROM skill_ai_request WHERE state='submitted'").get() as {n:number};
       const own=db.prepare("SELECT COUNT(*) n FROM skill_ai_request WHERE state='submitted' AND userId=?").get(userId) as {n:number};
       if(total.n>=32||own.n>=4)throw new Error('busy');

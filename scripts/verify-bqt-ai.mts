@@ -190,12 +190,12 @@ await check('one in-flight points request per lawyer; a concurrent one is paid f
   assert.equal(getBalance(lawyer.id), 10000);
   // Normal users keep the old limit of 4.
   for (let i = 0; i < 4; i++) { const rid = randomUUID(); await billing.authorizeCostCny(normal.id, rid, 0.01, 'deepseek-v4.1-flash-1017'); billing.reserveCostCny(normal.id, rid, {}, 'deepseek-v4.1-flash-1017', 0.01, {}); billing.release(normal.id, rid); }
-  // 15-minute incident sweep: same state/circuit semantics, no local refund for BQT rows.
+  // 15-minute incident sweep: same recovery semantics, no local refund for BQT rows and no user lockout.
   db.prepare('UPDATE platform_ai_request SET createdAt=? WHERE requestId=?').run(new Date(Date.now() - 16 * 60_000).toISOString(), id);
   billing.recoverPending();
   assert.equal(billing.requestRow(lawyer.id, id)!.state, 'refunded_pending');
   assert.equal(getBalance(lawyer.id), 10000);
-  assert.throws(() => billing.reserveCostCny(normal.id, randomUUID(), {}, 'deepseek-v4.1-flash-1017', 0.01, {}), /reconciliation_required/);
+  const afterIncident=randomUUID();assert.equal(billing.reserveCostCny(normal.id,afterIncident,{},'deepseek-v4.1-flash-1017',0.01,{}).state,'reserved');billing.release(normal.id,afterIncident);
   db.prepare("UPDATE platform_ai_request SET state='released' WHERE requestId=?").run(id);
 });
 

@@ -1570,13 +1570,13 @@ NEXT_PUBLIC_AWD_SITE=cn "$task_review_root/node_modules/.bin/tsx" --tsconfig "$t
 
 验证范围：上述顺序与恢复边界基于 `ai-key`、额度同步和 `retireOpenRouter` 的源码契约核查，不是生产迁移完成的证明。实际部署、退役/结清、隔离付费验收和旧手机重新登录恢复的已验/未验范围，应分别记录在当次发布回执；没有真实回执不得标为已验证。
 
-运维工具必须在目标站原 cwd 和环境运行（不输出供应商凭据）：`list` 查看未决记录，`reconcile` 回收超时预占并复查旧 Key；已发上游但 15 分钟没有可核实回执的请求原路退款并记 `refunded_pending`，所有新平台 AI 请求暂停 15 分钟，随后自动恢复，审计记录继续保留，禁止把未知用量认作零。维护者核实供应商账单后，用 `close-refunded-incident USER_ID REQUEST_ID INCIDENT_REFERENCE` 留审计引用提前解除并关闭记录；此动作不追扣已退款用户。旧 Web AI 的独立有限恢复和熔断机制继续保留。
+运维工具必须在目标站原 cwd 和环境运行（不输出供应商凭据）：`list` 查看未决记录，`reconcile` 回收超时预占并复查旧 Key；已发上游但 15 分钟没有可核实回执的请求原路退款并记 `refunded_pending`，未核实成本由平台承担，不阻断任何新平台 AI 请求，禁止把未知用量认作零。维护者核实供应商账单后，用 `close-refunded-incident USER_ID REQUEST_ID INCIDENT_REFERENCE` 留审计引用关闭记录；此动作不追扣已退款用户。旧 Web AI 同样保留独立退款和审计机制，但不因对账异常暂停新请求。
 
 北京接入点不等于所有模型均只在中国大陆推理；数据处理范围按百炼各模型当前服务说明，不对用户承诺全模型境内或零留存。
 
 `BAILIAN_AUTHORIZED_MODELS_FILE` 指向运维导出的非密 JSON（`workspaceId`、`updatedAt`、`models: string[]`），必须与配置工作空间一致。目录只展示此授权快照与供应商实时目录、可计价能力的交集；缺少快照时拒绝提供模型。新增模型授权后更新快照，无需把密钥写入该文件。
 
-Skill 帮写保留原“免费且限流、额度不足由平台承担”政策；国内流读取与页面断连解耦，按请求开始时价格、毛利和资助周期结算，仅保留轻量 `skill_ai_request` 回执，不保存 prompt。缺回执明确显示 `ai_usage_pending` 且暂停新免费调用，不显示零费用。`skill-list` 查看未决回执；供应商账单核对后可执行 `skill-close-incident USER_ID REQUEST_ID INCIDENT_REFERENCE`，未核实成本由平台承担，留审计引用，不事后追扣。
+Skill 帮写保留原“免费且限流、额度不足由平台承担”政策；国内流读取与页面断连解耦，按请求开始时价格、毛利和资助周期结算，仅保留轻量 `skill_ai_request` 回执，不保存 prompt。缺回执明确显示 `ai_usage_pending`，不显示零费用，也不阻断新免费调用。`skill-list` 查看未决回执；供应商账单核对后可执行 `skill-close-incident USER_ID REQUEST_ID INCIDENT_REFERENCE`，未核实成本由平台承担，留审计引用，不事后追扣。
 
 ## CI 预构建 Next 产物（dev-board#1648，仅准备，不部署）
 
