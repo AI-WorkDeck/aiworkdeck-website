@@ -169,7 +169,7 @@ jobs:
             # 的假失败，不是代码坏了（DEPLOY.md 记着这个坑）。
             d="$(mktemp -d)"
             echo "--- ${{ matrix.site }} / $s ---"
-            if [ "$s" = verify-mobile-download ] || [ "$s" = verify-skill-submit ]; then
+            if [ "$s" = verify-mobile-download ] || [ "$s" = verify-skill-submit ] || [ "$s" = verify-contributors ]; then
               (cd "$d" && NODE_OPTIONS=--conditions=react-server npx tsx --tsconfig "$REPO/tsconfig.json" "$REPO/scripts/$s.mts")
             else
               (cd "$d" && npx tsx --tsconfig "$REPO/tsconfig.json" "$REPO/scripts/$s.mts")
