@@ -1600,7 +1600,8 @@
       "items": [
         "La entidad operadora y titular de los derechos de autor de AI WorkDeck es BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
         "La información de Acerca de, derechos de autor y avisos legales de la aplicación de escritorio, el sitio web y los complementos de Office/WPS identifica ahora a la misma empresa.",
-        "Esta actualización se distribuye mediante un nuevo instalador completo. Tras instalarla, la página Acerca de muestra los datos actualizados de la empresa."
+        "Esta actualización se distribuye mediante un nuevo instalador completo. Tras instalarla, la página Acerca de muestra los datos actualizados de la empresa.",
+        "Configuración ahora enlaza con un directorio público que reconoce a los colaboradores de la aplicación, Skills y plugins. Las conexiones de red de los plugins y las respuestas a acciones rápidas también son más fiables."
       ]
     },
     "release0770": {
