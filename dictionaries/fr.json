@@ -1600,7 +1600,8 @@
       "items": [
         "L’exploitant et titulaire des droits d’auteur d’AI WorkDeck est BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
         "Les rubriques À propos, droits d’auteur et informations juridiques de l’application de bureau, du site et des compléments Office/WPS désignent désormais la même société.",
-        "Cette mise à jour est distribuée via un nouveau programme d’installation complet. Après installation, la page À propos affiche les informations actualisées de la société."
+        "Cette mise à jour est distribuée via un nouveau programme d’installation complet. Après installation, la page À propos affiche les informations actualisées de la société.",
+        "Les paramètres proposent désormais un lien vers un annuaire public qui reconnaît les contributeurs à l’application, aux Skills et aux plugins. Les connexions réseau des plugins et les réponses aux actions rapides sont également plus fiables."
       ]
     },
     "release0770": {

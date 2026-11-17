@@ -1600,7 +1600,8 @@
       "items": [
         "AI WorkDeck’s operator and copyright holder is BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
         "About, copyright and legal information across the desktop app, website and Office/WPS add-ins now identify the same company.",
-        "This release uses a new full installer. After installation, the About page shows the updated company information."
+        "This release uses a new full installer. After installation, the About page shows the updated company information.",
+        "Settings now links to a public directory recognizing app, Skill and plugin contributors. Plugin network connections and quick-action replies are also more reliable."
       ]
     },
     "release0770": {
