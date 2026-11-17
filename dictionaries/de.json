@@ -1600,8 +1600,7 @@
       "items": [
         "Betreiber und Urheberrechtsinhaber von AI WorkDeck ist BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
         "Die Angaben unter „Über“, zum Urheberrecht und zu rechtlichen Fragen nennen in der Desktop-App, auf der Website und in den Office/WPS-Add-ins dieselbe Gesellschaft.",
-        "Dieses Update wird als neues vollständiges Installationspaket bereitgestellt. Nach der Installation zeigt die Seite „Über“ die aktualisierten Unternehmensangaben.",
-        "In den Einstellungen gibt es nun einen Link zu einem öffentlichen Verzeichnis der Mitwirkenden an App, Skills und Plugins. Netzwerkverbindungen von Plugins und Antworten auf Schnellaktionen sind außerdem zuverlässiger."
+        "Dieses Update wird als neues vollständiges Installationspaket bereitgestellt. Nach der Installation zeigt die Seite „Über“ die aktualisierten Unternehmensangaben."
       ]
     },
     "release0770": {
@@ -1633,6 +1632,14 @@
         "Anzeige abgelaufener Anmeldungen korrigiert; Wiederherstellungsdaten der Anonymisierung automatisch gespeichert und verknüpft. Aufnahme vom Startbildschirm, chinesische Eingabe und übersetzte Titel verbessert.",
         "Electron 45.1.0 und Sicherheitsabhängigkeiten aktualisiert. Vollständiges Desktop-Update; mobile Apps werden separat veröffentlicht.",
         "Nur Apple Silicon; macOS 13 oder neuer erforderlich"
+      ]
+    },
+    "release0880": {
+      "headline": "Juristische News-Prüfung, Anerkennung der Mitwirkenden und Plugin-Zuverlässigkeit",
+      "items": [
+        "Ein neuer Skill zur Prüfung juristischer Nachrichten kontrolliert vor der Veröffentlichung Rechtsvorschriften, Fälle, Daten, Links und Autorenangaben, liefert belegte Feststellungen und kennzeichnet ungeklärte Punkte zur Bestätigung.",
+        "Die Einstellungen verlinken nun auf ein öffentliches Verzeichnis der Mitwirkenden an App, Skills und Plugins.",
+        "Netzwerkverbindungen von Plugins und Antworten auf Schnellaktionen sind jetzt zuverlässiger."
       ]
     }
   },

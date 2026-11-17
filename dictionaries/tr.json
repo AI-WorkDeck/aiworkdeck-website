@@ -1600,8 +1600,7 @@
       "items": [
         "AI WorkDeck’in işletmecisi ve telif hakkı sahibi BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED şirketidir.",
         "Masaüstü uygulaması, web sitesi ve Office/WPS eklentilerindeki Hakkında, telif hakkı ve yasal bilgiler artık aynı şirketi belirtir.",
-        "Bu güncelleme yeni bir tam kurulum paketiyle sunulur. Kurulumdan sonra Hakkında sayfasında güncel şirket bilgileri görüntülenir.",
-        "Ayarlar artık uygulama, Skill ve eklenti katkıcılarını tanıyan herkese açık bir dizine bağlantı içeriyor. Eklenti ağ bağlantıları ve hızlı işlem yanıtları da daha güvenilir."
+        "Bu güncelleme yeni bir tam kurulum paketiyle sunulur. Kurulumdan sonra Hakkında sayfasında güncel şirket bilgileri görüntülenir."
       ]
     },
     "release0770": {
@@ -1633,6 +1632,14 @@
         "Süresi dolan giriş düzeltildi; anonimleştirme geri yükleme verileri otomatik kaydedilip bağlanır. Başlangıç ekranından kayıt, Çince giriş ve çevrilmiş başlıklar iyileştirildi.",
         "Electron 45.1.0 ve güvenlik bağımlılıkları güncellendi. Tam masaüstü güncellemesidir; mobil uygulamalar ayrı yayımlanır.",
         "Yalnızca Apple Silicon; macOS 13 veya üstü gerekir"
+      ]
+    },
+    "release0880": {
+      "headline": "Hukuk haberi incelemesi, katkıcı takdiri ve eklenti güvenilirliği",
+      "items": [
+        "Yeni Hukuk Haberi İnceleme Skill’i yayımdan önce mevzuatı, davaları, tarihleri, bağlantıları ve atıfları kontrol eder, kaynaklı bulgular sunar ve çözülmemiş konuları onay bekliyor olarak işaretler.",
+        "Ayarlar artık uygulama, Skill ve eklenti katkıcılarını tanıyan herkese açık bir dizine bağlantı içeriyor.",
+        "Eklenti ağ bağlantıları ve hızlı işlem yanıtları artık daha güvenilir."
       ]
     }
   },

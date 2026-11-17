@@ -1600,8 +1600,7 @@
       "items": [
         "AI WorkDeck’s operator and copyright holder is BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
         "About, copyright and legal information across the desktop app, website and Office/WPS add-ins now identify the same company.",
-        "This release uses a new full installer. After installation, the About page shows the updated company information.",
-        "Settings now links to a public directory recognizing app, Skill and plugin contributors. Plugin network connections and quick-action replies are also more reliable."
+        "This release uses a new full installer. After installation, the About page shows the updated company information."
       ]
     },
     "release0770": {
@@ -1633,6 +1632,14 @@
         "Fixed expired-login status; redaction recovery data is saved and linked automatically. Quick recording from the welcome page, improved Chinese input and translated title refresh.",
         "Updated to Electron 45.1.0 and security dependencies. This is a full desktop update; mobile apps are released separately.",
         "Apple silicon only; requires macOS 13 or later"
+      ]
+    },
+    "release0880": {
+      "headline": "Legal news review, contributor recognition, and plugin reliability",
+      "items": [
+        "A new Legal News Review Skill checks authorities, cases, dates, links and attribution before publication, provides sourced findings, and leaves unresolved items marked for confirmation.",
+        "Settings now links to a public directory recognizing app, Skill and plugin contributors.",
+        "Plugin network connections and quick-action replies are more reliable."
       ]
     }
   },

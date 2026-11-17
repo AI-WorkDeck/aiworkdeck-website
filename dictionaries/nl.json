@@ -1600,8 +1600,7 @@
       "items": [
         "De exploitant en auteursrechthebbende van AI WorkDeck is BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED.",
         "De informatie onder Over, auteursrechten en juridische informatie in de desktopapp, op de website en in de Office/WPS-invoegtoepassingen vermeldt nu hetzelfde bedrijf.",
-        "Deze update wordt geleverd met een nieuw volledig installatieprogramma. Na installatie toont de pagina Over de bijgewerkte bedrijfsgegevens.",
-        "Instellingen bevat nu een link naar een openbare gids die bijdragers aan de app, Skills en plugins erkent. Netwerkverbindingen van plugins en reacties op snelle acties zijn ook betrouwbaarder."
+        "Deze update wordt geleverd met een nieuw volledig installatieprogramma. Na installatie toont de pagina Over de bijgewerkte bedrijfsgegevens."
       ]
     },
     "release0770": {
@@ -1633,6 +1632,14 @@
         "Verlopen aanmeldingen gecorrigeerd; herstelgegevens voor anonimisering automatisch opgeslagen en gekoppeld. Opnemen vanaf het startscherm, Chinese invoer en vertaalde titels verbeterd.",
         "Electron 45.1.0 en beveiligingsafhankelijkheden bijgewerkt. Volledige desktopupdate; mobiele apps verschijnen afzonderlijk.",
         "Alleen Apple Silicon; macOS 13 of nieuwer vereist"
+      ]
+    },
+    "release0880": {
+      "headline": "Juridische-nieuwscontrole, erkenning van bijdragers en betrouwbaarheid van plugins",
+      "items": [
+        "Een nieuwe Skill voor juridische-nieuwscontrole controleert wetgeving, zaken, datums, links en toeschrijvingen vóór publicatie, levert bevindingen met bronnen en markeert onopgeloste punten ter bevestiging.",
+        "Instellingen bevat nu een link naar een openbare gids die bijdragers aan de app, Skills en plugins erkent.",
+        "Netwerkverbindingen van plugins en reacties op snelle acties zijn betrouwbaarder."
       ]
     }
   },
