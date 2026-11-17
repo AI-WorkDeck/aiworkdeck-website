@@ -684,8 +684,8 @@
     "ctaBody": "Kompres menjadi zip dan kirimkan — kami akan meninjaunya secepat mungkin.",
     "ctaBtn": "Kirim plugin",
     "devEligibilityTitle": "Siapa yang dapat menerbitkan plugin",
-    "devEligibilityP1": "Plugin sumber terbuka yang gratis: daftar lalu kirim.",
-    "devEligibilityP2": "Plugin berbayar atau sumber tertutup memerlukan verifikasi pengembang terlebih dahulu.",
+    "devEligibilityP1": "Plugin open source gratis dapat dikirim setelah login tanpa token.",
+    "devEligibilityP2": "Pengiriman berbayar atau closed source memerlukan akses pengembang yang disetujui.",
     "devEligibilityLink": "Pusat pengembang"
   },
   "pluginSubmitPage": {
@@ -746,9 +746,11 @@
     "eyebrow": "Berkontribusi",
     "pageTitle": "Kirim plugin atau Pack",
     "pageLead": "Plugin dan pack membawa payload yang dapat dieksekusi: setiap versi ditinjau oleh manusia, kemudian ditandatangani dan didistribusikan oleh platform.",
-    "developerNoticeBody": "Plugin open-source gratis dapat dikirimkan oleh akun mana pun yang telah masuk. Untuk menetapkan harga atau menerbitkan plugin closed-source, ajukan permohonan terlebih dahulu di",
+    "developerNoticeBody": "Plugin open source gratis dapat dikirim setelah login tanpa token. manifest.homepage harus berisi URL HTTPS sumber publik. Pengiriman berbayar atau closed source memerlukan akses pengembang yang disetujui. ",
     "developerNoticeLink": "Pusat pengembang",
-    "attributionNotice": "Saat plugin Anda disetujui, nama tampilan publik dan profil penulis Anda akan muncul di halaman marketplace dan direktori kontributor."
+    "attributionNotice": "Saat plugin Anda disetujui, nama tampilan publik dan profil penulis Anda akan muncul di halaman marketplace dan direktori kontributor.",
+    "submissionRegionNotice": "Situs internasional hanya mencerminkan plugin yang telah ditinjau dan tidak menerima pengiriman lokal. Kirim melalui situs Tiongkok; akun terpisah, jadi masuk saat diminta.",
+    "submissionRegionLink": "Kirim di situs Tiongkok"
   },
   "packSubmitPage": {
     "tabPlugin": "Plugin JAR",
@@ -2405,8 +2407,8 @@
     "title": "Pusat pengembang",
     "subtitle": "Mendaftar, mengelola kredensial pengajuan Anda, dan memantau proses tinjauan.",
     "signInToContinue": "Masuk untuk melanjutkan",
-    "gateStep1": "Ajukan kualifikasi pengembang",
-    "gateStep2": "Buat token pengiriman",
+    "gateStep1": "Pengiriman berbayar atau closed source memerlukan akses pengembang yang disetujui.",
+    "gateStep2": "Unggah ZIP langsung dari web atau buat token CLI bila perlu",
     "gateStep3": "Lihat karya dan progres peninjauan",
     "errors": {
       "version_conflict": "Profil telah berubah. Segarkan dan coba lagi.",
@@ -2418,7 +2420,7 @@
       "token_limit": "Cabut token lama; maksimal 10 yang boleh aktif."
     },
     "working": "Sedang diproses…",
-    "savedNotice": "Tersimpan. Kirim permohonan saat sudah siap.",
+    "savedNotice": "Profil Anda telah dikirim untuk ditinjau.",
     "savingProfile": "Menyimpan profil…",
     "status": {
       "draft": "Draf",
@@ -2428,13 +2430,13 @@
       "suspended": "Ditangguhkan"
     },
     "introP1": "Pengajuan pengembang dan tinjauan kelayakan awalnya gratis. Detail identitas dinyatakan sendiri; verifikasi kontak bukan verifikasi identitas atau KYC.",
-    "introP2": "Detail kontak bersifat pribadi antara Anda dan administrator. Setiap plugin tetap memerlukan tinjauan keamanan dan penandatanganan terpisah; harga plugin tidak berubah.",
+    "introP2": "Plugin open source gratis dapat dikirim setelah login tanpa token. Pusat ini untuk publikasi berbayar atau closed source. Kontak hanya terlihat oleh Anda dan admin; setiap versi diperiksa dan ditandatangani.",
     "guideLink": "Petunjuk Guide dan Agent",
     "submitLink": "Kirim plugin",
     "loadFailedRetry": "Gagal memuat; coba lagi",
     "loadingProfile": "Memuat profil…",
     "profileHeading": "Profil pengembang",
-    "profileNotice": "Menyimpan perubahan memerlukan tinjauan kelayakan baru. Akses yang ditangguhkan memerlukan persetujuan administrator untuk dipulihkan. Versi yang sudah dipublikasikan tetap tersedia.",
+    "profileNotice": "Mengirim perubahan memulai peninjauan kualifikasi baru. Hanya admin yang dapat memulihkan akses yang ditangguhkan. Versi yang sudah terbit tetap tercantum.",
     "contactVerificationPrefix": "Verifikasi kontak: ",
     "contactVerificationPending": "Menunggu (administrator dapat memverifikasi kontak secara manual)",
     "identityTypeLabel": "Identitas yang dinyatakan sendiri",
@@ -2450,10 +2452,10 @@
     "planLabel": "Apa yang Anda rencanakan untuk dibangun dan mengapa izin ini diperlukan",
     "permissionsLegend": "Izin plugin yang direncanakan",
     "permissionsHint": "Izin plugin sebenarnya harus berada dalam cakupan aplikasi yang disetujui. Menambahkan izin memerlukan peninjauan ulang.",
-    "saveProfileBtn": "Simpan profil",
+    "saveProfileBtn": "Simpan dan kirim permohonan",
     "submittingApplication": "Mengirim permohonan…",
     "applyBtn": "Mengajukan menggunakan profil tersimpan",
-    "tokensHeading": "Token pengiriman agen",
+    "tokensHeading": "Token pengiriman CLI / otomatisasi (lanjutan)",
     "tokensIntro": "Token hanya mencantumkan kiriman Anda dan mengirim paket plugin. Token tidak dapat mengakses API akun, pembayaran, atau admin. Token hanya ditampilkan sekali: simpan di variabel lingkungan AWD_PLUGIN_TOKEN lokal, jangan pernah di source, prompt, atau paket.",
     "newTokenLabel": "Token baru (ditampilkan sekali)",
     "hideTokenBtn": "Tersimpan; sembunyikan token",
@@ -2467,7 +2469,7 @@
     "revokingToken": "Mencabut token…",
     "revokeBtn": "Cabut",
     "myPluginsHeading": "Plugin saya dan izin yang dideklarasikan",
-    "myPluginsIntro": "Kepemilikan mengikuti akun yang mengirimkan, bukan nama penulis dalam paket. Penulis lama masih dapat melihat pengiriman; versi baru memerlukan persetujuan kelayakan.",
+    "myPluginsIntro": "Plugin open source gratis dapat dikirim setelah login tanpa token. Pengiriman berbayar atau closed source memerlukan akses pengembang yang disetujui.",
     "noPermissions": "Tidak ada izin",
     "noSubmissionsYet": "Belum ada pengiriman.",
     "historySummary": "Riwayat kelayakan"

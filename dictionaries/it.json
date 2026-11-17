@@ -684,8 +684,8 @@
     "ctaBody": "Comprimilo in ZIP e invialo — lo esamineremo il prima possibile.",
     "ctaBtn": "Invia plugin",
     "devEligibilityTitle": "Chi può pubblicare plugin",
-    "devEligibilityP1": "Plugin open source gratuiti: registrati e invia.",
-    "devEligibilityP2": "I plugin a pagamento o closed source richiedono prima la verifica come sviluppatore.",
+    "devEligibilityP1": "I plugin gratuiti open source possono essere inviati dopo l’accesso, senza token.",
+    "devEligibilityP2": "Gli invii a pagamento o closed source richiedono l’approvazione sviluppatore.",
     "devEligibilityLink": "Centro sviluppatori"
   },
   "pluginSubmitPage": {
@@ -746,9 +746,11 @@
     "eyebrow": "Contribuisci",
     "pageTitle": "Invia un plugin o un pack",
     "pageLead": "I plugin e i pack contengono payload eseguibili: ogni versione viene revisionata da una persona, poi firmata e distribuita dalla piattaforma.",
-    "developerNoticeBody": "I plugin gratuiti e open-source possono essere inviati da qualsiasi account connesso. Per impostare un prezzo o pubblicare un plugin closed-source, presenta prima richiesta nel",
+    "developerNoticeBody": "I plugin gratuiti open source possono essere inviati dopo l’accesso, senza token. manifest.homepage deve contenere l’URL HTTPS pubblico del codice sorgente. Gli invii a pagamento o closed source richiedono l’approvazione sviluppatore. ",
     "developerNoticeLink": "Centro sviluppatori",
-    "attributionNotice": "Quando il tuo plugin viene approvato, il tuo nome pubblico e il tuo profilo autore appaiono sulla pagina del marketplace e nell’elenco dei collaboratori."
+    "attributionNotice": "Quando il tuo plugin viene approvato, il tuo nome pubblico e il tuo profilo autore appaiono sulla pagina del marketplace e nell’elenco dei collaboratori.",
+    "submissionRegionNotice": "Il sito internazionale rispecchia solo i plugin revisionati e non accetta invii locali. Invia dal sito cinese; gli account sono separati, accedi quando richiesto.",
+    "submissionRegionLink": "Invia sul sito cinese"
   },
   "packSubmitPage": {
     "tabPlugin": "Plugin JAR",
@@ -2405,8 +2407,8 @@
     "title": "Centro sviluppatori",
     "subtitle": "Candidati, gestisci le tue credenziali di invio e segui le revisioni.",
     "signInToContinue": "Accedi per continuare",
-    "gateStep1": "Richiedi l’accesso da sviluppatore",
-    "gateStep2": "Genera un token di invio",
+    "gateStep1": "Gli invii a pagamento o closed source richiedono l’approvazione sviluppatore.",
+    "gateStep2": "Carica uno ZIP dal web oppure crea un token CLI se necessario",
     "gateStep3": "Segui i tuoi plugin e lo stato della revisione",
     "errors": {
       "version_conflict": "Il profilo è stato modificato. Aggiorna e riprova.",
@@ -2418,7 +2420,7 @@
       "token_limit": "Revoca un token precedente; al massimo 10 possono essere attivi."
     },
     "working": "Elaborazione…",
-    "savedNotice": "Salvato. Invia la candidatura quando sei pronto.",
+    "savedNotice": "Il profilo è stato inviato per la revisione.",
     "savingProfile": "Salvataggio del profilo…",
     "status": {
       "draft": "Bozza",
@@ -2428,13 +2430,13 @@
       "suspended": "Sospeso"
     },
     "introP1": "La revisione delle candidature degli sviluppatori e dell'idoneità è inizialmente gratuita. I dati identificativi sono autodichiarati; la verifica del contatto non costituisce verifica dell'identità né KYC.",
-    "introP2": "I dati di contatto sono privati e visibili solo a te e agli amministratori. Ogni plugin richiede comunque una revisione di sicurezza e una firma separate; i prezzi dei plugin restano invariati.",
+    "introP2": "I plugin gratuiti open source possono essere inviati dopo l’accesso, senza token. Questo centro è per pubblicazioni a pagamento o closed source. I contatti sono visibili solo a te e agli amministratori; ogni versione richiede revisione e firma.",
     "guideLink": "Guida e istruzioni dell'agente",
     "submitLink": "Invia un plugin",
     "loadFailedRetry": "Caricamento non riuscito; riprova",
     "loadingProfile": "Caricamento del profilo…",
     "profileHeading": "Profilo sviluppatore",
-    "profileNotice": "Il salvataggio delle modifiche richiede una nuova revisione dell'idoneità. L'accesso sospeso richiede l'approvazione di un amministratore per essere ripristinato. Le versioni già pubblicate restano disponibili.",
+    "profileNotice": "L’invio delle modifiche avvia una nuova revisione. Solo un amministratore può ripristinare un accesso sospeso. Le versioni pubblicate restano elencate.",
     "contactVerificationPrefix": "Verifica del contatto: ",
     "contactVerificationPending": "In attesa (un amministratore può verificare il contatto manualmente)",
     "identityTypeLabel": "Identità autodichiarata",
@@ -2450,10 +2452,10 @@
     "planLabel": "Cosa si intende sviluppare e perché queste autorizzazioni sono necessarie",
     "permissionsLegend": "Autorizzazioni previste del plugin",
     "permissionsHint": "Le autorizzazioni effettive del plugin devono rientrare nella domanda approvata. L'aggiunta di autorizzazioni richiede una nuova revisione.",
-    "saveProfileBtn": "Salva profilo",
+    "saveProfileBtn": "Salva e invia la richiesta",
     "submittingApplication": "Invio della domanda in corso…",
     "applyBtn": "Fai domanda con il profilo salvato",
-    "tokensHeading": "Token di invio degli agenti",
+    "tokensHeading": "Token per invii CLI / automazione (avanzato)",
     "tokensIntro": "I token elencano solo i vostri invii e inviano pacchetti di plugin. Non possono accedere alle API di account, pagamenti o amministrazione. Un token viene mostrato una sola volta: conservatelo nella variabile d'ambiente locale AWD_PLUGIN_TOKEN, mai nel codice sorgente, nei prompt o nei pacchetti.",
     "newTokenLabel": "Nuovo token (mostrato una sola volta)",
     "hideTokenBtn": "Salvato; nascondi token",
@@ -2467,7 +2469,7 @@
     "revokingToken": "Revoca del token in corso…",
     "revokeBtn": "Revoca",
     "myPluginsHeading": "I miei plugin e permessi dichiarati",
-    "myPluginsIntro": "La proprietà segue l'account che effettua l'invio, non il nome dell'autore nel pacchetto. Gli autori legacy possono ancora visualizzare gli invii; le nuove versioni richiedono un'approvazione di idoneità.",
+    "myPluginsIntro": "I plugin gratuiti open source possono essere inviati dopo l’accesso, senza token. Gli invii a pagamento o closed source richiedono l’approvazione sviluppatore.",
     "noPermissions": "Nessun permesso",
     "noSubmissionsYet": "Ancora nessun invio.",
     "historySummary": "Cronologia di idoneità"

@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
 import { Info } from 'lucide-react';
 import { SubmitPluginForm } from './SubmitPluginForm';
 import { SubmitPackForm } from './SubmitPackForm';
+import { crossSiteUrl, SITE_ID } from '@/lib/site-config';
 
 /**
  * 提交页的两种形态：JAR 插件与原生资源包。
@@ -47,7 +47,10 @@ export function SubmitTabs({ lang, pluginT, packT, developerApproved }: { lang: 
             </div>
 
             {tab === 'plugin' ? (
-                developerApproved ? <SubmitPluginForm lang={lang} t={pluginT} /> : <div className="rounded-xl border border-neutral-gray-light bg-white p-5"><p>{pluginT.developerNoticeBody}</p><Link className="mt-3 inline-block text-king-forest underline" href={`/${lang}/plugins/developer`}>{pluginT.developerNoticeLink}</Link></div>
+                SITE_ID !== 'cn' ? <div className="rounded-xl border border-neutral-gray-light bg-white p-6 text-center">
+                    <p className="text-neutral-gray-dark">{pluginT.submissionRegionNotice}</p>
+                    <a href={crossSiteUrl('cn', `/${lang}/plugins/submit`)} className="mt-4 inline-flex rounded-lg bg-king-forest px-5 py-2.5 text-sm font-semibold text-white">{pluginT.submissionRegionLink}</a>
+                </div> : <SubmitPluginForm lang={lang} t={pluginT} developerApproved={developerApproved} />
             ) : (
                 <SubmitPackForm lang={lang} t={packT} />
             )}

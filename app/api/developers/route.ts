@@ -14,6 +14,6 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     cookieDeveloper(request); const body = await readDeveloperBody(request);
-    return privateJson({ profile: saveDeveloper(cookieDeveloper(request), body.profile, body.expectedVersion) });
+    return privateJson({ profile: saveDeveloper(cookieDeveloper(request), body.profile, body.expectedVersion, body.apply === true) });
   } catch (e) { return developerApiError(e); }
 }

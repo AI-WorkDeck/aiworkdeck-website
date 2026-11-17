@@ -684,8 +684,8 @@
     "ctaBody": "Sıkıştırıp gönderin — en kısa sürede inceleyeceğiz.",
     "ctaBtn": "Eklenti gönder",
     "devEligibilityTitle": "Eklenti kimler yayınlayabilir",
-    "devEligibilityP1": "Ücretsiz açık kaynak eklentiler: kaydolun ve gönderin.",
-    "devEligibilityP2": "Ücretli veya kapalı kaynak eklentiler için önce geliştirici doğrulaması gerekir.",
+    "devEligibilityP1": "Ücretsiz açık kaynak eklentiler oturum açtıktan sonra token olmadan gönderilebilir.",
+    "devEligibilityP2": "Ücretli veya kapalı kaynak gönderimleri onaylı geliştirici erişimi gerektirir.",
     "devEligibilityLink": "Geliştirici merkezi"
   },
   "pluginSubmitPage": {
@@ -746,9 +746,11 @@
     "eyebrow": "Katkıda bulun",
     "pageTitle": "Eklenti veya pack gönder",
     "pageLead": "Eklentiler ve pack'ler çalıştırılabilir yükler içerir: her sürüm insan tarafından incelenir, ardından platform tarafından imzalanır ve dağıtılır.",
-    "developerNoticeBody": "Ücretsiz, açık kaynak eklentiler oturum açmış herhangi bir hesap tarafından gönderilebilir. Fiyat belirlemek veya kapalı kaynaklı bir eklenti yayınlamak için önce şu bölümden başvurun:",
+    "developerNoticeBody": "Ücretsiz açık kaynak eklentiler oturum açtıktan sonra token olmadan gönderilebilir. manifest.homepage herkese açık HTTPS kaynak URL’sini içermelidir. Ücretli veya kapalı kaynak gönderimleri onaylı geliştirici erişimi gerektirir. ",
     "developerNoticeLink": "Geliştirici merkezi",
-    "attributionNotice": "Eklentiniz onaylandığında herkese açık görünen adınız ve yazar profiliniz, marketplace sayfasında ve katkıda bulunanlar dizininde gösterilir."
+    "attributionNotice": "Eklentiniz onaylandığında herkese açık görünen adınız ve yazar profiliniz, marketplace sayfasında ve katkıda bulunanlar dizininde gösterilir.",
+    "submissionRegionNotice": "Uluslararası site yalnızca incelenmiş eklentileri yansıtır ve yerel gönderim kabul etmez. Çin sitesinden gönder; hesaplar ayrıdır, istendiğinde oturum aç.",
+    "submissionRegionLink": "Çin sitesinden gönder"
   },
   "packSubmitPage": {
     "tabPlugin": "JAR eklentisi",
@@ -2405,8 +2407,8 @@
     "title": "Geliştirici merkezi",
     "subtitle": "Başvurun, gönderim kimlik bilgilerini yönetin ve incelemeleri takip edin.",
     "signInToContinue": "Devam etmek için giriş yapın",
-    "gateStep1": "Geliştirici yetkisi için başvurun",
-    "gateStep2": "Gönderim belirteci oluşturun",
+    "gateStep1": "Ücretli veya kapalı kaynak gönderimleri onaylı geliştirici erişimi gerektirir.",
+    "gateStep2": "Web üzerinden doğrudan ZIP yükle veya gerekirse CLI tokenı oluştur",
     "gateStep3": "Eklentilerinizi ve inceleme durumunu izleyin",
     "errors": {
       "version_conflict": "Profil değişti. Yenileyin ve tekrar deneyin.",
@@ -2418,7 +2420,7 @@
       "token_limit": "Eski bir token'ı iptal edin; en fazla 10 tanesi etkin olabilir."
     },
     "working": "Çalışıyor…",
-    "savedNotice": "Kaydedildi. Hazır olduğunuzda başvuruyu gönderin.",
+    "savedNotice": "Profilin incelemeye gönderildi.",
     "savingProfile": "Profil kaydediliyor…",
     "status": {
       "draft": "Taslak",
@@ -2428,13 +2430,13 @@
       "suspended": "Askıya alındı"
     },
     "introP1": "Geliştirici başvuruları ve uygunluk incelemesi başlangıçta ücretsizdir. Kimlik bilgileri tarafınızca beyan edilir; iletişim doğrulaması kimlik doğrulaması veya KYC değildir.",
-    "introP2": "İletişim bilgileri yalnızca size ve yöneticilere açıktır. Her eklenti yine ayrı güvenlik incelemesi ve imzalama gerektirir; eklenti fiyatlandırması değişmemiştir.",
+    "introP2": "Ücretsiz açık kaynak eklentiler oturum açtıktan sonra token olmadan gönderilebilir. Bu merkez ücretli veya kapalı kaynak yayınları içindir. İletişim bilgilerini yalnızca sen ve yöneticiler görebilir; her sürüm incelenir ve imzalanır.",
     "guideLink": "Kılavuz ve Agent talimatları",
     "submitLink": "Eklenti gönder",
     "loadFailedRetry": "Yükleme başarısız; tekrar deneyin",
     "loadingProfile": "Profil yükleniyor…",
     "profileHeading": "Geliştirici profili",
-    "profileNotice": "Değişiklikleri kaydetmek yeni bir uygunluk incelemesi gerektirir. Askıya alınan erişimin geri yüklenmesi yönetici onayı gerektirir. Mevcut yayınlanmış sürümler kullanılabilir kalır.",
+    "profileNotice": "Değişiklikleri göndermek yeni bir yeterlilik incelemesi başlatır. Askıya alınan erişimi yalnızca yönetici geri yükleyebilir. Yayımlanmış sürümler listede kalır.",
     "contactVerificationPrefix": "İletişim doğrulaması: ",
     "contactVerificationPending": "Beklemede (bir yönetici iletişimi manuel olarak doğrulayabilir)",
     "identityTypeLabel": "Tarafınızca beyan edilen kimlik",
@@ -2450,10 +2452,10 @@
     "planLabel": "Neyi oluşturmayı planlıyorsunuz ve bu izinler neden gerekiyor",
     "permissionsLegend": "İstenen eklenti izinleri",
     "permissionsHint": "Fiili eklenti izinleri onaylanan başvurunuz kapsamında olmalıdır. İzin eklemek yeni bir inceleme gerektirir.",
-    "saveProfileBtn": "Profili kaydet",
+    "saveProfileBtn": "Kaydet ve başvuruyu gönder",
     "submittingApplication": "Başvuru gönderiliyor…",
     "applyBtn": "Kayıtlı profili kullanarak başvur",
-    "tokensHeading": "Ajan gönderim jetonları",
+    "tokensHeading": "CLI / otomasyon gönderim tokenları (gelişmiş)",
     "tokensIntro": "Jetonlar yalnızca gönderimlerinizi listeler ve eklenti paketlerini gönderir. Hesap, ödeme veya yönetici API'lerine erişemezler. Bir jeton yalnızca bir kez gösterilir: yerel AWD_PLUGIN_TOKEN ortam değişkeninde saklayın; asla kaynak kodda, komut istemlerinde veya paketlerde bulundurmayın.",
     "newTokenLabel": "Yeni jeton (bir kez gösterilir)",
     "hideTokenBtn": "Kaydedildi; jetonu gizle",
@@ -2467,7 +2469,7 @@
     "revokingToken": "Token iptal ediliyor…",
     "revokeBtn": "İptal et",
     "myPluginsHeading": "Eklentilerim ve beyan edilen izinler",
-    "myPluginsIntro": "Sahiplik, paket içindeki yazar adına değil, paketi gönderen hesaba aittir. Eski yazarlar gönderimleri görmeye devam edebilir; yeni sürümler uygunluk onayı gerektirir.",
+    "myPluginsIntro": "Ücretsiz açık kaynak eklentiler oturum açtıktan sonra token olmadan gönderilebilir. Ücretli veya kapalı kaynak gönderimleri onaylı geliştirici erişimi gerektirir.",
     "noPermissions": "İzin yok",
     "noSubmissionsYet": "Henüz gönderim yok.",
     "historySummary": "Uygunluk geçmişi"

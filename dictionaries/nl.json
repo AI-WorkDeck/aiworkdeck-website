@@ -684,8 +684,8 @@
     "ctaBody": "Zip het in en dien het in — we bekijken het zo snel mogelijk.",
     "ctaBtn": "Plug-in indienen",
     "devEligibilityTitle": "Wie plug-ins kan publiceren",
-    "devEligibilityP1": "Gratis open-sourceplug-ins: registreer en dien in.",
-    "devEligibilityP2": "Betaalde of closed-sourceplug-ins vereisen eerst ontwikkelaarsverificatie.",
+    "devEligibilityP1": "Gratis open-sourceplugins kunnen na het inloggen zonder token worden ingediend.",
+    "devEligibilityP2": "Betaalde of closed-source-inzendingen vereisen goedgekeurde ontwikkelaarstoegang.",
     "devEligibilityLink": "Ontwikkelaarscentrum"
   },
   "pluginSubmitPage": {
@@ -746,9 +746,11 @@
     "eyebrow": "Bijdragen",
     "pageTitle": "Een plugin of Pack indienen",
     "pageLead": "Plugins en Packs bevatten uitvoerbare code: elke versie wordt door een mens beoordeeld, vervolgens ondertekend en door het platform gedistribueerd.",
-    "developerNoticeBody": "Gratis, open-source plugins kunnen door elk ingelogd account worden ingediend. Om een prijs te zetten of een closed-source plugin te publiceren, moet je eerst een aanvraag doen in het",
+    "developerNoticeBody": "Gratis open-sourceplugins kunnen na het inloggen zonder token worden ingediend. manifest.homepage moet de openbare HTTPS-bron-URL bevatten. Betaalde of closed-source-inzendingen vereisen goedgekeurde ontwikkelaarstoegang. ",
     "developerNoticeLink": "Ontwikkelaarscentrum",
-    "attributionNotice": "Wanneer je plugin wordt goedgekeurd, verschijnen je openbare weergavenaam en auteursprofiel op de marketplacepagina en in de bijdragersgids."
+    "attributionNotice": "Wanneer je plugin wordt goedgekeurd, verschijnen je openbare weergavenaam en auteursprofiel op de marketplacepagina en in de bijdragersgids.",
+    "submissionRegionNotice": "De internationale site spiegelt alleen beoordeelde plugins en accepteert geen lokale inzendingen. Dien in via de Chinese site; accounts zijn gescheiden, dus log in wanneer gevraagd.",
+    "submissionRegionLink": "Indienen via de Chinese site"
   },
   "packSubmitPage": {
     "tabPlugin": "JAR-plugin",
@@ -2405,8 +2407,8 @@
     "title": "Ontwikkelaarscentrum",
     "subtitle": "Doe een aanvraag, beheer uw inzendingsgegevens en volg de beoordelingen.",
     "signInToContinue": "Log in om door te gaan",
-    "gateStep1": "Ontwikkelaarstoegang aanvragen",
-    "gateStep2": "Een indieningstoken genereren",
+    "gateStep1": "Betaalde of closed-source-inzendingen vereisen goedgekeurde ontwikkelaarstoegang.",
+    "gateStep2": "Upload een ZIP via het web of maak zo nodig een CLI-token",
     "gateStep3": "Je plug-ins en de beoordelingsstatus volgen",
     "errors": {
       "version_conflict": "Het profiel is gewijzigd. Vernieuw en probeer het opnieuw.",
@@ -2418,7 +2420,7 @@
       "token_limit": "Trek een oud token in; er kunnen maximaal 10 actief zijn."
     },
     "working": "Bezig…",
-    "savedNotice": "Opgeslagen. Dien de aanvraag in wanneer u er klaar voor bent.",
+    "savedNotice": "Je profiel is ingediend voor beoordeling.",
     "savingProfile": "Profiel wordt opgeslagen…",
     "status": {
       "draft": "Concept",
@@ -2428,13 +2430,13 @@
       "suspended": "Opgeschort"
     },
     "introP1": "De beoordeling van ontwikkelaarsaanvragen en geschiktheid is aanvankelijk gratis. Identiteitsgegevens worden zelf verklaard; contactverificatie is geen identiteitsverificatie of KYC.",
-    "introP2": "Contactgegevens zijn alleen zichtbaar voor u en beheerders. Elke plugin vereist nog steeds een afzonderlijke securitybeoordeling en ondertekening; pluginprijzen blijven ongewijzigd.",
+    "introP2": "Gratis open-sourceplugins kunnen na het inloggen zonder token worden ingediend. Dit centrum is voor betaalde en closed-source-publicaties. Contactgegevens zijn alleen zichtbaar voor jou en beheerders; elke versie wordt beoordeeld en ondertekend.",
     "guideLink": "Gids en agentinstructies",
     "submitLink": "Plugin indienen",
     "loadFailedRetry": "Laden mislukt; opnieuw proberen",
     "loadingProfile": "Profiel laden…",
     "profileHeading": "Ontwikkelaarsprofiel",
-    "profileNotice": "Het opslaan van wijzigingen vereist een nieuwe geschiktheidsbeoordeling. Opgeschorte toegang heeft goedkeuring van een beheerder nodig om te worden hersteld. Reeds gepubliceerde versies blijven beschikbaar.",
+    "profileNotice": "Wijzigingen indienen start een nieuwe kwalificatiebeoordeling. Alleen een beheerder kan geschorste toegang herstellen. Gepubliceerde versies blijven vermeld.",
     "contactVerificationPrefix": "Contactverificatie: ",
     "contactVerificationPending": "In behandeling (een beheerder kan het contact handmatig verifiëren)",
     "identityTypeLabel": "Zelfverklaarde identiteit",
@@ -2450,10 +2452,10 @@
     "planLabel": "Wat u van plan bent te bouwen en waarom deze machtigingen nodig zijn",
     "permissionsLegend": "Geplande plug-in-machtigingen",
     "permissionsHint": "De werkelijke plug-in-machtigingen moeten binnen uw goedgekeurde aanvraag vallen. Het toevoegen van machtigingen vereist een nieuwe beoordeling.",
-    "saveProfileBtn": "Profiel opslaan",
+    "saveProfileBtn": "Opslaan en aanvraag indienen",
     "submittingApplication": "Aanvraag wordt ingediend…",
     "applyBtn": "Aanvragen met opgeslagen profiel",
-    "tokensHeading": "Agent-indieningstokens",
+    "tokensHeading": "Tokens voor CLI-/automatiseringinzendingen (geavanceerd)",
     "tokensIntro": "Tokens vermelden alleen uw indieningen en dienen plug-in-pakketten in. Ze hebben geen toegang tot account-, betalings- of beheer-API's. Een token wordt één keer getoond: bewaar het in de lokale omgevingsvariabele AWD_PLUGIN_TOKEN, nooit in broncode, prompts of pakketten.",
     "newTokenLabel": "Nieuw token (één keer getoond)",
     "hideTokenBtn": "Opgeslagen; token verbergen",
@@ -2467,7 +2469,7 @@
     "revokingToken": "Token wordt ingetrokken…",
     "revokeBtn": "Intrekken",
     "myPluginsHeading": "Mijn plugins en gedeclareerde machtigingen",
-    "myPluginsIntro": "Eigendom volgt de account die de inzending doet, niet een auteursnaam in het pakket. Legacy-auteurs kunnen inzendingen nog steeds bekijken; nieuwe versies vereisen goedkeuring van geschiktheid.",
+    "myPluginsIntro": "Gratis open-sourceplugins kunnen na het inloggen zonder token worden ingediend. Betaalde of closed-source-inzendingen vereisen goedgekeurde ontwikkelaarstoegang.",
     "noPermissions": "Geen machtigingen",
     "noSubmissionsYet": "Nog geen inzendingen.",
     "historySummary": "Geschiktheidsgeschiedenis"

@@ -30,14 +30,14 @@ const STATUS_META: Record<
     revoked: { labelKey: 'statusRevoked', className: 'text-red-700 bg-red-50 border-red-200', Icon: AlertTriangle },
 };
 
-export function SubmitPluginForm({ lang, t }: { lang: string; t: any }) {
-    // 本站是否接受付费投稿。不接受时定价字段不渲染，priceYuan 恒为空串——
-    // 也就是「不传 priceCents」，首次提交即免费，新版本沿用上一版标价（不做静默改价）。
+export function SubmitPluginForm({ lang, t, developerApproved }: { lang: string; t: any; developerApproved: boolean }) {
+    // 仅站点允许付费且资格已通过时展示定价。未获资格时显式按免费投稿，
+    // 避免旧付费版本在缺省继承价格后把作者卡死；收费版本缺省仍沿用上一版标价。
     const paidAllowed = siteConfig.allowPaidSubmissions;
     const [file, setFile] = useState<File | null>(null);
-    // 价格以元展示，提交时转分；0 = 免费
-    // 默认留空：首次提交 = 免费；新版本 = 沿用上一版本标价（防止默认 0 把付费插件静默改免费）
-    const [priceYuan, setPriceYuan] = useState('');
+    // 价格以元展示，提交时转分；0 = 免费。获资格者留空即继承上一版标价，
+    // 未获资格者显式提交 0，避免继承付费价格后无法发布免费开源新版本。
+    const [priceYuan, setPriceYuan] = useState(developerApproved ? '' : '0');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const [okMsg, setOkMsg] = useState('');
@@ -100,6 +100,10 @@ export function SubmitPluginForm({ lang, t }: { lang: string; t: any }) {
     return (
         <div className="space-y-8">
             <section className="rounded-2xl border border-neutral-gray-light bg-white p-6 shadow-sm">
+                {!developerApproved && <div className="mb-4 rounded-lg border border-king-mint/40 bg-king-forest-lightest/50 px-4 py-3 text-sm leading-relaxed text-neutral-gray-dark">
+                    {t.developerNoticeBody}
+                    <a href={`/${lang}/plugins/developer`} className="ml-1 font-medium text-king-forest underline underline-offset-4">{t.developerNoticeLink}</a>
+                </div>}
                 <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.8} />
                     <div>
@@ -180,7 +184,7 @@ export function SubmitPluginForm({ lang, t }: { lang: string; t: any }) {
                     />
                 </label>
 
-                {paidAllowed ? (
+                {paidAllowed && developerApproved ? (
                     <div className="mt-4 flex max-w-xs flex-col gap-1.5">
                         <label htmlFor="plugin-price" className="text-sm font-medium text-neutral-gray-dark">
                             {t.priceLabel}
@@ -199,12 +203,12 @@ export function SubmitPluginForm({ lang, t }: { lang: string; t: any }) {
                             {t.priceHint}
                         </p>
                     </div>
-                ) : (
+                ) : !paidAllowed ? (
                     // 说明放在原本填价格的位置：别让人打完包上传了才发现不支持收费
                     <p className="mt-4 rounded-lg border border-neutral-gray-light bg-neutral-gray-pale px-4 py-3 text-sm leading-relaxed text-neutral-gray-dark">
                         {t.priceUnavailable}
                     </p>
-                )}
+                ) : null}
 
                 {error && (
                     <FormNotice variant="error" className="mt-3">{error}</FormNotice>

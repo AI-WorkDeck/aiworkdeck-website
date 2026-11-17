@@ -52,18 +52,19 @@ function accountVerification(user: User, data: DeveloperData): string | null {
 function audit(userId: string, version: number, action: string, note = '') {
   getDb().prepare('INSERT INTO developer_review(userId,version,action,note,actor,snapshot,createdAt) VALUES(?,?,?,?,?,?,?)').run(userId, version, action, note, ['approve', 'reject', 'suspend'].includes(action) ? 'admin' : userId, JSON.stringify(getDeveloper(userId)), new Date().toISOString());
 }
-export function saveDeveloper(user: User, value: unknown, expectedVersion: unknown) {
+export function saveDeveloper(user: User, value: unknown, expectedVersion: unknown, apply = false) {
   const data = validate(value);
   return withTransaction(d => {
     const freshUser = findUserById(user.id);
     if (!freshUser || isDeletedUser(freshUser)) fail('unauthorized', 401);
     const old = current(freshUser.id, expectedVersion); const now = new Date().toISOString();
-    const status = old?.status === 'suspended' ? 'suspended' : 'draft';
+    if (apply && old && !['draft', 'rejected', 'approved'].includes(old.status)) fail('invalid_state', 409);
+    const status = old?.status === 'suspended' ? 'suspended' : apply ? 'pending' : 'draft';
     const version = (old?.version ?? 0) + 1;
     d.prepare(`INSERT INTO developer_profile(userId,data,status,version,contactVerification,reviewNote,createdAt,updatedAt) VALUES(?,?,?,?,?,'',?,?)
       ON CONFLICT(userId) DO UPDATE SET data=excluded.data,status=excluded.status,version=excluded.version,contactVerification=excluded.contactVerification,reviewNote=excluded.reviewNote,updatedAt=excluded.updatedAt`)
       .run(user.id, JSON.stringify(data), status, version, accountVerification(freshUser, data), old?.createdAt ?? now, now);
-    audit(user.id, version, 'save'); return getDeveloper(user.id)!;
+    audit(user.id, version, apply ? 'apply' : 'save'); return getDeveloper(user.id)!;
   });
 }
 export function applyDeveloper(user: User, expectedVersion: unknown) {

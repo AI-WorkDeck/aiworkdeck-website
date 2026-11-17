@@ -684,8 +684,8 @@
     "ctaBody": "zip으로 압축하여 제출해 주세요. 최대한 빨리 검토하겠습니다.",
     "ctaBtn": "플러그인 제출",
     "devEligibilityTitle": "플러그인을 게시할 수 있는 사용자",
-    "devEligibilityP1": "오픈소스 무료 플러그인은 가입만 하면 제출할 수 있습니다.",
-    "devEligibilityP2": "유료 또는 비공개 소스 플러그인은 먼저 개발자 인증이 필요합니다.",
+    "devEligibilityP1": "무료 오픈 소스 플러그인은 로그인 후 토큰 없이 제출할 수 있습니다.",
+    "devEligibilityP2": "유료 또는 클로즈드 소스 제출에는 승인된 개발자 자격이 필요합니다.",
     "devEligibilityLink": "개발자 센터"
   },
   "pluginSubmitPage": {
@@ -746,9 +746,11 @@
     "eyebrow": "기여하기",
     "pageTitle": "플러그인 또는 Pack 제출",
     "pageLead": "플러그인과 팩은 실행 가능한 페이로드를 포함합니다. 모든 버전은 사람이 검토한 후 플랫폼이 서명하고 배포합니다.",
-    "developerNoticeBody": "무료 오픈소스 플러그인은 로그인한 계정이라면 누구나 제출할 수 있습니다. 가격을 설정하거나 클로즈드소스 플러그인을 게시하려면 먼저 다음에서 신청하세요:",
+    "developerNoticeBody": "무료 오픈 소스 플러그인은 로그인 후 토큰 없이 제출할 수 있습니다. manifest.homepage에 공개 소스 HTTPS URL을 입력해야 합니다. 유료 또는 클로즈드 소스 제출에는 승인된 개발자 자격이 필요합니다. ",
     "developerNoticeLink": "개발자 센터",
-    "attributionNotice": "플러그인이 승인되면 공개 표시 이름과 작성자 프로필이 마켓플레이스 페이지와 기여자 명부에 표시됩니다."
+    "attributionNotice": "플러그인이 승인되면 공개 표시 이름과 작성자 프로필이 마켓플레이스 페이지와 기여자 명부에 표시됩니다.",
+    "submissionRegionNotice": "국제 사이트는 검토된 플러그인만 미러링하며 현지 제출을 받지 않습니다. 중국 사이트에서 제출하세요. 계정은 별도이므로 안내에 따라 로그인하세요.",
+    "submissionRegionLink": "중국 사이트에서 제출"
   },
   "packSubmitPage": {
     "tabPlugin": "JAR 플러그인",
@@ -2405,8 +2407,8 @@
     "title": "개발자 센터",
     "subtitle": "신청하고, 제출 자격 증명을 관리하며, 검토 현황을 확인하세요.",
     "signInToContinue": "계속하려면 로그인하세요",
-    "gateStep1": "개발자 자격 신청",
-    "gateStep2": "제출 토큰 발급",
+    "gateStep1": "유료 또는 클로즈드 소스 제출에는 승인된 개발자 자격이 필요합니다.",
+    "gateStep2": "웹에서 ZIP을 바로 업로드하거나 필요 시 CLI 토큰 생성",
     "gateStep3": "작품과 심사 진행 상황 확인",
     "errors": {
       "version_conflict": "프로필이 변경되었습니다. 새로고침 후 다시 시도하세요.",
@@ -2418,7 +2420,7 @@
       "token_limit": "기존 토큰을 취소하세요. 최대 10개까지만 활성화할 수 있습니다."
     },
     "working": "처리 중…",
-    "savedNotice": "저장되었습니다. 준비가 되면 신청서를 제출하세요.",
+    "savedNotice": "프로필을 검토용으로 제출했습니다.",
     "savingProfile": "프로필 저장 중…",
     "status": {
       "draft": "초안",
@@ -2428,13 +2430,13 @@
       "suspended": "정지됨"
     },
     "introP1": "개발자 신청 및 자격 심사는 초기에 무료입니다. 신원 정보는 본인이 직접 선언하는 것이며, 연락처 확인은 신원 확인이나 KYC가 아닙니다.",
-    "introP2": "연락처 정보는 본인과 관리자만 볼 수 있습니다. 모든 플러그인은 여전히 별도의 보안 검토와 서명이 필요하며, 플러그인 가격은 변경되지 않습니다.",
+    "introP2": "무료 오픈 소스 플러그인은 로그인 후 토큰 없이 제출할 수 있습니다. 이 센터는 유료 및 클로즈드 소스 게시용입니다. 연락처는 본인과 관리자만 볼 수 있으며 모든 버전은 검토와 서명을 거칩니다.",
     "guideLink": "Guide 및 Agent 지침",
     "submitLink": "플러그인 제출하기",
     "loadFailedRetry": "불러오기 실패, 다시 시도",
     "loadingProfile": "프로필 불러오는 중…",
     "profileHeading": "개발자 프로필",
-    "profileNotice": "변경 사항을 저장하려면 새로운 자격 심사가 필요합니다. 정지된 액세스를 복원하려면 관리자의 승인이 필요합니다. 이미 게시된 버전은 계속 사용할 수 있습니다.",
+    "profileNotice": "변경 사항을 제출하면 자격 심사가 다시 시작됩니다. 정지된 자격은 관리자만 복구할 수 있습니다. 게시된 버전은 목록에 유지됩니다.",
     "contactVerificationPrefix": "연락처 확인: ",
     "contactVerificationPending": "대기 중(관리자가 연락처를 수동으로 확인할 수 있음)",
     "identityTypeLabel": "본인 선언 신원",
@@ -2450,10 +2452,10 @@
     "planLabel": "구축 계획과 이러한 권한이 필요한 이유",
     "permissionsLegend": "계획된 플러그인 권한",
     "permissionsHint": "플러그인의 실제 권한은 승인된 신청 범위 내에 있어야 합니다. 권한을 추가하려면 다시 검토가 필요합니다.",
-    "saveProfileBtn": "프로필 저장",
+    "saveProfileBtn": "저장하고 신청 제출",
     "submittingApplication": "신청 제출 중…",
     "applyBtn": "저장된 프로필로 신청",
-    "tokensHeading": "에이전트 제출 토큰",
+    "tokensHeading": "CLI / 자동 제출 토큰(고급)",
     "tokensIntro": "토큰은 제출 목록 조회와 플러그인 패키지 제출에만 사용되며, 계정, 결제 또는 관리자 API에는 접근할 수 없습니다. 토큰은 한 번만 표시됩니다. 로컬 AWD_PLUGIN_TOKEN 환경 변수에 보관하고 소스 코드, 프롬프트 또는 패키지에 절대 포함하지 마세요.",
     "newTokenLabel": "새 토큰(한 번만 표시)",
     "hideTokenBtn": "저장됨; 토큰 숨기기",
@@ -2467,7 +2469,7 @@
     "revokingToken": "토큰을 취소하는 중…",
     "revokeBtn": "취소",
     "myPluginsHeading": "내 플러그인 및 선언된 권한",
-    "myPluginsIntro": "소유권은 패키지 내 작성자 이름이 아닌 제출한 계정을 따릅니다. 기존 작성자는 제출 내역을 계속 볼 수 있으며, 새 버전은 자격 승인이 필요합니다.",
+    "myPluginsIntro": "무료 오픈 소스 플러그인은 로그인 후 토큰 없이 제출할 수 있습니다. 유료 또는 클로즈드 소스 제출에는 승인된 개발자 자격이 필요합니다.",
     "noPermissions": "권한 없음",
     "noSubmissionsYet": "아직 제출된 항목이 없습니다.",
     "historySummary": "자격 기록"

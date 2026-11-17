@@ -54,7 +54,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const entry = getPlugin(id, version);
     if (!entry) return NextResponse.json({ error: 'not_found' }, { status: 404 });
     let result: ReturnType<typeof approvePlugin>;
-    try { result = withTransaction(() => { requireDeclaredPermissions(entry.authorId, entry.permissions); return approvePlugin(id, version); }); } catch (e) { return developerApiError(e); }
+    try { result = withTransaction(() => {
+      if (entry.requiresDeveloperReview !== false) requireDeclaredPermissions(entry.authorId, entry.permissions);
+      return approvePlugin(id, version);
+    }); } catch (e) { return developerApiError(e); }
     const { ok, reason } = result;
     if (!ok) {
       const message =

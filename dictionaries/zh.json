@@ -686,8 +686,8 @@
     "ctaBody": "打包成 zip，提交后我们会尽快审核。",
     "ctaBtn": "提交插件",
     "devEligibilityTitle": "谁可以发布插件",
-    "devEligibilityP1": "开源免费插件，注册即可提交。",
-    "devEligibilityP2": "标价或闭源的插件，需先通过开发者认证。",
+    "devEligibilityP1": "免费开源插件，登录即可提交，无需令牌。",
+    "devEligibilityP2": "收费或闭源投稿，需先通过开发者资格审核。",
     "devEligibilityLink": "开发者中心"
   },
   "pluginSubmitPage": {
@@ -748,9 +748,11 @@
     "eyebrow": "社区共建",
     "pageTitle": "提交插件与资源包",
     "pageLead": "插件与资源包都含可执行载荷：逐版本人工审核，通过后由平台签名分发。",
-    "developerNoticeBody": "开源的免费插件，任何登录账号都能直接提交。如果要设置价格收款，或上传闭源插件，需要先在",
+    "developerNoticeBody": "免费开源插件，登录即可提交，无需令牌。 manifest.homepage 需填写公开源码 HTTPS 地址。 收费或闭源投稿，需先通过开发者资格审核。 ",
     "developerNoticeLink": "开发者中心",
-    "attributionNotice": "插件审核上架后，你的公开显示名与作者主页将展示在广场作品页和贡献者名录中。"
+    "attributionNotice": "插件审核上架后，你的公开显示名与作者主页将展示在广场作品页和贡献者名录中。",
+    "submissionRegionNotice": "国际站只展示已审核插件，不在本地接收投稿，以避免镜像覆盖。请前往国内站提交；两站账号独立，按页面提示登录。",
+    "submissionRegionLink": "前往国内站提交"
   },
   "packSubmitPage": {
     "tabPlugin": "JAR 插件",
@@ -2407,8 +2409,8 @@
     "title": "开发者中心",
     "subtitle": "申请开发者资格，管理投稿凭据，查看作品与审核进度。",
     "signInToContinue": "登录账号后继续",
-    "gateStep1": "申请开发者资格",
-    "gateStep2": "生成投稿令牌",
+    "gateStep1": "收费或闭源投稿，需先通过开发者资格审核。",
+    "gateStep2": "网页直接上传 ZIP，或按需生成 CLI 令牌",
     "gateStep3": "查看作品与审核进度",
     "errors": {
       "version_conflict": "资料已被更新，请刷新后重试。",
@@ -2420,7 +2422,7 @@
       "token_limit": "最多同时保留 10 个有效令牌，请先撤销旧令牌。"
     },
     "working": "正在处理…",
-    "savedNotice": "资料已保存，请提交资格申请。",
+    "savedNotice": "资料已提交，进入资格审核。",
     "savingProfile": "正在保存资料…",
     "status": {
       "draft": "草稿",
@@ -2430,13 +2432,13 @@
       "suspended": "资格已暂停"
     },
     "introP1": "初期开发者申请与资格审核免费。个人或组织资料由申请人自行声明，联系核验不代表实名或 KYC 认证。",
-    "introP2": "联系信息仅本人和管理员可见。资格审核通过后仍需逐个插件安全审核、签名；插件定价规则保持不变。",
+    "introP2": "免费开源插件，登录即可提交，无需令牌。 这里用于收费或闭源投稿；联系信息仅本人和管理员可见，每个插件版本仍需安全审核与签名。",
     "guideLink": "开发指南与 Agent 指令",
     "submitLink": "提交插件",
     "loadFailedRetry": "读取失败，重新加载",
     "loadingProfile": "正在读取资料…",
     "profileHeading": "开发者资料",
-    "profileNotice": "保存修改会重新进入资格审核；已暂停资格需管理员恢复。已上架版本不会因此自动下架。",
+    "profileNotice": "提交修改会重新进入资格审核；已暂停资格需管理员恢复。已上架版本不会因此自动下架。",
     "contactVerificationPrefix": "联系核验：",
     "contactVerificationPending": "待核验（管理员可人工联系确认）",
     "identityTypeLabel": "身份类型（自行声明）",
@@ -2452,10 +2454,10 @@
     "planLabel": "准备开发什么、为什么需要这些权限",
     "permissionsLegend": "预计使用的插件权限",
     "permissionsHint": "插件实际声明的权限必须在资格申请范围内；新增权限需更新资料重新审核。",
-    "saveProfileBtn": "保存资料",
+    "saveProfileBtn": "保存并提交申请",
     "submittingApplication": "正在提交申请…",
     "applyBtn": "提交已保存的资格申请",
-    "tokensHeading": "Agent 投稿令牌",
+    "tokensHeading": "命令行 / 自动化投稿令牌（高级）",
     "tokensIntro": "只允许读取本人的插件提交和投稿，不能访问账号、付款或管理员接口。令牌只显示一次；请保存在本机环境变量 AWD_PLUGIN_TOKEN，不放入源码、对话或插件包。",
     "newTokenLabel": "新令牌（仅此一次）",
     "hideTokenBtn": "已保存，隐藏",
@@ -2469,7 +2471,7 @@
     "revokingToken": "正在撤销令牌…",
     "revokeBtn": "撤销",
     "myPluginsHeading": "我的插件与实际权限",
-    "myPluginsIntro": "作品按投稿账号关联，不依据插件包内自行填写的作者名称认领。历史作者仍可查看旧提交，新版本需先完成资格审核。",
+    "myPluginsIntro": "免费开源插件，登录即可提交，无需令牌。 收费或闭源投稿，需先通过开发者资格审核。",
     "noPermissions": "无权限",
     "noSubmissionsYet": "尚无投稿。",
     "historySummary": "资格变更记录"

@@ -54,7 +54,7 @@ import {
 /** 管理后台为维护者专用，不走 i18n 词典，界面固定中文。 */
 
 interface Overview {
-    stats: { skills: number; users: number; downloads: number; failedSubmissions: number };
+    stats: { skills: number; users: number; downloads: number; failedSubmissions: number; pendingDevelopers: number; pendingPlugins: number; pendingPacks: number };
     skills: any[];
     users: any[];
     failedSubmissions: any[];
@@ -258,7 +258,7 @@ export function AdminPanel({ bailianManaged }: { bailianManaged: string }) {
     const [token, setToken] = useState('');
     const [loginError, setLoginError] = useState('');
     const [data, setData] = useState<Overview | null>(null);
-    const [tab, setTab] = useState<TabKey>('users');
+    const [tab, setTab] = useState<TabKey>('plugins');
     // 深链定位的反馈 id（?tab=feedback&fb=N，优化者邮件里的「后台直达」链接）
     const [feedbackFocus, setFeedbackFocus] = useState<number | undefined>(undefined);
 
@@ -750,6 +750,9 @@ export function AdminPanel({ bailianManaged }: { bailianManaged: string }) {
 
     const navCount: Partial<Record<TabKey, number>> = {
         skills: data.stats.skills,
+        developers: data.stats.pendingDevelopers,
+        plugins: data.stats.pendingPlugins,
+        packs: data.stats.pendingPacks,
         users: data.stats.users,
         failed: data.stats.failedSubmissions,
     };
@@ -823,8 +826,8 @@ export function AdminPanel({ bailianManaged }: { bailianManaged: string }) {
                                             {count != null && (
                                                 <span
                                                     className={`font-mono text-xs tabular-nums ${
-                                                        item.key === 'failed' && count > 0
-                                                            ? 'text-red-600'
+                                                        ['failed', 'developers', 'plugins', 'packs'].includes(item.key) && count > 0
+                                                            ? 'font-semibold text-amber-700'
                                                             : 'text-neutral-gray-medium/70'
                                                     }`}
                                                 >
@@ -944,7 +947,7 @@ export function AdminPanel({ bailianManaged }: { bailianManaged: string }) {
                         </>
                     )}
 
-                    {tab === 'developers' && <DeveloperReview />}
+                    {tab === 'developers' && <DeveloperReview onReviewed={load} />}
 
                     {/* 插件审核：可执行代码，必须人工逐个过，见 PluginReview 组件注释 */}
                     {tab === 'plugins' && (
@@ -954,7 +957,7 @@ export function AdminPanel({ bailianManaged }: { bailianManaged: string }) {
                                 title="插件审核"
                                 description="插件是可执行代码，与桌面端宿主同权限。通过即对该版本签名，因此不提供批量通过。"
                             />
-                            <PluginReview />
+                            <PluginReview onReviewed={load} />
                         </>
                     )}
 

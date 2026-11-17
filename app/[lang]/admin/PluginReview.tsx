@@ -2,7 +2,7 @@
 
 import { useAdminSite } from './AdminWorkspace';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Download, PackageOpen, RefreshCw, ShieldX, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState, Notice, StatusDot, type Tone } from './ui';
@@ -37,7 +37,9 @@ interface PluginEntry {
     description: string;
     author: string;
     authorId: string;
+    homepage?: string;
     developerStatus: string;
+    requiresDeveloperReview?: boolean;
     permissions: string[];
     tools: { name: string; description?: string }[];
     files: Record<string, string>;
@@ -82,7 +84,7 @@ function formatSize(bytes: number): string {
     return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 }
 
-export function PluginReview() {
+export function PluginReview({ onReviewed }: { onReviewed?: () => Promise<void> }) {
     const { fetch, url } = useAdminSite();
     const [plugins, setPlugins] = useState<PluginEntry[]>([]);
     const [signingConfigured, setSigningConfigured] = useState(true);
@@ -90,14 +92,26 @@ export function PluginReview() {
     const [busy, setBusy] = useState('');
     const [expanded, setExpanded] = useState<string | null>(null);
     const [msg, setMsg] = useState('');
+    const [loading, setLoading] = useState(true);
+    const loadSeq = useRef(0);
 
     const load = useCallback(async () => {
-        const qs = filter === 'pending' ? '?status=pending' : '';
-        const res = await fetch(`/api/admin/plugins${qs}`);
-        if (!res.ok) return;
-        const d = await res.json();
-        setPlugins(d.plugins || []);
-        setSigningConfigured(d.signingConfigured !== false);
+        const seq = ++loadSeq.current;
+        setLoading(true);
+        setMsg('');
+        try {
+            const qs = filter === 'pending' ? '?status=pending' : '';
+            const res = await fetch(`/api/admin/plugins${qs}`);
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(d.message || d.error || `HTTP ${res.status}`);
+            if (seq !== loadSeq.current) return;
+            setPlugins(d.plugins || []);
+            setSigningConfigured(d.signingConfigured !== false);
+        } catch (error) {
+            if (seq === loadSeq.current) setMsg(error instanceof Error ? `审核队列读取失败：${error.message}` : '审核队列读取失败，请重试');
+        } finally {
+            if (seq === loadSeq.current) setLoading(false);
+        }
     }, [filter]);
 
     useEffect(() => {
@@ -122,18 +136,24 @@ export function PluginReview() {
 
         setBusy(`${p.id}@${p.version}`);
         setMsg('');
-        const res = await fetch(`/api/admin/plugins/${p.id}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ version: p.version, action, note }),
-        });
-        const d = await res.json().catch(() => ({}));
-        setBusy('');
-        if (!res.ok) {
-            setMsg(d.message || d.error || '操作失败');
-            return;
+        try {
+            const res = await fetch(`/api/admin/plugins/${p.id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ version: p.version, action, note }),
+            });
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                setMsg(d.message || d.error || '操作失败');
+                return;
+            }
+            await load();
+            await onReviewed?.();
+        } catch {
+            setMsg('请求中断，审核结果尚未确认。请先刷新队列，再决定是否重试。');
+        } finally {
+            setBusy('');
         }
-        await load();
     };
 
     return (
@@ -159,6 +179,7 @@ export function PluginReview() {
                         variant="outline"
                         size="sm"
                         onClick={load}
+                        disabled={loading}
                         className="gap-1.5 border-neutral-gray-light bg-white/70 text-neutral-gray-dark"
                     >
                         <RefreshCw className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -173,14 +194,16 @@ export function PluginReview() {
                     请先生成 Ed25519 密钥对并写入环境变量，公钥同步到桌面端配置。
                 </Notice>
             )}
+            <p role="status" aria-live="polite" className="sr-only">{loading ? '正在读取审核队列' : msg}</p>
             {msg && <Notice tone="danger">{msg}</Notice>}
+            {loading && <Notice>正在读取审核队列…</Notice>}
 
-            {plugins.length === 0 && (
+            {!loading && plugins.length === 0 && (
                 <div className="bg-white/65 backdrop-blur-xl border border-neutral-gray-light/90 rounded-xl">
                     <EmptyState
                         icon={PackageOpen}
                         title={filter === 'pending' ? '没有待审核的插件' : '还没有插件提交'}
-                        hint="开发者通过桌面端或 API 提交插件包后，会在这里排队等待人工审核与签名。"
+                        hint="开发者通过网页或 CLI 提交插件包后，会在这里排队等待人工审核与签名。"
                     />
                 </div>
             )}
@@ -216,9 +239,10 @@ export function PluginReview() {
                                     {p.description || '（无描述）'}
                                 </p>
                                 <p className="mt-1.5 text-xs text-neutral-gray-medium/90">
-                                    作者 {p.author}（{p.authorId}）· 资格 {p.developerStatus} · {formatSize(p.size)} · {p.scan.classCount} 个 class ·{' '}
+                                    作者 {p.author}（{p.authorId}）· {p.requiresDeveloperReview === false ? '免费开源社区投稿' : `资格 ${p.developerStatus}`} · {formatSize(p.size)} · {p.scan.classCount} 个 class ·{' '}
                                     {new Date(p.submittedAt).toLocaleString('zh-CN')}
                                 </p>
+                                {p.homepage && <a href={p.homepage} target="_blank" rel="noopener noreferrer" className="mt-1.5 inline-block text-xs text-king-forest underline underline-offset-2">公开源码地址</a>}
                             </div>
                             <div className="flex shrink-0 flex-wrap gap-2">
                                 <Button
