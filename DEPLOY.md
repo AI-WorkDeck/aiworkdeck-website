@@ -1604,7 +1604,7 @@ CN原SITE缺省经实际确认后记为 `inferredDefault:cn`，Intl必须显式�
 和provenance逐文件SHA清单；不含data、env、任何node_modules或 `*.node`。
 原Turbopack会为external包生成 `.next/node_modules` 链接；copytree解引用后包含整包
 及better-sqlite3原生二进制，故这里改用webpack且继续严格拒绝，而非删掉运行依赖。
-固定16.4.3运行器从
+固定16.4.6运行器从
 `.next/server/preview-props.json` 读取preview参数，不能只留下旧版prerender字段；
 包校验检查该文件／字段、BUILD_ID和完整server/static，并解开最终tar再次核清单。
 HTTP smoke禁用继承代理并拒绝全部重定向，逐响应核URL仍为localhost；显式Host与

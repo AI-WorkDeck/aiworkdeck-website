@@ -4,7 +4,7 @@
 import argparse, hashlib, json, os, pathlib, re, shutil, socket, subprocess, tarfile, tempfile, time, urllib.request, urllib.error, urllib.parse, zipfile, stat
 
 NODE = 'v22.23.2'
-NEXT = '16.4.3'
+NEXT = '16.4.6'
 BUILD_MODE = 'webpack'
 PUBLIC = {
     'NEXT_PUBLIC_AWD_SITE', 'NEXT_PUBLIC_BASE_URL', 'NEXT_PUBLIC_AWD_INTL_CONTACT_EMAIL',
@@ -215,7 +215,7 @@ def build(args):
         for name in ['package.json','package-lock.json','next.config.ts']:shutil.copy2(app/name,bundle/name)
         write(bundle/'public-config.json',values);write(bundle/'smoke.json',result)
         next_version=json.loads((app/'node_modules/next/package.json').read_text())['version']
-        if next_version != NEXT:raise ValueError('Expected pinned Next16.4.3')
+        if next_version != NEXT:raise ValueError('Expected pinned Next16.4.6')
         write(bundle/'provenance.json',{'schema':1,'sourceSha':args.source_sha,'site':args.site,'siteBinding':'explicit' if 'NEXT_PUBLIC_AWD_SITE' in values else 'inferredDefault:cn','node':NODE,'next':next_version,'buildMode':BUILD_MODE,'lockSha256':digest(bundle/'package-lock.json'),'publicConfigSha256':hashlib.sha256(json.dumps(values,sort_keys=True,separators=(',',':')).encode()).hexdigest(),'web':web,'workflowSha':os.environ.get('GITHUB_SHA'),'runnerPlatform':os.uname().sysname+' '+os.uname().machine,'nodeAbi':subprocess.check_output(['node','-p','process.versions.modules'],text=True).strip(),'files':inventory(bundle)})
         verify(bundle,args.source_sha,args.site)
         archive=out/'next-artifact.tar.gz'
