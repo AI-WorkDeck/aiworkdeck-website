@@ -2581,6 +2581,8 @@
     "lastLoginAt": "Log masuk terakhir",
     "lastLoginUnknown": "Tiada rekod",
     "lastLoginHint": "Log masuk berjaya ke laman web atau klien; log masuk terdahulu yang tidak direkodkan tidak dapat dipulihkan.",
+    "lastActiveAt": "Terakhir aktif",
+    "lastActiveHint": "Yang terkini antara penggunaan API desktop, panggilan model platform atau aktiviti dompet (ketepatan sejam); lebih mencerminkan penggunaan berbanding log masuk terakhir.",
     "bailianManaged": "Platform China menggunakan Bailian. Kunci dan model lalai diurus pada pelayan dan hanya boleh dibaca di sini. Semak baki dalam konsol Bailian.",
     "manage": "Urus laman",
     "choose": "Pilih laman",

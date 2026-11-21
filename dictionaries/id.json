@@ -2581,6 +2581,8 @@
     "lastLoginAt": "Login terakhir",
     "lastLoginUnknown": "Tidak tercatat",
     "lastLoginHint": "Login berhasil ke situs atau klien; login sebelumnya yang tidak tercatat tidak dapat dipulihkan.",
+    "lastActiveAt": "Terakhir aktif",
+    "lastActiveHint": "Yang terbaru dari penggunaan API desktop, panggilan model platform, atau aktivitas dompet (presisi per jam); lebih mencerminkan penggunaan daripada login terakhir.",
     "bailianManaged": "Platform Tiongkok menggunakan Bailian. Kunci dan model default dikelola di server dan hanya dapat dibaca di sini. Periksa saldo di konsol Bailian.",
     "manage": "Kelola situs",
     "choose": "Pilih situs",

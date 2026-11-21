@@ -2581,6 +2581,8 @@
     "lastLoginAt": "마지막 로그인",
     "lastLoginUnknown": "기록 없음",
     "lastLoginHint": "웹사이트 또는 클라이언트 로그인 성공 시간입니다. 기록되지 않은 이전 로그인은 복원할 수 없습니다.",
+    "lastActiveAt": "마지막 활동",
+    "lastActiveHint": "데스크톱 API 사용, 플랫폼 모델 호출, 지갑 내역 중 가장 최근 시점(시간 단위). 마지막 로그인보다 실제 사용 여부를 잘 보여줍니다.",
     "bailianManaged": "중국 플랫폼 AI는 Bailian을 사용합니다. 키와 기본 모델은 서버에서 관리하며 여기서는 읽기 전용입니다. 잔액은 Bailian 콘솔에서 확인하세요.",
     "manage": "사이트 관리",
     "choose": "사이트 선택",

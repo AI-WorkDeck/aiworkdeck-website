@@ -2581,6 +2581,8 @@
     "lastLoginAt": "Dernière connexion",
     "lastLoginUnknown": "Non enregistrée",
     "lastLoginHint": "Connexion réussie au site ou au client ; les connexions antérieures non enregistrées ne peuvent pas être reconstituées.",
+    "lastActiveAt": "Dernière activité",
+    "lastActiveHint": "Plus récente utilisation de l'API desktop, appel de modèle de la plateforme ou opération de portefeuille (à l'heure près) ; plus parlant que la dernière connexion.",
     "bailianManaged": "La plateforme Chine utilise Bailian. La clé et le modèle par défaut sont gérés sur le serveur et sont en lecture seule ici. Consultez le solde dans la console Bailian.",
     "manage": "Gérer le site",
     "choose": "Choisir le site",

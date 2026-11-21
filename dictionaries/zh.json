@@ -2583,6 +2583,8 @@
     "lastLoginAt": "最后登录时间",
     "lastLoginUnknown": "暂无记录",
     "lastLoginHint": "记录官网或客户端成功登录的时间；历史未记录的登录无法还原。",
+    "lastActiveAt": "最后活跃",
+    "lastActiveHint": "桌面端调用、平台模型使用或钱包流水中最晚的一次（精确到小时级）；比最后登录更能反映是否在用。",
     "bailianManaged": "国内平台使用百炼。密钥与默认模型由服务器配置，此处只读；余额请到百炼控制台查看。",
     "manage": "管理站点",
     "choose": "选择站点",

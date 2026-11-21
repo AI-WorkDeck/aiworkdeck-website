@@ -2581,6 +2581,8 @@
     "lastLoginAt": "Last login",
     "lastLoginUnknown": "Not recorded",
     "lastLoginHint": "Successful website or client login; earlier unrecorded logins cannot be recovered.",
+    "lastActiveAt": "Last active",
+    "lastActiveHint": "Latest of desktop API use, platform model calls or wallet activity (hour-level precision); a better usage signal than last login.",
     "bailianManaged": "China platform AI uses Bailian. The key and default model are managed on the server and are read-only here. Check the balance in the Bailian console.",
     "manage": "Manage site",
     "choose": "Select site",
