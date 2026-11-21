@@ -12,7 +12,7 @@ globalThis.fetch = async (url) => { assert.ok(String(url).startsWith('https://ws
 const { getDb, withTransaction } = await import('@/lib/db');
 const service = await import('@/lib/review-access');
 const { createUser } = await import('@/lib/users');
-const { findUserByApiKey, generateApiKey, revokeApiKey, countActiveKeys } = await import('@/lib/api-keys');
+const { findUserByApiKey, generateApiKey, revokeApiKey, countActiveKeys, MAX_ACTIVE_KEYS } = await import('@/lib/api-keys');
 const { subscriptionSnapshot, captureServiceFunding, SUBSCRIPTION_LIMITS } = await import('@/lib/subscription');
 const { getSpendableBalance, spendCredits } = await import('@/lib/credits');
 const { encryptKeyMaterial, getActiveKeyRow } = await import('@/lib/openrouter-keys');
@@ -171,7 +171,8 @@ ok('same grant retry recovers the previous invocation after lost response and cl
         AND json_extract(c.detail,'$.keyId')=json_extract(p.detail,'$.keyId'))`).get() as { n: number };
     assert.equal(pending.n, 0);
 });
-const reserved = [generateApiKey(grant.userId).key!, generateApiKey(grant.userId).key!, generateApiKey(grant.userId).key!];
+// Fill every free slot (the limit is not a fixed number; it went from 3 to 10).
+const reserved = Array.from({ length: MAX_ACTIVE_KEYS - countActiveKeys(grant.userId) }, () => generateApiKey(grant.userId).key!);
 await assert.rejects(service.connectReviewAccess(grant, cloud), (e: unknown) => e instanceof service.ReviewAccessError && e.code === 'temporary_key_limit');
 ok('full account-key slots never evict existing devices', () => {
     for (const key of reserved) assert.equal(findUserByApiKey(key.plaintextKey)?.id, grant.userId);
