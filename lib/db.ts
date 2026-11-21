@@ -1821,6 +1821,13 @@ export const MIGRATIONS: Array<{ version: number; up: (d: Database.Database) => 
       );
     },
   },
+  {
+    // 后台「最后活跃」：桌面端 Key 永不过期，lastLoginAt 只在领 Key 时写一次，看不出谁在用
+    version: 52,
+    up(d) {
+      d.exec('ALTER TABLE api_keys ADD COLUMN lastUsedAt TEXT;');
+    },
+  },
 ];
 
 function migrate(d: Database.Database) {

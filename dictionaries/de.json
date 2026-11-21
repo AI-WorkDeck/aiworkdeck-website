@@ -2581,6 +2581,8 @@
     "lastLoginAt": "Letzte Anmeldung",
     "lastLoginUnknown": "Nicht erfasst",
     "lastLoginHint": "Erfolgreiche Anmeldung auf der Website oder im Client; frühere nicht erfasste Anmeldungen sind nicht rekonstruierbar.",
+    "lastActiveAt": "Zuletzt aktiv",
+    "lastActiveHint": "Letzte Desktop-API-Nutzung, Plattformmodell-Anfrage oder Wallet-Buchung (stundengenau); aussagekräftiger als der letzte Login.",
     "bailianManaged": "Die China-Plattform nutzt Bailian. Schlüssel und Standardmodell werden auf dem Server verwaltet und sind hier schreibgeschützt. Das Guthaben finden Sie in der Bailian-Konsole.",
     "manage": "Website verwalten",
     "choose": "Website auswählen",

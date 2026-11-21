@@ -2581,6 +2581,8 @@
     "lastLoginAt": "Laatste aanmelding",
     "lastLoginUnknown": "Niet vastgelegd",
     "lastLoginHint": "Geslaagde aanmelding op de website of in de client; eerdere niet vastgelegde aanmeldingen kunnen niet worden hersteld.",
+    "lastActiveAt": "Laatst actief",
+    "lastActiveHint": "Meest recente desktop-API-gebruik, platformmodelaanroep of portemonneeboeking (op het uur nauwkeurig); zegt meer over gebruik dan de laatste login.",
     "bailianManaged": "Het Chinese platform gebruikt Bailian. De sleutel en het standaardmodel worden op de server beheerd en zijn hier alleen-lezen. Bekijk het saldo in de Bailian-console.",
     "manage": "Website beheren",
     "choose": "Website selecteren",

@@ -10,6 +10,7 @@ import { SITE_ID } from '@/lib/site-config';
 import { listDevelopers } from '@/lib/developers';
 import { listPlugins } from '@/lib/plugins-store';
 import { listPacks } from '@/lib/packs-store';
+import { getDb } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,8 +40,19 @@ export async function GET(request: NextRequest) {
   // 2026-08-30 明确要求手机号不脱敏展示，dev-board#295）
   // 只列真实可联系的用户，计数同口径（dev-board#652）：境内站要有手机号、国际站要有邮箱；
   // scripts/seed.mjs 的种子账号（@seed.aiworkdeck.com）是系统用户，注销墓碑行也不算。
-  let users: { username: string; displayName: string; email: string; phone: string; createdAt: string; lastLoginAt: string | null }[] = [];
+  let users: { username: string; displayName: string; email: string; phone: string; createdAt: string; lastLoginAt: string | null; lastActiveAt: string | null }[] = [];
   try {
+    // 最后活跃 = 桌面端 Key 最近使用 / 平台模型调用 / 钱包流水 三者取最晚。
+    // lastLoginAt 只在新建会话或领 Key 时写，Key 永不过期，所以它基本等于注册时间。
+    const lastActive = new Map(
+      (getDb().prepare(`
+        SELECT userId, MAX(at) AS at FROM (
+          SELECT userId, MAX(lastUsedAt) AS at FROM api_keys GROUP BY userId
+          UNION ALL SELECT userId, MAX(createdAt) FROM platform_ai_request GROUP BY userId
+          UNION ALL SELECT userId, MAX(ts) FROM wallet_ledger GROUP BY userId
+        ) WHERE at IS NOT NULL GROUP BY userId`).all() as { userId: string; at: string }[])
+        .map(r => [r.userId, r.at])
+    );
     const raw: User[] = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'users.json'), 'utf-8'));
     users = raw
       .filter(u => !u.deletedAt && !(u.email ?? '').endsWith('@seed.aiworkdeck.com'))
@@ -52,6 +64,7 @@ export async function GET(request: NextRequest) {
       phone: u.phone ?? '',
       createdAt: u.createdAt,
       lastLoginAt: u.lastLoginAt ?? null,
+      lastActiveAt: [lastActive.get(u.id), u.lastLoginAt].filter((v): v is string => !!v).sort().at(-1) ?? null,
     }));
   } catch {
     // 文件不存在即空

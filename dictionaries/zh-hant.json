@@ -2581,6 +2581,8 @@
     "lastLoginAt": "最後登入時間",
     "lastLoginUnknown": "暫無紀錄",
     "lastLoginHint": "記錄官網或用戶端成功登入的時間；歷史未記錄的登入無法還原。",
+    "lastActiveAt": "最後活躍",
+    "lastActiveHint": "桌面端呼叫、平台模型使用或錢包流水中最晚的一次（精確到小時級）；比最後登入更能反映是否在用。",
     "bailianManaged": "國內平台使用百煉。金鑰與預設模型由伺服器設定，此處唯讀；餘額請到百煉控制台查看。",
     "manage": "管理網站",
     "choose": "選擇網站",

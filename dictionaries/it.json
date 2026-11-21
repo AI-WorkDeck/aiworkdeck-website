@@ -2581,6 +2581,8 @@
     "lastLoginAt": "Ultimo accesso",
     "lastLoginUnknown": "Non registrato",
     "lastLoginHint": "Accesso riuscito al sito o al client; gli accessi precedenti non registrati non possono essere recuperati.",
+    "lastActiveAt": "Ultima attività",
+    "lastActiveHint": "Più recente tra uso dell'API desktop, chiamate ai modelli della piattaforma o movimenti del portafoglio (precisione oraria); indica l'uso meglio dell'ultimo accesso.",
     "bailianManaged": "La piattaforma cinese usa Bailian. La chiave e il modello predefinito sono gestiti sul server e qui sono di sola lettura. Consulta il saldo nella console Bailian.",
     "manage": "Gestisci sito",
     "choose": "Seleziona sito",

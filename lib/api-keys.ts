@@ -30,7 +30,11 @@ interface ApiKeyRow {
   prefix: string;
   createdAt: string;
   revokedAt: string | null;
+  lastUsedAt: string | null;
 }
+
+/** 后台「最后活跃」只要小时级精度；每次请求都写库是无谓的写放大。 */
+const LAST_USED_RESOLUTION_MS = 60 * 60 * 1000;
 
 export function hashApiKey(key: string): string {
   return crypto.createHash('sha256').update(key, 'utf-8').digest('hex');
@@ -179,5 +183,10 @@ export function findUserByApiKey(key: string): User | undefined {
   if (!row || !equal || !candidate.startsWith(API_KEY_PREFIX)) return undefined;
   const user = findUserById(row.userId);
   // 墓碑行不是可用账户。注销会删光 api_keys 行，这里是第二道闸（同 getUserByToken）。
-  return user && !isDeletedUser(user) ? user : undefined;
+  if (!user || isDeletedUser(user)) return undefined;
+  const now = Date.now();
+  if (!row.lastUsedAt || now - Date.parse(row.lastUsedAt) >= LAST_USED_RESOLUTION_MS) {
+    getDb().prepare('UPDATE api_keys SET lastUsedAt = ? WHERE id = ?').run(new Date(now).toISOString(), row.id);
+  }
+  return user;
 }

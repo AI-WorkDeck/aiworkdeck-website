@@ -1015,6 +1015,7 @@ export function AdminPanel({ bailianManaged }: { bailianManaged: string }) {
                                                 <th className={TH}>手机号</th>
                                                 <th className={TH}>注册时间</th>
                                                 <th className={TH} title={copy.lastLoginHint}>{copy.lastLoginAt}</th>
+                                                <th className={TH} title={copy.lastActiveHint}>{copy.lastActiveAt}</th>
                                             </tr>
                                         </Thead>
                                         <tbody>
@@ -1033,6 +1034,9 @@ export function AdminPanel({ bailianManaged }: { bailianManaged: string }) {
                                                     </td>
                                                     <td className={`${TD} text-neutral-gray-medium whitespace-nowrap`} title={copy.lastLoginHint}>
                                                         {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString(locale) : copy.lastLoginUnknown}
+                                                    </td>
+                                                    <td className={`${TD} text-neutral-gray-medium whitespace-nowrap`} title={copy.lastActiveHint}>
+                                                        {u.lastActiveAt ? new Date(u.lastActiveAt).toLocaleString(locale) : copy.lastLoginUnknown}
                                                     </td>
                                                 </tr>
                                             ))}

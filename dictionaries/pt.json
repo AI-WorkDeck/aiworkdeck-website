@@ -2581,6 +2581,8 @@
     "lastLoginAt": "Último login",
     "lastLoginUnknown": "Sem registro",
     "lastLoginHint": "Login bem-sucedido no site ou cliente; logins anteriores não registrados não podem ser recuperados.",
+    "lastActiveAt": "Última atividade",
+    "lastActiveHint": "O mais recente entre uso da API do desktop, chamadas de modelo da plataforma ou movimentos da carteira (precisão de hora); reflete melhor o uso do que o último login.",
     "bailianManaged": "A plataforma da China usa Bailian. A chave e o modelo padrão são gerenciados no servidor e são somente leitura aqui. Consulte o saldo no console Bailian.",
     "manage": "Gerir site",
     "choose": "Selecionar site",

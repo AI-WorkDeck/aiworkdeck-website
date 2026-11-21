@@ -2581,6 +2581,8 @@
     "lastLoginAt": "Son giriş",
     "lastLoginUnknown": "Kayıt yok",
     "lastLoginHint": "Web sitesine veya istemciye başarılı giriş; önceki kaydedilmemiş girişler kurtarılamaz.",
+    "lastActiveAt": "Son etkinlik",
+    "lastActiveHint": "Masaüstü API kullanımı, platform model çağrıları veya cüzdan hareketlerinden en sonuncusu (saat hassasiyetinde); kullanımı son girişten daha iyi gösterir.",
     "bailianManaged": "Çin platformu Bailian kullanır. Anahtar ve varsayılan model sunucuda yönetilir ve burada salt okunurdur. Bakiyeyi Bailian konsolundan kontrol edin.",
     "manage": "Siteyi yönet",
     "choose": "Site seç",

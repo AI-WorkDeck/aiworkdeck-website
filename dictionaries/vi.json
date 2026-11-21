@@ -2581,6 +2581,8 @@
     "lastLoginAt": "Đăng nhập gần nhất",
     "lastLoginUnknown": "Chưa ghi nhận",
     "lastLoginHint": "Đăng nhập thành công vào trang web hoặc ứng dụng; không thể khôi phục các lần đăng nhập trước chưa được ghi nhận.",
+    "lastActiveAt": "Hoạt động gần nhất",
+    "lastActiveHint": "Mốc muộn nhất trong: dùng API máy tính, gọi mô hình nền tảng hoặc giao dịch ví (chính xác đến giờ); phản ánh việc sử dụng tốt hơn lần đăng nhập cuối.",
     "bailianManaged": "Nền tảng Trung Quốc dùng Bailian. Khóa và mô hình mặc định được quản lý trên máy chủ và chỉ có thể đọc tại đây. Xem số dư trong bảng điều khiển Bailian.",
     "manage": "Quản lý trang",
     "choose": "Chọn trang",
