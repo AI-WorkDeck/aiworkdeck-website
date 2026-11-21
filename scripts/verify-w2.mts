@@ -4,6 +4,10 @@
  * Credits 重构 P3 起，「用户手动分配额度」已下线，额度由余额自动派生：
  *   limit = 远端已用 + 折算(可用 Credits)，用量事后回抄扣 Credits。
  * 本脚本覆盖新模型 + 旧模型遗留 pending 的对账。
+ *
+ * 国内站（cn）的平台 AI 已整体迁到百炼（lib/platform-ai，契约见 verify-platform-ai），
+ * OpenRouter 自动开 key 只剩国际站走。因此 cn 只跑与站点无关的部分（加解密、折算、
+ * 遗留 pending 对账）并确认 cn 的 ai-key 不再发 OpenRouter key；[5]–[11]、[13] 仅 intl 跑。
  * 必须在一个空目录里执行（data/awd.db 与 users.json 会建在 cwd，与真实数据隔离）：
  *   cd <空目录> && npx tsx --tsconfig <repo>/tsconfig.json <repo>/scripts/verify-w2.mts
  */
@@ -43,7 +47,7 @@ fs.writeFileSync(
 );
 
 const mgmt = await import('@/lib/openrouter-mgmt');
-// 本脚本的断言按 7.3 写死：即时汇率（dev-board#853）打桩成不可用，计费汇率固定落在站点默认值。
+// 即时汇率（dev-board#853）打桩成不可用，计费汇率固定落在站点默认值（cn 7.3、intl 1）。
 // 不打桩的话读汇率会在后台真去拉中间价，落盘时刻不确定，断言时红时绿。
 (await import('@/lib/fx-rate')).__setFxFetchForTests(async () => {
   throw new Error('verify-w2: fx offline');
@@ -57,6 +61,12 @@ const { generateApiKey } = await import('@/lib/api-keys');
 const { POST: aiKeyPOST } = await import('@/app/api/account/ai-key/route');
 const { GET: aiUsageGET } = await import('@/app/api/account/ai-usage/route');
 const { NextRequest } = await import('next/server');
+const { getExchangeRateInfo, getAiConfig } = await import('@/lib/ai-config');
+// [6] 起的金额断言按站点默认汇率与毛利乘数算（[4] 的纯函数用例仍写死 7.3/1.2）
+const RATE = getExchangeRateInfo().rate;
+const MARGIN = getAiConfig().marginMultiplier;
+const { platformProvider } = await import('@/lib/platform-ai/config');
+const IS_CN = platformProvider() === 'bailian';
 
 let passed = 0;
 function ok(name: string) {
@@ -70,10 +80,26 @@ const bearerReq = (key: string, url: string, method = 'GET') =>
 // ---------- 1. 未配置分支：明确报错，不半残运行 ----------
 console.log('\n[1] 未配置');
 const awdk1 = generateApiKey(userId).key!;
-const notCfgRes = await aiKeyPOST(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-key', 'POST'));
-assert.strictEqual(notCfgRes.status, 503);
-assert.strictEqual((await notCfgRes.json()).error, 'not_configured');
-ok('未配置加密密钥时 ai-key 端点 503');
+if (IS_CN) {
+  // cn 已迁百炼：旧客户端（不带 x-awd-ai-protocol: 2）一律 409 要求升级，绝不再发 OpenRouter key
+  const legacyRes = await aiKeyPOST(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-key', 'POST'));
+  assert.strictEqual(legacyRes.status, 409);
+  assert.strictEqual((await legacyRes.json()).error, 'client_upgrade_required');
+  ok('cn 旧协议客户端 → 409 client_upgrade_required');
+  const v2Req = new NextRequest('http://localhost/api/account/ai-key', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${awdk1.plaintextKey}`, 'x-awd-ai-protocol': '2' },
+  });
+  const notCfgRes = await aiKeyPOST(v2Req);
+  assert.strictEqual(notCfgRes.status, 503);
+  assert.strictEqual((await notCfgRes.json()).error, 'not_configured');
+  ok('cn 未配置百炼时 ai-key 端点 503');
+} else {
+  const notCfgRes = await aiKeyPOST(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-key', 'POST'));
+  assert.strictEqual(notCfgRes.status, 503);
+  assert.strictEqual((await notCfgRes.json()).error, 'not_configured');
+  ok('未配置加密密钥时 ai-key 端点 503');
+}
 
 // ---------- 2. 配置环境 + fetch 打桩 ----------
 const MGMT_KEY = 'mgmt-test-secret-do-not-log';
@@ -163,113 +189,6 @@ assert.strictEqual(centsFromUsd(1, 7.3, 1.2), 876);       // 1 美元用量 → 
 assert.strictEqual(centsFromUsd(0.001, 7.3, 1.2), 1);     // 极小用量向上取整到 1 分，不白送
 ok('入账折算向下取整、用量折算向上取整');
 
-// ---------- 5. 零 Credits：不开 key，且文案不得像掉线 ----------
-console.log('\n[5] 零 Credits');
-assert.strictEqual(getBalance(userId), 0);
-const noCredit = await aiKeyPOST(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-key', 'POST'));
-assert.strictEqual(noCredit.status, 409);
-const noCreditBody = await noCredit.json();
-assert.strictEqual(noCreditBody.error, 'no_credits');
-// 文案红线：桌面端 api.js 对含「登录」「未授权」「请先」的 message 判为掉线并清会话
-for (const banned of ['登录', '未授权', '请先']) {
-  assert.ok(!String(noCreditBody.message).includes(banned), `错误文案不得含「${banned}」`);
-}
-assert.strictEqual(getActiveKeyRow(userId), undefined, '零余额不建 key，避免孤儿 key');
-ok('零 Credits → 409 no_credits，不建 key，文案不像掉线');
-
-// ---------- 6. 充值后自动开 key，limit 派生自余额 ----------
-console.log('\n[6] 自动开 key');
-withTransaction(db => grantCredits(db, { userId, pool: 'topup', amountCents: 50000, ledgerKind: 'recharge' }));
-const keyRes = await aiKeyPOST(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-key', 'POST'));
-assert.strictEqual(keyRes.status, 200);
-const keyBody = await keyRes.json();
-assert.deepStrictEqual(Object.keys(keyBody).sort(), ['limitUsd', 'openrouterKey']);
-const expectLimit0 = usdFromCents(50000, 7.3, 1.2);
-assert.strictEqual(keyBody.limitUsd, expectLimit0, 'limit = 折算(余额)，无需任何「分配」动作');
-const row0 = getActiveKeyRow(userId)!;
-assert.strictEqual(decryptKeyMaterial(row0.encKey!), keyBody.openrouterKey);
-assert.strictEqual(getBalance(userId), 50000, '开 key 不扣钱——钱只在用量发生时扣');
-ok('有 Credits 即自动开 key，limit 派生自余额，开 key 不扣钱');
-
-// 幂等：反复调恒返回同一把（server 模式 per-user 计费隔离的前提）
-const again = await (await aiKeyPOST(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-key', 'POST'))).json();
-assert.strictEqual(again.openrouterKey, keyBody.openrouterKey);
-assert.strictEqual((getDb().prepare('SELECT COUNT(*) AS c FROM openrouter_keys WHERE userId = ?').get(userId) as { c: number }).c, 1);
-ok('ai-key 幂等：同账户恒返回同一把 key');
-
-// ---------- 7. 用量回抄 ----------
-console.log('\n[7] 用量回抄扣 Credits');
-const usage1 = await (await aiUsageGET(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-usage'))).json();
-assert.strictEqual(usage1.usageAvailable, true);
-assert.strictEqual(usage1.hasKey, true);
-assert.strictEqual(usage1.creditsCents, 50000);
-assert.strictEqual(getBalance(userId), 50000, '零用量不扣钱');
-ok('首次同步：建立用量水位，不扣钱');
-
-orKeys.get(row0.orKeyHash)!.usage = 2.0;
-const before7 = getBalance(userId);
-const usage2 = await (await aiUsageGET(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-usage'))).json();
-const owed = centsFromUsd(2.0, 7.3, 1.2);
-assert.strictEqual(getBalance(userId), before7 - owed, '新增用量按实际消耗扣 Credits');
-assert.strictEqual(usage2.creditsCents, before7 - owed);
-assert.strictEqual(usage2.usageUsd, 2.0);
-const led = listLedger(userId).entries[0];
-assert.strictEqual(led.kind, 'ai_alloc');
-assert.strictEqual(led.amountCents, -owed);
-ok('用量增长 → 折成 Credits 扣减并留流水');
-
-// 同一笔用量不得被重复扣
-const before7b = getBalance(userId);
-await aiUsageGET(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-usage'));
-assert.strictEqual(getBalance(userId), before7b, '水位已推进，重复同步不重复扣');
-ok('用量水位幂等：重复同步不二次扣费');
-
-// ---------- 8. limit 跟随余额（降额） ----------
-console.log('\n[8] limit 跟随余额');
-withTransaction(db => spendCredits(db, { userId, amountCents: 30000, ledgerKind: 'purchase' }));
-const afterSpend = await (await aiUsageGET(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-usage'))).json();
-const expectLimit1 = Math.round((2.0 + usdFromCents(getBalance(userId), 7.3, 1.2)) * 100) / 100;
-assert.strictEqual(afterSpend.limitUsd, expectLimit1, 'limit = 已用 + 折算(剩余余额)');
-assert.strictEqual(orKeys.get(row0.orKeyHash)!.limit, expectLimit1, '远端已降额');
-ok('Credits 花在别处后，AI 上限自动下调');
-
-// ---------- 9. 上游故障：200 + usageAvailable=false，绝不 4xx ----------
-console.log('\n[9] 上游故障降级');
-failNext.get = true;
-const degraded = await aiUsageGET(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-usage'));
-assert.strictEqual(degraded.status, 200, '桌面端把 4xx 判为凭据失效并清账户缓存，绝不能回 4xx');
-const dBody = await degraded.json();
-assert.strictEqual(dBody.usageAvailable, false);
-assert.strictEqual(dBody.creditsCents, getBalance(userId), 'Credits 是本地事实，照常返回');
-ok('上游不可达 → 200 + usageAvailable=false，Credits 不受影响');
-
-// ---------- 10. patch 失败不是丢钱事故 ----------
-console.log('\n[10] patch 失败');
-const before10 = getBalance(userId);
-failNext.patch = true;
-withTransaction(db => grantCredits(db, { userId, pool: 'topup', amountCents: 10000, ledgerKind: 'recharge' }));
-await aiUsageGET(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-usage'));
-assert.strictEqual(getBalance(userId), before10 + 10000, 'patch 失败不影响余额（钱只按用量扣）');
-// 下一次同步应当自愈
-const healed = await (await aiUsageGET(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-usage'))).json();
-const expectLimit2 = Math.round((2.0 + usdFromCents(getBalance(userId), 7.3, 1.2)) * 100) / 100;
-assert.strictEqual(healed.limitUsd, expectLimit2, '下次同步自动补上提额');
-ok('patch 失败只是阀门没动，钱分文不错，下次同步自愈');
-
-// ---------- 11. 超支保护：余额不足只扣到 0，绝不为负 ----------
-console.log('\n[11] 有界超支');
-const row11 = getActiveKeyRow(userId)!;
-withTransaction(db => spendCredits(db, { userId, amountCents: getBalance(userId), ledgerKind: 'purchase' }));
-assert.strictEqual(getBalance(userId), 0);
-orKeys.get(row11.orKeyHash)!.usage = 50.0; // 远端超支
-await aiUsageGET(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-usage'));
-assert.strictEqual(getBalance(userId), 0, '余额扣到 0 为止，绝不为负');
-const shortfall = getDb()
-  .prepare("SELECT COUNT(*) AS c FROM admin_audit WHERE action = 'ai_usage_shortfall'")
-  .get() as { c: number };
-assert.ok(shortfall.c >= 1, '缺口必须留痕给运营');
-ok('超支时余额扣到 0 为止并写 admin_audit 留痕');
-
 // ---------- 12. 遗留 pending 对账（旧模型残留） ----------
 console.log('\n[12] 遗留 pending 对账');
 const staleTs = new Date(Date.now() - 11 * 60 * 1000).toISOString();
@@ -294,6 +213,122 @@ const bd12 = (await import('@/lib/credits')).getBalanceBreakdown(user2Id);
 assert.strictEqual(bd12.topupCents, 5000);
 assert.strictEqual(bd12.rewardCents, 0);
 ok('遗留退款按原批次还原，不产生额外可提现额度');
+
+if (IS_CN) {
+  // cn 的平台 AI 走百炼，以下 OpenRouter 自动开 key / 回抄 / 降额 / 对账扫描在 cn 不再可达
+  console.log(`\n全部通过（cn：OpenRouter 自动预留段仅 intl 跑）：${passed} 项`);
+  process.exit(0);
+}
+
+// ---------- 5. 零 Credits：不开 key，且文案不得像掉线 ----------
+console.log('\n[5] 零 Credits');
+assert.strictEqual(getBalance(userId), 0);
+const noCredit = await aiKeyPOST(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-key', 'POST'));
+assert.strictEqual(noCredit.status, 409);
+const noCreditBody = await noCredit.json();
+assert.strictEqual(noCreditBody.error, 'no_credits');
+// 文案红线：桌面端 api.js 对含「登录」「未授权」「请先」的 message 判为掉线并清会话
+for (const banned of ['登录', '未授权', '请先']) {
+  assert.ok(!String(noCreditBody.message).includes(banned), `错误文案不得含「${banned}」`);
+}
+assert.strictEqual(getActiveKeyRow(userId), undefined, '零余额不建 key，避免孤儿 key');
+ok('零 Credits → 409 no_credits，不建 key，文案不像掉线');
+
+// ---------- 6. 充值后自动开 key，limit 派生自余额 ----------
+console.log('\n[6] 自动开 key');
+withTransaction(db => grantCredits(db, { userId, pool: 'topup', amountCents: 50000, ledgerKind: 'recharge' }));
+const keyRes = await aiKeyPOST(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-key', 'POST'));
+assert.strictEqual(keyRes.status, 200);
+const keyBody = await keyRes.json();
+// provider/baseUrl 是百炼迁移后追加的：桌面端按 provider 决定走哪条通道
+assert.deepStrictEqual(Object.keys(keyBody).sort(), ['baseUrl', 'limitUsd', 'openrouterKey', 'provider']);
+assert.strictEqual(keyBody.provider, 'openrouter');
+assert.strictEqual(keyBody.baseUrl, 'https://openrouter.ai/api/v1');
+const expectLimit0 = usdFromCents(50000, RATE, MARGIN);
+assert.strictEqual(keyBody.limitUsd, expectLimit0, 'limit = 折算(余额)，无需任何「分配」动作');
+const row0 = getActiveKeyRow(userId)!;
+assert.strictEqual(decryptKeyMaterial(row0.encKey!), keyBody.openrouterKey);
+assert.strictEqual(getBalance(userId), 50000, '开 key 不扣钱——钱只在用量发生时扣');
+ok('有 Credits 即自动开 key，limit 派生自余额，开 key 不扣钱');
+
+// 幂等：反复调恒返回同一把（server 模式 per-user 计费隔离的前提）
+const again = await (await aiKeyPOST(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-key', 'POST'))).json();
+assert.strictEqual(again.openrouterKey, keyBody.openrouterKey);
+assert.strictEqual((getDb().prepare('SELECT COUNT(*) AS c FROM openrouter_keys WHERE userId = ?').get(userId) as { c: number }).c, 1);
+ok('ai-key 幂等：同账户恒返回同一把 key');
+
+// ---------- 7. 用量回抄 ----------
+console.log('\n[7] 用量回抄扣 Credits');
+const usage1 = await (await aiUsageGET(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-usage'))).json();
+assert.strictEqual(usage1.usageAvailable, true);
+assert.strictEqual(usage1.hasKey, true);
+assert.strictEqual(usage1.creditsCents, 50000);
+assert.strictEqual(getBalance(userId), 50000, '零用量不扣钱');
+ok('首次同步：建立用量水位，不扣钱');
+
+orKeys.get(row0.orKeyHash)!.usage = 2.0;
+const before7 = getBalance(userId);
+const usage2 = await (await aiUsageGET(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-usage'))).json();
+const owed = centsFromUsd(2.0, RATE, MARGIN);
+assert.strictEqual(getBalance(userId), before7 - owed, '新增用量按实际消耗扣 Credits');
+assert.strictEqual(usage2.creditsCents, before7 - owed);
+assert.strictEqual(usage2.usageUsd, 2.0);
+const led = listLedger(userId).entries[0];
+assert.strictEqual(led.kind, 'ai_alloc');
+assert.strictEqual(led.amountCents, -owed);
+ok('用量增长 → 折成 Credits 扣减并留流水');
+
+// 同一笔用量不得被重复扣
+const before7b = getBalance(userId);
+await aiUsageGET(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-usage'));
+assert.strictEqual(getBalance(userId), before7b, '水位已推进，重复同步不重复扣');
+ok('用量水位幂等：重复同步不二次扣费');
+
+// ---------- 8. limit 跟随余额（降额） ----------
+console.log('\n[8] limit 跟随余额');
+withTransaction(db => spendCredits(db, { userId, amountCents: 30000, ledgerKind: 'purchase' }));
+const afterSpend = await (await aiUsageGET(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-usage'))).json();
+const expectLimit1 = Math.round((2.0 + usdFromCents(getBalance(userId), RATE, MARGIN)) * 100) / 100;
+assert.strictEqual(afterSpend.limitUsd, expectLimit1, 'limit = 已用 + 折算(剩余余额)');
+assert.strictEqual(orKeys.get(row0.orKeyHash)!.limit, expectLimit1, '远端已降额');
+ok('Credits 花在别处后，AI 上限自动下调');
+
+// ---------- 9. 上游故障：200 + usageAvailable=false，绝不 4xx ----------
+console.log('\n[9] 上游故障降级');
+failNext.get = true;
+const degraded = await aiUsageGET(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-usage'));
+assert.strictEqual(degraded.status, 200, '桌面端把 4xx 判为凭据失效并清账户缓存，绝不能回 4xx');
+const dBody = await degraded.json();
+assert.strictEqual(dBody.usageAvailable, false);
+assert.strictEqual(dBody.creditsCents, getBalance(userId), 'Credits 是本地事实，照常返回');
+ok('上游不可达 → 200 + usageAvailable=false，Credits 不受影响');
+
+// ---------- 10. patch 失败不是丢钱事故 ----------
+console.log('\n[10] patch 失败');
+const before10 = getBalance(userId);
+failNext.patch = true;
+withTransaction(db => grantCredits(db, { userId, pool: 'topup', amountCents: 10000, ledgerKind: 'recharge' }));
+await aiUsageGET(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-usage'));
+assert.strictEqual(getBalance(userId), before10 + 10000, 'patch 失败不影响余额（钱只按用量扣）');
+// 下一次同步应当自愈
+const healed = await (await aiUsageGET(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-usage'))).json();
+const expectLimit2 = Math.round((2.0 + usdFromCents(getBalance(userId), RATE, MARGIN)) * 100) / 100;
+assert.strictEqual(healed.limitUsd, expectLimit2, '下次同步自动补上提额');
+ok('patch 失败只是阀门没动，钱分文不错，下次同步自愈');
+
+// ---------- 11. 超支保护：余额不足只扣到 0，绝不为负 ----------
+console.log('\n[11] 有界超支');
+const row11 = getActiveKeyRow(userId)!;
+withTransaction(db => spendCredits(db, { userId, amountCents: getBalance(userId), ledgerKind: 'purchase' }));
+assert.strictEqual(getBalance(userId), 0);
+orKeys.get(row11.orKeyHash)!.usage = 50.0; // 远端超支
+await aiUsageGET(bearerReq(awdk1.plaintextKey, 'http://localhost/api/account/ai-usage'));
+assert.strictEqual(getBalance(userId), 0, '余额扣到 0 为止，绝不为负');
+const shortfall = getDb()
+  .prepare("SELECT COUNT(*) AS c FROM admin_audit WHERE action = 'ai_usage_shortfall'")
+  .get() as { c: number };
+assert.ok(shortfall.c >= 1, '缺口必须留痕给运营');
+ok('超支时余额扣到 0 为止并写 admin_audit 留痕');
 
 // ---------- 13. 定时对账扫描 ----------
 console.log('\n[13] reconcileAllQuotas');

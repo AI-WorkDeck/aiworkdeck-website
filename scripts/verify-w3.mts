@@ -312,12 +312,14 @@ const entBody = await entRes.json();
 const features = entBody.entitlements.map((e: any) => e.feature).sort();
 assert.deepStrictEqual(features, ['clipboard.unlimited', 'plugin:paid-plugin', 'skill:paid-skill']);
 for (const e of entBody.entitlements) {
-  assert.deepStrictEqual(Object.keys(e).sort(), ['feature', 'orderId', 'purchasedAt'], 'Spec §9 字段逐字对齐');
+  // expiresAt 于 2026-10-10 追加（限时权益如个人 Pro）；一次性购买的权益恒为永久 null
+  assert.deepStrictEqual(Object.keys(e).sort(), ['expiresAt', 'feature', 'orderId', 'purchasedAt'], 'Spec §9 字段逐字对齐');
+  assert.strictEqual(e.expiresAt, null, '一次性购买的权益永久有效');
 }
 const entAnon = await entitlementsGET(req('http://localhost/api/account/entitlements'));
 assert.strictEqual(entAnon.status, 401);
 assert.strictEqual(listEntitlements(buyerId).length, 3);
-ok('GET /api/account/entitlements：{feature, purchasedAt, orderId}，无 Key 401');
+ok('GET /api/account/entitlements：{feature, purchasedAt, orderId, expiresAt}，无 Key 401');
 
 const regSkills = await (await skillsRegistryGET()).json();
 const regPaid = regSkills.find((s: any) => s.id === 'paid-skill');
@@ -358,25 +360,39 @@ function decodeTrialCode(code: string): { payload: Buffer; signature: Buffer } {
   assert.strictEqual(raw.length, 70, 'payload 6 + 签名 64');
   return { payload: raw.subarray(0, 6), signature: raw.subarray(6) };
 }
-const generated = execFileSync('node', [path.join(repoRoot, 'scripts', 'gen-trial-code.mjs')], { encoding: 'utf-8' }).trim();
-const existing = fs.readFileSync(path.join(repoRoot, 'secrets', 'trial-code-v1.txt'), 'utf-8').trim();
+// 真私钥与既有码只在签发机的 secrets/ 里（不入库，CI 也没有）。有则对拍真私钥；
+// 没有则用临时 Ed25519 密钥验生成器的码格式与签名，「既有码同私钥」一项跳过并注明。
+const realPem = path.join(repoRoot, 'secrets', 'awd-trial-signing.pem');
+const hasRealKey = fs.existsSync(realPem);
+let pemPath = realPem;
+if (!hasRealKey) {
+  pemPath = path.join(cwd, 'w3-ephemeral-trial-signing.pem');
+  const { privateKey: ephemeral } = crypto.generateKeyPairSync('ed25519');
+  fs.writeFileSync(pemPath, ephemeral.export({ type: 'pkcs8', format: 'pem' }));
+}
+const generated = execFileSync('node', [path.join(repoRoot, 'scripts', 'gen-trial-code.mjs')], {
+  encoding: 'utf-8',
+  env: { ...process.env, AWD_TRIAL_SIGNING_PEM: pemPath },
+}).trim();
 const gen = decodeTrialCode(generated);
-const old = decodeTrialCode(existing);
-for (const [label, c] of [['新签', gen], ['既有', old]] as const) {
+const old = hasRealKey
+  ? decodeTrialCode(fs.readFileSync(path.join(repoRoot, 'secrets', 'trial-code-v1.txt'), 'utf-8').trim())
+  : null;
+for (const [label, c] of [['新签', gen], ...(old ? [['既有', old] as const] : [])] as const) {
   assert.strictEqual(c.payload[0], 0x01, `${label}码 版本字节`);
   assert.strictEqual(c.payload[1], 0x01, `${label}码 type=trial`);
   const iat = c.payload.readUInt32BE(2);
   assert.ok(iat > 1700000000 && iat < 2000000000, `${label}码 iat 合理`);
 }
-const publicKey = crypto.createPublicKey(
-  crypto.createPrivateKey(fs.readFileSync(path.join(repoRoot, 'secrets', 'awd-trial-signing.pem')))
-);
+const publicKey = crypto.createPublicKey(crypto.createPrivateKey(fs.readFileSync(pemPath)));
 assert.ok(crypto.verify(null, gen.payload, publicKey, gen.signature), '新签码验签通过');
-assert.ok(crypto.verify(null, old.payload, publicKey, old.signature), '既有码同一公钥验签通过');
+if (old) assert.ok(crypto.verify(null, old.payload, publicKey, old.signature), '既有码同一公钥验签通过');
 const tampered = Buffer.from(gen.payload);
 tampered[5] ^= 0xff;
 assert.ok(!crypto.verify(null, tampered, publicKey, gen.signature), '篡改 payload 验签失败');
-ok('gen-trial-code.mjs 与既有码同格式同私钥，解码验签双向通过');
+ok(hasRealKey
+  ? 'gen-trial-code.mjs 与既有码同格式同私钥，解码验签双向通过'
+  : 'gen-trial-code.mjs 码格式与验签通过（无真私钥：临时密钥，既有码对拍跳过）');
 
 
 // ---------- 11. 用 Credits 直接购买（Credits 重构 P4） ----------
