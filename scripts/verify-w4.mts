@@ -66,8 +66,9 @@ const {
   generateGiftCodes, redeemGiftCode, revokeGiftCode, listGiftCodes,
   normalizeCode, isGrantableFeature, MAX_BATCH,
 } = await import('@/lib/gift-codes');
-const { getDb } = await import('@/lib/db');
+const { getDb, MIGRATIONS } = await import('@/lib/db');
 const { getBalance } = await import('@/lib/wallet');
+const { getBalanceBreakdown } = await import('@/lib/credits');
 const { generateApiKey } = await import('@/lib/api-keys');
 const { NextRequest } = await import('next/server');
 const {
@@ -99,12 +100,15 @@ assert.strictEqual(
   1,
   'gift_codes 表已建'
 );
+// 不写死版本号：gift_codes 建于 version 5，之后迁移会持续追加。断言「全部迁移都已应用」
+const latestVersion = Math.max(...MIGRATIONS.map(m => m.version));
+assert.ok(latestVersion >= 5, 'gift_codes 所在的 version 5 必须在迁移表里');
 assert.strictEqual(
   count('SELECT MAX(version) AS c FROM schema_version'),
-  5,
-  '迁移已推进到 version 5'
+  latestVersion,
+  `迁移已推进到最新 version ${latestVersion}`
 );
-ok('迁移 version 5：gift_codes 表建成');
+ok('迁移全部应用（含 version 5）：gift_codes 表建成');
 
 const batch = generateGiftCodes({
   count: MAX_BATCH, kind: 'recharge', amountCents: 5000, note: '批量测试', createdBy: 'admin',
@@ -172,7 +176,11 @@ assert.strictEqual(getBalance(aliceId), 5000, '余额派生与返回值一致');
 const ledgerRow = getDb()
   .prepare('SELECT * FROM wallet_ledger WHERE userId = ? ORDER BY id DESC LIMIT 1')
   .get(aliceId) as any;
-assert.strictEqual(ledgerRow.kind, 'recharge');
+// Credits 重构后兑换码入账记 kind=gift、入 reward 批次（平台自费、不可提现），
+// 与真金白银的 recharge/topup 区分——不能让兑换码变成可提现余额。
+assert.strictEqual(ledgerRow.kind, 'gift');
+assert.strictEqual(getBalanceBreakdown(aliceId).rewardCents, 5000, '兑换码入 reward 批次');
+assert.strictEqual(getBalanceBreakdown(aliceId).topupCents, 0, '兑换码不产生可提现 topup');
 assert.strictEqual(ledgerRow.amountCents, 5000);
 assert.strictEqual(ledgerRow.balanceAfterCents, 5000);
 assert.strictEqual(ledgerRow.refOrderId, null, '兑换码不挂订单号');

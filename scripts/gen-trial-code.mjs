@@ -17,7 +17,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PEM_PATH = path.join(repoRoot, 'secrets', 'awd-trial-signing.pem');
+// AWD_TRIAL_SIGNING_PEM 仅供契约脚本用临时密钥对拍格式（CI 与公开仓都没有真私钥）
+const PEM_PATH = process.env.AWD_TRIAL_SIGNING_PEM || path.join(repoRoot, 'secrets', 'awd-trial-signing.pem');
 
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
