@@ -1642,7 +1642,9 @@
         "Skill Thẩm định Tin Pháp luật mới kiểm tra quy định, án lệ, ngày tháng, liên kết và thông tin tác giả trước khi xuất bản, cung cấp phát hiện có nguồn và giữ các vấn đề chưa xác minh ở trạng thái cần xác nhận.",
         "Cài đặt hiện có liên kết đến danh bạ công khai ghi nhận những người đóng góp cho ứng dụng, Skill và plugin.",
         "Kết nối mạng của plugin và phản hồi thao tác nhanh đã trở nên đáng tin cậy hơn.",
-        "Mở thư mục lồng nhau chứa tệp chưa được tải xuống từ iCloud không còn bị treo khi khởi tạo phiên bản; phiên bản đầu tiên được tạo sau khi tệp có sẵn trên máy."
+        "Mở thư mục lồng nhau chứa tệp chưa được tải xuống từ iCloud không còn bị treo khi khởi tạo phiên bản; phiên bản đầu tiên được tạo sau khi tệp có sẵn trên máy.",
+        "Các plugin hoạt động xuyên suốt nhiều dự án nay có thể mở và chỉnh sửa tệp Word trong dự án bạn đang mở, ngay trong trình soạn thảo riêng của AI WorkDeck.",
+        "Giá niêm yết của GLM-5.2 và Kimi K3.1 Pro nay đã được cập nhật cho khớp với mức giá hiện hành của nhà cung cấp."
       ]
     }
   },

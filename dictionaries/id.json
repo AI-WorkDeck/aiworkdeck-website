@@ -1642,7 +1642,9 @@
         "Skill Tinjauan Berita Hukum baru memeriksa peraturan, kasus, tanggal, tautan, dan atribusi sebelum publikasi, menyediakan temuan bersumber, serta menandai hal yang belum terselesaikan untuk dikonfirmasi.",
         "Pengaturan kini memiliki tautan ke direktori publik yang mengakui kontributor aplikasi, Skill, dan plugin.",
         "Koneksi jaringan plugin dan balasan tindakan cepat kini lebih andal.",
-        "Membuka folder bersarang dengan file yang belum diunduh dari iCloud tidak lagi macet saat inisialisasi versi; versi awal dibuat setelah file tersedia di perangkat."
+        "Membuka folder bersarang dengan file yang belum diunduh dari iCloud tidak lagi macet saat inisialisasi versi; versi awal dibuat setelah file tersedia di perangkat.",
+        "Plugin yang bekerja lintas proyek kini dapat membuka dan mengedit file Word di proyek yang sedang Anda buka, menggunakan editor bawaan AI WorkDeck.",
+        "Harga yang tercantum untuk GLM-5.2 dan Kimi K3.1 Pro kini telah disesuaikan dengan tarif terbaru dari penyedia layanan."
       ]
     }
   },

@@ -1642,7 +1642,9 @@
         "A new Legal News Review Skill checks authorities, cases, dates, links and attribution before publication, provides sourced findings, and leaves unresolved items marked for confirmation.",
         "Settings now links to a public directory recognizing app, Skill and plugin contributors.",
         "Plugin network connections and quick-action replies are more reliable.",
-        "Opening nested folders with files not yet downloaded from iCloud no longer hangs during version initialization; the initial version is created once the files are available locally."
+        "Opening nested folders with files not yet downloaded from iCloud no longer hangs during version initialization; the initial version is created once the files are available locally.",
+        "Plugins that work across projects can now open and edit Word files in the project you have open, in AI WorkDeck's own editor.",
+        "Listed prices for GLM-5.2 and Kimi K3.1 Pro now match the provider's current rates."
       ]
     }
   },
