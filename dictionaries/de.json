@@ -1642,7 +1642,9 @@
         "Ein neuer Skill zur Prüfung juristischer Nachrichten kontrolliert vor der Veröffentlichung Rechtsvorschriften, Fälle, Daten, Links und Autorenangaben, liefert belegte Feststellungen und kennzeichnet ungeklärte Punkte zur Bestätigung.",
         "Die Einstellungen verlinken nun auf ein öffentliches Verzeichnis der Mitwirkenden an App, Skills und Plugins.",
         "Netzwerkverbindungen von Plugins und Antworten auf Schnellaktionen sind jetzt zuverlässiger.",
-        "Das Öffnen verschachtelter Ordner mit noch nicht aus iCloud heruntergeladenen Dateien bleibt bei der Versionsinitialisierung nicht mehr hängen; die erste Version wird erstellt, sobald die Dateien lokal verfügbar sind."
+        "Das Öffnen verschachtelter Ordner mit noch nicht aus iCloud heruntergeladenen Dateien bleibt bei der Versionsinitialisierung nicht mehr hängen; die erste Version wird erstellt, sobald die Dateien lokal verfügbar sind.",
+        "Projektübergreifend genutzte Plugins können Word-Dateien jetzt in dem aktuell geöffneten Projekt mit dem integrierten Editor von AI WorkDeck öffnen und bearbeiten.",
+        "Die angezeigten Preise für GLM-5.2 und Kimi K3.1 Pro entsprechen nun den aktuellen Tarifen des Anbieters."
       ]
     }
   },

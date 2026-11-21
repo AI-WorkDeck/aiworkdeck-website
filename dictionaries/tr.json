@@ -1642,7 +1642,9 @@
         "Yeni Hukuk Haberi İnceleme Skill’i yayımdan önce mevzuatı, davaları, tarihleri, bağlantıları ve atıfları kontrol eder, kaynaklı bulgular sunar ve çözülmemiş konuları onay bekliyor olarak işaretler.",
         "Ayarlar artık uygulama, Skill ve eklenti katkıcılarını tanıyan herkese açık bir dizine bağlantı içeriyor.",
         "Eklenti ağ bağlantıları ve hızlı işlem yanıtları artık daha güvenilir.",
-        "iCloud'dan henüz indirilmemiş dosyalar içeren iç içe klasörleri açmak, sürüm başlatma sırasında artık takılmıyor; dosyalar yerel olarak kullanılabilir olduğunda ilk sürüm oluşturulur."
+        "iCloud'dan henüz indirilmemiş dosyalar içeren iç içe klasörleri açmak, sürüm başlatma sırasında artık takılmıyor; dosyalar yerel olarak kullanılabilir olduğunda ilk sürüm oluşturulur.",
+        "Projeler arası çalışan eklentiler artık, açık olan projedeki Word dosyalarını AI WorkDeck'in kendi düzenleyicisinde açıp düzenleyebilir.",
+        "GLM-5.2 ve Kimi K3.1 Pro için listelenen fiyatlar artık sağlayıcının güncel fiyatlarıyla uyumludur."
       ]
     }
   },

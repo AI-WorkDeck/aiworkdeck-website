@@ -1642,7 +1642,9 @@
         "Una nuova Skill per la revisione delle notizie giuridiche controlla norme, casi, date, collegamenti e attribuzioni prima della pubblicazione, fornisce risultati con fonti e lascia i punti irrisolti da confermare.",
         "Le Impostazioni ora includono un collegamento a un elenco pubblico che riconosce i collaboratori di app, Skill e plugin.",
         "Le connessioni di rete dei plugin e le risposte alle azioni rapide sono più affidabili.",
-        "L'apertura di cartelle annidate con file non ancora scaricati da iCloud non si blocca più durante l'inizializzazione della versione; la versione iniziale viene creata quando i file sono disponibili localmente."
+        "L'apertura di cartelle annidate con file non ancora scaricati da iCloud non si blocca più durante l'inizializzazione della versione; la versione iniziale viene creata quando i file sono disponibili localmente.",
+        "I plugin che funzionano su più progetti ora possono aprire e modificare i file Word nel progetto attualmente aperto, utilizzando l'editor integrato di AI WorkDeck.",
+        "I prezzi di listino di GLM-5.2 e Kimi K3.1 Pro sono stati aggiornati per corrispondere alle tariffe attuali del fornitore."
       ]
     }
   },
