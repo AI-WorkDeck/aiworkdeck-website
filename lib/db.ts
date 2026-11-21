@@ -1825,7 +1825,10 @@ export const MIGRATIONS: Array<{ version: number; up: (d: Database.Database) => 
     // 后台「最后活跃」：桌面端 Key 永不过期，lastLoginAt 只在领 Key 时写一次，看不出谁在用
     version: 52,
     up(d) {
-      d.exec('ALTER TABLE api_keys ADD COLUMN lastUsedAt TEXT;');
+      // 幂等：测试脚本会把版本号回退后重跑迁移，列可能已存在
+      if (!(d.prepare('PRAGMA table_info(api_keys)').all() as { name: string }[]).some(c => c.name === 'lastUsedAt')) {
+        d.exec('ALTER TABLE api_keys ADD COLUMN lastUsedAt TEXT;');
+      }
     },
   },
 ];
