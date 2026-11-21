@@ -10,7 +10,7 @@ import { mapUsernamesByIds } from './users';
  * 兑换码（PR-W4）。
  *
  * 两类：
- * - recharge   ：兑换后按面额入钱包（wallet_ledger 记 kind=recharge）
+ * - recharge   ：兑换后按面额入 reward 批次（wallet_ledger 记 kind=gift；平台自费、不可提现）
  * - entitlement：兑换后直接发权益（entitlements 行，orderId 记为 gift:<code>）
  *
  * 码格式 `AWDG-XXXX-XXXX-XXXX`：12 位 base32（A-Z2-7，60 bit 随机）。
