@@ -58,6 +58,8 @@ function entry(value: unknown, at: string, files: ReadonlyMap<string, Buffer>) {
 const VIEW_ID = /^[a-z][a-z0-9-]{0,49}$/;
 const OP_ID = /^[a-zA-Z][a-zA-Z0-9._-]{0,63}$/;
 const KEY = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/;
+/** Official first-party plugin hosts permitted to declare auth.type = 'awd-account' (mirrors host PluginConnectionService). */
+const AWD_ACCOUNT_ALLOWED_HOSTS = new Set(['ai-firm.aiworkdeck.com', 'aifirm.aiworkdeck.com']);
 /**
  * Every manifest permission the desktop host knows and enforces. Pinned by scripts/verify-plugin-permissions.mts,
  * which mirrors the main repo's backend/src/test/java/com/checkba/service/ai/PluginPermissionParityTest.java
@@ -96,7 +98,11 @@ export function validateMcpInputSchema(value: unknown, at = 'inputSchema', depth
   }
 }
 
-export function validatePluginPlatformManifest(manifest: Obj, files: ReadonlyMap<string, Buffer>): { payloadCount: number } {
+export function validatePluginPlatformManifest(
+  manifest: Obj,
+  files: ReadonlyMap<string, Buffer>,
+  opts?: { allowOfficialAccountAuth?: boolean },
+): { payloadCount: number } {
   const permissions = list(manifest.permissions, 'permissions', PERMISSIONS.length).map(p => oneOf(p, PERMISSIONS, 'permissions'));
   unique(permissions, 'permissions');
   const c = manifest.contributes === undefined ? {} : object(manifest.contributes, 'contributes');
@@ -139,7 +145,14 @@ export function validatePluginPlatformManifest(manifest: Obj, files: ReadonlyMap
     const base = https(conn.baseUrl, 'connections.baseUrl', true);
     const oauth = object(conn.auth, 'connections.auth');
     fields(oauth, ['type', 'authorizationUrl', 'tokenUrl', 'clientId', 'scopes'], 'connections.auth');
-    const auth = oneOf(oauth.type, ['none', 'bearer', 'oauth2'], 'connections.auth.type');
+    const auth = oneOf(oauth.type, ['none', 'bearer', 'oauth2', 'awd-account'], 'connections.auth.type');
+    if (auth === 'awd-account') {
+      fields(oauth, ['type'], 'connections.auth');
+      if (!opts?.allowOfficialAccountAuth) throw new Error('connections.auth.type: awd-account is reserved for official plugins');
+      if (!AWD_ACCOUNT_ALLOWED_HOSTS.has(base.hostname.toLowerCase().replace(/\.$/, ''))) {
+        throw new Error('connections.baseUrl: host is not allowed for awd-account auth');
+      }
+    }
     if (auth === 'oauth2') {
       https(oauth.authorizationUrl, 'oauth.authorizationUrl'); https(oauth.tokenUrl, 'oauth.tokenUrl');
       string(oauth.clientId, 'oauth.clientId', 512);
@@ -150,10 +163,13 @@ export function validatePluginPlatformManifest(manifest: Obj, files: ReadonlyMap
     for (const [name, rawOp] of Object.entries(ops)) {
       match(name, OP_ID, 'connections.operations');
       const op = object(rawOp, `operations.${name}`);
-      fields(op, ['path', 'method'], `operations.${name}`);
+      fields(op, ['path', 'method', 'anonymousFallback'], `operations.${name}`);
       const rel = match(op.path, /^\/[a-zA-Z0-9/_-]*$/, `operations.${name}.path`);
       if (rel.includes('//')) throw new Error('operations.path: empty segment');
       oneOf(op.method, ['GET', 'POST'], `operations.${name}.method`);
+      if (op.anonymousFallback !== undefined && typeof op.anonymousFallback !== 'boolean') {
+        throw new Error(`operations.${name}.anonymousFallback: expected boolean`);
+      }
     }
     if (conn.billing !== undefined) {
       const billing = object(conn.billing, 'connections.billing');
