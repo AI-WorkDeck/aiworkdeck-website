@@ -14,28 +14,16 @@
  * 并留一行 warn。**调用方不需要 try/catch，但也别拿返回值当发送成功的凭据**——
  * Resend 收下了不等于对方收件箱收到了。
  *
- * env：`AWD_MAIL_RESEND_KEY` / `AWD_MAIL_FROM`，与验证码邮件同一套（同一个发信域）。
+ * env：与验证码邮件同一套（同一个发信域、同一个通道，见 `lib/mail-transport.ts`）。
  * 没配就静默跳过并返回 false，与 `mailEnabled()` 的降级口径一致：
  * CI 合并即部署而密钥要人上服务器写，「代码已到、密钥未到」是必然的中间态。
  */
 
-const ENDPOINT = 'https://api.resend.com/emails';
-
-interface NotifyMailConfig {
-    apiKey: string;
-    from: string;
-}
-
-function notifyMailConfig(): NotifyMailConfig | null {
-    const apiKey = process.env.AWD_MAIL_RESEND_KEY || '';
-    const from = process.env.AWD_MAIL_FROM || '';
-    if (!apiKey || !from) return null;
-    return { apiKey, from };
-}
+import { mailTransportConfigured, sendTransactionalMail } from './mail-transport';
 
 /** 本站是否具备发通知信的能力。与 `mailEnabled()` 同判据，只是不牵扯验证码那条链。 */
 export function notifyMailEnabled(): boolean {
-    return notifyMailConfig() !== null;
+    return mailTransportConfigured();
 }
 
 export interface NotifyMail {
@@ -53,26 +41,7 @@ export async function sendNotifyMail({ to, subject, text }: NotifyMail): Promise
     const address = (to || '').trim();
     if (!address) return false;
 
-    const cfg = notifyMailConfig();
-    if (!cfg) return false;
-
-    try {
-        const res = await fetch(ENDPOINT, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${cfg.apiKey}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ from: cfg.from, to: [address], subject, text }),
-            signal: AbortSignal.timeout(10_000),
-        });
-        if (res.status >= 200 && res.status < 300) return true;
-        // 原始 message 含发信域名与内部错误码，只进日志
-        const body = await res.text().catch(() => '');
-        console.warn('[mail-notify] 发送被拒: status=%s body=%s', res.status, body.slice(0, 300));
-        return false;
-    } catch (e) {
-        console.warn('[mail-notify] 网关不可达:', e instanceof Error ? e.message : e);
-        return false;
-    }
+    if (!mailTransportConfigured()) return false;
+    const result = await sendTransactionalMail({ to: address, subject, text });
+    return result.ok;
 }

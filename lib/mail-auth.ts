@@ -24,6 +24,7 @@ import crypto from 'crypto';
 import { getDb, withTransaction } from './db';
 import { assertCodeSendAllowed } from './code-send-guard';
 import { isReviewIdentity, reviewCodeAccepts } from './review-account';
+import { mailTransportConfigured, sendTransactionalMail } from './mail-transport';
 
 // 策略常量在 lib/mail-constants.ts（客户端组件也要读，不能走这条含 better-sqlite3 的链）
 export {
@@ -34,7 +35,6 @@ import {
   MAIL_MAX_PER_ADDRESS_PER_DAY, MAIL_DAY_WINDOW_MS,
 } from './mail-constants';
 
-const ENDPOINT = 'https://api.resend.com/emails';
 
 export const SCENE_SIGNIN = 'signin';
 export const SCENE_PASSWORD_RESET = 'password_reset';
@@ -70,18 +70,6 @@ export function maskEmail(email: string): string {
   return `${head}${'*'.repeat(Math.max(local.length - 1, 1))}@${email.slice(at + 1)}`;
 }
 
-interface MailConfig {
-  apiKey: string;
-  from: string;
-}
-
-function mailConfig(): MailConfig | null {
-  const apiKey = process.env.AWD_MAIL_RESEND_KEY || '';
-  const from = process.env.AWD_MAIL_FROM || '';
-  if (!apiKey || !from) return null;
-  return { apiKey, from };
-}
-
 /**
  * 本站是否具备发信能力。
  *
@@ -93,7 +81,7 @@ function mailConfig(): MailConfig | null {
  * 都必须与它同时成立，否则那个中间态下就是两条路都堵死。
  */
 export function mailEnabled(): boolean {
-  return mailConfig() !== null;
+  return mailTransportConfigured();
 }
 
 /** 验证码邮件正文。纯文本 + 极简 HTML，不引模板系统。 */
@@ -116,37 +104,14 @@ function codeMessage(code: string, ttlMinutes: number, scene: string): { subject
 
 /** 发一封验证码邮件。失败抛 {@link MailError}，文案已脱敏。 */
 async function sendMail(email: string, code: string, scene: string): Promise<void> {
-  const cfg = mailConfig();
-  if (!cfg) throw new MailError('Email sign-in is not enabled on this site');
+  if (!mailTransportConfigured()) throw new MailError('Email sign-in is not enabled on this site');
 
   const { subject, text, html } = codeMessage(code, Math.round(MAIL_CODE_TTL_MS / 60_000), scene);
-
-  let status: number;
-  let body: string;
-  try {
-    const res = await fetch(ENDPOINT, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${cfg.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ from: cfg.from, to: [email], subject, text, html }),
-      signal: AbortSignal.timeout(10_000),
-    });
-    status = res.status;
-    body = await res.text();
-  } catch (e) {
-    console.warn('[mail] 网关不可达:', e instanceof Error ? e.message : e);
-    throw new MailError('Could not send the code, please try again shortly');
-  }
-
-  if (status >= 200 && status < 300) return;
-
-  console.warn('[mail] 发送被拒: status=%s body=%s', status, body.slice(0, 300));
-  // 422 是 Resend 对收件地址本身的拒绝（无效地址/被压制），这一类要让用户知道是地址的问题；
-  // 429 是我们这边打太快。其余一律通用文案，原始 message 不外露。
-  if (status === 422) throw new MailError('That email address was rejected, please check it and try again');
-  if (status === 429) throw new MailError('Too many requests, please try again shortly');
+  const result = await sendTransactionalMail({ to: email, subject, text, html });
+  if (result.ok) return;
+  // 分类之外的原始 message 只进日志（mail-transport），这里不外露
+  if (result.kind === 'bad-address') throw new MailError('That email address was rejected, please check it and try again');
+  if (result.kind === 'rate-limited') throw new MailError('Too many requests, please try again shortly');
   throw new MailError('Could not send the code, please try again shortly');
 }
 
