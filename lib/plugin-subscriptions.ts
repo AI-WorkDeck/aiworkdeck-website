@@ -4,6 +4,8 @@ import type Database from 'better-sqlite3';
 import { getDb } from './db';
 import type { Order } from './orders';
 import { addDays } from './pro-products';
+import { siteConfig } from './site-config';
+import { findUserById } from './users';
 
 /**
  * 插件周期通行证（非自动续费、预付天数按次顺延）。
@@ -205,4 +207,57 @@ export function fulfillPluginSubscription(
   }
 
   return { duplicate: false, periodStart, periodEnd };
+}
+
+const ASSERTION_TTL_SECONDS = 600;
+
+export interface IssuedPluginAssertion {
+  token: string;
+  active: boolean;
+  expiresAt: string | null;
+  exp: number;
+}
+
+export async function issuePluginAssertion(
+  userId: string,
+  pluginId: string,
+  secret: string
+): Promise<IssuedPluginAssertion> {
+  const profile = findUserById(userId);
+  const sub = profile?.id || userId;
+  const displayName = profile?.displayName || profile?.username || '';
+  const status = getPluginSubscriptionStatus(sub, pluginId);
+  const nowSec = Math.floor(Date.now() / 1000);
+  const exp = nowSec + ASSERTION_TTL_SECONDS;
+  const payload = {
+    v: 1,
+    iss: siteConfig.id === 'cn' ? 'aiworkdeck.com' : 'workdeck.ai',
+    sub,
+    displayName,
+    pluginId,
+    active: status.active,
+    expiresAt: status.expiresAt,
+    iat: nowSec,
+    exp,
+  };
+  const payloadB64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+  const signingKey = await globalThis.crypto.subtle.importKey(
+    'raw',
+    Buffer.from(secret, 'utf8'),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const sigBuf = await globalThis.crypto.subtle.sign(
+    'HMAC',
+    signingKey,
+    Buffer.from(`awdpa1.${payloadB64}`, 'utf8')
+  );
+  const sigB64 = Buffer.from(sigBuf).toString('base64url');
+  return {
+    token: `awdpa1.${payloadB64}.${sigB64}`,
+    active: status.active,
+    expiresAt: status.expiresAt,
+    exp,
+  };
 }
