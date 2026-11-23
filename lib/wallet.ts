@@ -2,6 +2,7 @@ import { getDb, withTransaction } from './db';
 import { getOrder, markOrderPaid, markOrderRefunded, MarkPaidResult, type Order } from './orders';
 import { fulfillPurchase } from './purchases';
 import { fulfillProPayment, isLegacyProSku, isProSku } from './pro-products';
+import { fulfillPluginSubscription, isPluginSubSku } from './plugin-subscriptions';
 import {
     APPSTORE_SOURCE_KIND,
     GOOGLEPLAY_SOURCE_KIND,
@@ -150,6 +151,8 @@ export function settleOrderPaid(
         ) {
             // 个人 Pro：权益顺延 + subscription_paid (+ first_payment) + 试用转付费，同一事务、按 outTradeNo 幂等
             fulfillProPayment(db, order);
+        } else if (order.kind === 'subscription' && isPluginSubSku(order.skuId)) {
+            fulfillPluginSubscription(db, order);
         } else if (order.kind === 'purchase') {
             fulfillPurchase(db, order);
         }

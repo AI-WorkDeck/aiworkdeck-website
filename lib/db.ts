@@ -1831,6 +1831,28 @@ export const MIGRATIONS: Array<{ version: number; up: (d: Database.Database) => 
       }
     },
   },
+  {
+    // 插件周期通行证（限时，非自动续费）：aifirm-partner 月/季通行证订单履约流水
+    version: 53,
+    up(d) {
+      d.exec(`
+        CREATE TABLE IF NOT EXISTS plugin_subscription_payment (
+          outTradeNo   TEXT PRIMARY KEY,
+          userId       TEXT NOT NULL,
+          pluginId     TEXT NOT NULL,
+          skuId        TEXT NOT NULL,
+          planPeriod   TEXT NOT NULL,
+          days         INTEGER NOT NULL,
+          amountCents  INTEGER NOT NULL,
+          currency     TEXT NOT NULL,
+          periodStart  TEXT NOT NULL,
+          periodEnd    TEXT NOT NULL,
+          createdAt    TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_plugin_sub_user_plugin ON plugin_subscription_payment (userId, pluginId);
+      `);
+    },
+  },
 ];
 
 function migrate(d: Database.Database) {

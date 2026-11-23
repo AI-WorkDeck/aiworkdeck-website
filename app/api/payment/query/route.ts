@@ -6,6 +6,7 @@ import { resolveKeyUser } from '@/lib/account-auth';
 import { pickLangText, resolveRequestLocale } from '@/lib/api-locale';
 import { describeSettleFailure, getAdapterForChannel, settleFromChannel } from '@/lib/payments';
 import { getDb } from '@/lib/db';
+import { parsePluginSubSku } from '@/lib/plugin-subscriptions';
 
 /**
  * 通道回查限频：同一订单号最短间隔内只出站回查一次，
@@ -33,21 +34,22 @@ function publicOrder(order: Order) {
     kind: order.kind,
   };
   if (order.status === 'paid' && order.kind === 'subscription') {
-    // 只读服务端权威值，不在此按天数自算：
-    // 1) entitlements('pro').expiresAt（含续购顺延后的当前到期）；2) 本单履约 pro_payment.periodEnd。
+    const pluginPlan = parsePluginSubSku(order.skuId);
+    const feature = pluginPlan ? `plugin:${pluginPlan.pluginId}` : 'pro';
     let expiresAt: string | null = null;
     try {
       const db = getDb();
       if (order.userId) {
         const ent = db
-          .prepare("SELECT expiresAt FROM entitlements WHERE userId = ? AND feature = 'pro'")
-          .get(order.userId) as { expiresAt: string | null } | undefined;
+          .prepare('SELECT expiresAt FROM entitlements WHERE userId = ? AND feature = ?')
+          .get(order.userId, feature) as { expiresAt: string | null } | undefined;
         expiresAt = ent?.expiresAt ?? null;
       }
       if (!expiresAt) {
-        const row = db
-          .prepare('SELECT periodEnd FROM pro_payment WHERE outTradeNo = ?')
-          .get(order.outTradeNo) as { periodEnd: string } | undefined;
+        const row = (pluginPlan
+          ? db.prepare('SELECT periodEnd FROM plugin_subscription_payment WHERE outTradeNo = ?').get(order.outTradeNo)
+          : db.prepare('SELECT periodEnd FROM pro_payment WHERE outTradeNo = ?').get(order.outTradeNo)
+        ) as { periodEnd: string } | undefined;
         expiresAt = row?.periodEnd ?? null;
       }
     } catch {

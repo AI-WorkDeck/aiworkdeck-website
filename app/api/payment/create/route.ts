@@ -11,6 +11,7 @@ import { getSessionUser } from '@/lib/sessions';
 import { resolveKeyUser } from '@/lib/account-auth';
 import { validatePurchaseSku } from '@/lib/purchases';
 import { getProIntroQuote, isProSku, validateProPurchase } from '@/lib/pro-products';
+import { isPluginSubSku, validatePluginSubPurchase } from '@/lib/plugin-subscriptions';
 import { checkProPurchaseGate, normalizeLegacyProSku } from '@/lib/pro-purchase-flag';
 import { getPaymentAdapter } from '@/lib/payments';
 import { siteConfig } from '@/lib/site-config';
@@ -87,42 +88,55 @@ export async function POST(request: NextRequest) {
     // #228 旧 pro:monthly（kind=purchase）归一为 subscription / pro_monthly，切换期旧页面不挂
     ({ kind, skuId } = normalizeLegacyProSku(kind, skuId) as { kind: OrderKind; skuId: unknown });
 
-    // subscription：个人 Pro（pro_monthly / pro_yearly）。一次性购买，可续购。
+    // subscription：插件周期通行证（双站直购）或个人 Pro（大陆微信一次性购买）。
     // purchase：skuId 语义校验（skill:<id> / plugin:<id> / feature:<key>），
     // 金额必须等于当前标价；重复购买同一 SKU 直接 409。
     if (kind === 'subscription') {
-      if (!isProSku(skuId)) {
-        return NextResponse.json({ error: t('商品不存在', 'Item not found') }, { status: 400 });
-      }
-      // 价格只认 lib/saas-pricing.ts 的 SAAS_PRICE_FEN，且仅限人民币站（微信 Native）。
-      const checked = validateProPurchase(skuId, amount, siteConfig.currency);
-      if ('error' in checked) {
-        const messages = {
-          invalid_sku: t('商品不存在', 'Item not found'),
-          not_purchasable: t('该商品不可购买', 'This item is not available for purchase'),
-          amount_mismatch: t('金额与当前标价不符，请刷新后重试', 'Amount does not match the current price. Please refresh and try again.'),
-        } as const;
-        return NextResponse.json({ error: messages[checked.error] }, { status: 400 });
-      }
-      // Only prevent new overlapping sales; paid callbacks still fulfill their original order.
-      const applePro = getDb().prepare("SELECT 1 FROM entitlements WHERE userId=? AND feature='pro.appstore' AND expiresAt>?")
-        .get(user!.id, new Date().toISOString());
-      if (applePro) {
-        return NextResponse.json({ code: 'appstore_subscription_active', error: t(
-          '你已有有效的 Apple Pro 订阅，请在 Apple 订阅设置中管理，当前无需重复购买。',
-          'You already have an active Apple Pro subscription. Manage it in Apple subscription settings; another purchase is not needed.'
-        ) }, { status: 409 });
-      }
-      if (skuId === 'pro_monthly_intro') {
-        const intro = getProIntroQuote(getDb(), user!.id);
-        if (!intro.eligible) {
-          return NextResponse.json({ code: 'intro_quota_exhausted', error: t(
-            '首 3 个月特惠名额已用完，请按标准月付（¥149/月）续订。',
-            'Your 3-month introductory offer has been used. Please renew at the standard ¥149/month rate.'
+      if (isPluginSubSku(skuId)) {
+        const checked = validatePluginSubPurchase(skuId, amount, siteConfig.currency);
+        if ('error' in checked) {
+          const messages = {
+            invalid_sku: t('商品不存在', 'Item not found'),
+            not_purchasable: t('该商品不可购买', 'This item is not available for purchase'),
+            amount_mismatch: t('金额与当前标价不符，请刷新后重试', 'Amount does not match the current price. Please refresh and try again.'),
+          } as const;
+          return NextResponse.json({ error: messages[checked.error] }, { status: 400 });
+        }
+        description = (toBaseLocale(lang) === 'en' ? checked.plan.nameEn : checked.plan.nameZh).slice(0, 127);
+      } else {
+        if (!isProSku(skuId)) {
+          return NextResponse.json({ error: t('商品不存在', 'Item not found') }, { status: 400 });
+        }
+        // 价格只认 lib/saas-pricing.ts 的 SAAS_PRICE_FEN，且仅限人民币站（微信 Native）。
+        const checked = validateProPurchase(skuId, amount, siteConfig.currency);
+        if ('error' in checked) {
+          const messages = {
+            invalid_sku: t('商品不存在', 'Item not found'),
+            not_purchasable: t('该商品不可购买', 'This item is not available for purchase'),
+            amount_mismatch: t('金额与当前标价不符，请刷新后重试', 'Amount does not match the current price. Please refresh and try again.'),
+          } as const;
+          return NextResponse.json({ error: messages[checked.error] }, { status: 400 });
+        }
+        // Only prevent new overlapping sales; paid callbacks still fulfill their original order.
+        const applePro = getDb().prepare("SELECT 1 FROM entitlements WHERE userId=? AND feature='pro.appstore' AND expiresAt>?")
+          .get(user!.id, new Date().toISOString());
+        if (applePro) {
+          return NextResponse.json({ code: 'appstore_subscription_active', error: t(
+            '你已有有效的 Apple Pro 订阅，请在 Apple 订阅设置中管理，当前无需重复购买。',
+            'You already have an active Apple Pro subscription. Manage it in Apple subscription settings; another purchase is not needed.'
           ) }, { status: 409 });
         }
+        if (skuId === 'pro_monthly_intro') {
+          const intro = getProIntroQuote(getDb(), user!.id);
+          if (!intro.eligible) {
+            return NextResponse.json({ code: 'intro_quota_exhausted', error: t(
+              '首 3 个月特惠名额已用完，请按标准月付（¥149/月）续订。',
+              'Your 3-month introductory offer has been used. Please renew at the standard ¥149/month rate.'
+            ) }, { status: 409 });
+          }
+        }
+        description = (toBaseLocale(lang) === 'en' ? checked.product.nameEn || checked.product.name : checked.product.name).slice(0, 127);
       }
-      description = (toBaseLocale(lang) === 'en' ? checked.product.nameEn || checked.product.name : checked.product.name).slice(0, 127);
     } else if (kind === 'purchase') {
       const checked = validatePurchaseSku(user!.id, skuId, amount);
       if ('error' in checked) {
