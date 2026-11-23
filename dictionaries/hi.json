@@ -1516,7 +1516,8 @@
     "amountPlaceholder": "राशि ({currency})",
     "currencyNames": {
       "CNY": "सीवाईवाई (CNY)",
-      "USD": "यूएसडी (USD)"
+      "USD": "यूएसडी (USD)",
+      "TWD": "TWD"
     },
     "invalidAmount": "कम से कम {min} दर्ज करें, दशमलव के बाद अधिकतम दो अंक",
     "orderDescription": "AI WorkDeck का समर्थन करें",

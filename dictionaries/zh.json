@@ -1518,7 +1518,8 @@
     "amountPlaceholder": "金额（{currency}）",
     "currencyNames": {
       "CNY": "元",
-      "USD": "美元"
+      "USD": "美元",
+      "TWD": "新台币"
     },
     "invalidAmount": "请输入至少 {min} 的金额，最多两位小数",
     "orderDescription": "支持 AI WorkDeck",

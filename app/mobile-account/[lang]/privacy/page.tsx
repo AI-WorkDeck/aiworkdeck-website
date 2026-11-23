@@ -19,7 +19,7 @@ export default async function MobilePrivacyPage({ params, searchParams }: {
         <nav aria-label={links.related} className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white">
             <a className="underline" href={`/mobile-account/${lang}/deletion`}>{links.deletion}</a>
             <a className="underline" href={`/mobile-account/${lang}/privacy${scope === 'general' ? '' : '?scope=general'}`}>{scope === 'general' ? links.mobile : links.general}</a>
-            <a className="underline" href={crossSiteUrl(siteConfig.otherSite.id, `/mobile-account/${lang}/privacy`)}>{links.other}</a>
+            {siteConfig.crossSiteLinks && <a className="underline" href={crossSiteUrl(siteConfig.otherSite.id, `/mobile-account/${lang}/privacy`)}>{links.other}</a>}
         </nav>
     } />;
 }

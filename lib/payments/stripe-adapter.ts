@@ -47,14 +47,17 @@ function client(): Stripe {
 function returnUrl(baseUrl: string, outTradeNo: string, result: 'success' | 'cancel'): string {
   const support = getOrder(outTradeNo)?.kind === 'support';
   const q = new URLSearchParams({ [support ? 'donation' : 'checkout']: result, order: outTradeNo });
-  if (support) q.set('site', 'intl'); // 境内手机扫码也留在国际支付体系，不被地理分流到大陆站。
+  if (support && siteConfig.crossSiteLinks) q.set('site', 'intl'); // 境内手机扫码也留在国际支付体系，不被地理分流到大陆站。
   const path = support ? '' : '/account';
   return `${baseUrl}/${siteConfig.defaultLocale}${path}?${q.toString()}`;
 }
 
 export const stripeAdapter: PaymentChannelAdapter = {
   id: 'stripe',
-  currency: 'USD',
+  // 本站币种（国际站 USD；贴牌站点可为 TWD）。按调用读，与 googleplay-adapter 同一口径。
+  get currency(): CurrencyCode {
+    return siteConfig.currency;
+  },
 
   isConfigured() {
     return Boolean(secretKey() && webhookSecret());
@@ -71,7 +74,7 @@ export const stripeAdapter: PaymentChannelAdapter = {
         {
           quantity: 1,
           price_data: {
-            currency: 'usd',
+            currency: siteConfig.currency.toLowerCase(),
             unit_amount: input.amountMinor,
             product_data: { name: input.description },
           },

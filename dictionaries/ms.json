@@ -1516,7 +1516,8 @@
     "amountPlaceholder": "Jumlah ({currency})",
     "currencyNames": {
       "CNY": "CNY",
-      "USD": "USD"
+      "USD": "USD",
+      "TWD": "TWD"
     },
     "invalidAmount": "Masukkan sekurang-kurangnya {min}, dengan sehingga dua tempat perpuluhan",
     "orderDescription": "Sokong AI WorkDeck",

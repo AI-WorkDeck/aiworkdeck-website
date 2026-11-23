@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
  * （本地沙箱浏览器实测：complete=true、naturalWidth=0、锚点照样显示），
  * 所以挂载后要再补查一次 `complete && naturalWidth === 0`。
  */
+import { BRAND_PROFILE } from '@/lib/brand-profile';
 const SLUG = 'ai-workdeck';
 
 export type ProductHuntBadgeTheme = 'light' | 'neutral' | 'dark';
@@ -26,6 +27,8 @@ interface ProductHuntBadgeProps {
 }
 
 export function ProductHuntBadge({ theme = 'light', className }: ProductHuntBadgeProps) {
+    // 徽章是 AI WorkDeck 的 Product Hunt 条目，贴牌部署不渲染
+    if (BRAND_PROFILE) return null;
     const href = `https://www.producthunt.com/posts/${SLUG}?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-${SLUG}`;
     const src = `/api/ph-badge?theme=${theme}`;
     const linkRef = useRef<HTMLAnchorElement>(null);

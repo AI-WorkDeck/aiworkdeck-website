@@ -1516,7 +1516,8 @@
     "amountPlaceholder": "Importe ({currency})",
     "currencyNames": {
       "CNY": "CNY",
-      "USD": "USD"
+      "USD": "USD",
+      "TWD": "TWD"
     },
     "invalidAmount": "Introduzca al menos {min}, con hasta dos decimales",
     "orderDescription": "Apoya AI WorkDeck",

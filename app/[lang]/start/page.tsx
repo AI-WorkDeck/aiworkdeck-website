@@ -166,10 +166,12 @@ function SiteChoice({ t, currentHost, setupPath }: { t: Awaited<ReturnType<typeo
                         <p className="text-[11.5px] text-neutral-gray-medium">
                             {t.domainLoginNote}
                         </p>
+                        {siteConfig.crossSiteLinks && (
                         <a href={crossSiteUrl(siteConfig.otherSite.id, setupPath)} className="inline-flex items-center gap-1 text-xs font-semibold text-king-forest hover:underline">
                             {intl ? t.continueSetupMainland : t.continueSetupIntl}
                             <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={1.75} />
                         </a>
+                        )}
                     </div>
                 </div>
             </details>

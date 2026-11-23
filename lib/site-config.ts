@@ -27,6 +27,8 @@
  * 设计文档：桌面仓 `docs/superpowers/specs/2026-08-08-dual-site-architecture.md`
  */
 
+import { BRAND_PROFILE } from './brand-profile';
+
 export type SiteId = 'cn' | 'intl';
 
 export const SITE_ID: SiteId =
@@ -67,9 +69,9 @@ export interface SiteConfig {
   host: string;
   origin: string;
   /** 默认落地语言。**locales 数组两站都保持 ['en','zh'] 不变**，见 i18n-config.ts。 */
-  defaultLocale: 'zh' | 'en';
+  defaultLocale: 'zh' | 'en' | 'zh-hant';
   /** ISO 4217。`amountCents` 与 `priceCents` 一律是本币种的最小单位。 */
-  currency: 'CNY' | 'USD';
+  currency: 'CNY' | 'USD' | 'TWD';
   currencySymbol: string;
   /** 站内启用的支付通道。 */
   paymentChannel: 'wxpay' | 'stripe';
@@ -81,6 +83,8 @@ export interface SiteConfig {
   legalEntity: SiteLegalEntity;
   /** 另一个站，用于「你要找的可能是这里」的互指引导。 */
   otherSite: { id: SiteId; origin: string; host: string; labelZh: string; labelEn: string };
+  /** 是否在页面上渲染「另一个站」的互指链接（贴牌部署不指向 AI WorkDeck 的站）。 */
+  crossSiteLinks: boolean;
   /** Credits → 美元的折算汇率。本币已是美元时为 1。 */
   usdExchangeRate: number;
   /** 是否接受付费投稿（国际站首期只上免费与官方条目，见设计文档决策 3）。 */
@@ -102,7 +106,7 @@ export interface SiteConfig {
 /** 保留原条款生效日期；2026-11-16 主体资料修订不倒造新的签署或生效日期。 */
 export const LEGAL_EFFECTIVE_DATE: Record<SiteId, string> = {
   cn: '2026-08-08',
-  intl: '2026-08-08',
+  intl: BRAND_PROFILE?.legalEffectiveDate || '2026-08-08',
 };
 
 /** 公司登记资料由用户于 2026-11-16 提供；英文名称采用用户指定写法。
@@ -156,12 +160,13 @@ const CN: SiteConfig = {
   allowPaidSubmissions: true,
   addinOrigin: 'https://addin.aiworkdeck.com',
   offersWpsAddin: true,
+  crossSiteLinks: true,
 };
 
 /** 国际站采用同一运营主体，保留原有币种、支付、联系邮箱及争议解决约定。
  * 账户实名、支付收款与域名登记的迁移须分别办理，不由展示信息替换完成。
  */
-const INTL: SiteConfig = {
+const INTL_BASE: SiteConfig = {
   id: 'intl',
   host: 'www.workdeck.ai',
   origin: 'https://www.workdeck.ai',
@@ -194,7 +199,27 @@ const INTL: SiteConfig = {
   allowPaidSubmissions: false,
   addinOrigin: 'https://addin.workdeck.ai',
   offersWpsAddin: false,
+  crossSiteLinks: true,
 };
+
+/**
+ * 贴牌部署（lib/brand-profile.json 非空）：逻辑沿用国际站，换掉域名、主体、币种、语言，
+ * 不再指向 AI WorkDeck 的另一个站。
+ */
+const INTL: SiteConfig = BRAND_PROFILE
+  ? {
+      ...INTL_BASE,
+      host: BRAND_PROFILE.host,
+      origin: BRAND_PROFILE.origin,
+      defaultLocale: BRAND_PROFILE.defaultLocale,
+      currency: BRAND_PROFILE.currency,
+      currencySymbol: BRAND_PROFILE.currencySymbol,
+      legalEntity: BRAND_PROFILE.legalEntity,
+      crossSiteLinks: false,
+      usdExchangeRate: BRAND_PROFILE.usdExchangeRate,
+      addinOrigin: BRAND_PROFILE.addinOrigin,
+    }
+  : INTL_BASE;
 
 const ALL: Record<SiteId, SiteConfig> = { cn: CN, intl: INTL };
 
@@ -208,7 +233,9 @@ export const siteConfig: SiteConfig = ALL[SITE_ID];
 /** Public same-site mutation origins; aliases share the existing Web AI CSRF policy. */
 export const siteOrigins: readonly string[] = SITE_ID === 'cn'
   ? ['https://www.aiworkdeck.com', 'https://aiworkdeck.com']
-  : ['https://www.workdeck.ai', 'https://workdeck.ai', 'https://www.aiworkdeck.us', 'https://aiworkdeck.us'];
+  : BRAND_PROFILE
+    ? [BRAND_PROFILE.origin, ...(BRAND_PROFILE.aliases || [])]
+    : ['https://www.workdeck.ai', 'https://workdeck.ai', 'https://www.aiworkdeck.us', 'https://aiworkdeck.us'];
 
 export function siteConfigOf(id: SiteId): SiteConfig {
   return ALL[id];
@@ -253,7 +280,7 @@ export function isUsHost(host: string | null | undefined): boolean {
  * 配错的反代，应保留当前站点的联系邮箱。
  */
 export function publicEntityForHost(host: string | null | undefined): SitePublicEntity {
-  if (SITE_ID === 'intl' && isUsHost(host)) return INTL_US_LEGAL_ENTITY;
+  if (SITE_ID === 'intl' && !BRAND_PROFILE && isUsHost(host)) return INTL_US_LEGAL_ENTITY;
   return siteConfig.legalEntity;
 }
 
@@ -287,7 +314,9 @@ export const SITE_LEGAL_EFFECTIVE_DATE = LEGAL_EFFECTIVE_DATE[SITE_ID];
 /** 金额格式化的唯一出口：`cents` 是**本站币种**的最小单位。 */
 export function formatSiteAmount(cents: number): string {
   const sign = cents < 0 ? '-' : '';
-  return `${sign}${siteConfig.currencySymbol}${(Math.abs(cents) / 100).toFixed(2)}`;
+  // 新台币按整数元显示（Stripe 的 TWD 金额仍以「分」计，且须为 100 的整数倍）
+  const digits = siteConfig.currency === 'TWD' ? 0 : 2;
+  return `${sign}${siteConfig.currencySymbol}${(Math.abs(cents) / 100).toFixed(digits)}`;
 }
 
 /**

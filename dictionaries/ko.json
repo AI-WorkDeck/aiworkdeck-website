@@ -1516,7 +1516,8 @@
     "amountPlaceholder": "금액 ({currency})",
     "currencyNames": {
       "CNY": "위안화 (CNY)",
-      "USD": "미국 달러 (USD)"
+      "USD": "미국 달러 (USD)",
+      "TWD": "TWD"
     },
     "invalidAmount": "최소 {min} 이상 입력하세요. 소수점 둘째 자리까지 가능합니다",
     "orderDescription": "AI WorkDeck 지원하기",

@@ -1516,7 +1516,8 @@
     "amountPlaceholder": "Amount ({currency})",
     "currencyNames": {
       "CNY": "CNY",
-      "USD": "USD"
+      "USD": "USD",
+      "TWD": "TWD"
     },
     "invalidAmount": "Enter at least {min}, with up to two decimal places",
     "orderDescription": "Support AI WorkDeck",

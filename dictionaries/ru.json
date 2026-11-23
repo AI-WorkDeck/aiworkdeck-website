@@ -1516,7 +1516,8 @@
     "amountPlaceholder": "Сумма ({currency})",
     "currencyNames": {
       "CNY": "CNY",
-      "USD": "USD"
+      "USD": "USD",
+      "TWD": "TWD"
     },
     "invalidAmount": "Введите не менее {min}, не более двух знаков после запятой",
     "orderDescription": "Поддержать AI WorkDeck",

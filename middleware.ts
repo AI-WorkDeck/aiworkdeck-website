@@ -9,6 +9,7 @@ import {
 } from './i18n-config';
 import Negotiator from 'negotiator';
 import { SITE_ID } from '@/lib/site-config';
+import { BRAND_PROFILE } from '@/lib/brand-profile';
 import { isWishPath, WISH_URL } from '@/lib/wish-link';
 
 export function resolveRequestLocale(request: NextRequest): string {
@@ -17,6 +18,9 @@ export function resolveRequestLocale(request: NextRequest): string {
         const matchedCookie = matchLanguageTagToLocale(cookieLang);
         if (matchedCookie) return matchedCookie;
     }
+
+    // 贴牌站点可钉死默认语言（例如面向台湾的站点首访一律繁体），用户手选的语言 Cookie 仍优先
+    if (BRAND_PROFILE?.forceDefaultLocale && cookieLang !== 'system') return i18n.defaultLocale;
 
     // When no explicit cookie is set (first-time visitor), prioritize Geo-IP country routing
     // (CF-IPCountry / X-Vercel-IP-Country / CloudFront-Viewer-Country / Ali-Cdn-Real-Country / X-Geo-Country).

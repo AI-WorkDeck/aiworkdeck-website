@@ -13,7 +13,7 @@
 import type { AppPayParams } from '../wxpay';
 
 export type PaymentChannelId = 'wxpay' | 'stripe' | 'wxvp' | 'appstore' | 'wxpay-app' | 'googleplay';
-export type CurrencyCode = 'CNY' | 'USD';
+export type CurrencyCode = 'CNY' | 'USD' | 'TWD';
 
 export interface CreateChargeInput {
   outTradeNo: string;

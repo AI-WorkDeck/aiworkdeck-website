@@ -1516,7 +1516,8 @@
     "amountPlaceholder": "Số tiền ({currency})",
     "currencyNames": {
       "CNY": "Nhân dân tệ (CNY)",
-      "USD": "Đô la Mỹ (USD)"
+      "USD": "Đô la Mỹ (USD)",
+      "TWD": "TWD"
     },
     "invalidAmount": "Nhập ít nhất {min}, tối đa hai chữ số thập phân",
     "orderDescription": "Ủng hộ AI WorkDeck",

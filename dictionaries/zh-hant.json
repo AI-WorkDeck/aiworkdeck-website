@@ -2265,7 +2265,8 @@
     "creating": "創建訂單中…",
     "currencyNames": {
       "CNY": "元",
-      "USD": "美元"
+      "USD": "美元",
+      "TWD": "新台幣"
     },
     "invalidAmount": "請輸入至少 {min} 的金額，最多兩位小數",
     "motto": "您的支持是我們持續改進的動力",

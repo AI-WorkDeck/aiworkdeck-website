@@ -1,5 +1,6 @@
 import QRCode from 'qrcode';
 import { SITE_ID, siteConfig } from '@/lib/site-config';
+import { BRAND_PROFILE } from '@/lib/brand-profile';
 import { CN_ANDROID_RELEASE } from '@/lib/mobile-release';
 import { MOBILE_STORES } from '@/lib/mobile-stores';
 
@@ -15,6 +16,8 @@ type Copy = {
 
 /** Store buttons first (device-matching store on top), direct APK last and quiet (cn only). */
 export async function MobileAppSection({ t, ua, showQr = false }: { t: Copy; ua: string; showQr?: boolean }) {
+    // 贴牌部署没有手机端 App（商店里的是 AI WorkDeck 的包），整段不渲染
+    if (BRAND_PROFILE) return null;
     const cn = SITE_ID === 'cn';
     const ios = /iPhone|iPad|iPod/i.test(ua);
     const android = /Android/i.test(ua);

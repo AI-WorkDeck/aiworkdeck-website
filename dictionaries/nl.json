@@ -1516,7 +1516,8 @@
     "amountPlaceholder": "Bedrag ({currency})",
     "currencyNames": {
       "CNY": "CNY",
-      "USD": "USD"
+      "USD": "USD",
+      "TWD": "TWD"
     },
     "invalidAmount": "Voer minimaal {min} in, met maximaal twee decimalen",
     "orderDescription": "Steun AI WorkDeck",

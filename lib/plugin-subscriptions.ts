@@ -6,21 +6,27 @@ import type { Order } from './orders';
 import { addDays } from './pro-products';
 import { siteConfig } from './site-config';
 import { findUserById } from './users';
+import { BRAND_PROFILE } from './brand-profile';
 
 /**
  * 插件周期通行证（非自动续费、预付天数按次顺延）。
  * 权益仍写入 entitlements（feature = "plugin:<pluginId>"），与桌面端 EntitlementService 对齐；
  * 履约流水写入 plugin_subscription_payment，按 outTradeNo 幂等。
  */
-export type PluginSubPeriod = 'monthly' | 'quarterly';
-export type SupportedCurrency = 'CNY' | 'USD';
+export type PluginSubPeriod = 'monthly' | 'quarterly' | 'halfyear' | 'yearly';
+export type SupportedCurrency = 'CNY' | 'USD' | 'TWD';
+
+function isSupportedCurrency(c: unknown): c is SupportedCurrency {
+  return c === 'CNY' || c === 'USD' || c === 'TWD';
+}
 
 export interface PluginSubscriptionPlanDef {
   pluginId: string;
   period: PluginSubPeriod;
   skuId: string;
   days: number;
-  prices: Readonly<Record<SupportedCurrency, number>>;
+  /** 各币种标价（最小单位）。没有某币种标价的方案在该币种的站点上不出售。 */
+  prices: Readonly<Partial<Record<SupportedCurrency, number>>>;
   nameZh: string;
   nameEn: string;
   savingsNoteZh?: string;
@@ -48,6 +54,8 @@ export const PLUGIN_SUBSCRIPTION_PLANS: readonly PluginSubscriptionPlanDef[] = [
     savingsNoteZh: '折合每月约 ¥176（比单买30天省 ¥68）',
     savingsNoteEn: 'Saves $8 vs three 30-day passes',
   },
+  // 贴牌站点自己的方案（如新台币价）来自私有的 brand-profile.json，不写进本仓库。
+  ...(BRAND_PROFILE?.pluginPlans ?? []),
 ];
 
 const PLAN_BY_SKU = new Map(PLUGIN_SUBSCRIPTION_PLANS.map(p => [p.skuId, p]));
@@ -83,13 +91,13 @@ export function getPluginSubscriptionCatalog(
   currency: SupportedCurrency
 ): PluginCatalogPlanView[] {
   return PLUGIN_SUBSCRIPTION_PLANS
-    .filter(p => p.pluginId === pluginId)
+    .filter(p => p.pluginId === pluginId && (p.prices[currency] ?? 0) > 0)
     .map(p => ({
       skuId: p.skuId,
       pluginId: p.pluginId,
       period: p.period,
       days: p.days,
-      amountCents: p.prices[currency],
+      amountCents: p.prices[currency] as number,
       currency,
       nameZh: p.nameZh,
       nameEn: p.nameEn,
@@ -107,7 +115,7 @@ export function validatePluginSubPurchase(
 ): { plan: PluginSubscriptionPlanDef; amountCents: number; currency: SupportedCurrency } | { error: PluginSubValidationError } {
   const plan = parsePluginSubSku(skuId);
   if (!plan) return { error: 'invalid_sku' };
-  if (currency !== 'CNY' && currency !== 'USD') return { error: 'not_purchasable' };
+  if (!isSupportedCurrency(currency)) return { error: 'not_purchasable' };
   const expected = plan.prices[currency];
   if (!expected || expected <= 0) return { error: 'not_purchasable' };
   if (amountCents !== expected) return { error: 'amount_mismatch' };
@@ -168,7 +176,7 @@ export function fulfillPluginSubscription(
   if (!order.userId) throw new Error(`插件订阅订单缺少 userId: ${order.outTradeNo}`);
   const plan = parsePluginSubSku(order.skuId);
   if (!plan) throw new Error(`插件订阅订单 skuId 无法解析: ${order.outTradeNo} ${order.skuId}`);
-  if (order.currency !== 'CNY' && order.currency !== 'USD') {
+  if (!isSupportedCurrency(order.currency)) {
     throw new Error(`插件订阅订单币种不受支持: ${order.outTradeNo} ${order.currency}`);
   }
   const expectedAmount = plan.prices[order.currency];

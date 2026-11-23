@@ -15,6 +15,8 @@ import type { getDictionary } from '@/get-dictionary';
  * 撞了级别只会把真正要做的事（拿一把账户 Key）往下挤。
  */
 export async function SiteNotice({ lang, dict }: { lang: Locale; dict: Awaited<ReturnType<typeof getDictionary>> }) {
+    // 贴牌部署只有一个站，不存在「注册在另一个站」的混淆
+    if (!siteConfig.crossSiteLinks) return null;
     const t = dict.authPage;
     const zh = toBaseLocale(lang) === 'zh';
     const otherName = zh ? siteConfig.otherSite.labelZh : siteConfig.otherSite.labelEn;

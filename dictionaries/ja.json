@@ -1516,7 +1516,8 @@
     "amountPlaceholder": "金額({currency})",
     "currencyNames": {
       "CNY": "人民元（CNY）",
-      "USD": "米ドル（USD）"
+      "USD": "米ドル（USD）",
+      "TWD": "台湾ドル"
     },
     "invalidAmount": "{min}以上、小数点以下2桁までで入力してください",
     "orderDescription": "AI WorkDeckを支援する",

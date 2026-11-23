@@ -1516,7 +1516,8 @@
     "amountPlaceholder": "المبلغ ({currency})",
     "currencyNames": {
       "CNY": "اليوان الصيني",
-      "USD": "الدولار الأمريكي"
+      "USD": "الدولار الأمريكي",
+      "TWD": "TWD"
     },
     "invalidAmount": "أدخل {min} على الأقل، بحد أقصى منزلتين عشريتين",
     "orderDescription": "دعم AI WorkDeck",

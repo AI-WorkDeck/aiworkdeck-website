@@ -36,7 +36,7 @@ export function MobileAccountDeletion({ lang, mobileOnly = false }: { lang: Loca
                 <div className="flex flex-wrap gap-5 text-king-forest underline">
                     <a href={mobileOnly ? `/mobile-account/${lang}/privacy` : `/${lang}/legal/mobile-privacy`}>{copy.mobilePrivacyLink}</a>
                     <a href={mobileOnly ? `/mobile-account/${lang}/privacy?scope=general` : `/${lang}/legal/privacy`}>{copy.generalPrivacyLink}</a>
-                    <a href={crossSiteUrl(siteConfig.otherSite.id, mobileOnly ? `/mobile-account/${lang}/deletion` : `/${lang}/legal/mobile-account-deletion`)}>{copy.otherRegionLink}</a>
+                    {siteConfig.crossSiteLinks && <a href={crossSiteUrl(siteConfig.otherSite.id, mobileOnly ? `/mobile-account/${lang}/deletion` : `/${lang}/legal/mobile-account-deletion`)}>{copy.otherRegionLink}</a>}
                 </div>
             </section>
         </article>

@@ -1516,7 +1516,8 @@
     "amountPlaceholder": "Montant ({currency})",
     "currencyNames": {
       "CNY": "CNY",
-      "USD": "USD"
+      "USD": "USD",
+      "TWD": "TWD"
     },
     "invalidAmount": "Saisissez au moins {min}, avec deux décimales au maximum",
     "orderDescription": "Soutenir AI WorkDeck",

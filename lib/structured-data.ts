@@ -13,6 +13,8 @@ import { siteConfig } from '@/lib/site-config';
 
 /** 仓库与发布位置：站内已在 Hero / Pricing / updates 里以可见链接出现过。 */
 export const REPO_URL = 'https://github.com/AI-WorkDeck/aiworkdeck';
+import { BRAND_PROFILE } from './brand-profile';
+
 export const PRODUCT_HUNT_URL = 'https://www.producthunt.com/posts/ai-workdeck';
 /** AGPLv3：定价区与 README 都以可见文本写着「AGPLv3 开源」。 */
 export const LICENSE_URL = 'https://www.gnu.org/licenses/agpl-3.0.html';
@@ -31,7 +33,7 @@ export function organizationJsonLd(): Record<string, unknown> {
         logo: `${siteConfig.origin}/icon.png`,
         // 实体消歧的关键：裸品牌词 "workdeck" 被多家同名公司占据，
         // sameAs 是告诉搜索引擎「此 AI WorkDeck 即彼 GitHub 仓库」的唯一办法。
-        sameAs: [REPO_URL, PRODUCT_HUNT_URL],
+        sameAs: BRAND_PROFILE ? [REPO_URL] : [REPO_URL, PRODUCT_HUNT_URL],
     };
 }
 

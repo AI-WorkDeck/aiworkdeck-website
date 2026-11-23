@@ -1516,7 +1516,8 @@
     "amountPlaceholder": "จำนวนเงิน ({currency})",
     "currencyNames": {
       "CNY": "หยวน (CNY)",
-      "USD": "ดอลลาร์สหรัฐ (USD)"
+      "USD": "ดอลลาร์สหรัฐ (USD)",
+      "TWD": "TWD"
     },
     "invalidAmount": "กรอกอย่างน้อย {min} โดยมีเลขทศนิยมได้สูงสุดสองตำแหน่ง",
     "orderDescription": "สนับสนุน AI WorkDeck",

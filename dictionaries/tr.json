@@ -1516,7 +1516,8 @@
     "amountPlaceholder": "Tutar ({currency})",
     "currencyNames": {
       "CNY": "CNY",
-      "USD": "USD"
+      "USD": "USD",
+      "TWD": "TWD"
     },
     "invalidAmount": "En az {min} girin, en fazla iki ondalık basamaklı",
     "orderDescription": "AI WorkDeck'i destekleyin",
