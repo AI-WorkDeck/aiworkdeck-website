@@ -241,7 +241,7 @@ export function submitPlugin(
 
   if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) return { error: 'manifest_invalid' };
   let platformPayload = 0;
-  try { platformPayload = validatePluginPlatformManifest(manifest, files).payloadCount; }
+  try { platformPayload = validatePluginPlatformManifest(manifest, files, { allowOfficialAccountAuth: author.id === 'awd-official' }).payloadCount; }
   catch (error) { return { error: 'manifest_invalid', detail: error instanceof Error ? error.message : 'Invalid platform contract' }; }
 
   const id = String(manifest.id || '').trim().toLowerCase();

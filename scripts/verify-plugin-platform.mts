@@ -100,6 +100,33 @@ check('public OAuth metadata including query accepted', () => {
   const m = fixture(); m.contributes.connections[0].auth = { type: 'oauth2', authorizationUrl: 'https://auth.example.com/authorize?audience=example', tokenUrl: 'https://auth.example.com/token', clientId: 'public-client', scopes: ['read'] };
   assert.equal(submitPlugin(packageOf(m), AUTHOR).plugin?.status, 'pending');
 });
+const OFFICIAL = { id: 'awd-official', username: 'AI WorkDeck' };
+function accountConnFixture() {
+  const m = fixture();
+  delete m.contributes.mcpServers;
+  m.contributes.connections[0].baseUrl = 'https://ai-firm.aiworkdeck.com';
+  m.contributes.connections[0].auth = { type: 'awd-account' };
+  m.contributes.connections[0].operations.summarize.anonymousFallback = true;
+  return m;
+}
+check('official awd-account connection and anonymousFallback accepted on allowlisted host', () => {
+  assert.equal(submitPlugin(packageOf(accountConnFixture()), OFFICIAL).plugin?.status, 'pending');
+});
+check('community awd-account connection rejected', () => {
+  assert.equal(submitPlugin(packageOf(accountConnFixture()), AUTHOR).error, 'manifest_invalid');
+});
+check('official awd-account connection on non-allowlisted host rejected', () => {
+  const m = accountConnFixture(); m.contributes.connections[0].baseUrl = 'https://api.example.com';
+  assert.equal(submitPlugin(packageOf(m), OFFICIAL).error, 'manifest_invalid');
+});
+check('official awd-account connection with extra auth fields rejected', () => {
+  const m = accountConnFixture(); m.contributes.connections[0].auth = { type: 'awd-account', clientId: 'extra' };
+  assert.equal(submitPlugin(packageOf(m), OFFICIAL).error, 'manifest_invalid');
+});
+check('non-boolean operation anonymousFallback rejected', () => {
+  const m = accountConnFixture(); m.contributes.connections[0].operations.summarize.anonymousFallback = 'yes';
+  assert.equal(submitPlugin(packageOf(m), OFFICIAL).error, 'manifest_invalid');
+});
 check('JSON null rejected without exception', () => assert.equal(submitPlugin(packageOf(null), AUTHOR).error, 'manifest_invalid'));
 for (const marker of ['.awd-dev', '.awd-service-trust', '.awd-service-trust-123.tmp', '.awd-bundled', '.AWD-service-trust']) {
   check(`controlled marker rejected: ${marker}`, () => assert.equal(submitPlugin(packageOf(fixture(), { [marker]: Buffer.from('fake') }), AUTHOR).error, 'unsafe_path'));
