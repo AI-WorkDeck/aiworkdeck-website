@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
+import { BRAND_PROFILE } from './brand-profile';
 import { randomUUID } from 'crypto';
 import { getDb,withTransaction } from './db';
 import { getSpendableBalance,spendCredits,refundSpend } from './credits';
@@ -75,7 +76,7 @@ export async function syncPostpaidOpenRouter(userId:string):Promise<QuotaState> 
         const remainingUsd=Math.floor(budget.remainingCents/(budget.exchangeRate*budget.margin))/100;
         const disable=!!state.billing.overLimitAt||state.cloudAccess.frozen||remainingUsd<=0;
         if(!budget.keyHash&&remainingUsd>0&&!disable) {
-            wroteProvider=true;const created=await mgmt.createKey(`awd-user-${userId}`,remainingUsd);
+            wroteProvider=true;const created=await mgmt.createKey(`${BRAND_PROFILE?.id ?? 'awd'}-user-${userId}`,remainingUsd);
             withTransaction(db=>{
                 db.prepare('INSERT INTO openrouter_keys(userId,orKeyHash,limitUsd,createdAt,encKey,settledUsageUsd,fundingJson,mgmtAccount) VALUES(?,?,?,?,?,0,?,?)').run(userId,created.hash,created.limitUsd,now,encryptKeyMaterial(created.key),budget.fundingJson,mgmt.currentMgmtAccount());
                 db.prepare('UPDATE postpaid_external_budget SET keyHash=? WHERE userId=? AND generation=?').run(created.hash,userId,generation);

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { BRAND_PROFILE } from '@/lib/brand-profile';
 import { pickLocale, type Locale } from '@/i18n-config';
 import { siteConfig, US_SITE_ORIGIN } from '@/lib/site-config';
 import { publicEntityForRequest } from '@/lib/request-entity';
@@ -43,7 +44,7 @@ export default async function AboutPage({
     if (entity.nameZh) {
         facts.push({ label: copy.labels.nameZh, value: entity.nameZh });
     }
-    facts.push({ label: pickLocale(entity.registrationLabel, lang), value: entity.registrationNo });
+    if (entity.registrationNo) facts.push({ label: pickLocale(entity.registrationLabel, lang), value: entity.registrationNo });
     if (entity.incorporatedOn) {
         facts.push({
             label: copy.labels.incorporated,
@@ -57,6 +58,8 @@ export default async function AboutPage({
         { label: copy.labels.website, value: siteOrigin, href: siteOrigin },
         { label: copy.labels.contact, value: entity.contactEmail, href: `mailto:${entity.contactEmail}` }
     );
+    // 贴牌运营方未公开的登记字段（留空）整项不显示
+    for (let i = facts.length - 1; i >= 0; i--) if (!facts[i].value) facts.splice(i, 1);
 
     const postalAddress = {
         '@type': 'PostalAddress',
@@ -69,19 +72,21 @@ export default async function AboutPage({
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Organization',
-        name: 'AI WorkDeck',
+        name: BRAND_PROFILE?.name ?? 'AI WorkDeck',
         legalName: entity.nameEn,
         ...(entity.nameZh ? { alternateName: entity.nameZh } : {}),
         url: siteOrigin,
         logo: `${siteOrigin}/logo.png`,
         email: entity.contactEmail,
         ...(entity.incorporatedOn ? { foundingDate: entity.incorporatedOn } : {}),
-        identifier: {
-            '@type': 'PropertyValue',
-            name: entity.registrationLabel.en,
-            value: entity.registrationNo,
-        },
-        address: postalAddress,
+        ...(entity.registrationNo ? {
+            identifier: {
+                '@type': 'PropertyValue',
+                name: entity.registrationLabel.en,
+                value: entity.registrationNo,
+            },
+        } : {}),
+        ...(entity.registeredAddress.en && !BRAND_PROFILE ? { address: postalAddress } : {}),
     };
 
     return (

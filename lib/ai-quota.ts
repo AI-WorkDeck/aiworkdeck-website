@@ -1,4 +1,5 @@
 import { postpaidPolicy, POSTPAID_VERSION } from './postpaid';
+import { BRAND_PROFILE } from './brand-profile';
 import { platformProvider, bailianConfigured } from './platform-ai/config';
 import { subscriptionSnapshot, captureServiceFunding, type ServiceFunding } from './subscription';
 import { getDb, withTransaction } from './db';
@@ -216,7 +217,7 @@ async function syncAiQuotaOnce(userId: string): Promise<QuotaState> {
         if (limitUsd <= 0) return base;
         // create 路径刻意不重试：runtime key 明文只在创建响应里出现一次，
         // 重试会建出一堆带 limit 的孤儿 key，全计入平台超卖告警却无人可用。
-        const created = await mgmt.createKey(`awd-user-${userId}`, limitUsd);
+        const created = await mgmt.createKey(`${BRAND_PROFILE?.id ?? 'awd'}-user-${userId}`, limitUsd);
         getDb()
             .prepare(
                 `INSERT INTO openrouter_keys (userId, orKeyHash, limitUsd, createdAt, encKey, settledUsageUsd, fundingJson, mgmtAccount)

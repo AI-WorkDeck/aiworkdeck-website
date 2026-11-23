@@ -158,8 +158,10 @@ export async function Footer({ lang, dict }: FooterProps) {
                                         ? `${publicEntity.nameZh}（${publicEntity.nameEn}）`
                                         : `${publicEntity.nameEn}（${publicEntity.nameZh}）`)
                                     : publicEntity.nameEn}
+                                {publicEntity.registrationNo && <>
                                 {' · '}
                                 {pickLocale(publicEntity.registrationLabel, lang)} {publicEntity.registrationNo}
+                                </>}
                             </p>
                         ) : (
                             <p className="text-neutral-gray-medium">

@@ -294,10 +294,11 @@ export function publicEntityForHost(host: string | null | undefined): SitePublic
  */
 {
   const e = siteConfigOfInternal(SITE_ID).legalEntity;
+  // 贴牌部署的运营方可不公开登记号与地址（用户决定，2026-11-23）：页面上留空的字段整项不渲染
   const missing = [
     !e.nameEn && 'nameEn',
-    !e.registrationNo && 'registrationNo',
-    !e.registeredAddress.en && 'registeredAddress.en',
+    !BRAND_PROFILE && !e.registrationNo && 'registrationNo',
+    !BRAND_PROFILE && !e.registeredAddress.en && 'registeredAddress.en',
     !e.contactEmail && 'contactEmail',
   ].filter(Boolean);
   if (missing.length > 0) {
