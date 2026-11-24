@@ -1636,6 +1636,22 @@
         "Apple silicon only; requires macOS 13 or later"
       ]
     },
+    "release0900": {
+      "headline": "Progress from the first second, compare long contracts about 10× faster, and Taiwan vocabulary in Traditional Chinese",
+      "items": [
+        "A start-up screen with a progress bar appears about half a second after you open the app. Progress is estimated from how long this computer took to start last time, so you no longer wait at a blank screen for local services.",
+        "Comparing versions of a long contract with large rewritten passages is about 10 times faster: a 4,000-paragraph document with half of it rewritten now takes about 1.3 seconds instead of about 15, with exactly the same result.",
+        "The Traditional Chinese interface now uses Taiwan vocabulary, including the official plugins.",
+        "On the international site (workdeck.ai), sign-in and Settings no longer show the mainland-China separate consent for cross-border personal data, and the email-only site no longer asks for a phone number. The mainland-China site is unchanged."
+      ]
+    },
+    "release0890": {
+      "headline": "In-app plugin subscriptions, and the right version number after a patch",
+      "items": [
+        "Paid plugins can be subscribed to monthly or yearly inside the app; the plugin works as soon as payment completes, with no separate purchase on the website.",
+        "After an in-app update patch, the version shown in About and in feedback matches the version that is actually running."
+      ]
+    },
     "release0880": {
       "headline": "Legal news review, contributor recognition, and plugin reliability",
       "items": [

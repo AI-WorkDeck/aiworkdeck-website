@@ -1636,6 +1636,22 @@
         "Hanya Apple Silicon; memerlukan macOS 13 atau lebih baru"
       ]
     },
+    "release0900": {
+      "headline": "Progres sejak detik pertama, perbandingan kontrak panjang sekitar 10 kali lebih cepat, dan kosakata Taiwan dalam bahasa Tionghoa Tradisional",
+      "items": [
+        "Layar awal dengan bilah progres muncul sekitar setengah detik setelah aplikasi dibuka. Progres diperkirakan dari lama komputer ini memulai aplikasi terakhir kali, sehingga Anda tidak lagi menunggu di layar kosong sampai layanan lokal berjalan.",
+        "Membandingkan versi kontrak panjang dengan bagian besar yang ditulis ulang kini sekitar 10 kali lebih cepat: dokumen 4.000 paragraf dengan separuhnya ditulis ulang sekarang memerlukan sekitar 1,3 detik, bukan sekitar 15 detik, dengan hasil yang persis sama.",
+        "Antarmuka bahasa Tionghoa Tradisional kini memakai kosakata Taiwan, termasuk pada plugin resmi.",
+        "Di situs internasional (workdeck.ai), proses masuk dan Pengaturan tidak lagi menampilkan persetujuan terpisah dari Tiongkok daratan untuk transfer data pribadi lintas batas, dan situs khusus email tidak lagi meminta nomor telepon. Situs Tiongkok daratan tidak berubah."
+      ]
+    },
+    "release0890": {
+      "headline": "Langganan plugin di dalam aplikasi, dan nomor versi yang benar setelah patch",
+      "items": [
+        "Plugin berbayar dapat dilanggan secara bulanan atau tahunan langsung di dalam aplikasi; plugin langsung berfungsi setelah pembayaran selesai, tanpa pembelian terpisah di situs web.",
+        "Setelah patch pembaruan dalam aplikasi terpasang, versi yang ditampilkan di Tentang dan di umpan balik sesuai dengan versi yang benar-benar berjalan."
+      ]
+    },
     "release0880": {
       "headline": "Tinjauan berita hukum, pengakuan kontributor, dan keandalan plugin",
       "items": [

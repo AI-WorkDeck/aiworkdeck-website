@@ -25,10 +25,12 @@ export interface LegacyReleaseNote {
 export type ReleaseNote = LegacyReleaseNote | {
     version: string;
     date: string;
-    contentKey: 'release0750' | 'release0760' | 'release0770' | 'release0870' | 'release0880';
+    contentKey: 'release0750' | 'release0760' | 'release0770' | 'release0870' | 'release0880' | 'release0890' | 'release0900';
 };
 
 export const RELEASES: ReleaseNote[] = [
+    { version: '0.90.0', date: '2026-11-24', contentKey: 'release0900' },
+    { version: '0.89.0', date: '2026-11-23', contentKey: 'release0890' },
     { version: '0.88.2', date: '2026-11-21', contentKey: 'release0880' },
     { version: '0.87.0', date: '2026-11-16', contentKey: 'release0870' },
     {

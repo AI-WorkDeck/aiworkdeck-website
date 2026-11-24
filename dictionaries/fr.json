@@ -1636,6 +1636,22 @@
         "Puce Apple uniquement ; macOS 13 ou ultérieur requis"
       ]
     },
+    "release0900": {
+      "headline": "Progression dès la première seconde, comparaison des contrats longs environ 10 fois plus rapide et vocabulaire de Taïwan en chinois traditionnel",
+      "items": [
+        "Un écran de démarrage avec une barre de progression apparaît environ une demi-seconde après l’ouverture de l’application. La progression est estimée d’après la durée du dernier démarrage de cet ordinateur, de sorte que vous n’attendez plus devant un écran vide le démarrage des services locaux.",
+        "La comparaison de versions d’un long contrat comportant de larges passages réécrits est environ 10 fois plus rapide : un document de 4 000 paragraphes dont la moitié a été réécrite prend désormais environ 1,3 seconde au lieu d’environ 15, avec exactement le même résultat.",
+        "L’interface en chinois traditionnel utilise désormais le vocabulaire de Taïwan, y compris pour les plugins officiels.",
+        "Sur le site international (workdeck.ai), la connexion et les paramètres n’affichent plus le consentement distinct de la Chine continentale pour le transfert transfrontalier de données personnelles, et le site réservé à l’e-mail ne demande plus de numéro de téléphone. Le site de Chine continentale est inchangé."
+      ]
+    },
+    "release0890": {
+      "headline": "Abonnements aux plugins dans l’application et bon numéro de version après un correctif",
+      "items": [
+        "Les plugins payants peuvent être souscrits au mois ou à l’année dans l’application ; le plugin fonctionne dès que le paiement est terminé, sans achat séparé sur le site web.",
+        "Après l’installation d’un correctif de mise à jour dans l’application, la version affichée dans « À propos » et dans les retours correspond à la version réellement en cours d’exécution."
+      ]
+    },
     "release0880": {
       "headline": "Révision juridique, reconnaissance des contributeurs et fiabilité des plugins",
       "items": [

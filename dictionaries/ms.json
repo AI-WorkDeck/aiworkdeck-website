@@ -1636,6 +1636,22 @@
         "Apple Silicon sahaja; memerlukan macOS 13 atau lebih baharu"
       ]
     },
+    "release0900": {
+      "headline": "Kemajuan dari saat pertama, perbandingan kontrak panjang kira-kira 10 kali lebih pantas, dan istilah Taiwan dalam bahasa Cina Tradisional",
+      "items": [
+        "Skrin permulaan dengan bar kemajuan muncul kira-kira setengah saat selepas aplikasi dibuka. Kemajuan dianggarkan berdasarkan masa yang diambil komputer ini untuk bermula kali terakhir, jadi anda tidak lagi menunggu di skrin kosong sehingga perkhidmatan setempat bermula.",
+        "Membandingkan versi kontrak panjang yang banyak bahagiannya ditulis semula kini kira-kira 10 kali lebih pantas: dokumen 4,000 perenggan dengan separuhnya ditulis semula kini mengambil kira-kira 1.3 saat berbanding kira-kira 15 saat, dengan hasil yang sama sepenuhnya.",
+        "Antara muka bahasa Cina Tradisional kini menggunakan istilah Taiwan, termasuk pemalam rasmi.",
+        "Di laman antarabangsa (workdeck.ai), log masuk dan Tetapan tidak lagi memaparkan persetujuan berasingan China daratan untuk pemindahan data peribadi merentas sempadan, dan laman khusus e-mel tidak lagi meminta nombor telefon. Laman China daratan tidak berubah."
+      ]
+    },
+    "release0890": {
+      "headline": "Langganan pemalam dalam aplikasi, dan nombor versi yang betul selepas tampalan",
+      "items": [
+        "Pemalam berbayar boleh dilanggan secara bulanan atau tahunan terus dalam aplikasi; pemalam berfungsi sebaik sahaja pembayaran selesai, tanpa pembelian berasingan di laman web.",
+        "Selepas tampalan kemas kini dalam aplikasi dipasang, versi yang dipaparkan dalam Perihal dan dalam maklum balas sepadan dengan versi yang sedang dijalankan."
+      ]
+    },
     "release0880": {
       "headline": "Semakan berita undang-undang, pengiktirafan penyumbang dan kestabilan pemalam",
       "items": [
