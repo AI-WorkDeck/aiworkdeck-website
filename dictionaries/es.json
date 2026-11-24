@@ -1636,6 +1636,22 @@
         "Solo chip Apple; requiere macOS 13 o posterior"
       ]
     },
+    "release0900": {
+      "headline": "Progreso desde el primer segundo, comparación de contratos largos unas 10 veces más rápida y vocabulario de Taiwán en chino tradicional",
+      "items": [
+        "Aproximadamente medio segundo después de abrir la aplicación aparece una pantalla de inicio con una barra de progreso. El progreso se estima según el tiempo que tardó este equipo en iniciarse la última vez, de modo que ya no espera ante una pantalla en blanco a que arranquen los servicios locales.",
+        "Comparar versiones de un contrato largo con pasajes reescritos en gran parte es unas 10 veces más rápido: un documento de 4000 párrafos con la mitad reescrita tarda ahora unos 1,3 segundos en lugar de unos 15, con exactamente el mismo resultado.",
+        "La interfaz en chino tradicional usa ahora vocabulario de Taiwán, incluidos los plugins oficiales.",
+        "En el sitio internacional (workdeck.ai), el inicio de sesión y Configuración ya no muestran el consentimiento separado de China continental para la transferencia transfronteriza de datos personales, y el sitio solo con correo electrónico ya no solicita un número de teléfono. El sitio de China continental no cambia."
+      ]
+    },
+    "release0890": {
+      "headline": "Suscripciones a plugins dentro de la aplicación y número de versión correcto tras un parche",
+      "items": [
+        "Los plugins de pago se pueden suscribir de forma mensual o anual dentro de la aplicación; el plugin funciona en cuanto se completa el pago, sin necesidad de una compra aparte en el sitio web.",
+        "Tras instalar un parche de actualización dentro de la aplicación, la versión que se muestra en «Acerca de» y en los comentarios coincide con la versión que realmente se está ejecutando."
+      ]
+    },
     "release0880": {
       "headline": "Revisión de noticias jurídicas, reconocimiento de colaboradores y fiabilidad de plugins",
       "items": [

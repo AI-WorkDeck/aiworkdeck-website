@@ -1636,6 +1636,22 @@
         "Chỉ Apple Silicon; yêu cầu macOS 13 trở lên"
       ]
     },
+    "release0900": {
+      "headline": "Hiển thị tiến trình từ giây đầu tiên, so sánh hợp đồng dài nhanh hơn khoảng 10 lần và dùng từ vựng Đài Loan trong tiếng Trung phồn thể",
+      "items": [
+        "Khoảng nửa giây sau khi mở ứng dụng, màn hình khởi động kèm thanh tiến trình sẽ xuất hiện. Tiến trình được ước tính dựa trên thời gian máy tính này khởi động lần trước, nên bạn không còn phải chờ trước màn hình trống cho đến khi các dịch vụ cục bộ khởi động.",
+        "So sánh các phiên bản của hợp đồng dài có nhiều đoạn được viết lại nay nhanh hơn khoảng 10 lần: tài liệu 4.000 đoạn được viết lại một nửa giờ mất khoảng 1,3 giây thay vì khoảng 15 giây, với kết quả hoàn toàn giống nhau.",
+        "Giao diện tiếng Trung phồn thể nay dùng từ vựng Đài Loan, kể cả các plugin chính thức.",
+        "Trên trang quốc tế (workdeck.ai), đăng nhập và Cài đặt không còn hiển thị sự đồng ý riêng của Trung Quốc đại lục về chuyển dữ liệu cá nhân ra nước ngoài, và trang chỉ dùng email không còn yêu cầu số điện thoại. Trang dành cho Trung Quốc đại lục không thay đổi."
+      ]
+    },
+    "release0890": {
+      "headline": "Đăng ký plugin ngay trong ứng dụng và hiển thị đúng số phiên bản sau bản vá",
+      "items": [
+        "Có thể đăng ký plugin trả phí theo tháng hoặc theo năm ngay trong ứng dụng; plugin dùng được ngay khi thanh toán xong, không cần mua riêng trên trang web.",
+        "Sau khi cài bản vá cập nhật trong ứng dụng, số phiên bản hiển thị ở mục Giới thiệu và trong phản hồi khớp với phiên bản đang thực sự chạy."
+      ]
+    },
     "release0880": {
       "headline": "Cập nhật thẩm định tin pháp luật, ghi nhận người đóng góp và độ tin cậy plugin",
       "items": [

@@ -1636,6 +1636,22 @@
         "Nur Apple Silicon; macOS 13 oder neuer erforderlich"
       ]
     },
+    "release0900": {
+      "headline": "Fortschritt ab der ersten Sekunde, lange Verträge etwa 10-mal schneller vergleichen und taiwanische Begriffe in Traditionellem Chinesisch",
+      "items": [
+        "Etwa eine halbe Sekunde nach dem Öffnen der App erscheint ein Startbildschirm mit Fortschrittsbalken. Der Fortschritt wird anhand der Startzeit dieses Computers beim letzten Mal geschätzt, sodass Sie nicht mehr vor einem leeren Bildschirm auf die lokalen Dienste warten.",
+        "Der Versionsvergleich langer Verträge mit umfangreich umgeschriebenen Passagen ist etwa 10-mal schneller: Ein Dokument mit 4.000 Absätzen, von dem die Hälfte umgeschrieben wurde, braucht jetzt etwa 1,3 statt etwa 15 Sekunden – bei exakt demselben Ergebnis.",
+        "Die Oberfläche in Traditionellem Chinesisch verwendet jetzt taiwanische Begriffe, auch bei den offiziellen Plugins.",
+        "Auf der internationalen Website (workdeck.ai) zeigen Anmeldung und Einstellungen die in Festlandchina erforderliche gesonderte Einwilligung zur grenzüberschreitenden Übermittlung personenbezogener Daten nicht mehr an, und die reine E-Mail-Website fragt nicht mehr nach einer Telefonnummer. Die Website für Festlandchina bleibt unverändert."
+      ]
+    },
+    "release0890": {
+      "headline": "Plugin-Abos in der App und die richtige Versionsnummer nach einem Patch",
+      "items": [
+        "Kostenpflichtige Plugins lassen sich in der App monatlich oder jährlich abonnieren; das Plugin funktioniert, sobald die Zahlung abgeschlossen ist, ein separater Kauf auf der Website ist nicht nötig.",
+        "Nach einem In-App-Update-Patch stimmt die in „Info“ und im Feedback angezeigte Versionsnummer mit der tatsächlich laufenden Version überein."
+      ]
+    },
     "release0880": {
       "headline": "Juristische News-Prüfung, Anerkennung der Mitwirkenden und Plugin-Zuverlässigkeit",
       "items": [

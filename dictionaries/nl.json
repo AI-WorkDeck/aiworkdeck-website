@@ -1636,6 +1636,22 @@
         "Alleen Apple Silicon; macOS 13 of nieuwer vereist"
       ]
     },
+    "release0900": {
+      "headline": "Voortgang vanaf de eerste seconde, lange contracten ongeveer 10 keer sneller vergelijken en Taiwanese terminologie in traditioneel Chinees",
+      "items": [
+        "Ongeveer een halve seconde nadat u de app opent, verschijnt een startscherm met een voortgangsbalk. De voortgang wordt geschat op basis van hoe lang deze computer de vorige keer over het opstarten deed, zodat u niet meer naar een leeg scherm hoeft te kijken tot de lokale services zijn gestart.",
+        "Het vergelijken van versies van een lang contract met grote herschreven passages is ongeveer 10 keer sneller: een document van 4.000 alinea’s waarvan de helft is herschreven duurt nu ongeveer 1,3 seconde in plaats van ongeveer 15, met precies hetzelfde resultaat.",
+        "De interface in traditioneel Chinees gebruikt nu Taiwanese terminologie, ook bij de officiële plugins.",
+        "Op de internationale site (workdeck.ai) tonen inloggen en Instellingen niet langer de aparte toestemming van het Chinese vasteland voor grensoverschrijdende doorgifte van persoonsgegevens, en de site die alleen e-mail gebruikt vraagt niet langer om een telefoonnummer. De site voor het Chinese vasteland is ongewijzigd."
+      ]
+    },
+    "release0890": {
+      "headline": "Plugin-abonnementen in de app en het juiste versienummer na een patch",
+      "items": [
+        "Betaalde plugins kunnen in de app maandelijks of jaarlijks worden afgesloten; de plugin werkt zodra de betaling is voltooid, zonder aparte aankoop op de website.",
+        "Na een updatepatch in de app komt het versienummer dat in Over en in feedback wordt getoond overeen met de versie die daadwerkelijk draait."
+      ]
+    },
     "release0880": {
       "headline": "Juridische-nieuwscontrole, erkenning van bijdragers en betrouwbaarheid van plugins",
       "items": [

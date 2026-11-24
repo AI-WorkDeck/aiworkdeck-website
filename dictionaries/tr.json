@@ -1636,6 +1636,22 @@
         "Yalnızca Apple Silicon; macOS 13 veya üstü gerekir"
       ]
     },
+    "release0900": {
+      "headline": "İlk saniyeden itibaren ilerleme, uzun sözleşmelerin karşılaştırılması yaklaşık 10 kat daha hızlı ve Geleneksel Çince’de Tayvan terimleri",
+      "items": [
+        "Uygulamayı açtıktan yaklaşık yarım saniye sonra ilerleme çubuklu bir başlangıç ekranı görünür. İlerleme, bu bilgisayarın son seferki başlama süresine göre tahmin edilir; böylece yerel hizmetler başlayana kadar boş bir ekranda beklemezsiniz.",
+        "Büyük bölümleri yeniden yazılmış uzun bir sözleşmenin sürüm karşılaştırması yaklaşık 10 kat daha hızlı: yarısı yeniden yazılmış 4.000 paragraflık bir belge artık yaklaşık 15 saniye yerine yaklaşık 1,3 saniye sürüyor ve sonuç tamamen aynı.",
+        "Geleneksel Çince arayüz artık Tayvan terimlerini kullanıyor; resmî eklentiler de buna dahil.",
+        "Uluslararası sitede (workdeck.ai) oturum açma ve Ayarlar artık kişisel verilerin yurt dışına aktarımına ilişkin Çin anakarasına özgü ayrı onayı göstermiyor, yalnızca e-postaya dayalı site de artık telefon numarası istemiyor. Çin anakarası sitesi değişmedi."
+      ]
+    },
+    "release0890": {
+      "headline": "Uygulama içinde eklenti abonelikleri ve yama sonrası doğru sürüm numarası",
+      "items": [
+        "Ücretli eklentilere uygulama içinde aylık veya yıllık abone olunabilir; eklenti ödeme tamamlanır tamamlanmaz çalışır, web sitesinden ayrıca satın almak gerekmez.",
+        "Uygulama içi güncelleme yamasından sonra Hakkında bölümünde ve geri bildirimde gösterilen sürüm numarası, gerçekten çalışan sürümle aynıdır."
+      ]
+    },
     "release0880": {
       "headline": "Hukuk haberi incelemesi, katkıcı takdiri ve eklenti güvenilirliği",
       "items": [
