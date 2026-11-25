@@ -413,7 +413,7 @@ export default async function TransparencyPage({
                 </section>
 
                 {/* 口径与机制说明块 */}
-                <section className="mt-12 rounded-2xl border border-[#dce2de] bg-white p-6 shadow-[0_12px_32px_-20px_rgba(22,42,33,0.1)] md:p-8">
+                <section className="mt-12 rounded-2xl border border-neutral-gray-light bg-white p-6 shadow-[0_12px_32px_-20px_rgba(22,42,33,0.1)] md:p-8">
                     <Reveal>
                         <SectionEyebrow>{t.intro.eyebrow}</SectionEyebrow>
                         <h2 className="mb-5 text-2xl font-semibold tracking-tight text-neutral-dark-bg">

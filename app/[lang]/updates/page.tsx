@@ -61,7 +61,7 @@ export default async function UpdatesPage({
                 <div className="flex flex-wrap items-center gap-3">
                     <Link
                         href={`/${lang}/start`}
-                        className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#1f3b34] px-5 text-sm font-bold text-[#f6f4ee] shadow-sm transition-colors hover:bg-[#17302a]"
+                        className="inline-flex h-10 items-center gap-2 rounded-lg bg-pine px-5 text-sm font-bold text-paper shadow-sm transition-colors hover:bg-pine-deep"
                     >
                         <Download className="h-4 w-4" strokeWidth={2} />
                         {dict.common.nav.download}
@@ -69,7 +69,7 @@ export default async function UpdatesPage({
                     <Link
                         href={`${REPO_URL}/releases`}
                         target="_blank"
-                        className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-[#e3dccb] bg-[#fffdf8] px-4 text-sm font-medium text-[#1f3b34] transition-colors hover:border-[#c9bd9f] hover:bg-white"
+                        className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-neutral-gray-light bg-neutral-white px-4 text-sm font-medium text-pine transition-colors hover:border-king-gold-line hover:bg-white"
                     >
                         {t.releasesLink} ↗
                     </Link>
@@ -97,7 +97,7 @@ export default async function UpdatesPage({
                                 className={
                                     idx === 0
                                         ? 'relative overflow-hidden rounded-2xl border-king-forest/45 bg-white shadow-[0_18px_42px_-20px_rgba(32,63,56,0.22)]'
-                                        : 'rounded-2xl border-[#dce2de] bg-white'
+                                        : 'rounded-2xl border-neutral-gray-light bg-white'
                                 }
                             >
                                 {idx === 0 && (
@@ -137,7 +137,7 @@ export default async function UpdatesPage({
 
                     {/* 历史版本收进紧凑手风琴时间轴，避免页面被数千像素日志拉得过长 */}
                     {archivedReleases.length > 0 && (
-                        <div className="mt-5 divide-y divide-neutral-gray-light/80 rounded-2xl border border-[#dce2de] bg-white px-5 md:px-6">
+                        <div className="mt-5 divide-y divide-neutral-gray-light/80 rounded-2xl border border-neutral-gray-light bg-white px-5 md:px-6">
                             {archivedReleases.map(r => (
                                 <details key={r.version} className="group py-4">
                                     <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 text-sm [&::-webkit-details-marker]:hidden">
@@ -188,7 +188,7 @@ export default async function UpdatesPage({
                         </span>
                     </div>
                     <p className="mb-5 text-sm text-neutral-gray-medium">{t.subtitle}</p>
-                    <Card variant="outline" className="mb-5 rounded-2xl border-[#dce2de] bg-white">
+                    <Card variant="outline" className="mb-5 rounded-2xl border-neutral-gray-light bg-white">
                         <CardHeader className="pb-3">
                             <CardTitle className="text-lg">{t.scheme.title}</CardTitle>
                         </CardHeader>
@@ -205,7 +205,7 @@ export default async function UpdatesPage({
                     </Card>
                     <div className="grid gap-4 md:grid-cols-2">
                         {sections.map(({ icon: Icon, data }) => (
-                            <Card key={data.title} variant="outline" className="rounded-2xl border-[#dce2de] bg-white">
+                            <Card key={data.title} variant="outline" className="rounded-2xl border-neutral-gray-light bg-white">
                                 <CardHeader className="pb-2.5">
                                     <CardTitle className="flex items-center gap-2.5 text-base font-bold text-neutral-dark-bg">
                                         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-king-mint-lightest text-king-forest">

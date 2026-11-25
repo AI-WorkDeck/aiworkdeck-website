@@ -32,6 +32,15 @@
   --neutral-gray-faint: #A8A296;
   --neutral-gray-light: #DFDBCE;
   --neutral-gray-pale: #F1EFE7;
+
+  /* Lines, hover and status · 与桌面端同名角色（X30 part 4：网站不再写原始色值） */
+  --border-strong: #C3BCA9;
+  --accent-hover: #254A41;
+  --danger: #B5483C;
+  --danger-text: #9A3A30;
+  --danger-soft: #FAF0EE;
+  --warning-text: #8A6320;
+  --warning-soft: #F8F1E2;
   /* AWD-TOKENS:END website-root */
   /* Website paper-and-ink ramp (marketing pages only; lane X token map, POLISH X30). Product colours use the
      palette tokens above; these six carry the 纸与墨 look and replace the raw hex that drifted into components. */
@@ -75,6 +84,14 @@
   --color-neutral-gray-faint: var(--neutral-gray-faint);
   --color-neutral-gray-light: var(--neutral-gray-light);
   --color-neutral-gray-pale: var(--neutral-gray-pale);
+
+  --color-border-strong: var(--border-strong);
+  --color-accent-hover: var(--accent-hover);
+  --color-danger: var(--danger);
+  --color-danger-text: var(--danger-text);
+  --color-danger-soft: var(--danger-soft);
+  --color-warning-text: var(--warning-text);
+  --color-warning-soft: var(--warning-soft);
   /* AWD-TOKENS:END website-theme */
   --color-paper: var(--paper);
   --color-ink: var(--ink);

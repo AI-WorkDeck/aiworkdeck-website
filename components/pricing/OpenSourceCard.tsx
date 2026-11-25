@@ -15,7 +15,7 @@ export function OpenSourceCard({ lang, p, grantLabels }: { lang: Locale; /** dic
     const grantLine = grant && grantLabels ? signupGrantLine(grant, grantLabels) : null;
 
     return (
-        <Card className="flex flex-col rounded-2xl border border-[#dce2de] bg-white transition-all duration-300 hover:-translate-y-0.5 hover:border-king-forest/35 hover:shadow-[0_20px_44px_-20px_rgba(32,63,56,0.2)]">
+        <Card className="flex flex-col rounded-2xl border border-neutral-gray-light bg-white transition-all duration-300 hover:-translate-y-0.5 hover:border-king-forest/35 hover:shadow-[0_20px_44px_-20px_rgba(32,63,56,0.2)]">
             <CardHeader className="border-b border-neutral-gray-light/70 pb-5">
                 <CardTitle className="text-lg font-bold text-neutral-dark-bg">{p.title}</CardTitle>
                 <div className="mt-2.5 font-display text-3xl font-bold tracking-tight text-neutral-dark-bg">{p.price}</div>

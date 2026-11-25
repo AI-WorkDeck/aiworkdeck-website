@@ -44,7 +44,7 @@ export default async function ContributorsPage({ params }: { params: Promise<{ l
           </div>
           <ul className="grid gap-px overflow-hidden rounded-xl border border-neutral-gray-light bg-neutral-gray-light sm:grid-cols-2 lg:grid-cols-3">
             {codeContributors.map(contributor => (
-              <li key={contributor.login} className="bg-[#fffdf8]">
+              <li key={contributor.login} className="bg-neutral-white">
                 <a
                   href={contributor.url}
                   target="_blank"
@@ -84,7 +84,7 @@ export default async function ContributorsPage({ params }: { params: Promise<{ l
                 <li key={contributor.user.id}>
                   <Link
                     href={`/${lang}/u/${contributor.user.username}`}
-                    className="group block h-full rounded-xl border border-neutral-gray-light bg-[#fffdf8] p-5 transition-all hover:-translate-y-0.5 hover:border-king-forest/35 hover:shadow-lg hover:shadow-king-forest/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-king-forest"
+                    className="group block h-full rounded-xl border border-neutral-gray-light bg-neutral-white p-5 transition-all hover:-translate-y-0.5 hover:border-king-forest/35 hover:shadow-lg hover:shadow-king-forest/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-king-forest"
                     aria-label={`${contributor.user.displayName} — ${t.viewProfile}`}
                   >
                     <div className="flex items-center gap-3.5">
@@ -121,7 +121,7 @@ export default async function ContributorsPage({ params }: { params: Promise<{ l
           )}
         </section>
 
-        <section className="mt-16 border-y border-[#d7c5a1] py-8 md:flex md:items-center md:justify-between md:gap-10">
+        <section className="mt-16 border-y border-king-gold py-8 md:flex md:items-center md:justify-between md:gap-10">
           <div className="max-w-2xl">
             <h2 className="text-2xl font-semibold text-neutral-dark-bg">{t.joinTitle}</h2>
             <p className="mt-3 text-[15px] leading-relaxed text-neutral-gray-medium">{t.joinText}</p>

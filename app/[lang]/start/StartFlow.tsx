@@ -322,7 +322,7 @@ function DownloadStep({
                                     'group relative flex items-center justify-between gap-3 rounded-xl border-2 px-4 py-4 text-left transition-all duration-200 hover:-translate-y-0.5 md:px-5',
                                     isPrimary
                                         ? 'border-king-forest-darker bg-king-forest-darker text-white shadow-[0_20px_42px_-14px_rgba(22,42,33,0.48)] hover:border-king-forest hover:bg-king-forest'
-                                        : 'border-king-forest/30 bg-[#f2f6f4] text-neutral-dark-bg shadow-[0_10px_28px_-14px_rgba(22,42,33,0.16)] hover:border-king-forest hover:bg-white'
+                                        : 'border-king-forest/30 bg-king-forest-lightest text-neutral-dark-bg shadow-[0_10px_28px_-14px_rgba(22,42,33,0.16)] hover:border-king-forest hover:bg-white'
                                 )}
                             >
                                 <div className="flex items-center gap-3 min-w-0">

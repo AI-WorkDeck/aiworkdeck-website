@@ -89,6 +89,18 @@ function websiteGroups(P) {
         ['--neutral-gray-pale', L.bg],
       ],
     },
+    {
+      title: 'Lines, hover and status · 与桌面端同名角色（X30 part 4：网站不再写原始色值）',
+      vars: [
+        ['--border-strong', L['border-strong']],
+        ['--accent-hover', L['accent-hover']],
+        ['--danger', L.danger],
+        ['--danger-text', L['danger-text']],
+        ['--danger-soft', L['danger-soft']],
+        ['--warning-text', L['warning-text']],
+        ['--warning-soft', L['warning-soft']],
+      ],
+    },
   ];
 }
 
