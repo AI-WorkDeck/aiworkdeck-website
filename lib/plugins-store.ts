@@ -1,4 +1,5 @@
 import { publicHttpsUrl, validatePluginPlatformManifest } from './plugin-manifest-platform';
+import { toZhHant } from '@/lib/zh-hant';
 import fs from 'fs';
 import path from 'path';
 import AdmZip from 'adm-zip';
@@ -148,6 +149,8 @@ export const WEB_DIR = 'web/';
 
 function pluginDisplayLocales(language?: string): string[] {
   const locale = isLocale(language) ? language : siteConfig.defaultLocale;
+  // zh-TW readers get converted zh-CN before English (POLISH X47).
+  if (locale === 'zh-hant') return ['zh-TW', 'zh-CN', 'en-US'];
   return [...new Set([LOCALE_META[locale].bcp47, 'en-US', 'zh-CN'])];
 }
 
@@ -176,7 +179,9 @@ function pluginDisplayText(value: unknown, fallback: string, files: Map<string, 
 
 /** Resolve display at read time: INTL mirrors CN-signed entries without rewriting them. */
 export function getPluginDisplay(entry: PluginEntry, language?: string): Pick<PluginEntry, 'name' | 'description'> {
-  const fallback = { name: entry.name, description: entry.description };
+  const fallback = language === 'zh-hant'
+    ? { name: toZhHant(entry.name), description: toZhHant(entry.description) }
+    : { name: entry.name, description: entry.description };
   try {
     const manifestBytes = readEntryFile(entry, 'manifest.json');
     if (!manifestBytes) return fallback;
@@ -189,10 +194,12 @@ export function getPluginDisplay(entry: PluginEntry, language?: string): Pick<Pl
       const bytes = readEntryFile(entry, name);
       if (bytes) files.set(name, bytes);
     }
-    return {
+    const display = {
       name: pluginDisplayText(manifest.name, entry.name, files, locales, ['plugin.name']),
       description: pluginDisplayText(manifest.description, entry.description, files, locales, ['plugin.description', 'plugin.desc']),
     };
+    // zh-TW visitors: a plugin without zh-TW l10n falls back to Simplified; convert it (Taiwan terms, POLISH X47).
+    return language === 'zh-hant' ? { name: toZhHant(display.name), description: toZhHant(display.description) } : display;
   } catch { // Older mirrored entries may not have readable package metadata.
     return fallback;
   }

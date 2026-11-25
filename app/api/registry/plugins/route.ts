@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { listPlugins, compareSemver, getPluginDisplay } from '@/lib/plugins-store';
 import { findUserById } from '@/lib/users';
 import { siteConfig } from '@/lib/site-config';
@@ -11,7 +11,10 @@ export const dynamic = 'force-dynamic';
  *
  * 只暴露 approved 状态；pending / rejected / revoked 一律不出现在这里。
  */
-export async function GET() {
+export async function GET(request?: NextRequest) {
+  // ?lang=zh-hant serves Traditional (Taiwan) name/description in place; every entry also carries i18n['zh-hant']
+  // so a client that fetches once (the desktop backend) can pick per UI language (POLISH X47). Additive only.
+  const hant = request?.nextUrl?.searchParams.get('lang')?.toLowerCase() === 'zh-hant';
   const approved = listPlugins({ status: 'approved' });
 
   // 同一 id 只暴露最高版本
@@ -23,9 +26,10 @@ export async function GET() {
 
   const entries = [...latest.values()].map((p) => {
     const author = findUserById(p.authorId);
+    const zhHant = getPluginDisplay(p, 'zh-hant');
     return {
       id: p.id,
-      ...getPluginDisplay(p),
+      ...(hant ? zhHant : getPluginDisplay(p)),
       icon: p.icon,
       version: p.version,
       author: author?.username || p.author,
@@ -39,6 +43,7 @@ export async function GET() {
       // PR-W3 只增不改：付费元数据，旧桌面端忽略未知字段
       priceCents: p.priceCents ?? 0,
       pricingModel: p.pricingModel ?? 'once',
+      i18n: { 'zh-hant': zhHant },
     };
   });
 

@@ -1,4 +1,5 @@
 import { toBaseLocale, type Locale } from '@/i18n-config';
+import { toZhHant } from '@/lib/zh-hant';
 
 /**
  * 精选 Skill 的英文展示文案（PR 官网中英混杂修复）。
@@ -277,6 +278,9 @@ export function localizeSkill<T extends { id: string; name: string; description:
   skill: T,
   lang: Locale,
 ): T {
+  if (lang === 'zh-hant') {
+    return { ...skill, name: toZhHant(skill.name), description: toZhHant(skill.description), triggers: skill.triggers.map(toZhHant) };
+  }
   if (toBaseLocale(lang) !== 'en') return skill;
   const copy = SKILL_EN[skill.id];
   if (!copy) return skill;

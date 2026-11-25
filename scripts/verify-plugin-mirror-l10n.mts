@@ -80,6 +80,7 @@ if (!mode) {
         const registryBefore = fs.readFileSync('data/plugins.json');
         const filesBefore = Object.keys(entry.files).map(name => [name, store.readPluginFile(entry.id, entry.version, name)!] as const);
         const { GET } = await import('@/app/api/registry/plugins/route');
+        const { NextRequest } = await import('next/server');
         const response = await GET();
         assert.equal(response.status, 200);
         const rows = await response.json();
@@ -98,6 +99,12 @@ if (!mode) {
         assert.deepEqual(store.getPluginDisplay(enLiteral, 'zh'), { name: '展会线索', description: '展位线索' });
         assert.deepEqual(store.getPluginDisplay(enLiteral, 'fr'), { name: 'Event Lead Portal', description: 'Booth leads' }, 'A literal is never replaced by a Chinese fallback');
         assert.deepEqual(store.getPluginDisplay(enLiteral, 'zh-hant'), { name: 'Event Lead Portal', description: 'Booth leads' }, 'Chinese visitors without their dictionary keep the literal, not English or zh-CN');
+        assert.deepEqual(store.getPluginDisplay(entry, 'zh-hant'), { name: '極光玻璃', description: '專注工作皮膚' }, 'zh-TW without a zh-TW dictionary converts the Simplified text (X47)');
+        assert.deepEqual(row('mirror-theme').i18n['zh-hant'], { name: '極光玻璃', description: '專注工作皮膚' }, 'Registry entries carry zh-hant display (X47)');
+        assert.deepEqual(row('literal-zh').i18n['zh-hant'], { name: '專案溝通', description: '律所溝通' }, 'A package zh-TW dictionary wins');
+        const hantRows = await (await GET(new NextRequest('http://localhost/api/registry/plugins?lang=zh-hant'))).json();
+        assert.equal(hantRows.find((r: { id: string }) => r.id === 'mirror-theme').name, '極光玻璃', '?lang=zh-hant serves Traditional in place');
+        assert.equal(hantRows.find((r: { id: string }) => r.id === 'literal-en').name, 'Event Lead Portal', 'English literals stay English');
         assert.deepEqual(store.getPluginDisplay(entry), expected, 'Marketplace display uses the same localized fields');
         assert.deepEqual(store.getPluginDisplay(entry, 'ja'), { name: 'オーロラガラス', description: '集中できるテーマ' });
         assert.deepEqual(store.getPluginDisplay(entry, 'zh'), { name: '极光玻璃', description: '专注工作皮肤' });
