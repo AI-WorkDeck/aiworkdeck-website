@@ -161,6 +161,18 @@ export function middleware(request: NextRequest) {
         (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
     );
 
+    // A standard language tag in place of our slug (/zh-TW, /en-US/pricing, /zh_HK) goes to the matching
+    // locale instead of a 404 (POLISH Q16). Only tag-shaped first segments, so ordinary paths are untouched.
+    if (pathnameIsMissingLocale) {
+        const [first = '', ...rest] = pathname.slice(1).split('/');
+        const alias = /^[a-z]{2,3}(?:[-_][a-z0-9]{2,8})+$/i.test(first) ? matchLanguageTagToLocale(first) : null;
+        if (alias) {
+            const url = request.nextUrl.clone();
+            url.pathname = `/${alias}${rest.length ? `/${rest.join('/')}` : ''}`;
+            return NextResponse.redirect(url, 308);
+        }
+    }
+
     // Redirect if there is no locale
     if (pathnameIsMissingLocale) {
         const locale = resolveRequestLocale(request);

@@ -13,6 +13,9 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
     const user = resolveKeyUser(request) ?? (await getSessionUser());
     if (!user) {
+        // The public /membership page asks with ?optional=1: a signed-out visitor is a normal state there,
+        // not an error (browsers log every 4xx in the console). Other callers keep the 401 contract.
+        if (request.nextUrl.searchParams.get('optional') === '1') return NextResponse.json({ signedIn: false });
         return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
     return NextResponse.json(membershipSnapshot(getDb(), user.id));
