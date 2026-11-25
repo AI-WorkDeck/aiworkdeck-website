@@ -197,6 +197,14 @@ let intro: any;
   ok('quote = intro ¥9.9; a stale or forged SKU/amount is refused before any order or WeChat call');
 }
 
+{
+  const fresh = await (await POST(req({ action: 'pro-quote' }))).json();
+  assert.strictEqual(fresh.available, true);
+  assert.strictEqual(fresh.skuId, 'pro_monthly_intro', 'a user without an account yet sees the new-account intro offer');
+  assert.strictEqual(fresh.amountCents, 990);
+  ok('quote without an account → intro offer (the account is created on purchase)');
+}
+
 console.log('\n[3] create-pro → WeChat APP order; replay reuses it');
 let no = '';
 {

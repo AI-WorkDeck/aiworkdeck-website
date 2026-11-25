@@ -34,18 +34,24 @@ export type MobileProQuote =
       days: number;
     };
 
+/**
+ * [userId] null = a signed-in app user who has no unified account yet: they see the offer a new account gets (the
+ * intro price), and the account is created by create-pro when they actually buy.
+ */
 export function mobileProQuote(
   db: Database.Database,
-  userId: string,
+  userId: string | null,
   env: Record<string, string | undefined> = process.env,
   now: string = new Date().toISOString()
 ): MobileProQuote {
   if (!mobileWxpayProEnabled(env) || !isProPurchaseEnabled(env)) return { available: false, reason: 'disabled' };
   if (siteConfig.currency !== 'CNY' || !wxpayAppAdapter.isConfigured()) return { available: false, reason: 'channel_unavailable' };
   // Same rule as the website: no new sale on top of an active Apple subscription.
-  const apple = db.prepare("SELECT 1 FROM entitlements WHERE userId=? AND feature='pro.appstore' AND expiresAt>?").get(userId, now);
-  if (apple) return { available: false, reason: 'appstore_subscription_active' };
-  const intro = getProIntroQuote(db, userId);
+  if (userId) {
+    const apple = db.prepare("SELECT 1 FROM entitlements WHERE userId=? AND feature='pro.appstore' AND expiresAt>?").get(userId, now);
+    if (apple) return { available: false, reason: 'appstore_subscription_active' };
+  }
+  const intro = getProIntroQuote(db, userId ?? '');
   return {
     available: true,
     skuId: intro.recommendedSkuId,

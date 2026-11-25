@@ -583,7 +583,7 @@ async function handleCreateRecharge(
 // action: pro-quote / create-pro (Android mainland: personal Pro via WeChat APP pay, POLISH M3)
 // ---------------------------------------------------------------------------
 
-function handleProQuote(userId: string): NextResponse {
+function handleProQuote(userId: string | null): NextResponse {
   return NextResponse.json(mobileProQuote(getDb(), userId));
 }
 
@@ -944,6 +944,8 @@ export async function POST(request: NextRequest) {
     if (action === 'wx-phone') return await handleWxPhone(body);
     // Shadow report about cloud users that have no account mapping; carries cloud ids only.
     if (action === 'shadow-unmapped') return NextResponse.json(recordShadowUnmapped(body as unknown as {observedAt:string;users:number;bytes:string;sample?:unknown}));
+    // Like the App Store capability, a Pro quote may be read without an account (a new user sees the intro offer).
+    if (action === 'pro-quote' && !body.accountId) return handleProQuote(null);
     if (action === 'appstore-subscription-capability') {
       const account = typeof body.accountId === 'string' ? findUserById(body.accountId) : undefined;
       if (account && !isDeletedUser(account) && siteConfig.currency === 'CNY' && sandboxAllowed(account.id) && appstoreAdapter.isConfigured()) {
