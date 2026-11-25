@@ -67,6 +67,8 @@ jobs:
         run: npx tsx --tsconfig tsconfig.json scripts/verify-web-engine-prefetch.mts
       - name: Marketplace terminology (X-S3)
         run: node scripts/verify-marketplace-terms.mjs
+      - name: Pricing card buttons stack
+        run: node scripts/verify-pricing-card-buttons.mjs
       - name: Plugin store lists each plugin once
         run: npm run test:store-plugins
       - name: Pricing page offers only what each site sells
