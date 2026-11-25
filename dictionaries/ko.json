@@ -970,7 +970,6 @@
     "account": "사용자 이름 또는 이메일",
     "username": "사용자 이름 (영문 소문자/숫자/하이픈 3~30자)",
     "email": "이메일",
-    "password": "비밀번호 (최소 8자)",
     "displayName": "표시 이름 (선택 사항)",
     "loginBtn": "로그인",
     "registerBtn": "계정 만들기",

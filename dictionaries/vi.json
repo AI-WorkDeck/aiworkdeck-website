@@ -970,7 +970,6 @@
     "account": "Tên người dùng hoặc email",
     "username": "Tên người dùng (3-30 chữ cái thường/chữ số/dấu gạch ngang)",
     "email": "Email",
-    "password": "Mật khẩu (tối thiểu 8 ký tự)",
     "displayName": "Tên hiển thị (không bắt buộc)",
     "loginBtn": "Đăng nhập",
     "registerBtn": "Tạo tài khoản",

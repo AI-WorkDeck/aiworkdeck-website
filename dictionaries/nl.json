@@ -970,7 +970,6 @@
     "account": "Gebruikersnaam of e-mailadres",
     "username": "Gebruikersnaam (3-30 kleine letters/cijfers/af streepjes)",
     "email": "E-mail",
-    "password": "Wachtwoord (min. 8 tekens)",
     "displayName": "Weergavenaam (optioneel)",
     "loginBtn": "Inloggen",
     "registerBtn": "Account aanmaken",

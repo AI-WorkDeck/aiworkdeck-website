@@ -970,7 +970,6 @@
     "account": "Username or email",
     "username": "Username (3-30 lowercase letters/digits/hyphens)",
     "email": "Email",
-    "password": "Password (min 8 chars)",
     "displayName": "Display name (optional)",
     "loginBtn": "Sign in",
     "registerBtn": "Create account",

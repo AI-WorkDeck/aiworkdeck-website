@@ -970,7 +970,6 @@
     "account": "Nome de usuário ou e-mail",
     "username": "Nome de usuário (3-30 letras minúsculas/dígitos/hifens)",
     "email": "E-mail",
-    "password": "Senha (mín. 8 caracteres)",
     "displayName": "Nome de exibição (opcional)",
     "loginBtn": "Entrar",
     "registerBtn": "Criar conta",

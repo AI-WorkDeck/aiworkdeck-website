@@ -970,7 +970,6 @@
     "account": "Nome utente o e-mail",
     "username": "Nome utente (3-30 lettere minuscole/cifre/trattini)",
     "email": "E-mail",
-    "password": "Password (min. 8 caratteri)",
     "displayName": "Nome visualizzato (facoltativo)",
     "loginBtn": "Accedi",
     "registerBtn": "Crea account",
