@@ -29,7 +29,7 @@ export function OpenSourceCard({ lang, p, grantLabels }: { lang: Locale; /** dic
                     {' · '}<a href={COMMERCIAL_LICENSE_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-king-forest hover:underline">{p.agplLegalLink}</a>
                 </p>
             </CardContent>
-            <CardFooter className="flex flex-col gap-2.5 pt-2 sm:flex-row">
+            <CardFooter className="flex flex-col gap-2.5 pt-2">
                 <Link href={`/${lang}/start`} className="w-full">
                     <Button className="w-full gap-2 bg-neutral-dark-bg font-bold text-white shadow-sm hover:bg-neutral-dark-bg/90">
                         <Download className="h-4 w-4" /> {p.ctaPrimary}
