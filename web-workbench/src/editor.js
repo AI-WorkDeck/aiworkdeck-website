@@ -9,7 +9,8 @@ export function documentText(result){
  return typeof result.text==='string'?result.text:'';
 }
 export class EditorSession{
- constructor({container,store,onState,onBusy,onBoot=()=>{},language='zh'}){
+ constructor({container,store,onState,onBusy,onBoot=()=>{},language='zh',fonts=null}){
+  this.fonts=fonts;
   this.agent=new AgentEditor(this);
   this.store=store;this.onState=onState;this.onBusy=onBusy;this.file=null;this.dirty=false;this.generation=0;this.loading=false;this.queue=Promise.resolve();this.recoveryBytes=null;this.savedRevision=null;
   this.frame=document.createElement('iframe');this.frame.title=language==='en'?'Document editor':'文档编辑器';this.frame.allow='clipboard-read; clipboard-write';
@@ -56,7 +57,7 @@ export class EditorSession{
    this.detachInput=()=>{for(const type of ['input','compositionend','paste','cut','drop'])doc.removeEventListener(type,this.inputChanged,true);doc.removeEventListener('keydown',this.inputKey,true)};
   };
   this.frame.addEventListener('load',this.attachInput);
-  this.frame.src=`/web/editor/editor.html?lowa=/web/editor/lowa/&uilang=${language==='en'?'en-US':'zh-CN'}`;container.append(this.frame);
+  this.frame.src=`/web/editor/editor.html?lowa=/web/editor/lowa/&uilang=${language==='en'?'en-US':'zh-CN'}${fonts?`&fonts=${encodeURIComponent(fonts.join(','))}`:''}`;container.append(this.frame);
   this.reportBoot();
  }
  reportBoot(){this.onBoot({status:this.bootSlow?'slow':'loading',phase:this.bootPhase,...(this.bootProgress?{progress:this.bootProgress}:{})})}

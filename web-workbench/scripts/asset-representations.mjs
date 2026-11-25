@@ -11,6 +11,18 @@ export function mapFontRequests(code){
  for(const name of FONT_NAMES){const old=`'./${name}'`;if(code.split(old).length!==2)throw Error('Expected exactly one pinned font URL: '+name);code=code.replace(old,`'./compressed/${name}'`)}
  return code;
 }
+// ?fonts=sans,serif boots with only those bundled font categories (website adapter; same contract as
+// aiworkdeck#1686 bundled-fonts.js). Absent = all fonts. Fonts register only at boot, so the host picks
+// them per document before creating the editor (POLISH W6 step 2).
+export function mapFontSelection(code){
+ const query="const q = new URLSearchParams(location.search)\n";
+ const open="  fontUrls: [\n";
+ const close="    // 本机字体排在随包字体之后";
+ for(const [label,needle] of [['query',query],['fontUrls',open],['system fonts',close]])if(code.split(needle).length!==2)throw Error('Expected exactly one '+label+' anchor for font selection');
+ return code.replace(query,query+"const __fontCategories = q.get('fonts') == null ? null : q.get('fonts').split(',').map(s => s.trim()).filter(Boolean)\n")
+  .replace(open,open+"    ...[\n")
+  .replace(close,"    ].filter(f => __fontCategories == null || __fontCategories.includes(f.category)),\n"+close);
+}
 export function mapFontFetching(code,transportModule){
  const original=`        const r = await fetch(f.url)
         if (!r.ok) { log('CJK font not found at ' + f.url + ' (skipping)'); return null }
