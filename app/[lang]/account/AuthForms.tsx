@@ -228,7 +228,7 @@ export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false
         finally { setBusy(false); }
     }
 
-    const title = mode === 'bqt-scan' ? t.bqtScanTab : mode === 'review' ? t.reviewLogin : mode === 'password' ? t.passwordTab : mode === 'register' ? t.firstTime : mode === 'setup' ? t.createPassword : t.resetPassword;
+    const title = mode === 'bqt-scan' ? t.bqtScanTab : mode === 'review' ? t.reviewLogin : mode === 'password' ? t.loginTitle : mode === 'register' ? t.firstTime : mode === 'setup' ? t.createPassword : t.resetPassword;
     if (mobileComplete) return <div role="status" className="rounded-xl border border-neutral-gray-light bg-white p-8 shadow-sm">
         <h2 className="mb-3 text-xl font-bold text-king-forest">{mobileCopy.completeTitle}</h2>
         <p className="text-neutral-gray-dark">{mobileCopy.completeBody}</p>
@@ -321,7 +321,7 @@ export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false
                     {mode !== 'review' && !codeChannelReady && <FormNotice variant="error">{t.codeUnavailable}</FormNotice>}
                 </>}
                 {showPassword && <div className="flex flex-col gap-2">
-                    <Label htmlFor="auth-password">{newPassword ? t.newPassword : t.password}</Label>
+                    <Label htmlFor="auth-password">{newPassword ? t.newPassword : t.passwordTab}</Label>
                     <Input id="auth-password" type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={newPassword ? 8 : undefined} maxLength={72} autoComplete={newPassword ? 'new-password' : 'current-password'} disabled={busy || sending || challengeLoading} />
                     {newPassword && <p className="text-xs text-neutral-gray-medium">{t.passwordRule}</p>}
                 </div>}

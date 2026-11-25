@@ -970,7 +970,6 @@
     "account": "Nama pengguna atau e-mel",
     "username": "Nama pengguna (3-30 huruf kecil/digit/sempang)",
     "email": "E-mel",
-    "password": "Kata laluan (min 8 aksara)",
     "displayName": "Nama paparan (pilihan)",
     "loginBtn": "Daftar masuk",
     "registerBtn": "Cipta akaun",

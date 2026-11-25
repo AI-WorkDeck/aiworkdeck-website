@@ -970,7 +970,6 @@
     "account": "Nama pengguna atau email",
     "username": "Nama pengguna (3-30 huruf kecil/angka/hubung)",
     "email": "Email",
-    "password": "Kata sandi (min. 8 karakter)",
     "displayName": "Nama tampilan (opsional)",
     "loginBtn": "Masuk",
     "registerBtn": "Buat akun",

@@ -970,7 +970,6 @@
     "account": "Kullanıcı adı veya e-posta",
     "username": "Kullanıcı adı (3-30 küçük harf/rakam/tire)",
     "email": "E-posta",
-    "password": "Şifre (en az 8 karakter)",
     "displayName": "Görünen ad (isteğe bağlı)",
     "loginBtn": "Giriş yap",
     "registerBtn": "Hesap oluştur",
