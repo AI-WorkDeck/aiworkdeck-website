@@ -16,7 +16,7 @@ const server=createPreviewServer();
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base=`http://127.0.0.1:${server.address().port}`;
 const shots=process.env.SHOTS;if(shots)await fs.mkdir(shots,{recursive:true});
-const launch=async()=>{const dir=await fs.mkdtemp(path.join(os.tmpdir(),'awd-preview-'));return {dir,browser:await puppeteer.launch({executablePath:process.env.PUPPETEER_EXECUTABLE_PATH,headless:process.env.PUPPETEER_HEADLESS==='shell'?'shell':'new',userDataDir:dir,protocolTimeout:180000,args:['--disable-dev-shm-usage','--lang=en-US']})}};
+const launch=async()=>{const dir=await fs.mkdtemp(path.join(os.tmpdir(),'awd-preview-'));return {dir,browser:await puppeteer.launch({executablePath:process.env.PUPPETEER_EXECUTABLE_PATH,headless:process.env.PUPPETEER_HEADLESS==='shell'?'shell':'new',userDataDir:dir,protocolTimeout:180000,args:['--disable-dev-shm-usage','--lang=en-US','--use-angle=swiftshader','--enable-unsafe-swiftshader']})}};
 const shot=async(page,name)=>{if(shots)await page.screenshot({path:path.join(shots,name+'.png')})};
 const until=async(page,fn,label,ms=180000)=>{const end=Date.now()+ms;while(Date.now()<end){if(await page.evaluate(fn))return;await new Promise(r=>setTimeout(r,100))}throw Error('timeout: '+label)};
 const previewText=()=>{const el=document.querySelector('#doc-preview');return !!el&&!el.hidden&&/Service Agreement/.test(el.innerText)};
@@ -38,6 +38,8 @@ await run('cold throttled load: readable preview fast, edits blocked, then the s
  assert.ok(readable<=3000,`first readable text in ${readable} ms (≤ 3000 on a throttled cold load)`);
  assert.equal(await page.$eval('#preview-badge',e=>e.hidden),false,'read-only badge shown');
  assert.equal(await page.$eval('#editor-cover',e=>e.hidden),true,'no full-page cover over the preview');
+ assert.match(await page.$eval('#tabs .tab.active',e=>e.textContent),/Service agreement/,'the tab is shown during the preview');
+ assert.match(await page.$eval('#ai-document',e=>e.textContent),/Service agreement/,'AI pane names the document during the preview');
  await until(page,()=>/Preparing editor… \d+%/.test(document.querySelector('#prep-text')?.textContent||''),'progress bar');
  await shot(page,'preview-progress');
  await page.click('[data-action="bold"]');
@@ -47,6 +49,9 @@ await run('cold throttled load: readable preview fast, edits blocked, then the s
  await page.cdp.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
  await until(page,()=>{const p=document.querySelector('#doc-preview');return p.hidden&&!document.querySelector('.document-toolbar').classList.contains('asleep')},'swap');
  assert.match(await page.$eval('#prep-text',e=>e.textContent),/Editor ready/);
+ assert.equal(await page.$eval('#doc-preview',e=>e.dataset.swapReason),'painted','swapped only after the engine painted the page');
+ assert.ok(await page.$eval('#toast',e=>e.hidden),'blocked-edit toast cleared at the swap');
+ assert.match(await page.$eval('#tabs .tab.active',e=>e.textContent),/Service agreement/,'tab shown');
  assert.equal(await page.$eval('#preview-badge',e=>e.hidden),true,'badge gone after the swap');
  assert.equal(await page.$eval('[data-action="bold"]',b=>b.getAttribute('aria-disabled')),null,'toolbar enabled at the swap');
  await shot(page,'after-swap');
