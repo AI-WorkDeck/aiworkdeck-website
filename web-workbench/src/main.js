@@ -6,14 +6,14 @@ import {ConversationStore} from './conversations.js';
 import {progressView} from './boot-progress-view.js';
 import {openWorkspace,TEMPORARY_PROJECT_ID,GUEST_SCOPE,adoptLegacyDatabase,listScopes,deleteScope} from './storage.js';
 import {resolveScope,exportScopeZip,countScopeFiles,mayLeaveScope} from './account-scope.js';
-import {projectLocales,projectLocale} from './project-locales.js';
+import {projectLocales,initialLocale} from './project-locales.js';
 import {EditorSession} from './editor.js';
 import {createDocument,validateDocx,downloadFile} from './docx.js';
 import {streamChat} from './chat.js';
 import {runDocumentAgent} from './agent-runner.js';
 import {countLiteralMatches,validateProposal} from './proposal.js';
 
-const requestedLocale=projectLocale(new URLSearchParams(location.search).get('lang'));
+const requestedLocale=initialLocale({query:new URLSearchParams(location.search).get('lang'),cookie:document.cookie,languages:navigator.languages});
 const projectText=projectLocales[requestedLocale];
 const language=requestedLocale==='zh'||requestedLocale==='zh-hant'?'zh':'en';
 const en=language==='en';
