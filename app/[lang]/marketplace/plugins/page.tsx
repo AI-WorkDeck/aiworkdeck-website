@@ -191,7 +191,7 @@ export default async function MarketplacePluginsPage({ params }: { params: Promi
                     <Reveal delay={180}>
                         <div className="mt-6 rounded-xl border border-dashed border-neutral-gray-light bg-white/60 px-6 py-16 text-center">
                             <Blocks className="mx-auto mb-5 h-10 w-10 text-king-forest/40" strokeWidth={1.5} />
-                            <p className="font-display text-lg font-bold text-neutral-dark-bg">{t.emptyTitle}</p>
+                            <p className="text-lg font-semibold text-ink">{t.emptyTitle}</p>
                             <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-neutral-gray-dark">
                                 {t.emptyBody}
                             </p>
