@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<!-- SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-## Getting Started
+# AI WorkDeck website
 
-First, run the development server:
+Source of the AI WorkDeck websites: product pages, downloads, the Marketplace (skills, plugins, MCP), accounts and billing, and the browser workbench at `/web/`.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Mainland China: [www.aiworkdeck.com](https://www.aiworkdeck.com)
+- International: [workdeck.ai](https://workdeck.ai)
+- The desktop app and plugin SDK live in [AI-WorkDeck/aiworkdeck](https://github.com/AI-WorkDeck/aiworkdeck).
+
+AI WorkDeck 官网源码：产品介绍、下载、Marketplace（技能、插件、MCP）、账户与计费，以及 `/web/` 网页工作台。桌面端与插件 SDK 在 [AI-WorkDeck/aiworkdeck](https://github.com/AI-WorkDeck/aiworkdeck)。
+
+## Layout
+
+| Path | What it is |
+|---|---|
+| `app/[lang]/` | Next.js pages, one route tree for all 20 interface languages |
+| `app/api/` | API routes (accounts, registry, billing, web AI) |
+| `components/`, `lib/` | Shared UI and server logic |
+| `dictionaries/<locale>.json` | All user-visible text |
+| `content/` | Release notes, articles, videos |
+| `web-workbench/` | The `/web/` browser workbench (see `doc/web-workbench-deploy.md`) |
+| `doc/`, `docs/` | Design notes and runbooks |
+
+## Develop
+
+Node 22.23.2 (the version CI uses).
+
+```sh
+npm ci
+npm run dev       # http://localhost:3000
+npm run check     # typecheck + locale parity; run before every commit
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Rules for contributors and agents are in [CLAUDE.md](CLAUDE.md). The most important one: no hard-coded UI text; every string goes through `dictionaries/` (`npm run check:locales` enforces it).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploy
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Merging does not deploy. Production goes through the CI-built artifact and the gated promote workflow described in [DEPLOY.md](DEPLOY.md).
 
-## Learn More
+## License
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[AGPL-3.0-or-later](LICENSE). Copyright 2026 北京公富信息技术有限公司 (BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED) and AI WorkDeck contributors.
