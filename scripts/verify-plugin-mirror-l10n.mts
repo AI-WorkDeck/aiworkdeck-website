@@ -50,6 +50,23 @@ if (!mode) {
         assert.equal(submitted.plugin?.name, '极光玻璃');
         assert.equal(submitted.plugin?.description, '专注工作皮肤');
         assert.deepEqual(store.approvePlugin('mirror-theme', '1.0.2'), { ok: true });
+        // Most official plugins keep a literal Chinese manifest name and translate it in l10n/<locale>.json.
+        const literal = (id: string, manifest: Record<string, unknown>, dicts: Record<string, Record<string, string>>) => {
+            const z = new AdmZip();
+            z.addFile('manifest.json', Buffer.from(JSON.stringify({ id, version: '1.0.0', contributes: { themes: [{ id: 'paper', file: 'themes/paper.json' }] }, ...manifest })));
+            z.addFile('themes/paper.json', Buffer.from(JSON.stringify({ colors: { 'surface-primary': '#ffffff' } })));
+            for (const [locale, dict] of Object.entries(dicts)) z.addFile(`l10n/${locale}.json`, Buffer.from(JSON.stringify(dict)));
+            assert.equal(store.submitPlugin(z.toBuffer(), { id: 'mirror-author', username: 'mirror-tester' }).error, undefined);
+            assert.deepEqual(store.approvePlugin(id, '1.0.0'), { ok: true });
+        };
+        literal('literal-zh', { name: '项目沟通', description: '律所沟通' }, {
+            'zh-CN': { 'plugin.name': '项目沟通', 'plugin.description': '律所沟通' },
+            'zh-TW': { 'plugin.name': '專案溝通', 'plugin.description': '律所溝通' },
+            'en-US': { 'plugin.name': 'Project Chat', 'plugin.description': 'Firm chat' },
+        });
+        literal('literal-en', { name: 'Event Lead Portal', description: 'Booth leads' }, {
+            'zh-CN': { 'plugin.name': '展会线索', 'plugin.description': '展位线索' },
+        });
         console.log('PASS CN submit and sign localized plugin with an isolated test key');
     } else {
         const { siteConfig } = await import('@/lib/site-config');
@@ -66,9 +83,21 @@ if (!mode) {
         const response = await GET();
         assert.equal(response.status, 200);
         const rows = await response.json();
-        assert.equal(rows.length, 1);
-        assert.equal(rows[0].name, expected.name, 'Actual registry API must localize the mirrored CN name');
-        assert.equal(rows[0].description, expected.description);
+        assert.equal(rows.length, 3);
+        const row = (id: string) => rows.find((r: { id: string }) => r.id === id);
+        assert.equal(row('mirror-theme').name, expected.name, 'Actual registry API must localize the mirrored CN name');
+        assert.equal(row('mirror-theme').description, expected.description);
+        const zhLiteral = store.getPlugin('literal-zh', '1.0.0')!;
+        const enLiteral = store.getPlugin('literal-en', '1.0.0')!;
+        assert.equal(zhLiteral.name, '项目沟通', 'Registry keeps the literal manifest name');
+        assert.equal(row('literal-zh').name, siteConfig.defaultLocale === 'zh' ? '项目沟通' : 'Project Chat', 'Registry API translates a literal name for the site language');
+        assert.deepEqual(store.getPluginDisplay(zhLiteral, 'en'), { name: 'Project Chat', description: 'Firm chat' }, 'English store shows the package English name');
+        assert.deepEqual(store.getPluginDisplay(zhLiteral, 'fr'), { name: 'Project Chat', description: 'Firm chat' }, 'Missing visitor dictionary falls back to English');
+        assert.deepEqual(store.getPluginDisplay(zhLiteral, 'zh'), { name: '项目沟通', description: '律所沟通' });
+        assert.deepEqual(store.getPluginDisplay(zhLiteral, 'zh-hant'), { name: '專案溝通', description: '律所溝通' });
+        assert.deepEqual(store.getPluginDisplay(enLiteral, 'zh'), { name: '展会线索', description: '展位线索' });
+        assert.deepEqual(store.getPluginDisplay(enLiteral, 'fr'), { name: 'Event Lead Portal', description: 'Booth leads' }, 'A literal is never replaced by a Chinese fallback');
+        assert.deepEqual(store.getPluginDisplay(enLiteral, 'zh-hant'), { name: 'Event Lead Portal', description: 'Booth leads' }, 'Chinese visitors without their dictionary keep the literal, not English or zh-CN');
         assert.deepEqual(store.getPluginDisplay(entry), expected, 'Marketplace display uses the same localized fields');
         assert.deepEqual(store.getPluginDisplay(entry, 'ja'), { name: 'オーロラガラス', description: '集中できるテーマ' });
         assert.deepEqual(store.getPluginDisplay(entry, 'zh'), { name: '极光玻璃', description: '专注工作皮肤' });
