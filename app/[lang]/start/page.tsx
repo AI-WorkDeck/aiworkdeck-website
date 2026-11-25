@@ -17,6 +17,7 @@ import { StartFlow } from './StartFlow';
 import { MobileStart } from './MobileStart';
 import { MobileAppSection } from './MobileAppSection';
 import { pageAlternates } from '@/lib/page-metadata';
+import { WebVersionLink } from '@/components/WebVersionLink';
 
 /** 来源统计（dev-board#304）：作者主页 CTA 带 ref=u-<username>，落地记一笔评估转化 */
 function logStartRef(ref: string, mobile: boolean) {
@@ -122,7 +123,7 @@ export default async function StartPage({
                 {!isMobile && (
                     <p className="mt-8 mb-16 text-[13.5px] leading-relaxed text-neutral-gray-medium">
                         {t.webFallback.text}{' '}
-                        <a href={`/web/?lang=${lang}`} className="font-semibold text-king-forest underline decoration-[#d7c5a1] underline-offset-4 hover:decoration-king-forest">{t.webFallback.link}</a>
+                        <WebVersionLink href={`/web/?lang=${lang}`} className="font-semibold text-king-forest underline decoration-[#d7c5a1] underline-offset-4 hover:decoration-king-forest">{t.webFallback.link}</WebVersionLink>
                     </p>
                 )}
             </div>
