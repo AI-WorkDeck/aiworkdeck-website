@@ -14,7 +14,10 @@ import { NOINDEX } from '@/lib/page-metadata';
 export const dynamic = 'force-dynamic';
 
 /** 投稿页：未登录访客（含爬虫）看到的永远是登录墙，不进索引。 */
-export const metadata: Metadata = { robots: NOINDEX };
+export async function generateMetadata({ params }: { params: Promise<{ lang: Locale }> }): Promise<Metadata> {
+    const { lang } = await params;
+    return { title: (await getDictionary(lang)).pluginSubmitPage.title, robots: NOINDEX };
+}
 
 export default async function SubmitPluginPage({ params }: { params: Promise<{ lang: Locale }> }) {
     const { lang } = await params;

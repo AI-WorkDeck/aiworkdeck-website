@@ -79,6 +79,8 @@ jobs:
         run: npx tsx --tsconfig tsconfig.json scripts/verify-signin-page.mts
       - name: Link-preview card size
         run: node scripts/verify-og-card.mjs
+      - name: Skill charts, 404 and submit page titles
+        run: npx tsx --tsconfig tsconfig.json scripts/verify-charts-and-titles.mts
       - name: Plugin store lists each plugin once
         run: npm run test:store-plugins
       - name: Pricing page offers only what each site sells

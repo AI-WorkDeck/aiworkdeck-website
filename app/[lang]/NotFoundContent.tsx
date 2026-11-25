@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { i18n, pickLocale, type BaseLocale, type Locale } from '@/i18n-config';
 
@@ -29,6 +30,8 @@ export function NotFoundContent({
         ? (raw as Locale)
         : i18n.defaultLocale;
     const t = pickLocale(copy, lang);
+    // not-found.tsx can't read params, so the tab title is set here instead of the home page's title.
+    useEffect(() => { document.title = `${t.title} · AI WorkDeck`; }, [t.title]);
 
     return (
         <div className="flex min-h-[60vh] items-center justify-center bg-neutral-gray-pale px-4 py-24">

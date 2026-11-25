@@ -4,7 +4,6 @@ import { pickLocale, toBaseLocale, type Locale } from '@/i18n-config';
 import type { getDictionary } from '@/get-dictionary';
 import { siteConfig } from '@/lib/site-config';
 import { publicEntityForRequest } from '@/lib/request-entity';
-import { ProductHuntBadge } from '@/components/ProductHuntBadge';
 import { getArticles, pickShortTitle } from '@/lib/articles';
 import { REPO_URL } from '@/lib/structured-data';
 import { communityHomePath } from '@/lib/edition-paths';
@@ -106,8 +105,6 @@ export async function Footer({ lang, dict }: FooterProps) {
                         <p className="text-neutral-gray-medium text-sm leading-relaxed">
                             {dict.common.productTagline}
                         </p>
-                        {/* Product Hunt 徽章（dev-board#370）：页脚是 PH 官方建议的第二落点 */}
-                        <ProductHuntBadge theme="neutral" />
                     </div>
 
                     {/* Links Grid (Right) */}

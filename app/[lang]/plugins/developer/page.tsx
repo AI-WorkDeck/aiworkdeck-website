@@ -10,7 +10,10 @@ import { Button } from '@/components/ui/button';
 import { PageHero } from '@/components/layout/PageHero';
 import { DeveloperDashboard } from './DeveloperDashboard';
 export const dynamic = 'force-dynamic';
-export const metadata = { robots: NOINDEX };
+export async function generateMetadata({ params }: { params: Promise<{ lang: Locale }> }) {
+  const { lang } = await params;
+  return { title: (await getDictionary(lang)).developerPage.title, robots: NOINDEX };
+}
 export default async function Page({ params }: { params: Promise<{ lang: Locale }> }) {
   const { lang } = await params;
   const dict = await getDictionary(lang);
