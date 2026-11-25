@@ -2069,7 +2069,7 @@
     "faqPricesBriefBody": "若你需要闭源交付、专有插件、SaaS 运营或官方认证标识，请洽谈商业授权与 Certified 计划。人数档表与 OEM 明细走邮件询价，不再占用本页主视觉。",
     "faqPricesBriefCta": "邮件咨询商业授权",
     "creditsCrossLink": {
-      "before": "Credits 充值、上游扣款 ×1.2 与服务商价目见",
+      "before": "Credits 如何扣费、各项 AI 服务的价格，见",
       "label": "常见问题 · 怎么收费"
     },
     "openSource": {
@@ -2160,7 +2160,7 @@
     },
     "marketplaceAuthor": {
       "title": "在市场出售 Skill / 插件",
-      "body": "为律师与文书场景上架付费工作流。平台抽成 {platform}%，作者保留 {author}%（以 MARKETPLACE-TERMS 对净收据抽成后为准，非毛成交额直接×比例；月结阈值等以条款为准）。",
+      "body": "为律师与文书场景上架付费工作流。作者保留净收入的 {author}%，平台收取 {platform}%。结算方式见市场条款。",
       "ctaTerms": "了解市场条款",
       "ctaSubmit": "投稿与上架指南"
     },
@@ -2172,7 +2172,7 @@
       },
       "seats": {
         "q": "「席位」怎么算？",
-        "a": "个人 Pro = 1 个付费账号。律所 / 企业按开通的付费席位计数：开 5 席 = 5。合同金额与 ARR 另表统计，不是「一份合同算 1 人」。"
+        "a": "个人 Pro 是 1 个付费账号。律所和企业方案按开通的付费席位计算：开 5 个席位，就是 5 个人可以登录。"
       },
       "agpl": {
         "q": "AGPL 与商业授权有何区别？",
@@ -2180,11 +2180,11 @@
       },
       "refund": {
         "q": "退款政策？",
-        "a": "退款规则以购买协议为准（法务书面确认前，本页不承诺具体天数或比例）。咨询请联系 hi@aiworkdeck.com。"
+        "a": "退款按购买协议办理。如需退款，请发邮件至 hi@aiworkdeck.com。"
       },
       "regions": {
         "q": "大陆站与国际站如何选？",
-        "a": "中国大陆用户优先使用 aiworkdeck.com（支付与发票体验以大陆站为准）。国际用户可使用 workdeck.ai。产品能力对齐，获客与运营节奏以大陆为主。"
+        "a": "中国大陆用户请使用 aiworkdeck.com，支付和发票都在大陆站办理。其他地区用户可使用 workdeck.ai。两个站点的产品功能相同。"
       },
       "allowance": {
         "q": "订阅额度与充值余额有什么区别？",
@@ -2205,7 +2205,10 @@
       "body": "按人数、模型部署方式和配套服务，在线测算服务器、人员与首年投入。",
       "cta": "打开部署计算器"
     },
-    "heroSubtitleIntro": "桌面软件开源免费、文件在本机。个人 Pro 前 {months} 个月享 {intro}/月体验价（原价 {standard}/月），含周期 Credits、3GB 云空间与不限量剪贴板，一次买 30 天，不自动扣款。"
+    "heroSubtitleIntro": "桌面软件开源免费、文件在本机。个人 Pro 前 {months} 个月享 {intro}/月体验价（原价 {standard}/月），含周期 Credits、3GB 云空间与不限量剪贴板，一次买 30 天，不自动扣款。",
+    "heroTitleIntl": "自带 AI 密钥即可免费使用，也可按量付费。",
+    "heroSubtitleIntl": "桌面端开源免费，文件留在你的电脑上。接入你自己的 AI 服务商，我们不收费；或者给美元钱包充值，用多少付多少。律所可咨询专属部署。",
+    "metaDescriptionIntl": "自带 AI 密钥即可免费使用 AI WorkDeck；也可给美元钱包充值、按量付费。律所专属部署单独报价。"
   },
   "notFoundPage": {
     "code": "404",

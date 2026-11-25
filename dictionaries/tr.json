@@ -2067,7 +2067,7 @@
     "faqPricesBriefBody": "Kapalı kaynak dağıtım, tescilli eklentiler, SaaS işletimi veya resmi sertifika markalarına ihtiyacınız varsa, ticari lisanslama ve Certified programları hakkında bizimle görüşün. Çalışan sayısı tabloları ve OEM ayrıntıları e-posta sorgularına taşındı ve artık bu sayfada yer almıyor.",
     "faqPricesBriefCta": "Ticari lisanslama hakkında e-posta gönder",
     "creditsCrossLink": {
-      "before": "Credits yüklemeleri, tedarikçi ×1.2 ölçümlemesi ve tedarikçi fiyat listeleri için bkz.",
+      "before": "Kredilerin nasıl düşüldüğü ve her yapay zeka hizmetinin maliyeti için bkz.",
       "label": "SSS · Ücretlendirme mantığımız"
     },
     "openSource": {
@@ -2158,7 +2158,7 @@
     },
     "marketplaceAuthor": {
       "title": "Marketplace'te Skills / eklenti satın",
-      "body": "Hukuk ve belge çalışmaları için ücretli iş akışları satın. Platform {platform}% / yazar {author}% net gelir üzerinden MARKETPLACE-TERMS'e göre (ham brüt bölüşümü değildir). Ödeme ayrıntıları şartlarda yer alır.",
+      "body": "Hukuk ve belge işleri için ücretli iş akışları satın. Yazarlar net gelirin %{author}'ini, platform %{platform}'ini alır. Ödeme süreci pazar yeri koşullarında açıklanır.",
       "ctaTerms": "Marketplace şartları",
       "ctaSubmit": "Gönderme ve listeleme kılavuzu"
     },
@@ -2170,7 +2170,7 @@
       },
       "seats": {
         "q": "Kullanıcı koltukları nasıl sayılır?",
-        "a": "Personal Pro = bir ücretli hesap. Firmalar / kurumlar etkinleştirilmiş ücretli koltukları sayar: 5 koltuk = 5. Sözleşme tutarı ve ARR ayrı izlenir — \"bir sözleşme = bir kullanıcı\" değildir."
+        "a": "Personal Pro tek bir ücretli hesaptır. Hukuk bürosu ve kurum planları etkinleştirilen ücretli koltuk sayısına göre hesaplanır: 5 koltuk, 5 kişinin oturum açabileceği anlamına gelir."
       },
       "agpl": {
         "q": "AGPL ticari lisanstan nasıl farklıdır?",
@@ -2178,11 +2178,11 @@
       },
       "refund": {
         "q": "İade politikası nedir?",
-        "a": "İadeler satış sözleşmesine göre yapılır (avukat yazılı olarak onaylayana kadar bu sayfa belirli gün veya yüzdeler taahhüt etmez). hi@aiworkdeck.com adresiyle iletişime geçin."
+        "a": "İadeler satın alma sözleşmesine göre yapılır. İade talebi için hi@aiworkdeck.com adresine e-posta gönderin."
       },
       "regions": {
         "q": "Ana kapsam mı yoksa uluslararası site mi?",
-        "a": "Ana Çin'deki kullanıcılar aiworkdeck.com'u tercih etmelidir (ödemeler ve faturalar ana kapsamdaki siteyi izler). Uluslararası kullanıcılar workdeck.ai kullanabilir. Ürün yetenekleri aynıdır; geliştirme önceliği ana Çin'dedir."
+        "a": "Çin anakarasındaki kullanıcılar, ödemelerin ve faturaların yürütüldüğü aiworkdeck.com'u kullanmalıdır. Diğer herkes workdeck.ai'yi kullanabilir. Ürün her iki sitede de aynıdır."
       },
       "allowance": {
         "q": "Hak ile cüzdan bakiyesi arasındaki fark nedir?",
@@ -2203,7 +2203,10 @@
       "body": "Sunucuları, personeli ve ilk yıl bütçesini ekip büyüklüğüne, model moduna ve isteğe bağlı hizmetlere göre tahmin edin.",
       "cta": "Dağıtım planlayıcısını aç"
     },
-    "heroSubtitleIntro": "Ücretsiz açık kaynak masaüstü çalışma alanı. Personal Pro ilk {months} ay {intro}/ay (normal {standard}/ay); Credits, 3GB bulut alanı ve sınırsız pano içerir. 30 günlük tek seferlik satın alım."
+    "heroSubtitleIntro": "Ücretsiz açık kaynak masaüstü çalışma alanı. Personal Pro ilk {months} ay {intro}/ay (normal {standard}/ay); Credits, 3GB bulut alanı ve sınırsız pano içerir. 30 günlük tek seferlik satın alım.",
+    "heroTitleIntl": "Kendi yapay zeka anahtarınızla ücretsiz. Ya da kullandıkça ödeyin.",
+    "heroSubtitleIntl": "Masaüstü uygulaması açık kaynaklı ve ücretsizdir; dosyalarınız bilgisayarınızda kalır. Kendi yapay zeka sağlayıcınızı bize hiçbir ücret ödemeden bağlayın ya da bir USD cüzdanına bakiye yükleyip yalnızca kullandığınız kadar ödeyin. Hukuk büroları özel kurulum talep edebilir.",
+    "metaDescriptionIntl": "AI WorkDeck kendi yapay zeka anahtarınızla ücretsizdir. Ya da bir USD cüzdanına bakiye yükleyip kullandıkça ödeyin. Hukuk bürolarına özel kurulumlar ayrıca fiyatlandırılır."
   },
   "notFoundPage": {
     "code": "404",

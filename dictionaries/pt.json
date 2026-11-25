@@ -2067,7 +2067,7 @@
     "faqPricesBriefBody": "Se você precisa de distribuição de código fechado, plugins proprietários, operação de SaaS ou marcas de certificação oficiais, fale conosco sobre licenciamento comercial e programas Certificados. Tabelas de número de usuários e detalhes de OEM passam para consultas por e-mail e não dominam mais esta página.",
     "faqPricesBriefCta": "Enviar e-mail sobre licenciamento comercial",
     "creditsCrossLink": {
-      "before": "Para recargas de Créditos, medição de ×1,2 sobre os serviços de origem e listas de preços dos fornecedores, consulte",
+      "before": "Para saber como os créditos são cobrados e quanto custa cada serviço de IA, veja",
       "label": "FAQ · Como cobramos"
     },
     "openSource": {
@@ -2158,7 +2158,7 @@
     },
     "marketplaceAuthor": {
       "title": "Venda Skills / plugins no marketplace",
-      "body": "Venda fluxos de trabalho pagos para tarefas jurídicas e documentais. A plataforma recebe {platform}% / o autor {author}% do valor líquido recebido, conforme os MARKETPLACE-TERMS (não é uma divisão simples sobre o valor bruto). Detalhes de liquidação nos termos.",
+      "body": "Venda fluxos de trabalho pagos para trabalho jurídico e de documentos. Os autores ficam com {author}% da receita líquida e a plataforma com {platform}%. Os termos do marketplace explicam como funciona o acerto.",
       "ctaTerms": "Termos do marketplace",
       "ctaSubmit": "Guia de envio e listagem"
     },
@@ -2170,7 +2170,7 @@
       },
       "seats": {
         "q": "Como as licenças são contadas?",
-        "a": "Pessoal Pro = uma conta paga. Escritórios / empresas contam licenças pagas ativadas: 5 licenças = 5. O valor do contrato e o ARR são acompanhados separadamente — não é “um contrato = um usuário”."
+        "a": "O Personal Pro é uma conta paga. Planos para escritórios e empresas contam os assentos pagos ativados: 5 assentos significam que 5 pessoas podem entrar."
       },
       "agpl": {
         "q": "Qual a diferença entre AGPL e licença comercial?",
@@ -2178,11 +2178,11 @@
       },
       "refund": {
         "q": "Qual é a política de reembolso?",
-        "a": "Os reembolsos seguem o contrato de compra (até confirmação por escrito de nossos assessores jurídicos, esta página não promete dias ou percentuais específicos). Contate hi@aiworkdeck.com."
+        "a": "Os reembolsos seguem o contrato de compra. Para solicitar um, envie um e-mail para hi@aiworkdeck.com."
       },
       "regions": {
         "q": "Site da China continental vs. internacional?",
-        "a": "Usuários na China continental devem preferir aiworkdeck.com (pagamentos e faturas seguem o site da China continental). Usuários internacionais podem usar workdeck.ai. A capacidade do produto é equivalente; o crescimento prioriza a China continental."
+        "a": "Usuários na China continental devem usar aiworkdeck.com, onde pagamentos e notas fiscais são tratados. Todos os demais podem usar workdeck.ai. O produto é o mesmo nos dois sites."
       },
       "allowance": {
         "q": "Qual a diferença entre franquia e saldo da carteira?",
@@ -2203,7 +2203,10 @@
       "body": "Estime servidores, equipe e orçamento do primeiro ano por tamanho da equipe, modo de modelo e serviços opcionais.",
       "cta": "Abrir o planejador de implantação"
     },
-    "heroSubtitleIntro": "Workspace desktop gratuito e open-source. Personal Pro por {intro}/mês nos primeiros {months} meses (normal {standard}/mês), com Credits, 3 GB na nuvem e área de transferência ilimitada, compra avulsa de 30 dias."
+    "heroSubtitleIntro": "Workspace desktop gratuito e open-source. Personal Pro por {intro}/mês nos primeiros {months} meses (normal {standard}/mês), com Credits, 3 GB na nuvem e área de transferência ilimitada, compra avulsa de 30 dias.",
+    "heroTitleIntl": "Grátis com sua própria chave de IA. Ou pague conforme o uso.",
+    "heroSubtitleIntl": "O aplicativo desktop é de código aberto e gratuito, e seus arquivos ficam no seu computador. Conecte seu próprio provedor de IA sem nos pagar nada, ou recarregue uma carteira em USD e pague só pelo que usar. Escritórios podem solicitar uma implantação dedicada.",
+    "metaDescriptionIntl": "O AI WorkDeck é grátis com sua própria chave de IA. Ou recarregue uma carteira em USD e pague conforme o uso. Implantações dedicadas para escritórios têm orçamento à parte."
   },
   "notFoundPage": {
     "code": "404",

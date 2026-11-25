@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { PRO_INTRO_MONTHS, SAAS_PRICING, SUBSCRIPTION_LIMITS } from '@/lib/saas-pricing';
-import { siteConfig } from '@/lib/site-config';
+import { siteConfig, SITE_ID } from '@/lib/site-config';
 import { ArrowUpRight } from 'lucide-react';
 import { Locale } from '@/i18n-config';
 import { PageHero } from '@/components/layout/PageHero';
@@ -27,6 +27,9 @@ export function PricingPageView({
     grantLabels?: any;
 }) {
     const isWxpay = siteConfig.paymentChannel === 'wxpay';
+    // Personal Pro can only be bought on the mainland site, so the international site shows what an
+    // international visitor can actually buy: free with their own AI key, or the USD wallet.
+    const isIntl = SITE_ID === 'intl';
     const heroPrice = isWxpay ? SAAS_PRICING.proIntroMonthly : SAAS_PRICING.proMonthly;
     const formatAllowance = (text: string) => text.replace('{monthlyCredits}', String(SUBSCRIPTION_LIMITS.monthlyCents / 100))
         .replace('{weeklyCredits}', String(SUBSCRIPTION_LIMITS.weeklyCents / 100));
@@ -35,11 +38,11 @@ export function PricingPageView({
         .replace('{intro}', SAAS_PRICING.proIntroMonthly)
         .replace('{standard}', SAAS_PRICING.proMonthly);
     const faqItems: PricingFaqItem[] = [
-        ...(t.saasFaq.intro ? [{ id: 'intro', q: formatIntro(t.saasFaq.intro.q), a: formatIntro(t.saasFaq.intro.a) }] : []),
-        { id: 'allowance', q: t.saasFaq.allowance.q, a: formatAllowance(t.saasFaq.allowance.a) },
+        ...(t.saasFaq.intro && !isIntl ? [{ id: 'intro', q: formatIntro(t.saasFaq.intro.q), a: formatIntro(t.saasFaq.intro.a) }] : []),
+        ...(isIntl ? [] : [{ id: 'allowance', q: t.saasFaq.allowance.q, a: formatAllowance(t.saasFaq.allowance.a) }]),
         { id: 'storage', q: t.saasFaq.storage.q, a: t.saasFaq.storage.a },
-        { id: 'trial', q: t.saasFaq.trial.q, a: t.saasFaq.trial.a, legalPending: true },
-        { id: 'seats', q: t.saasFaq.seats.q, a: t.saasFaq.seats.a },
+        ...(isIntl ? [] : [{ id: 'trial', q: t.saasFaq.trial.q, a: t.saasFaq.trial.a, legalPending: true }]),
+        ...(isIntl ? [] : [{ id: 'seats', q: t.saasFaq.seats.q, a: t.saasFaq.seats.a }]),
         { id: 'agpl', q: t.saasFaq.agpl.q, a: t.saasFaq.agpl.a, legalPending: true },
         { id: 'refund', q: t.saasFaq.refund.q, a: t.saasFaq.refund.a, legalPending: true },
         { id: 'regions', q: t.saasFaq.regions.q, a: t.saasFaq.regions.a },
@@ -50,16 +53,16 @@ export function PricingPageView({
             <PricingClickTracker lang={lang} />
             <PageHero
                 eyebrow={t.eyebrow}
-                title={t.heroTitle.replace('{price}', heroPrice)}
-                subtitle={isWxpay && t.heroSubtitleIntro ? formatIntro(t.heroSubtitleIntro) : t.heroSubtitle}
+                title={isIntl ? t.heroTitleIntl : t.heroTitle.replace('{price}', heroPrice)}
+                subtitle={isIntl ? t.heroSubtitleIntl : isWxpay && t.heroSubtitleIntro ? formatIntro(t.heroSubtitleIntro) : t.heroSubtitle}
                 size="compact"
                 width="6xl"
             />
 
             <div className="container mx-auto max-w-6xl px-4 md:px-8">
-                <section className="mt-9 grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3" aria-label={t.cardsAria}>
+                <section className={`mt-9 grid grid-cols-1 items-stretch gap-6 ${isIntl ? 'lg:grid-cols-2' : 'lg:grid-cols-3'}`} aria-label={t.cardsAria}>
                     <div className="order-2 flex lg:order-1 [&>*]:w-full"><OpenSourceCard lang={lang} p={t.openSource} grantLabels={grantLabels} /></div>
-                    <div className="order-1 flex lg:order-2 [&>*]:w-full"><ProCard lang={lang} p={t.pro} /></div>
+                    {!isIntl && <div className="order-1 flex lg:order-2 [&>*]:w-full"><ProCard lang={lang} p={t.pro} /></div>}
                     <div className="order-3 flex [&>*]:w-full"><TeamCard lang={lang} p={t.team} /></div>
                 </section>
 

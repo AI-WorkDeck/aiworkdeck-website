@@ -2067,7 +2067,7 @@
     "faqPricesBriefBody": "Se hai bisogno di distribuzione a codice chiuso, plugin proprietari, funzionamento SaaS o marchi di certificazione ufficiali, contattaci per le licenze commerciali e i programmi Certified. Le tabelle per numero di dipendenti e i dettagli OEM passano alle richieste via email e non dominano più questa pagina.",
     "faqPricesBriefCta": "Scrivi per una licenza commerciale",
     "creditsCrossLink": {
-      "before": "Per le ricariche di Crediti, la misurazione a monte ×1,2 e i listini dei fornitori, vedi",
+      "before": "Per sapere come vengono scalati i crediti e quanto costa ogni servizio di IA, vedi",
       "label": "FAQ · Come applichiamo i prezzi"
     },
     "openSource": {
@@ -2158,7 +2158,7 @@
     },
     "marketplaceAuthor": {
       "title": "Vendi Skill / plugin sul marketplace",
-      "body": "Vendi workflow a pagamento per lavoro legale e documentale. Piattaforma {platform}% / autore {author}% degli incassi netti secondo i MARKETPLACE-TERMS (non un semplice divisione dell'importo lordo). Dettagli sul regolamento nei termini.",
+      "body": "Vendi flussi di lavoro a pagamento per il lavoro legale e documentale. Gli autori ricevono il {author}% degli incassi netti e la piattaforma il {platform}%. I termini del marketplace spiegano come avviene il regolamento.",
       "ctaTerms": "Termini del marketplace",
       "ctaSubmit": "Guida a invio e pubblicazione"
     },
@@ -2170,7 +2170,7 @@
       },
       "seats": {
         "q": "Come vengono contati i posti?",
-        "a": "Personal Pro = un account a pagamento. Studi / imprese contano i posti a pagamento attivati: 5 posti = 5. L'importo del contratto e l'ARR sono tracciati separatamente — non \"un contratto = un utente\"."
+        "a": "Personal Pro è un account a pagamento. I piani per studi e aziende contano i posti a pagamento attivati: 5 posti significano che 5 persone possono accedere."
       },
       "agpl": {
         "q": "In cosa differisce AGPL da una licenza commerciale?",
@@ -2178,11 +2178,11 @@
       },
       "refund": {
         "q": "Qual è la politica di rimborso?",
-        "a": "I rimborso seguono l'accordo di acquisto (finché il legale non conferma per iscritto, questa pagina non promette giorni o percentuali specifiche). Contatta hi@aiworkdeck.com."
+        "a": "I rimborsi seguono il contratto di acquisto. Per richiederne uno, scrivi a hi@aiworkdeck.com."
       },
       "regions": {
         "q": "Sito mainland o internazionale?",
-        "a": "Gli utenti nella Cina continentale dovrebbero preferire aiworkdeck.com (pagamenti e fatture seguono il sito mainland). Gli utenti internazionali possono usare workdeck.ai. Le capacità del prodotto sono allineate; la crescita dà priorità al mainland."
+        "a": "Gli utenti nella Cina continentale dovrebbero usare aiworkdeck.com, che gestisce pagamenti e fatture. Tutti gli altri possono usare workdeck.ai. Il prodotto è lo stesso su entrambi i siti."
       },
       "allowance": {
         "q": "Qual è la differenza tra indennità e saldo del portafoglio?",
@@ -2203,7 +2203,10 @@
       "body": "Stima server, personale e budget del primo anno in base alla dimensione del team, alla modalità modello e ai servizi opzionali.",
       "cta": "Apri il pianificatore di deployment"
     },
-    "heroSubtitleIntro": "Desktop open source gratuito. Personal Pro a {intro}/mese per i primi {months} mesi (poi {standard}/mese) con Credits, 3 GB cloud e appunti illimitati. Pass singolo di 30 giorni senza rinnovo automatico."
+    "heroSubtitleIntro": "Desktop open source gratuito. Personal Pro a {intro}/mese per i primi {months} mesi (poi {standard}/mese) con Credits, 3 GB cloud e appunti illimitati. Pass singolo di 30 giorni senza rinnovo automatico.",
+    "heroTitleIntl": "Gratis con la tua chiave IA. Oppure paghi a consumo.",
+    "heroSubtitleIntl": "L'app desktop è open source e gratuita, e i tuoi file restano sul tuo computer. Collega il tuo fornitore di IA senza pagarci nulla, oppure ricarica un portafoglio in USD e paga solo ciò che usi. Gli studi legali possono richiedere un'installazione dedicata.",
+    "metaDescriptionIntl": "AI WorkDeck è gratis con la tua chiave IA. Oppure ricarica un portafoglio in USD e paga a consumo. Le installazioni dedicate per studi legali sono quotate a parte."
   },
   "notFoundPage": {
     "code": "404",

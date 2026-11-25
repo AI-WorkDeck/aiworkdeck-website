@@ -2067,7 +2067,7 @@
     "faqPricesBriefBody": "Jika Anda membutuhkan distribusi closed-source, plugin proprietary, operasi SaaS, atau tanda sertifikasi resmi, hubungi kami mengenai lisensi komersial dan program Certified. Tabel jumlah karyawan dan detail OEM dipindahkan ke pertanyaan melalui email dan tidak lagi menempati halaman ini.",
     "faqPricesBriefCta": "Email tentang lisensi komersial",
     "creditsCrossLink": {
-      "before": "Untuk isi ulang Kredit, pemeterian upstream ×1,2, dan daftar harga vendor, lihat",
+      "before": "Untuk cara Kredit ditagihkan dan biaya setiap layanan AI, lihat",
       "label": "FAQ · Cara kami menagih"
     },
     "openSource": {
@@ -2158,7 +2158,7 @@
     },
     "marketplaceAuthor": {
       "title": "Jual Skills / plugin di marketplace",
-      "body": "Jual workflow berbayar untuk pekerjaan hukum dan dokumen. Platform {platform}% / penulis {author}% dari penerimaan bersih per MARKETPLACE-TERMS (bukan bruto×pembagian mentah). Detail penyelesaian ada dalam ketentuan.",
+      "body": "Jual alur kerja berbayar untuk pekerjaan hukum dan dokumen. Penulis menerima {author}% dari penerimaan bersih dan platform menerima {platform}%. Ketentuan marketplace menjelaskan cara penyelesaiannya.",
       "ctaTerms": "Ketentuan marketplace",
       "ctaSubmit": "Panduan pengiriman & listing"
     },
@@ -2170,7 +2170,7 @@
       },
       "seats": {
         "q": "Bagaimana cara menghitung kursi (seat)?",
-        "a": "Personal Pro = satu akun berbayar. Firma/perusahaan menghitung kursi berbayar yang diaktifkan: 5 kursi = 5. Jumlah kontrak dan ARR dilacak secara terpisah — bukan \"satu kontrak = satu pengguna\"."
+        "a": "Personal Pro adalah satu akun berbayar. Paket firma dan perusahaan dihitung per kursi berbayar yang diaktifkan: 5 kursi berarti 5 orang dapat masuk."
       },
       "agpl": {
         "q": "Apa perbedaan AGPL dengan lisensi komersial?",
@@ -2178,11 +2178,11 @@
       },
       "refund": {
         "q": "Apa kebijakan pengembalian dana?",
-        "a": "Pengembalian dana mengikuti perjanjian pembelian (sampai konsultan hukum mengonfirmasi secara tertulis, halaman ini tidak menjanjikan hari atau persentase tertentu). Hubungi hi@aiworkdeck.com."
+        "a": "Pengembalian dana mengikuti perjanjian pembelian. Untuk mengajukannya, kirim email ke hi@aiworkdeck.com."
       },
       "regions": {
         "q": "Situs daratan vs internasional?",
-        "a": "Pengguna di daratan Tiongkok sebaiknya menggunakan aiworkdeck.com (pembayaran dan faktur mengikuti situs daratan). Pengguna internasional dapat menggunakan workdeck.ai. Kemampuan produk disamakan; pertumbuhan memprioritaskan daratan."
+        "a": "Pengguna di Tiongkok daratan sebaiknya memakai aiworkdeck.com, tempat pembayaran dan faktur diurus. Pengguna lainnya dapat memakai workdeck.ai. Produknya sama di kedua situs."
       },
       "allowance": {
         "q": "Apa perbedaan antara jatah (allowance) dan saldo dompet?",
@@ -2203,7 +2203,10 @@
       "body": "Perkirakan server, personel, dan anggaran tahun pertama berdasarkan ukuran tim, mode model, dan layanan opsional.",
       "cta": "Buka perencana penerapan"
     },
-    "heroSubtitleIntro": "Aplikasi desktop sumber terbuka gratis. Personal Pro cukup {intro}/bln selama {months} bulan pertama (normal {standard}/bln) termasuk Credits, penyimpanan cloud 3GB, dan papan klip tanpa batas untuk 30 hari."
+    "heroSubtitleIntro": "Aplikasi desktop sumber terbuka gratis. Personal Pro cukup {intro}/bln selama {months} bulan pertama (normal {standard}/bln) termasuk Credits, penyimpanan cloud 3GB, dan papan klip tanpa batas untuk 30 hari.",
+    "heroTitleIntl": "Gratis dengan kunci AI Anda sendiri. Atau bayar sesuai pemakaian.",
+    "heroSubtitleIntl": "Aplikasi desktop bersifat sumber terbuka dan gratis, dan berkas Anda tetap di komputer Anda. Hubungkan penyedia AI Anda sendiri tanpa biaya dari kami, atau isi dompet USD dan bayar hanya yang Anda gunakan. Firma dapat menanyakan penerapan khusus.",
+    "metaDescriptionIntl": "AI WorkDeck gratis dengan kunci AI Anda sendiri. Atau isi dompet USD dan bayar sesuai pemakaian. Penerapan khusus untuk firma ditawarkan secara terpisah."
   },
   "notFoundPage": {
     "code": "404",

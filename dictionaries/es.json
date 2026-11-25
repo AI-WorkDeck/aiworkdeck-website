@@ -2067,7 +2067,7 @@
     "faqPricesBriefBody": "Si necesitas distribución de código cerrado, complementos propietarios, operación SaaS o marcas de certificación oficiales, contacta con nosotros para hablar sobre licencias comerciales y los programas Certified. Las tablas de dimensionamiento por número de empleados y los detalles OEM pasan a consultas por correo electrónico y ya no ocupan esta página.",
     "faqPricesBriefCta": "Escribir por correo sobre licencias comerciales",
     "creditsCrossLink": {
-      "before": "Para recargas de créditos, la medicion de terceros ×1,2 y las listas de precios de los proveedores, consulte",
+      "before": "Para saber cómo se descuentan los créditos y cuánto cuesta cada servicio de IA, consulta",
       "label": "Preguntas frecuentes · Cómo cobramos"
     },
     "openSource": {
@@ -2158,7 +2158,7 @@
     },
     "marketplaceAuthor": {
       "title": "Venda Skills / plugins en el marketplace",
-      "body": "Venda flujos de trabajo de pago para el trabajo jurídico y documental. Plataforma {platform}% / autor {author}% de los ingresos netos por MARKETPLACE-TERMS (no un bruto × reparto simple). Los detalles de liquidación figuran en los términos.",
+      "body": "Vende flujos de trabajo de pago para trabajo jurídico y documental. Los autores reciben el {author} % de los ingresos netos y la plataforma el {platform} %. Los términos del marketplace explican cómo se liquida.",
       "ctaTerms": "Términos del marketplace",
       "ctaSubmit": "Envío y guía de publicación"
     },
@@ -2170,7 +2170,7 @@
       },
       "seats": {
         "q": "¿Cómo se cuentan las licencias (seats)?",
-        "a": "Personal Pro = una cuenta de pago. Los despachos / empresas cuentan las licencias de pago activadas: 5 licencias = 5. El importe del contrato y el ARR se registran por separado; no es «un contrato = un usuario»."
+        "a": "Personal Pro es una cuenta de pago. Los planes para despachos y empresas cuentan los puestos de pago activados: 5 puestos significan que 5 personas pueden iniciar sesión."
       },
       "agpl": {
         "q": "¿En qué se diferencia AGPL de una licencia comercial?",
@@ -2178,11 +2178,11 @@
       },
       "refund": {
         "q": "¿Cuál es la política de reembolsos?",
-        "a": "Los reembolsos se rigen por el acuerdo de compra (hasta que un abogado lo confirme por escrito, esta página no promete días ni porcentajes concretos). Contacte con hi@aiworkdeck.com."
+        "a": "Los reembolsos siguen el acuerdo de compra. Para solicitar uno, escribe a hi@aiworkdeck.com."
       },
       "regions": {
         "q": "¿Sitio de China continental o internacional?",
-        "a": "Los usuarios de China continental deben preferir aiworkdeck.com (los pagos y las facturas siguen el sitio continental). Los usuarios internacionales pueden usar workdeck.ai. Las capacidades del producto están alineadas; el crecimiento prioriza el mercado continental."
+        "a": "Los usuarios de China continental deben usar aiworkdeck.com, donde se gestionan pagos y facturas. Todos los demás pueden usar workdeck.ai. El producto es el mismo en ambos sitios."
       },
       "allowance": {
         "q": "¿En qué se diferencian el saldo de crédito y el monedero?",
@@ -2203,7 +2203,10 @@
       "body": "Estime servidores, personal y presupuesto del primer año según el tamaño del equipo, el modo de modelo y los servicios opcionales.",
       "cta": "Abrir el planificador de despliegue"
     },
-    "heroSubtitleIntro": "Espacio de trabajo de escritorio gratuito y de código abierto. Personal Pro a {intro}/mes durante los primeros {months} meses (normal {standard}/mes) con Credits, 3 GB en la nube y portapapeles ilimitado; pase único de 30 días."
+    "heroSubtitleIntro": "Espacio de trabajo de escritorio gratuito y de código abierto. Personal Pro a {intro}/mes durante los primeros {months} meses (normal {standard}/mes) con Credits, 3 GB en la nube y portapapeles ilimitado; pase único de 30 días.",
+    "heroTitleIntl": "Gratis con tu propia clave de IA. O paga según el uso.",
+    "heroSubtitleIntl": "La aplicación de escritorio es de código abierto y gratuita, y tus archivos se quedan en tu equipo. Conecta tu propio proveedor de IA sin pagarnos nada, o recarga un monedero en USD y paga solo lo que uses. Los despachos pueden solicitar un despliegue dedicado.",
+    "metaDescriptionIntl": "AI WorkDeck es gratis con tu propia clave de IA. O recarga un monedero en USD y paga según el uso. Los despliegues dedicados para despachos se cotizan aparte."
   },
   "notFoundPage": {
     "code": "404",
