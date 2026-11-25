@@ -116,5 +116,13 @@ const en: FaqContent = {
 };
 
 export function communityFaq(lang: Locale): FaqContent {
-    return toBaseLocale(lang) === 'zh' ? zh : en;
+    const content = toBaseLocale(lang) === 'zh' ? zh : en;
+    // The text is shared (zh-hant reads zh, other locales read en); links stay in the visitor's language.
+    return {
+        ...content,
+        sections: content.sections.map(section => ({
+            ...section,
+            items: section.items.map(item => (item.href ? { ...item, href: item.href.replace(/^\/(zh|en)(?=\/|$)/, `/${lang}`) } : item)),
+        })),
+    };
 }
