@@ -229,12 +229,12 @@ export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false
     }
 
     const title = mode === 'bqt-scan' ? t.bqtScanTab : mode === 'review' ? t.reviewLogin : mode === 'password' ? t.passwordTab : mode === 'register' ? t.firstTime : mode === 'setup' ? t.createPassword : t.resetPassword;
-    if (mobileComplete) return <div role="status" className="rounded-xl border border-[#dce2de] bg-white p-8 shadow-sm">
+    if (mobileComplete) return <div role="status" className="rounded-xl border border-neutral-gray-light bg-white p-8 shadow-sm">
         <h2 className="mb-3 text-xl font-bold text-king-forest">{mobileCopy.completeTitle}</h2>
         <p className="text-neutral-gray-dark">{mobileCopy.completeBody}</p>
     </div>;
     return (
-        <div className={bare ? '' : 'bg-white border border-[#dce2de] rounded-xl p-8 shadow-sm'}>
+        <div className={bare ? '' : 'bg-white border border-neutral-gray-light rounded-xl p-8 shadow-sm'}>
             {phoneSite && bqtEnabled && (mode === 'password' || mode === 'register' || mode === 'bqt-scan') && (
                 <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg bg-neutral-gray-pale/60 p-1 text-sm font-medium">
                     <button
@@ -261,7 +261,7 @@ export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false
             {mode === 'bqt-scan' ? (
                 <div className="flex flex-col items-center gap-4">
                     <p className="text-sm font-medium text-neutral-dark-bg">{t.bqtScanTitle}</p>
-                    <div className="relative flex h-56 w-56 items-center justify-center rounded-xl border border-[#dce2de] bg-neutral-gray-pale/30 p-3">
+                    <div className="relative flex h-56 w-56 items-center justify-center rounded-xl border border-neutral-gray-light bg-neutral-gray-pale/30 p-3">
                         {bqtQrDataUrl && <img src={bqtQrDataUrl} alt={t.bqtScanTitle} className="h-48 w-48 object-contain" />}
                         {bqtExpired && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-xl bg-white/90 p-4 text-center">

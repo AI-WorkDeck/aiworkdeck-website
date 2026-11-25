@@ -54,7 +54,7 @@ export function PurchasesSection({ lang, dict }: { lang: Locale; dict: any }) {
     return (
         <>
             {/* 我的已购 */}
-            <div className="bg-white border border-[#dce2de] rounded-xl p-6 md:p-8 shadow-sm mb-10">
+            <div className="bg-white border border-neutral-gray-light rounded-xl p-6 md:p-8 shadow-sm mb-10">
                 <div className="flex items-center gap-3 mb-6">
                     <ShoppingBag className="w-5 h-5 text-king-forest" strokeWidth={1.75} />
                     <h2 className="font-display text-xl font-semibold text-neutral-dark-bg">{t.purchasesTitle}</h2>
@@ -97,7 +97,7 @@ export function PurchasesSection({ lang, dict }: { lang: Locale; dict: any }) {
 
             {/* 创作者收益：有记录才显示 */}
             {earnings && earnings.totalCents > 0 && (
-                <div className="bg-white border border-[#dce2de] rounded-xl p-6 md:p-8 shadow-sm mb-10">
+                <div className="bg-white border border-neutral-gray-light rounded-xl p-6 md:p-8 shadow-sm mb-10">
                     <div className="flex items-center gap-3 mb-2">
                         <HandCoins className="w-5 h-5 text-king-forest" strokeWidth={1.75} />
                         <h2 className="font-display text-xl font-semibold text-neutral-dark-bg">{t.earningsTitle}</h2>

@@ -190,7 +190,7 @@ export function WalletSection({ lang, dict }: { lang: Locale; dict: any }) {
     const bqt = data?.bqtMember;
 
     return (
-        <div className="bg-white border border-[#dce2de] rounded-xl p-6 md:p-8 shadow-sm mb-10">
+        <div className="bg-white border border-neutral-gray-light rounded-xl p-6 md:p-8 shadow-sm mb-10">
             <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
                 <div className="flex items-center gap-3 flex-1">
                     <Wallet className="w-5 h-5 text-king-forest" strokeWidth={1.75} />

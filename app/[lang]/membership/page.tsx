@@ -78,7 +78,7 @@ export default async function MembershipPage({
                 <div>
                 <MembershipYourStatus lang={lang} dict={dict} />
 
-                <div className="mb-10 rounded-2xl border border-[#dce2de] bg-white p-6 shadow-[0_12px_32px_-20px_rgba(22,42,33,0.12)] md:p-7">
+                <div className="mb-10 rounded-2xl border border-neutral-gray-light bg-white p-6 shadow-[0_12px_32px_-20px_rgba(22,42,33,0.12)] md:p-7">
                     <SectionEyebrow>{t.algoTitle}</SectionEyebrow>
                     <div className="mt-2 grid gap-4 sm:grid-cols-2">
                         <div className="rounded-xl border border-neutral-gray-light/80 bg-neutral-gray-pale/55 p-4.5">
@@ -94,7 +94,7 @@ export default async function MembershipPage({
                 <div className="mb-6">
                     <SectionEyebrow>{t.tableTitle}</SectionEyebrow>
                     <p className="mb-4 text-sm text-neutral-gray-medium">{t.generalBenefitNote}</p>
-                    <div className="overflow-x-auto rounded-2xl border border-[#dce2de] bg-white shadow-[0_12px_32px_-20px_rgba(22,42,33,0.1)]">
+                    <div className="overflow-x-auto rounded-2xl border border-neutral-gray-light bg-white shadow-[0_12px_32px_-20px_rgba(22,42,33,0.1)]">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="border-b border-neutral-gray-light bg-neutral-gray-pale/50 text-left text-xs uppercase tracking-wider text-neutral-gray-medium">
