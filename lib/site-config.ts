@@ -203,15 +203,37 @@ function siteConfigOfInternal(id: SiteId): SiteConfig {
   return ALL[id];
 }
 
-export const siteConfig: SiteConfig = ALL[SITE_ID];
+/**
+ * Private and staging deployments serve this site under their own origins instead of production's
+ * (build-time NEXT_PUBLIC_* variables; unset = production, unchanged). Without this, a non-production
+ * build advertises the production platform-AI baseUrl and the backend rejects it.
+ */
+const ORIGIN_OVERRIDE = parseOriginOverride('NEXT_PUBLIC_AWD_ORIGIN_OVERRIDE', process.env.NEXT_PUBLIC_AWD_ORIGIN_OVERRIDE);
+const ADDIN_ORIGIN_OVERRIDE = parseOriginOverride('NEXT_PUBLIC_AWD_ADDIN_ORIGIN_OVERRIDE', process.env.NEXT_PUBLIC_AWD_ADDIN_ORIGIN_OVERRIDE);
+
+function parseOriginOverride(name: string, raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  let url: URL;
+  try { url = new URL(raw); } catch { throw new Error(`${name} must be an origin such as https://staging.example.com, got "${raw}"`); }
+  if (!['https:', 'http:'].includes(url.protocol) || url.origin !== raw.replace(/\/$/, '')) {
+    throw new Error(`${name} must be a bare origin (scheme + host [+ port], no path), got "${raw}"`);
+  }
+  return url.origin;
+}
+
+export const siteConfig: SiteConfig = {
+  ...ALL[SITE_ID],
+  ...(ORIGIN_OVERRIDE ? { origin: ORIGIN_OVERRIDE, host: new URL(ORIGIN_OVERRIDE).host } : {}),
+  ...(ADDIN_ORIGIN_OVERRIDE ? { addinOrigin: ADDIN_ORIGIN_OVERRIDE } : {}),
+};
 
 /** Public same-site mutation origins; aliases share the existing Web AI CSRF policy. */
-export const siteOrigins: readonly string[] = SITE_ID === 'cn'
+export const siteOrigins: readonly string[] = ORIGIN_OVERRIDE ? [ORIGIN_OVERRIDE] : SITE_ID === 'cn'
   ? ['https://www.aiworkdeck.com', 'https://aiworkdeck.com']
   : ['https://www.workdeck.ai', 'https://workdeck.ai', 'https://www.aiworkdeck.us', 'https://aiworkdeck.us'];
 
 export function siteConfigOf(id: SiteId): SiteConfig {
-  return ALL[id];
+  return id === SITE_ID ? siteConfig : ALL[id];
 }
 
 /** 页脚与公司页的资料不包含分站适用法和争议解决机构。 */

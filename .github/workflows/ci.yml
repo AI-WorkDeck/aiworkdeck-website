@@ -78,6 +78,10 @@ jobs:
         # 守的是「部署那几分钟里登录注册报的错要说人话」，见 lib/api-result.ts。
         run: npx tsx --tsconfig tsconfig.json scripts/verify-api-result.mts
 
+      - name: Origin override for private and staging deployments
+        # Unset = production config unchanged; set = this site's origin/host/addin/same-site list only; malformed = build fails.
+        run: npx tsx --tsconfig tsconfig.json scripts/verify-site-origin-override.mts
+
       - name: Web AI deployment flag fixtures (no server access)
         run: node --test scripts/web-ai-flag.test.mjs
 
