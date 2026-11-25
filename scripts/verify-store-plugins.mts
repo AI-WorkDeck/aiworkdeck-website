@@ -35,4 +35,14 @@ assert.equal(community.official, false);
 assert.equal(community.author, 'jane');
 assert.equal(community.downloads, 12);
 assert.ok(store.getPlugin('hello-plugin', '1.0.0'), 'The hidden sample stays in the registry for developers');
+// Rendering the store must not re-read the registry for every package file (it did ~4x per plugin).
+const realRead = fs.readFileSync;
+let registryReads = 0;
+(fs as { readFileSync: typeof fs.readFileSync }).readFileSync = ((file: fs.PathOrFileDescriptor, ...rest: unknown[]) => {
+    if (String(file).endsWith('plugins.json')) registryReads++;
+    return (realRead as (...a: unknown[]) => unknown)(file, ...rest);
+}) as typeof fs.readFileSync;
+listStorePlugins('en');
+(fs as { readFileSync: typeof fs.readFileSync }).readFileSync = realRead;
+assert.ok(registryReads <= 2, `store listing read the registry ${registryReads} times`);
 console.log('PASS store lists each plugin once, splits official/community, hides samples, fixes brand spelling');
