@@ -58,7 +58,7 @@ export function ProfileCard({ lang, dict, user, joined, nameIsDefault, stats }: 
 
     return (
         <>
-            <div className="bg-white border border-[#dce2de] rounded-xl p-6 md:p-8 shadow-sm mb-12">
+            <div className="bg-white border border-neutral-gray-light rounded-xl p-6 md:p-8 shadow-sm mb-12">
                 {/* 姓名引导：手机号注册的账户默认展示名是打码号，同事在案卷的参与人列表、
                     版本时间线、批注作者里看到的就是它（dev-board#564） */}
                 {nameIsDefault && (

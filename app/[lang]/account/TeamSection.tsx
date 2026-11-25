@@ -190,7 +190,7 @@ export function TeamSection({
     const firm = state?.firm ?? null;
 
     const cardClass =
-        'bg-white border border-[#dce2de] rounded-xl p-6 md:p-8 shadow-sm mb-10';
+        'bg-white border border-neutral-gray-light rounded-xl p-6 md:p-8 shadow-sm mb-10';
 
     if (loadError) {
         return (
@@ -218,7 +218,7 @@ export function TeamSection({
                 <p className="text-sm text-neutral-gray-dark mb-6">{t.teamNoTeamDesc}</p>
 
                 {!hasIdentity && (
-                    <p className="text-sm text-[var(--king-gold-text,#7E6439)] mb-4">
+                    <p className="text-sm text-king-gold-text mb-4">
                         {mailSite ? t.teamEmailRequiredHint : t.teamPhoneRequiredHint}
                     </p>
                 )}
@@ -829,7 +829,7 @@ export function TeamSection({
             </div>
 
             {/* 数据共享开关：紧贴看板顶部，不塞进设置深处 */}
-            <div className="bg-white border border-[#dce2de] rounded-xl p-6 md:p-8 shadow-sm mb-6">
+            <div className="bg-white border border-neutral-gray-light rounded-xl p-6 md:p-8 shadow-sm mb-6">
                 <label className="flex items-start gap-3 cursor-pointer">
                     <input
                         type="checkbox"
