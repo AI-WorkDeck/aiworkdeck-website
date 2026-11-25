@@ -42,7 +42,7 @@ export async function generateMetadata({
     // productTagline 是产品口号（还留给各处 UI 用），不是给搜索引擎的自述：
     // 它一个品类词都没有。这里改用 seo.homeDescription。
     description: seo.homeDescription,
-    // 社交与 IM 分享卡片。图是静态 public/og.png（scripts/gen-og.mjs 一次性生成）——
+    // 社交与 IM 分享卡片。图是静态 public/og.png（源文件 design/og/og-card.html，渲染后入库）——
     // 生产机 1.8G 内存，不用 ImageResponse 每次请求现渲染。
     //
     // 这里刻意**不写** title / description / url：布局层的 openGraph 对象会被子页整体继承

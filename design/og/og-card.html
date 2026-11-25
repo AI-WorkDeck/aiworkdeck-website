@@ -1,0 +1,27 @@
+<!-- SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Source of public/og.png (1200×630 link-preview card, shared by both sites; no domain on it).
+     Paper-and-ink design by lane X (readiness/qa/W12). Re-render after a copy or palette change:
+     open this file in headless Chromium at 1200×630, wait for document.fonts.ready, screenshot
+     to public/og.png, and commit the PNG. Nothing renders it at request time. -->
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@500;600&family=Noto+Serif+SC:wght@500;700&family=JetBrains+Mono:wght@500&display=block">
+<style>
+html,body{margin:0}
+.card{width:1200px;height:630px;box-sizing:border-box;position:relative;overflow:hidden;
+ background:#F6F4EE;
+ background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 47px,rgba(31,59,52,.055) 47px,rgba(31,59,52,.055) 48px);}
+.card:before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(255,255,255,.75),rgba(255,255,255,0) 65%)}
+.inner{position:absolute;inset:72px 96px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.brand{display:flex;align-items:center;gap:14px;font:600 34px Inter,sans-serif;color:#2E5A50;letter-spacing:.2px;margin-bottom:26px}
+.brand img{height:50px}
+h1{margin:0;font:400 120px/1.02 'Instrument Serif',serif;color:#1C352F;letter-spacing:-1px}
+.zh{margin-top:20px;font:600 54px/1.2 'Noto Serif SC',serif;color:#2E5A50;letter-spacing:3px}
+.meta{margin-top:34px;font:500 20px 'JetBrains Mono',monospace;color:#8A6A2E;letter-spacing:5px}
+.rule{position:absolute;left:96px;right:96px;bottom:60px;height:1px;background:#C9B98F;opacity:.7}
+</style></head><body><div class="card"><div class="inner">
+<div class="brand"><img src="mark.png">AI WorkDeck</div>
+<h1>The IDE for lawyers.</h1>
+<div class="zh">律师的 <span style="letter-spacing:0">IDE</span></div>
+<div class="meta">OPEN SOURCE · AGPLv3</div>
+</div><div class="rule"></div></div></body></html>
