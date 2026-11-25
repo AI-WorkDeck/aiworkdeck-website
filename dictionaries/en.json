@@ -864,7 +864,7 @@
         "generic": "Generation failed. Try again later.",
         "ai_busy": "The AI service is busy right now. Try again in a moment.",
         "ai_interrupted": "Generation was interrupted. Please try again.",
-        "ai_cancelled": "Generation cancelled."
+        "ai_cancelled": "Generation canceled."
       },
       "consent": "I understand this brief will be sent to OpenRouter, Inc. (United States) to generate the draft, and I consent to that transfer.",
       "consentLink": "Privacy Policy · cross-border transfers",
@@ -1684,7 +1684,7 @@
       "wxDesc": "Open registration from the mini program, verify your phone number and create a password. Then sign in with your phone and password, and send photos or voice notes to your desktop projects.",
       "wxButton": "Open mini program",
       "wxOpening": "Opening the mini program",
-      "wxFailed": "Could not open the mini program. Verify your contact and create a password below.",
+      "wxFailed": "Couldn't open the mini program. Verify your contact details and create a password below.",
       "wxOr": "Or verify your contact and create a password below",
       "readyTitle": "Account ready",
       "readyDesc": "AI WorkDeck installs on your computer. Open the address below in your desktop browser and sign in to download.",
@@ -1694,23 +1694,23 @@
       "emailLink": "Email me the link",
       "emailSending": "Sending",
       "emailSent": "Sent — check your inbox",
-      "emailFailed": "Failed, please retry later",
+      "emailFailed": "Couldn't send. Try again in a moment.",
       "browseHint": "Meanwhile, browse the",
-      "browseCta": "Skill gallery"
+      "browseCta": "Marketplace"
     },
     "eyebrow": "Get started",
-    "title": "Two steps to get started with AI WorkDeck",
-    "lead": "AI WorkDeck runs on your own machine — your documents never leave it. After installing, sign in right inside the app to get started; your account is created automatically the first time you sign in.",
+    "title": "Get started in two steps",
+    "lead": "AI WorkDeck runs on your own computer, and your documents stay there unless you ask the AI to work on them. After installing, sign in from inside the app. New here? You can create your account in the same dialog.",
     "mobileSubtitle": "Create your account here, then install AI WorkDeck on your computer to get started.",
     "siteChoice": {
       "title": "First, pick the right site",
-      "desc": "AI WorkDeck runs two sites. The software is identical; the account systems are not. Registration, Credits balance and purchases are never shared. Whichever site you sign in on is where your account lives, and it cannot be moved later.",
+      "desc": "AI WorkDeck has two separate account systems: mainland China (aiworkdeck.com) and international (workdeck.ai and aiworkdeck.us). The software is identical, but accounts, Credits and purchases are not shared between them, and an account can't be moved later.",
       "ariaLabel": "Region and accounts",
       "editionPrefix": "Community Edition",
       "regionIntl": "International",
       "regionMainland": "Mainland China",
-      "accountNote": "Sign in in the region where you registered. Mainland China and International have separate accounts, balances and purchases.",
-      "whichSiteQuestion": "Which of the three sites should I use?",
+      "accountNote": "Sign in on the site where you registered. Mainland China and International have separate accounts, balances and purchases.",
+      "whichSiteQuestion": "Which site should I use?",
       "cnSiteDesc": "Mainland China; CNY and WeChat Pay.",
       "intlSiteDesc": "International users outside the US; USD and card payments.",
       "usSiteDesc": "US users; shares international accounts, balances and purchases with workdeck.ai.",
@@ -1735,13 +1735,13 @@
         "en": "English"
       },
       "switch": "Go to {site}",
-      "clientNote": "Both sites use the same desktop client, from the same installer. Its interface is currently available in Chinese only."
+      "clientNote": "Both sites use the same desktop app and the same installer. The interface is available in 20 languages; switch under Settings › Language."
     },
     "progress": "Step {current} of {total}",
     "steps": {
       "download": {
         "title": "Download and install the desktop app",
-        "desc": "Pick the installer for your system. It is a large download — best done on Wi-Fi. Use those few minutes to finish step two.",
+        "desc": "Pick the installer for your system. It's a large download, so Wi-Fi is best. While it downloads, you can do step two.",
         "mac": "macOS (Apple silicon)",
         "win": "Windows 10 / 11 (64-bit)",
         "sizeHint": "about {size} MB",
@@ -1757,7 +1757,7 @@
         "openSourceNote": "What you download is the Community Edition: the desktop app is open source under the AGPLv3, and the source lives on {repo}. Premium features such as AI chat, OCR and transcription call paid third-party services, so they need Credits first — the {pricing} explains how billing works.",
         "openSourceRepo": "GitHub",
         "openSourcePricing": "pricing page",
-        "bilingualNote": "One installer supports both English and Simplified Chinese. After installing, switch under Settings - Language; the interface, document editor, and AI replies all follow. There is no separate English download.",
+        "bilingualNote": "One installer covers every interface language. After installing, switch under Settings › Language; the interface, document editor and AI replies all follow. There is no separate English download.",
         "addinTitle": "Office / WPS add-in (optional)",
         "addinDesc": "To use AI WorkDeck inside Word, Excel, or PowerPoint, install the task pane add-in: download the installer, run it, and restart Office — an \"Open AI WorkDeck\" button appears on the Home tab. For WPS Office there is nothing to download: open the one-click install page, click Install, and restart WPS (Writer, Spreadsheets, and Presentation on Windows and Linux). It connects to the official cloud by default (sign in with your phone number or email), or point it at your local desktop application or a firm server in the add-in settings.",
         "addinMac": "macOS installer (.dmg)",
@@ -1767,22 +1767,20 @@
       },
       "login": {
         "title": "Open the desktop app and sign in",
-        "descPhone": "After installing, open AI WorkDeck — the sign-in screen is the first thing you see. Enter your phone number to receive a code and sign in; your account is created automatically the first time, no separate registration needed.",
-        "descEmail": "After installing, open AI WorkDeck — the sign-in screen is the first thing you see. Enter your email to receive a code and sign in; your account is created automatically the first time, no separate registration needed.",
+        "descPhone": "Open AI WorkDeck and the sign-in screen appears first. Sign in with your phone number and password. New here? Choose “No password yet? Set one up”, verify your number and set a password.",
+        "descEmail": "Open AI WorkDeck and the sign-in screen appears first. Sign in with your email and password. New here? Choose “No password yet? Set one up”, verify your email and set a password.",
         "mockSubtitle": "The AI workbench for legal professionals",
         "phonePlaceholder": "Phone number",
         "emailPlaceholder": "Email address",
-        "codePlaceholder": "Verification code",
-        "sendCode": "Send code",
         "button": "Sign in",
-        "note": "Once signed in, your Credits balance, purchases, and skills sync automatically. Up to 3 devices can be connected to the same account at once — view or disconnect them from your account page.",
+        "note": "Once you're signed in, your Credits balance, purchases and skills sync automatically. Up to 3 devices can stay signed in to one account at a time; view or sign out devices on your account page.",
         "accountLink": "Go to your account"
       }
     },
     "after": {
       "title": "Once you are in",
       "skills": {
-        "title": "Skill plaza",
+        "title": "Skills in the Marketplace",
         "desc": "Ready-made review, drafting and verification skills, installable in one click."
       },
       "plugins": {
@@ -1791,7 +1789,7 @@
       },
       "updates": {
         "title": "Release notes",
-        "desc": "Patch releases update in place; major releases come from this site."
+        "desc": "Small updates install inside the app; major versions download from this site."
       }
     }
   },
@@ -2059,11 +2057,11 @@
         "a": "Unit prices are whatever each vendor currently lists on its official pricing page; we don’t publish a price list of our own, and your credits are drawn down at the vendor charge × 1.2. These are the outside services the app calls, with their official pricing pages."
       }
     },
-    "heroAside": "Top-up balance is retained. Subscription allowance resets each period. Both are tracked separately.",
+    "heroAside": "Your wallet balance never expires; the Pro allowance resets each period. They're tracked separately.",
     "cardsAria": "Subscription tiers",
     "subscriptionCrossLinkLabel": "Three options: pay as you go / Personal Pro / dedicated deployment",
     "faqPricesBriefTitle": "Commercial licensing inquiries",
-    "faqPricesBriefBody": "If you need closed-source distribution, proprietary plugins, SaaS operation, or official certification marks, talk to us about commercial licensing and Certified programs. Headcount tables and OEM details move to email inquiries and no longer dominate this page.",
+    "faqPricesBriefBody": "If you need closed-source distribution, proprietary plugins, SaaS operation or official certification marks, talk to us about commercial licensing and the Certified programs.",
     "faqPricesBriefCta": "Email about commercial licensing",
     "creditsCrossLink": {
       "before": "For how Credits are charged and what each AI service costs, see",
@@ -2074,12 +2072,12 @@
       "price": "Start free",
       "desc": "Top up when needed and unlock features individually.",
       "perk1": "Local projects, document editing and file organization",
-      "perk2": "{topup} top-up = 100 Credits, charged by service usage",
+      "perk2": "{topup} buys 100 Credits, spent as you use online services",
       "perk3": "Unlock clipboard and staging separately",
-      "perk4": "200MB temporary relay storage, freed after receipt",
+      "perk4": "200 MB phone-to-desktop relay, cleared once files arrive",
       "agplTitle": "AGPL boundary (non-exhaustive)",
       "agplCanLabel": "You may: ",
-      "agplCan": "research, personal use, and self-host/redistribute under AGPL-3.0 obligations (including corresponding source disclosure).",
+      "agplCan": "use it for research or personal work, and self-host or redistribute it under the AGPL-3.0 (including publishing the corresponding source).",
       "agplNeedLabel": "Typical cases that need a commercial license: ",
       "agplNeed": "offering WorkDeck or derivatives as a closed-source product/SaaS; providing network services without meeting AGPL network-interaction disclosure; shipping proprietary same-process plugins/customizations for closed commercial delivery; needing trademarks, certification marks, or official Certified endorsement.",
       "agplFootnote": "Non-exhaustive list; details in repo legal/ (including COMMERCIAL-LICENSE). Questions: hi@aiworkdeck.com.",
@@ -2097,7 +2095,7 @@
       "perk3": "3GB persistent cloud storage with a shared project catalog",
       "perk4": "See usage, remaining allowance and reset times",
       "excludes": "Not included: multi-seat firm plans, on-prem, closed-source commercial licenses, Certified deployments; paid marketplace Skills billed per listing.",
-      "ctaPrimary": "Try before subscribing",
+      "ctaPrimary": "Try it free first",
       "ctaSecondary": "Get Personal Pro",
       "footnote": "Allowance expires each period and is not cash. Extra usage stops unless you enable wallet spending. Unlimited local features do not remove cloud storage limits.",
       "checkout": {
@@ -2156,7 +2154,7 @@
       "mailSubject": "Inquire about AI WorkDeck commercial licensing / Certified"
     },
     "marketplaceAuthor": {
-      "title": "Sell Skills / plugins on the marketplace",
+      "title": "Sell skills and plugins in the Marketplace",
       "body": "Sell paid workflows for legal and document work. Authors keep {author}% of net receipts and the platform keeps {platform}%. The marketplace terms explain how settlement works.",
       "ctaTerms": "Marketplace terms",
       "ctaSubmit": "Submit & listing guide"
@@ -2181,7 +2179,7 @@
       },
       "regions": {
         "q": "Mainland vs international site?",
-        "a": "Users in mainland China should use aiworkdeck.com, where payments and invoices are handled. Everyone else can use workdeck.ai. The product is the same on both."
+        "a": "If you're in mainland China, use aiworkdeck.com (CNY, WeChat Pay and VAT invoices). Everyone else uses workdeck.ai, or aiworkdeck.us in the US. The software is the same on all of them."
       },
       "allowance": {
         "q": "How do allowance and wallet balance differ?",
@@ -2197,15 +2195,15 @@
       }
     },
     "deploymentBanner": {
-      "eyebrow": "PRIVATE DEPLOYMENT",
+      "eyebrow": "Private deployment",
       "title": "Deploying on your own servers and network?",
       "body": "Estimate servers, staffing and first-year budget by team size, model mode and optional services.",
       "cta": "Open deployment planner"
     },
     "heroSubtitleIntro": "Free open-source desktop workspace with local files. Get Personal Pro for {intro}/mo for your first {months} months (regularly {standard}/mo), including Credits, 3GB cloud storage, and unlimited clipboard. 30-day one-time pass, no auto-renewal.",
-    "heroTitleIntl": "Free with your own AI key. Or pay as you go.",
-    "heroSubtitleIntl": "The desktop app is open source and free, and your files stay on your machine. Connect your own AI provider at no cost from us, or top up a USD wallet and pay only for what you use. Firms can ask for a dedicated deployment.",
-    "metaDescriptionIntl": "AI WorkDeck is free with your own AI key. Or top up a USD wallet and pay as you go. Dedicated deployments for firms are quoted individually."
+    "heroTitleIntl": "Free and open source. Pay only for the AI you use.",
+    "heroSubtitleIntl": "The desktop app is open source and free, and your files stay on your computer. AI and other online services are pay-as-you-go from a USD wallet: the provider's price plus a flat 20%, with no subscription. Need everything in-house? Self-host it and point the AI at your own models or model account; firms can also ask for a dedicated deployment.",
+    "metaDescriptionIntl": "AI WorkDeck is free and open source. Pay as you go for AI from a USD wallet, or self-host and use your own models. Dedicated deployments for firms are quoted individually."
   },
   "notFoundPage": {
     "code": "404",
@@ -2327,7 +2325,7 @@
         "openSource": "Open source · AGPLv3",
         "title": "The IDE for lawyers.",
         "tagline": "Clear the clutter. Get back to the law.",
-        "lead": "Programmers have long had their IDE: files, editing, search, versions and AI in one window. AI WorkDeck brings that infrastructure to lawyers — organised by matter, every answer sourced, every change on the record.",
+        "lead": "Programmers have long worked in an IDE: files, editing, search, version history and AI in one window. AI WorkDeck gives lawyers the same, organized by matter, with every answer sourced and every change on the record.",
         "download": "Download for desktop",
         "star": "Star on GitHub",
         "meta": "Free community edition · Windows / macOS · {count} interface languages",
@@ -2341,10 +2339,10 @@
         "videoLoading": "Loading video…",
         "videoError": "The video can't play right now — the connection may be slow or the link expired.",
         "videoRetry": "Try again",
-        "introOffer": "Intro offer: Personal Pro {intro}/mo for your first {months} months (regularly {standard}/mo, no auto-renewal) ->"
+        "introOffer": "Intro offer: Personal Pro {intro}/mo for your first {months} months (regularly {standard}/mo, no auto-renewal) →"
       },
       "facts": {
-        "license": "open-source licence",
+        "license": "open-source license",
         "languages": "interface languages",
         "platformsValue": "Win · Mac",
         "platforms": "desktop apps",
@@ -2355,7 +2353,7 @@
       "why": {
         "eyebrow": "Why an IDE",
         "title": "The AI chat box is the command line of the AI era.",
-        "body": "A big matter means hundreds of documents, months of work and several people. Lawyers, like programmers, work in text: piles of files, draft after draft, citations to check everywhere. They deserve their own infrastructure too.",
+        "body": "A big matter means hundreds of documents, months of work and several people. Like programmers, lawyers work in text: stacks of files, draft after draft, citations to check at every turn. They deserve tools built for that work.",
         "chatTitle": "Chat box",
         "chatPoints": [
           "Start from scratch every time",
@@ -2394,17 +2392,17 @@
       "openSource": {
         "eyebrow": "Open source",
         "title": "Open code. See exactly what it does.",
-        "body": "All of the source is on GitHub. Whatever can run on your computer does: redaction never touches a language model, and recordings can stay on your machine.",
+        "body": "All of the source is on GitHub. Whatever can run on your computer runs there: redaction never touches a language model, and recordings can stay on your machine.",
         "star": "Star on GitHub",
         "contributing": "Contribute",
-        "license": "Licence",
+        "license": "License",
         "latest": "Latest",
         "stars": "Stars",
         "runFromSource": "Run from source"
       },
       "changelog": {
         "eyebrow": "Shipping continuously",
-        "title": "A new release every week.",
+        "title": "We ship every week.",
         "all": "Full changelog"
       },
       "videos": {
@@ -2415,8 +2413,8 @@
         "langNote": "Guides are narrated and subtitled in Chinese."
       },
       "final": {
-        "line1": "Give your time back to the practice.",
-        "line2": "Bring the work into one place.",
+        "line1": "Spend your time on the law.",
+        "line2": "Keep the work in one place.",
         "download": "Download free",
         "star": "Star on GitHub"
       }

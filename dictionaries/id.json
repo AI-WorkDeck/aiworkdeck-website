@@ -1700,7 +1700,7 @@
     },
     "eyebrow": "Mulai sekarang",
     "title": "Dua langkah untuk memulai dengan AI WorkDeck",
-    "lead": "AI WorkDeck berjalan di mesin Anda sendiri — dokumen Anda tidak pernah keluar darinya. Setelah menginstal, masuk langsung di dalam aplikasi untuk memulai; akun Anda dibuat secara otomatis saat pertama kali masuk.",
+    "lead": "AI WorkDeck berjalan di komputer Anda sendiri, dan dokumen Anda tetap di sana kecuali Anda meminta AI untuk mengerjakannya. Setelah menginstal, masuk langsung di dalam aplikasi. Pengguna baru? Anda dapat membuat akun di dialog yang sama.",
     "mobileSubtitle": "Buat akun Anda di sini, lalu instal AI WorkDeck di komputer Anda untuk memulai.",
     "siteChoice": {
       "title": "Pertama, pilih situs yang tepat",
@@ -1735,7 +1735,7 @@
         "en": "English"
       },
       "switch": "Buka {site}",
-      "clientNote": "Kedua situs menggunakan klien desktop yang sama, dari penginstal yang sama. Antarmukanya saat ini hanya tersedia dalam bahasa Tiongkok."
+      "clientNote": "Kedua situs menggunakan klien desktop dan penginstal yang sama. Antarmukanya tersedia dalam 20 bahasa; ganti melalui Pengaturan › Bahasa."
     },
     "progress": "Langkah {current} dari {total}",
     "steps": {
@@ -1757,7 +1757,7 @@
         "openSourceNote": "Yang Anda unduh adalah Community Edition: aplikasi desktop bersifat open source di bawah lisensi AGPLv3, dan kode sumbernya tersedia di {repo}. Fitur premium seperti AI chat, OCR, dan transkripsi menggunakan layanan pihak ketiga berbayar, sehingga memerlukan Credits terlebih dahulu — {pricing} menjelaskan cara kerja penagihannya.",
         "openSourceRepo": "GitHub",
         "openSourcePricing": "halaman harga",
-        "bilingualNote": "Satu installer mendukung bahasa Inggris dan Mandarin Sederhana. Setelah memasang, Anda dapat beralih bahasa melalui Pengaturan - Bahasa; antarmuka, editor dokumen, dan balasan AI semuanya akan mengikuti. Tidak ada unduhan terpisah untuk bahasa Inggris.",
+        "bilingualNote": "Satu installer mencakup semua bahasa antarmuka. Setelah memasang, Anda dapat beralih bahasa melalui Pengaturan › Bahasa; antarmuka, editor dokumen, dan balasan AI semuanya akan mengikuti. Tidak ada unduhan terpisah untuk bahasa Inggris.",
         "addinTitle": "Add-in Office / WPS (opsional)",
         "addinDesc": "Untuk menggunakan AI WorkDeck di dalam Word, Excel, atau PowerPoint, pasang add-in task pane: unduh installer, jalankan, lalu restart Office — tombol \"Buka AI WorkDeck\" akan muncul di tab Beranda. Untuk WPS Office, tidak perlu mengunduh apa pun: buka halaman instalasi satu klik, klik Instal, lalu restart WPS (Writer, Spreadsheets, dan Presentation di Windows dan Linux). Secara bawaan, add-in terhubung ke cloud resmi (masuk dengan nomor telepon atau email Anda), atau Anda dapat mengarahkannya ke aplikasi desktop lokal atau server firma Anda di pengaturan add-in.",
         "addinMac": "Installer macOS (.dmg)",
@@ -1767,13 +1767,11 @@
       },
       "login": {
         "title": "Buka aplikasi desktop dan masuk",
-        "descPhone": "Setelah memasang, buka AI WorkDeck — layar masuk adalah hal pertama yang Anda lihat. Masukkan nomor telepon Anda untuk menerima kode dan masuk; akun Anda dibuat otomatis saat pertama kali, tanpa perlu pendaftaran terpisah.",
-        "descEmail": "Setelah memasang, buka AI WorkDeck — layar masuk adalah hal pertama yang Anda lihat. Masukkan email Anda untuk menerima kode dan masuk; akun Anda dibuat otomatis saat pertama kali, tanpa perlu pendaftaran terpisah.",
+        "descPhone": "Buka AI WorkDeck — layar masuk adalah hal pertama yang Anda lihat. Masuk dengan nomor telepon dan kata sandi Anda. Pengguna baru? Pilih “Belum punya kata sandi? Buat sekarang”, verifikasi nomor Anda, lalu buat kata sandi.",
+        "descEmail": "Buka AI WorkDeck — layar masuk adalah hal pertama yang Anda lihat. Masuk dengan email dan kata sandi Anda. Pengguna baru? Pilih “Belum punya kata sandi? Buat sekarang”, verifikasi email Anda, lalu buat kata sandi.",
         "mockSubtitle": "Meja kerja AI untuk para profesional hukum",
         "phonePlaceholder": "Nomor telepon",
         "emailPlaceholder": "Alamat email",
-        "codePlaceholder": "Kode verifikasi",
-        "sendCode": "Kirim kode",
         "button": "Masuk",
         "note": "Setelah masuk, saldo Credits, pembelian, dan skill Anda akan tersinkronisasi secara otomatis. Hingga 3 perangkat dapat terhubung ke akun yang sama sekaligus — lihat atau putuskan koneksi dari halaman akun Anda.",
         "accountLink": "Buka akun Anda"
@@ -2203,9 +2201,9 @@
       "cta": "Buka perencana penerapan"
     },
     "heroSubtitleIntro": "Aplikasi desktop sumber terbuka gratis. Personal Pro cukup {intro}/bln selama {months} bulan pertama (normal {standard}/bln) termasuk Credits, penyimpanan cloud 3GB, dan papan klip tanpa batas untuk 30 hari.",
-    "heroTitleIntl": "Gratis dengan kunci AI Anda sendiri. Atau bayar sesuai pemakaian.",
-    "heroSubtitleIntl": "Aplikasi desktop bersifat sumber terbuka dan gratis, dan berkas Anda tetap di komputer Anda. Hubungkan penyedia AI Anda sendiri tanpa biaya dari kami, atau isi dompet USD dan bayar hanya yang Anda gunakan. Firma dapat menanyakan penerapan khusus.",
-    "metaDescriptionIntl": "AI WorkDeck gratis dengan kunci AI Anda sendiri. Atau isi dompet USD dan bayar sesuai pemakaian. Penerapan khusus untuk firma ditawarkan secara terpisah."
+    "heroTitleIntl": "Gratis dan sumber terbuka. Bayar hanya untuk AI yang Anda gunakan.",
+    "heroSubtitleIntl": "Aplikasi desktop bersifat sumber terbuka dan gratis, dan berkas Anda tetap di komputer Anda. AI dan layanan online lainnya dibayar sesuai pemakaian dari dompet USD: harga penyedia ditambah tetap 20%, tanpa langganan. Perlu semuanya tetap di internal? Hosting sendiri dan arahkan AI ke model Anda sendiri atau akun model Anda; firma juga dapat menanyakan penerapan khusus.",
+    "metaDescriptionIntl": "AI WorkDeck gratis dan sumber terbuka. Bayar AI sesuai pemakaian dari dompet USD, atau hosting sendiri dan gunakan model Anda sendiri. Penerapan khusus untuk firma ditawarkan secara terpisah."
   },
   "notFoundPage": {
     "code": "404",

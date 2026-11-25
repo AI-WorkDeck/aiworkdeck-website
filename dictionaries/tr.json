@@ -1700,7 +1700,7 @@
     },
     "eyebrow": "Başlayın",
     "title": "AI WorkDeck ile başlamak için iki adım",
-    "lead": "AI WorkDeck kendi makinenizde çalışır — belgeleriniz asla makinenizden ayrılmaz. Kurulumdan sonra, uygulamanın içinden oturum açarak başlayın; hesabınız ilk oturum açtığınızda otomatik olarak oluşturulur.",
+    "lead": "AI WorkDeck kendi bilgisayarınızda çalışır ve yapay zekadan üzerinde çalışmasını istemediğiniz sürece belgeleriniz orada kalır. Kurulumdan sonra uygulamanın içinden oturum açın. Yeni misiniz? Hesabınızı aynı pencerede oluşturabilirsiniz.",
     "mobileSubtitle": "Hesabınızı burada oluşturun, ardından AI WorkDeck'i bilgisayarınıza kurup kullanmaya başlayın.",
     "siteChoice": {
       "title": "Önce doğru siteyi seçin",
@@ -1735,7 +1735,7 @@
         "en": "English"
       },
       "switch": "{site} sitesine git",
-      "clientNote": "Her iki site de aynı masaüstü istemcisini, aynı yükleyiciden kullanır. Arayüzü şu anda yalnızca Çince olarak mevcuttur."
+      "clientNote": "Her iki site de aynı masaüstü istemcisini ve aynı yükleyiciyi kullanır. Arayüz 20 dilde kullanılabilir; Ayarlar › Dil bölümünden değiştirebilirsiniz."
     },
     "progress": "Adım {current} / {total}",
     "steps": {
@@ -1757,7 +1757,7 @@
         "openSourceNote": "İndirdiğiniz şey Topluluk Sürümüdür: masaüstü uygulaması AGPLv3 altında açık kaynaklıdır ve kaynak kodu {repo} üzerinde barındırılır. Yapay zeka sohbeti, OCR ve transkripsiyon gibi premium özellikler ücretli üçüncü taraf hizmetleri çağırdığından önce Credit gerekir — faturalandırmanın nasıl çalıştığını {pricing} açıklar.",
         "openSourceRepo": "GitHub",
         "openSourcePricing": "fiyatlandırma sayfası",
-        "bilingualNote": "Tek yükleyici hem İngilizce hem Basitleştirilmiş Çinceyi destekler. Yüklemeden sonra Ayarlar - Dil bölümünden değiştirin; arayüz, belge düzenleyici ve yapay zeka yanıtları tümünü takip eder. Ayrı bir İngilizce indirme yoktur.",
+        "bilingualNote": "Tek yükleyici tüm arayüz dillerini içerir. Yüklemeden sonra Ayarlar › Dil bölümünden değiştirin; arayüz, belge düzenleyici ve yapay zeka yanıtları da buna uyar. Ayrı bir İngilizce indirme yoktur.",
         "addinTitle": "Office / WPS eklentisi (isteğe bağlı)",
         "addinDesc": "AI WorkDeck'i Word, Excel veya PowerPoint içinde kullanmak için görev bölmesi eklentisini kurun: yükleyiciyi indirin, çalıştırın ve Office'i yeniden başlatın — Giriş sekmesinde bir \"AI WorkDeck'i Aç\" düğmesi görünür. WPS Office için indirilecek bir şey yoktur: tek tıkla kurulum sayfasını açın, Yükle'ye tıklayın ve WPS'yi yeniden başlatın (Windows ve Linux'ta Writer, Spreadsheets ve Presentation). Varsayılan olarak resmi buluta bağlanır (telefon numaranız veya e-postanızla oturum açın) ya da eklenti ayarlarında yerel masaüstü uygulamanızı veya bir firma sunucusunu işaret edin.",
         "addinMac": "macOS yükleyicisi (.dmg)",
@@ -1767,13 +1767,11 @@
       },
       "login": {
         "title": "Masaüstü uygulamasını açın ve oturum açın",
-        "descPhone": "Yüklemeden sonra AI WorkDeck'i açın — ilk göreceğiniz şey oturum açma ekranıdır. Kod almak ve oturum açmak için telefon numaranızı girin; hesabınız ilk seferde otomatik olarak oluşturulur, ayrıca kaydolmanız gerekmez.",
-        "descEmail": "Yüklemeden sonra AI WorkDeck'i açın — ilk göreceğiniz şey oturum açma ekranıdır. Kod almak ve oturum açmak için e-postanızı girin; hesabınız ilk seferde otomatik olarak oluşturulur, ayrıca kaydolmanız gerekmez.",
+        "descPhone": "AI WorkDeck'i açın — ilk göreceğiniz şey oturum açma ekranıdır. Telefon numaranız ve şifrenizle oturum açın. Yeni misiniz? “Henüz şifreniz yok mu? Şifre belirleyin” seçeneğini seçin, numaranızı doğrulayın ve bir şifre belirleyin.",
+        "descEmail": "AI WorkDeck'i açın — ilk göreceğiniz şey oturum açma ekranıdır. E-postanız ve şifrenizle oturum açın. Yeni misiniz? “Henüz şifreniz yok mu? Şifre belirleyin” seçeneğini seçin, e-postanızı doğrulayın ve bir şifre belirleyin.",
         "mockSubtitle": "Hukuk profesyonelleri için yapay zeka çalışma tezgahı",
         "phonePlaceholder": "Telefon numarası",
         "emailPlaceholder": "E-posta adresi",
-        "codePlaceholder": "Doğrulama kodu",
-        "sendCode": "Kod gönder",
         "button": "Giriş yap",
         "note": "Oturum açtığınızda Credit bakiyeniz, satın alımlarınız ve becerileriniz otomatik olarak eşitlenir. Aynı anda aynı hesaba en fazla 3 cihaz bağlanabilir — bunları hesap sayfanızdan görüntüleyin veya bağlantılarını kesin.",
         "accountLink": "Hesabınıza gidin"
@@ -2203,9 +2201,9 @@
       "cta": "Dağıtım planlayıcısını aç"
     },
     "heroSubtitleIntro": "Ücretsiz açık kaynak masaüstü çalışma alanı. Personal Pro ilk {months} ay {intro}/ay (normal {standard}/ay); Credits, 3GB bulut alanı ve sınırsız pano içerir. 30 günlük tek seferlik satın alım.",
-    "heroTitleIntl": "Kendi yapay zeka anahtarınızla ücretsiz. Ya da kullandıkça ödeyin.",
-    "heroSubtitleIntl": "Masaüstü uygulaması açık kaynaklı ve ücretsizdir; dosyalarınız bilgisayarınızda kalır. Kendi yapay zeka sağlayıcınızı bize hiçbir ücret ödemeden bağlayın ya da bir USD cüzdanına bakiye yükleyip yalnızca kullandığınız kadar ödeyin. Hukuk büroları özel kurulum talep edebilir.",
-    "metaDescriptionIntl": "AI WorkDeck kendi yapay zeka anahtarınızla ücretsizdir. Ya da bir USD cüzdanına bakiye yükleyip kullandıkça ödeyin. Hukuk bürolarına özel kurulumlar ayrıca fiyatlandırılır."
+    "heroTitleIntl": "Ücretsiz ve açık kaynak. Yalnızca kullandığınız yapay zeka için ödeyin.",
+    "heroSubtitleIntl": "Masaüstü uygulaması açık kaynaklı ve ücretsizdir; dosyalarınız bilgisayarınızda kalır. Yapay zeka ve diğer çevrimiçi hizmetler için bir USD cüzdanından kullandıkça ödersiniz: sağlayıcının fiyatı artı sabit %20, abonelik yok. Her şeyin kurum içinde kalması mı gerekiyor? Kendiniz barındırın ve yapay zekayı kendi modellerinize veya kendi model hesabınıza yönlendirin; hukuk büroları özel kurulum da talep edebilir.",
+    "metaDescriptionIntl": "AI WorkDeck ücretsiz ve açık kaynaklıdır. Yapay zeka için bir USD cüzdanından kullandıkça ödeyin ya da kendiniz barındırıp kendi modellerinizi kullanın. Hukuk bürolarına özel kurulumlar ayrıca fiyatlandırılır."
   },
   "notFoundPage": {
     "code": "404",

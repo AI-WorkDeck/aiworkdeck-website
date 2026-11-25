@@ -1739,9 +1739,9 @@
       "transparencyLine": "每半年在 GitHub 與官網公佈一次賬目與使用情況"
     },
     "heroSubtitleIntro": "桌面軟體開源免費、檔案在本機。個人 Pro 前 {months} 個月享 {intro}/月體驗價（原價 {standard}/月），含週期 Credits、3GB 雲空間與不限量剪貼簿，一次買 30 天，不自動扣款。",
-    "heroTitleIntl": "自備 AI 金鑰即可免費使用，也可按量付費。",
-    "heroSubtitleIntl": "桌面版開源免費，檔案留在你的電腦上。接入你自己的 AI 服務商，我們不收費；或者為美元錢包儲值，用多少付多少。律所可洽詢專屬部署。",
-    "metaDescriptionIntl": "自備 AI 金鑰即可免費使用 AI WorkDeck；也可為美元錢包儲值、按量付費。律所專屬部署另行報價。"
+    "heroTitleIntl": "免費開源，AI 依用量付費。",
+    "heroSubtitleIntl": "桌面版開源免費，檔案留在你的電腦上。AI 與其他線上服務從美元錢包依用量付費：服務商原價加統一 20%，不訂閱。需要一切留在所內？可自行部署，讓 AI 接入你自己的模型或模型帳戶；事務所也可洽詢專屬部署。",
+    "metaDescriptionIntl": "AI WorkDeck 免費開源。AI 從美元錢包依用量付費，也可自行部署、使用自己的模型。事務所專屬部署另行報價。"
   },
   "purchase": {
     "amountLabel": "金額",
@@ -2007,7 +2007,7 @@
     "siteChoice": {
       "accountNote": "請在賬戶所屬的地區登錄。中國大陸與國際站的賬戶、餘額和購買記錄獨立。",
       "ariaLabel": "站點與賬戶說明",
-      "clientNote": "兩站用的是同一個桌面客戶端，安裝包也是同一個；客戶端界面目前只有中文。",
+      "clientNote": "兩站用的是同一個桌面版，安裝檔也是同一個。介面支援 20 種語言，可在「設定 › 語言」中切換。",
       "cnSiteDesc": "中國大陸；人民幣與微信支付。",
       "continueSetupIntl": "轉到國際站繼續開始使用",
       "continueSetupMainland": "轉到中國大陸站繼續開始使用",
@@ -2048,7 +2048,7 @@
         "addinWin": "Windows 安裝器（.exe）",
         "addinWps": "WPS 一鍵安裝頁",
         "allReleases": "到發佈頁找歷史版本",
-        "bilingualNote": "一個安裝包同時支持簡體中文與 English。裝好後在「系統設置 - 語言」里切換，界面、文檔編輯器與 AI 回復都會跟著走——不需要另外下載英文版。",
+        "bilingualNote": "一個安裝檔包含所有介面語言。安裝後在「設定 › 語言」切換，介面、文件編輯器與 AI 回覆都會跟著變，不需要另外下載英文版。",
         "desc": "按你的系統選擇安裝包。安裝包較大，建議在 Wi-Fi 下載——下載的這幾分鐘里，可以先把第二步做了。",
         "doneSummary": "已安裝",
         "fallback": "前往 GitHub 發佈頁",
@@ -2069,14 +2069,12 @@
       "login": {
         "accountLink": "前往賬戶頁",
         "button": "登入",
-        "codePlaceholder": "驗證碼",
-        "descEmail": "安裝完成後打開 AI WorkDeck，首屏就是登錄頁。輸入郵箱接收驗證碼即可登錄，首次登錄自動創建賬戶，無需事先註冊。",
-        "descPhone": "安裝完成後打開 AI WorkDeck，首屏就是登錄頁。輸入手機號接收驗證碼即可登錄，首次登錄自動創建賬戶，無需事先註冊。",
+        "descEmail": "安裝完成後開啟 AI WorkDeck，第一個畫面就是登入頁。用電子郵件和密碼登入；第一次使用，點「還沒有密碼？設定密碼」，驗證電子郵件後設定密碼即可。",
+        "descPhone": "安裝完成後開啟 AI WorkDeck，第一個畫面就是登入頁。用手機號碼和密碼登入；第一次使用，點「還沒有密碼？設定密碼」，驗證手機號碼後設定密碼即可。",
         "emailPlaceholder": "電子郵件地址",
         "mockSubtitle": "面向法律工作者的 AI 工作台",
         "note": "登錄後 Credits 餘額、已購內容與 Skill 自動同步。同一賬戶最多同時連接 3 台設備，可在官網賬戶頁查看或斷開。",
         "phonePlaceholder": "手機號碼",
-        "sendCode": "取得驗證碼",
         "title": "打開桌面端，登錄"
       }
     },

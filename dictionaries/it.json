@@ -1700,7 +1700,7 @@
     },
     "eyebrow": "Inizia",
     "title": "Due passaggi per iniziare con AI WorkDeck",
-    "lead": "AI WorkDeck viene eseguito sul tuo computer — i tuoi documenti non lo lasciano mai. Dopo l'installazione, accedi direttamente dall'app per iniziare; il tuo account viene creato automaticamente al primo accesso.",
+    "lead": "AI WorkDeck viene eseguito sul tuo computer e i tuoi documenti restano lì, a meno che tu non chieda all'AI di lavorarci. Dopo l'installazione, accedi direttamente dall'app. Sei nuovo? Puoi creare il tuo account nella stessa finestra.",
     "mobileSubtitle": "Crea qui il tuo account, poi installa AI WorkDeck sul tuo computer per iniziare.",
     "siteChoice": {
       "title": "Prima, scegli il sito giusto",
@@ -1735,7 +1735,7 @@
         "en": "English"
       },
       "switch": "Vai a {site}",
-      "clientNote": "Entrambi i siti usano lo stesso client desktop, dallo stesso installer. La sua interfaccia è attualmente disponibile solo in cinese."
+      "clientNote": "Entrambi i siti usano lo stesso client desktop e lo stesso installer. L'interfaccia è disponibile in 20 lingue; puoi cambiarla in Impostazioni › Lingua."
     },
     "progress": "Passaggio {current} di {total}",
     "steps": {
@@ -1757,7 +1757,7 @@
         "openSourceNote": "Quello che scarichi è la Community Edition: l'app desktop è open source sotto licenza AGPLv3 e il codice sorgente è disponibile su {repo}. Le funzionalità premium come la chat AI, l'OCR e la trascrizione utilizzano servizi di terze parti a pagamento, quindi richiedono prima dei Crediti — la {pricing} spiega come funziona la fatturazione.",
         "openSourceRepo": "GitHub",
         "openSourcePricing": "pagina dei prezzi",
-        "bilingualNote": "Un unico programma di installazione supporta sia l'inglese che il cinese semplificato. Dopo l'installazione, cambia lingua in Impostazioni - Lingua; l'interfaccia, l'editor dei documenti e le risposte dell'AI seguiranno la scelta. Non esiste un download separato in inglese.",
+        "bilingualNote": "Un unico programma di installazione include tutte le lingue dell'interfaccia. Dopo l'installazione, cambia lingua in Impostazioni › Lingua; l'interfaccia, l'editor dei documenti e le risposte dell'AI seguiranno la scelta. Non esiste un download separato in inglese.",
         "addinTitle": "Componente aggiuntivo per Office / WPS (facoltativo)",
         "addinDesc": "Per usare AI WorkDeck all'interno di Word, Excel o PowerPoint, installa il componente aggiuntivo del riquadro attività: scarica il programma di installazione, eseguilo e riavvia Office — apparirà un pulsante \"Apri AI WorkDeck\" nella scheda Home. Per WPS Office non c'è nulla da scaricare: apri la pagina di installazione con un clic, fai clic su Installa e riavvia WPS (Writer, Fogli di calcolo e Presentazione su Windows e Linux). Per impostazione predefinita si connette al cloud ufficiale (accedi con il numero di telefono o l'email), oppure puoi puntarlo all'app desktop locale o a un server dello studio nelle impostazioni del componente aggiuntivo.",
         "addinMac": "Programma di installazione macOS (.dmg)",
@@ -1767,13 +1767,11 @@
       },
       "login": {
         "title": "Apri l'app desktop e accedi",
-        "descPhone": "Dopo l'installazione, apri AI WorkDeck — la prima cosa che vedrai è la schermata di accesso. Inserisci il tuo numero di telefono per ricevere un codice e accedere; l'account viene creato automaticamente la prima volta, senza necessità di registrazione separata.",
-        "descEmail": "Dopo l'installazione, apri AI WorkDeck — la prima cosa che vedrai è la schermata di accesso. Inserisci la tua email per ricevere un codice e accedere; l'account viene creato automaticamente la prima volta, senza necessità di registrazione separata.",
+        "descPhone": "Apri AI WorkDeck: la prima cosa che vedrai è la schermata di accesso. Accedi con il tuo numero di telefono e la password. Sei nuovo? Scegli «Non hai ancora una password? Impostala», verifica il numero e imposta una password.",
+        "descEmail": "Apri AI WorkDeck: la prima cosa che vedrai è la schermata di accesso. Accedi con la tua email e la password. Sei nuovo? Scegli «Non hai ancora una password? Impostala», verifica l'email e imposta una password.",
         "mockSubtitle": "Il banco di lavoro AI per i professionisti legali",
         "phonePlaceholder": "Numero di telefono",
         "emailPlaceholder": "Indirizzo email",
-        "codePlaceholder": "Codice di verifica",
-        "sendCode": "Invia codice",
         "button": "Accedi",
         "note": "Una volta effettuato l'accesso, il saldo dei tuoi Crediti, gli acquisti e le competenze si sincronizzano automaticamente. Fino a 3 dispositivi possono essere collegati contemporaneamente allo stesso account — visualizzali o scollegali dalla pagina del tuo account.",
         "accountLink": "Vai al tuo account"
@@ -2203,9 +2201,9 @@
       "cta": "Apri il pianificatore di deployment"
     },
     "heroSubtitleIntro": "Desktop open source gratuito. Personal Pro a {intro}/mese per i primi {months} mesi (poi {standard}/mese) con Credits, 3 GB cloud e appunti illimitati. Pass singolo di 30 giorni senza rinnovo automatico.",
-    "heroTitleIntl": "Gratis con la tua chiave IA. Oppure paghi a consumo.",
-    "heroSubtitleIntl": "L'app desktop è open source e gratuita, e i tuoi file restano sul tuo computer. Collega il tuo fornitore di IA senza pagarci nulla, oppure ricarica un portafoglio in USD e paga solo ciò che usi. Gli studi legali possono richiedere un'installazione dedicata.",
-    "metaDescriptionIntl": "AI WorkDeck è gratis con la tua chiave IA. Oppure ricarica un portafoglio in USD e paga a consumo. Le installazioni dedicate per studi legali sono quotate a parte."
+    "heroTitleIntl": "Gratuito e open source. Paghi solo l'IA che usi.",
+    "heroSubtitleIntl": "L'app desktop è open source e gratuita, e i tuoi file restano sul tuo computer. L'IA e gli altri servizi online si pagano a consumo da un portafoglio in USD: il prezzo del fornitore più un 20% fisso, senza abbonamento. Vuoi tenere tutto in casa? Installala sui tuoi server e collega l'IA ai tuoi modelli o al tuo account di modelli; gli studi legali possono anche richiedere un'installazione dedicata.",
+    "metaDescriptionIntl": "AI WorkDeck è gratuito e open source. Paga l'IA a consumo da un portafoglio in USD, oppure installalo sui tuoi server e usa i tuoi modelli. Le installazioni dedicate per studi legali sono quotate a parte."
   },
   "notFoundPage": {
     "code": "404",

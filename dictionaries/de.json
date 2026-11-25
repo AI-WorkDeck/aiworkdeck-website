@@ -1700,7 +1700,7 @@
     },
     "eyebrow": "Loslegen",
     "title": "In zwei Schritten mit AI WorkDeck starten",
-    "lead": "AI WorkDeck läuft auf Ihrem eigenen Rechner — Ihre Dokumente verlassen ihn nie. Melden Sie sich nach der Installation direkt in der App an, um loszulegen; Ihr Konto wird beim ersten Anmelden automatisch erstellt.",
+    "lead": "AI WorkDeck läuft auf Ihrem eigenen Rechner, und Ihre Dokumente bleiben dort, sofern Sie die KI nicht damit arbeiten lassen. Melden Sie sich nach der Installation direkt in der App an. Neu hier? Sie können Ihr Konto im selben Dialog erstellen.",
     "mobileSubtitle": "Erstellen Sie hier Ihr Konto und installieren Sie dann AI WorkDeck auf Ihrem Computer, um loszulegen.",
     "siteChoice": {
       "title": "Zuerst die richtige Seite wählen",
@@ -1735,7 +1735,7 @@
         "en": "English"
       },
       "switch": "Zu {site} gehen",
-      "clientNote": "Beide Seiten verwenden denselben Desktop-Client aus demselben Installationsprogramm. Die Oberfläche ist derzeit nur auf Chinesisch verfügbar."
+      "clientNote": "Beide Seiten verwenden denselben Desktop-Client und dasselbe Installationsprogramm. Die Oberfläche ist in 20 Sprachen verfügbar; wechseln Sie unter Einstellungen › Sprache."
     },
     "progress": "Schritt {current} von {total}",
     "steps": {
@@ -1757,7 +1757,7 @@
         "openSourceNote": "Was Sie herunterladen, ist die Community Edition: Die Desktop-App ist Open Source unter der AGPLv3, und der Quellcode befindet sich auf {repo}. Premium-Funktionen wie KI-Chat, OCR und Transkription nutzen kostenpflichtige Drittanbieter-Dienste und benötigen daher zunächst Credits – die {pricing} erklärt, wie die Abrechnung funktioniert.",
         "openSourceRepo": "GitHub",
         "openSourcePricing": "Preisseite",
-        "bilingualNote": "Ein Installationsprogramm unterstützt sowohl Englisch als auch Vereinfachtes Chinesisch. Wechseln Sie nach der Installation unter Einstellungen – Sprache; Oberfläche, Dokumenteneditor und KI-Antworten folgen alle. Es gibt keinen separaten englischen Download.",
+        "bilingualNote": "Ein Installationsprogramm enthält alle Oberflächensprachen. Wechseln Sie nach der Installation unter Einstellungen › Sprache; Oberfläche, Dokumenteneditor und KI-Antworten folgen alle. Es gibt keinen separaten englischen Download.",
         "addinTitle": "Office-/WPS-Add-in (optional)",
         "addinDesc": "Um AI WorkDeck in Word, Excel oder PowerPoint zu verwenden, installieren Sie das Aufgabenbereich-Add-in: Laden Sie das Installationsprogramm herunter, führen Sie es aus und starten Sie Office neu – auf der Registerkarte „Start“ erscheint die Schaltfläche „AI WorkDeck öffnen“. Für WPS Office gibt es nichts herunterzuladen: Öffnen Sie die Ein-Klick-Installationsseite, klicken Sie auf „Installieren“ und starten Sie WPS neu (Writer, Spreadsheets und Presentation unter Windows und Linux). Es verbindet sich standardmäßig mit der offiziellen Cloud (Anmeldung mit Telefonnummer oder E-Mail), oder richten Sie es in den Add-in-Einstellungen auf Ihre lokale Desktop-Anwendung oder einen Firmenserver.",
         "addinMac": "macOS-Installationsprogramm (.dmg)",
@@ -1767,13 +1767,11 @@
       },
       "login": {
         "title": "Desktop-App öffnen und anmelden",
-        "descPhone": "Öffnen Sie nach der Installation AI WorkDeck – der Anmeldebildschirm erscheint zuerst. Geben Sie Ihre Telefonnummer ein, um einen Code zu erhalten und sich anzumelden; Ihr Konto wird beim ersten Mal automatisch erstellt, eine separate Registrierung ist nicht erforderlich.",
-        "descEmail": "Öffnen Sie nach der Installation AI WorkDeck – der Anmeldebildschirm erscheint zuerst. Geben Sie Ihre E-Mail-Adresse ein, um einen Code zu erhalten und sich anzumelden; Ihr Konto wird beim ersten Mal automatisch erstellt, eine separate Registrierung ist nicht erforderlich.",
+        "descPhone": "Öffnen Sie AI WorkDeck – der Anmeldebildschirm erscheint zuerst. Melden Sie sich mit Ihrer Telefonnummer und Ihrem Passwort an. Neu hier? Wählen Sie „Noch kein Passwort? Jetzt festlegen“, bestätigen Sie Ihre Nummer und legen Sie ein Passwort fest.",
+        "descEmail": "Öffnen Sie AI WorkDeck – der Anmeldebildschirm erscheint zuerst. Melden Sie sich mit Ihrer E-Mail-Adresse und Ihrem Passwort an. Neu hier? Wählen Sie „Noch kein Passwort? Jetzt festlegen“, bestätigen Sie Ihre E-Mail-Adresse und legen Sie ein Passwort fest.",
         "mockSubtitle": "Die KI-Werkbank für Juristen und Dokumentenprofis",
         "phonePlaceholder": "Telefonnummer",
         "emailPlaceholder": "E-Mail-Adresse",
-        "codePlaceholder": "Verifizierungscode",
-        "sendCode": "Code senden",
         "button": "Anmelden",
         "note": "Nach der Anmeldung werden Ihr Credits-Guthaben, Ihre Käufe und Skills automatisch synchronisiert. Bis zu 3 Geräte können gleichzeitig mit demselben Konto verbunden sein – anzeigen oder trennen können Sie sie auf Ihrer Kontoseite.",
         "accountLink": "Zu Ihrem Konto gehen"
@@ -2203,9 +2201,9 @@
       "cta": "Deployment-Planer öffnen"
     },
     "heroSubtitleIntro": "Kostenloser Open-Source-Desktop. Personal Pro kostet in den ersten {months} Monaten {intro}/Monat (statt {standard}/Monat) inkl. Credits, 3 GB Cloud-Speicher und unbegrenzter Zwischenablage – Einmalkauf für 30 Tage.",
-    "heroTitleIntl": "Kostenlos mit Ihrem eigenen KI-Schlüssel. Oder nutzungsbasiert bezahlen.",
-    "heroSubtitleIntl": "Die Desktop-App ist Open Source und kostenlos, und Ihre Dateien bleiben auf Ihrem Rechner. Verbinden Sie Ihren eigenen KI-Anbieter, ohne uns etwas zu zahlen, oder laden Sie ein USD-Guthaben auf und zahlen Sie nur, was Sie nutzen. Kanzleien können eine dedizierte Bereitstellung anfragen.",
-    "metaDescriptionIntl": "AI WorkDeck ist mit Ihrem eigenen KI-Schlüssel kostenlos. Oder laden Sie ein USD-Guthaben auf und zahlen nutzungsbasiert. Dedizierte Bereitstellungen für Kanzleien werden individuell angeboten."
+    "heroTitleIntl": "Kostenlos und Open Source. Sie zahlen nur für die KI, die Sie nutzen.",
+    "heroSubtitleIntl": "Die Desktop-App ist Open Source und kostenlos, und Ihre Dateien bleiben auf Ihrem Rechner. KI und andere Online-Dienste bezahlen Sie nutzungsbasiert aus einem USD-Guthaben: Preis des Anbieters plus pauschal 20 %, ohne Abonnement. Soll alles im eigenen Haus bleiben? Hosten Sie die App selbst und binden Sie die KI an Ihre eigenen Modelle oder Ihr eigenes Modellkonto an; Kanzleien können auch eine dedizierte Bereitstellung anfragen.",
+    "metaDescriptionIntl": "AI WorkDeck ist kostenlos und Open Source. Bezahlen Sie KI nutzungsbasiert aus einem USD-Guthaben, oder hosten Sie selbst und nutzen Sie Ihre eigenen Modelle. Dedizierte Bereitstellungen für Kanzleien werden individuell angeboten."
   },
   "notFoundPage": {
     "code": "404",

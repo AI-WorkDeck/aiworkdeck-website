@@ -230,7 +230,7 @@ export function StartFlow({ lang, dict, release, releasesPageUrl }: StartFlowPro
                                                     onDownload={requestDownload}
                                                 />
                                             )}
-                                            {i === 1 && <LoginStep lang={lang} t={t.steps.login} />}
+                                            {i === 1 && <LoginStep lang={lang} t={t.steps.login} auth={dict.authPage} />}
                                         </div>
                                     )}
                                 </div>
@@ -535,7 +535,7 @@ function DownloadStep({
 
 /* ---------- 第二步：桌面端里登录 ---------- */
 
-function LoginStep({ lang, t }: { lang: Locale; t: any }) {
+function LoginStep({ lang, t, auth }: { lang: Locale; t: any; auth: any }) {
     // 大陆站用手机号验证码，国际站用邮箱验证码——两站的桌面端首屏登录方式不同
     const isPhone = SITE_ID === 'cn';
 
@@ -567,22 +567,19 @@ function LoginStep({ lang, t }: { lang: Locale; t: any }) {
                 <div className="px-5 py-5 text-center">
                     <p className="font-display text-base font-bold text-neutral-dark-bg">AI WorkDeck</p>
                     <p className="mt-0.5 text-[11.5px] text-neutral-gray-medium">{t.mockSubtitle}</p>
-                    <div className="mt-4 flex items-center gap-2">
-                        <div className="min-w-0 flex-1 rounded-lg border border-neutral-gray-light bg-neutral-gray-pale px-3 py-2 text-left">
-                            <span className="font-mono text-[11.5px] text-neutral-gray-medium">
-                                {isPhone ? t.phonePlaceholder : t.emailPlaceholder}
-                            </span>
-                        </div>
-                        <div className="flex-shrink-0 rounded-lg border border-king-forest/30 bg-king-mint-lightest/50 px-3 py-2 text-[11.5px] font-semibold text-king-forest">
-                            {t.sendCode}
-                        </div>
+                    {/* Same fields as the desktop sign-in: account + password, and the first-time link */}
+                    <div className="mt-4 rounded-lg border border-neutral-gray-light bg-neutral-gray-pale px-3 py-2 text-left">
+                        <span className="font-mono text-[11.5px] text-neutral-gray-medium">
+                            {isPhone ? t.phonePlaceholder : t.emailPlaceholder}
+                        </span>
                     </div>
                     <div className="mt-2.5 rounded-lg border border-neutral-gray-light bg-neutral-gray-pale px-3 py-2 text-left">
-                        <span className="font-mono text-[11.5px] text-neutral-gray-medium">{t.codePlaceholder}</span>
+                        <span className="font-mono text-[11.5px] text-neutral-gray-medium">{auth.passwordTab}</span>
                     </div>
                     <div className="mt-2.5 rounded-lg bg-king-forest px-3 py-2 text-[12.5px] font-bold text-white">
                         {t.button}
                     </div>
+                    <p className="mt-2.5 text-[11.5px] font-semibold text-king-forest">{auth.firstTime}</p>
                 </div>
             </div>
         </div>
