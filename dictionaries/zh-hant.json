@@ -21,8 +21,8 @@
       "egressRate": "{amount} / GiB"
     },
     "aiCreditsHint": "Credits 可直接用於 AI，無需再做一次「分配」。額度上限會隨餘額自動調整，用量按實際消耗從 Credits 扣減。",
-    "aiDisabled": "該密鑰已被止損禁用，請聯繫維護者。",
-    "aiKeyDesktopHint": "桌面端連接帳戶後會自動獲取此密鑰；也可複製後在桌面端 AI 設置裡手動配置。",
+    "aiDisabled": "該密鑰已被止損禁用，請聯絡維護者。",
+    "aiKeyDesktopHint": "桌面端連接帳戶後會自動獲取此密鑰；也可複製後在桌面端 AI 設定裡手動配置。",
     "aiKeyFailed": "獲取密鑰失敗，請稍後重試。",
     "aiKeyLabel": "專屬密鑰",
     "aiNoCredits": "Credits 餘額為空，充值後即可使用平台 AI。",
@@ -41,7 +41,7 @@
     "colTime": "時間",
     "copied": "已複製",
     "copy": "複製",
-    "creating": "創建訂單中…",
+    "creating": "建立訂單中…",
     "customAmount": "自定義金額（{currency}）",
     "customPlaceholder": "1 - {max}",
     "dangerBlockedAction": "寫信給 {email} 由人工辦理",
@@ -49,8 +49,8 @@
     "dangerButton": "註銷帳戶",
     "dangerCancel": "取消",
     "dangerConfirmBtn": "永久註銷帳戶",
-    "dangerConfirmHint": "確認無誤，請逐字輸入你的用戶名：",
-    "dangerConfirmPlaceholder": "輸入用戶名",
+    "dangerConfirmHint": "確認無誤，請逐字輸入你的使用者名稱：",
+    "dangerConfirmPlaceholder": "輸入使用者名稱",
     "dangerDeleting": "正在註銷…",
     "dangerDesc": "註銷後帳戶立即停用，無法恢復。點開會逐條列出後果，確認無誤再繼續。",
     "dangerDialogTitle": "確認註銷帳戶",
@@ -59,21 +59,21 @@
     "dangerDoneTitle": "帳戶已註銷",
     "dangerFacts": [
       "名下所有帳戶 Key 立即失效，用它連接的桌面端會斷開；平台 AI 通道一並作廢。",
-      "已購的 Skill、插件與功能無法再取回，也不會轉移到另一個站。",
+      "已購的 Skill、外掛與功能無法再取回，也不會轉移到另一個站。",
       "充值餘額不隨註銷退還：帳上還有可退餘額時需先來信申請退還，辦結後才能註銷；獎勵 Credits 按條款作廢。",
       "交易記錄因法定留存義務不能刪除，但會與你的身份解除關聯。",
-      "你提交的 Skill 與插件仍留在市集（作者顯示為「已註銷用戶」，付費的改為免費），已分發的副本不受影響。"
+      "你提交的 Skill 與外掛仍留在市集（作者顯示為「已註銷使用者」，付費的改為免費），已分發的副本不受影響。"
     ],
     "dangerFailed": "註銷未能完成，帳戶沒有任何改動，請稍後重試。",
     "dangerLead": "這一步不可撤銷。繼續之前請逐條確認：",
-    "dangerMismatch": "用戶名不一致，請與上面顯示的用戶名逐字相同。",
+    "dangerMismatch": "使用者名稱不一致，請與上面顯示的使用者名稱逐字相同。",
     "dangerTitle": "註銷帳戶",
-    "dangerUnauthorized": "會話已失效，刷新頁面重新登錄後再試。",
+    "dangerUnauthorized": "會話已失效，重新整理頁面重新登入後再試。",
     "developerCenterCta": "進入開發者中心",
-    "developerCenterDesc": "開源免費作品無需認證；申請認證後可為插件或套裝定價收款，並查看分成明細與提現記錄。",
-    "developerCenterTitle": "插件與 Skill 開發者中心",
-    "devicesGuide": "在桌面端或 Office 插件登錄後會自動出現在這裡。吊銷即斷開該設備，需要重新登錄。",
-    "devicesTitle": "已連接的設備",
+    "developerCenterDesc": "開源免費作品無需認證；申請認證後可為外掛或套裝定價收款，並查看分成明細與提現記錄。",
+    "developerCenterTitle": "外掛與 Skill 開發者中心",
+    "devicesGuide": "在桌面端或 Office 外掛登入後會自動出現在這裡。吊銷即斷開該裝置，需要重新登入。",
+    "devicesTitle": "已連接的裝置",
     "earningsHint": "你的付費 Skill / 外掛成交後，按 MARKETPLACE-TERMS 對淨收據抽成後約 85% 計入收益（非毛成交額直接×85%；入帳形態以產品與條款為準——Credits 可用性與是否可提現以帳戶頁及條款說明為準）。",
     "earningsPending": "待結算",
     "earningsSettled": "已結算",
@@ -103,7 +103,7 @@
     },
     "ledgerEmpty": "暫無流水記錄",
     "ledgerTitle": "餘額流水",
-    "loadFailed": "加載失敗，請刷新重試",
+    "loadFailed": "載入失敗，請重新整理重試",
     "membershipBonusLabel": "本檔充值贈送",
     "membershipGrowthLabel": "成長值",
     "membershipLevelLabel": "當前等級",
@@ -115,7 +115,7 @@
     "nameDefaultBannerCta": "填寫姓名",
     "nextExpiry": "{amount} 於 {date} 到期",
     "nextPage": "下一頁",
-    "noKeys": "還沒有已連接的設備",
+    "noKeys": "還沒有已連接的裝置",
     "payConfirmed": "支付成功，訂單已完成",
     "paymentResultTitle": "支付結果",
     "prevPage": "上一頁",
@@ -152,7 +152,7 @@
     "purchasesEmpty": "還沒有購買記錄",
     "purchasesTitle": "我的已購",
     "qrHint": "支付完成後將自動確認到帳",
-    "quotaSyncFailed": "額度同步未完成，請稍後刷新。",
+    "quotaSyncFailed": "額度同步未完成，請稍後重新整理。",
     "recharge": "儲值",
     "rechargeAmountLabel": "充值金額",
     "rechargeCanceled": "你在收銀臺取消了本次支付，未產生扣款。",
@@ -165,7 +165,7 @@
     "rechargeHintRedirect": "選擇充值金額，跳轉至 Stripe 收銀臺完成支付，回到本站後餘額即時更新",
     "rechargeInvalid": "請輸入 1 到 {max} 之間的整數金額（{currency}）",
     "rechargeOrderDesc": "錢包充值",
-    "rechargePendingHint": "如果你已完成支付，稍後刷新本頁即可看到結果；長時間未到帳請聯繫我們並提供訂單號。",
+    "rechargePendingHint": "如果你已完成支付，稍後重新整理本頁即可看到結果；長時間未到帳請聯絡我們並提供訂單號。",
     "rechargePendingTitle": "支付結果尚未確認",
     "rechargeRedirecting": "正在跳轉至 Stripe 收銀臺…",
     "rechargeScan": "請使用微信掃碼支付",
@@ -243,10 +243,10 @@
     "teamColTeam": "團隊",
     "teamCreateBtn": "建立",
     "teamCreateDesc": "填一個團隊名即可，你將成為團隊所有者。",
-    "teamCreateTitle": "創建團隊",
+    "teamCreateTitle": "建立團隊",
     "teamDashboardTitle": "使用看板",
     "teamEmailPlaceholder": "電子郵件地址",
-    "teamEmailRequiredHint": "先綁定郵箱才能創建或加入團隊",
+    "teamEmailRequiredHint": "先綁定電子郵件才能建立或加入團隊",
     "teamErrors": {
       "already_in_team": "你已經在一個團隊裡了，需要先退出目前團隊",
       "bad_code": "邀請碼不正確或已失效，請核對後重試",
@@ -256,7 +256,7 @@
       "email_required": "請先綁定信箱，才能建立或加入團隊",
       "forbidden": "你沒有執行這項操作的權限",
       "head_cannot_leave": "總部團隊不能退出律所",
-      "no_firm": "本團隊還沒有加入律所，暫時看不到全所數據",
+      "no_firm": "本團隊還沒有加入律所，暫時看不到全所資料",
       "owner_cannot_leave": "團隊所有者不能退出團隊，請先把團隊交給他人",
       "phone_required": "請先綁定手機號碼，才能建立或加入團隊"
     },
@@ -271,7 +271,7 @@
     "teamFirmLeaveConfirm": "退出後本團隊不再計入全所看板，確定退出？",
     "teamFirmNameLabel": "律所名稱",
     "teamFirmNamePlaceholder": "律所名稱",
-    "teamFirmNoneMemberHint": "本團隊還沒有加入律所。需要創建律所或併入律所時，請聯繫團隊所有者。",
+    "teamFirmNoneMemberHint": "本團隊還沒有加入律所。需要建立律所或併入律所時，請聯絡團隊所有者。",
     "teamFirmNoneOwnerHint": "把多個團隊併入同一間律所，總部團隊的管理者就能看到全所的使用情況。",
     "teamFirmRegenerateConfirm": "重置後舊的律所邀請碼立即失效，確定重置？",
     "teamFirmRemoveTeam": "移出律所",
@@ -280,11 +280,11 @@
     "teamFirmTitle": "律所",
     "teamHoursMinutes": "{h} 小時 {m} 分鐘",
     "teamInviteBtn": "送出邀請",
-    "teamInviteByEmailTitle": "按郵箱邀請",
+    "teamInviteByEmailTitle": "按電子郵件邀請",
     "teamInviteByPhoneTitle": "按手機號邀請",
     "teamInviteExpires": "有效期至 {date}",
     "teamInvitesEmpty": "暫時沒有收到邀請。可以讓團隊管理者按你的手機號邀請你，或者直接用邀請碼加入。",
-    "teamInvitesEmptyEmail": "暫時沒有收到邀請。可以讓團隊管理者按你的郵箱邀請你，或者直接用邀請碼加入。",
+    "teamInvitesEmptyEmail": "暫時沒有收到邀請。可以讓團隊管理者按你的電子郵件邀請你，或者直接用邀請碼加入。",
     "teamInvitesTitle": "收到的邀請",
     "teamJoinBtn": "加入",
     "teamJoinCodeHint": "把這串碼發給同事，他們在帳戶頁或桌面端輸入即可加入本團隊。",
@@ -307,11 +307,11 @@
     "teamMyRoleLabel": "我的角色",
     "teamNameLabel": "團隊名稱",
     "teamNamePlaceholder": "團隊名稱",
-    "teamNoTeamDesc": "組建團隊後可以邀請同事一起使用，並在這裡看到團隊的使用情況。團隊之上還能併入律所，由總部團隊統一查看全所數據。",
+    "teamNoTeamDesc": "組建團隊後可以邀請同事一起使用，並在這裡看到團隊的使用情況。團隊之上還能併入律所，由總部團隊統一查看全所資料。",
     "teamPendingEmpty": "沒有待接受的邀請",
     "teamPendingInvitesTitle": "待接受的邀請",
     "teamPhonePlaceholder": "手機號碼",
-    "teamPhoneRequiredHint": "先綁定手機號才能創建或加入團隊",
+    "teamPhoneRequiredHint": "先綁定手機號才能建立或加入團隊",
     "teamProjectsTitle": "專案明細",
     "teamRange7": "7 天",
     "teamRange30": "30 天",
@@ -319,7 +319,7 @@
     "teamRegenerate": "重設",
     "teamRegenerateConfirm": "重置後舊的團隊邀請碼立即失效，確定重置？",
     "teamRemove": "移除",
-    "teamRemoveConfirm": "移除後該成員將無法再查看團隊數據，確定移除？",
+    "teamRemoveConfirm": "移除後該成員將無法再查看團隊資料，確定移除？",
     "teamRename": "改名",
     "teamRevokeInvite": "撤銷",
     "teamRevokeInviteConfirm": "撤銷後對方將無法用這條邀請加入，確定撤銷？",
@@ -330,20 +330,20 @@
     "teamSavedFormula": "節省時間為估算：按每次 AI 編輯 {edit} 分鐘、每輪對話 {turn} 分鐘計算。",
     "teamScopeFirm": "全所",
     "teamScopeTeam": "本團隊",
-    "teamShareNamesHint": "項目名預設共享，可在這裡關閉：關閉後成員上報只帶匿名項目編號，看板裡不再顯示真實項目名。",
+    "teamShareNamesHint": "專案名預設共享，可在這裡關閉：關閉後成員上報只帶匿名專案編號，看板裡不再顯示真實專案名。",
     "teamShareNamesLabel": "共享專案名稱",
-    "teamSummaryEmpty": "還沒有使用數據。成員在桌面端開啟數據共享後，次日即可在這裡看到。",
+    "teamSummaryEmpty": "還沒有使用資料。成員在桌面端開啟資料共享後，次日即可在這裡看到。",
     "teamTeamsStatsTitle": "各團隊合計",
     "teamTitle": "我的團隊",
     "teamYou": "（我）",
-    "unnamedDevice": "未命名設備",
+    "unnamedDevice": "未命名裝置",
     "walletTitle": "錢包",
     "circleFirmBadge": "Circle 聯盟律所",
     "circleFirmDesc": "已綁定 {firm}（後綴：{suffix}）· 尊享 0 加成計費與 DeepSeek 專用額度（剩餘 {deepseekBalance}）",
-    "circleFirmBound": "已綁定 {firm}（用戶名後綴：{suffix}），已入帳 {amount} DeepSeek 專用額度",
+    "circleFirmBound": "已綁定 {firm}（使用者名稱後綴：{suffix}），已入帳 {amount} DeepSeek 專用額度",
     "qingtianTitle": "包晴天 · 晴天幣月度額度",
     "qingtianBalance": "本月剩餘 {remaining} / {monthly} 晴天幣",
-    "qingtianRatioHint": "換算比例：1 晴天幣 = {creditsPerCoin} Credits（當月有效，每月自動刷新）",
+    "qingtianRatioHint": "換算比例：1 晴天幣 = {creditsPerCoin} Credits（當月有效，每月自動重新整理）",
     "bqtMember": {
       "title": "包晴天會員",
       "levelLabel": "等級",
@@ -381,7 +381,7 @@
     "title": "我們怎麼用它辦案：公眾號實錄"
   },
   "authPage": {
-    "account": "用戶名或電子郵件",
+    "account": "使用者名稱或電子郵件",
     "agreeMid": "與",
     "agreePrefix": "註冊即表示你已閱讀並同意",
     "agreeSuffix": "，其中包含責任限制與仲裁條款。",
@@ -420,12 +420,12 @@
       "account_network_failed": "無法連接帳戶服務，請檢查網路後重試",
       "captcha_failed": "安全驗證未通過或已過期，請重試；載入不出來時可使用兼容驗證",
       "code_send_failed": "驗證碼未能發送，請稍後重試",
-      "email_conflict": "此電子郵件已屬於另一官網帳號，請使用該帳號的登入方式，或聯繫支持處理。",
+      "email_conflict": "此電子郵件已屬於另一官網帳號，請使用該帳號的登入方式，或聯絡支持處理。",
       "email_taken": "電子郵件已被註冊",
       "generic": "操作失敗，請稍後再試",
       "invalid_code": "驗證碼錯誤或已過期",
       "invalid_code_or_email": "電子郵件格式不正確，或驗證碼錯誤、已過期。",
-      "invalid_credentials": "用戶名或密碼不正確",
+      "invalid_credentials": "使用者名稱或密碼不正確",
       "invalid_email": "請輸入正確的電子郵件地址",
       "invalid_password": "密碼須為 8–72 個字符。",
       "invalid_phone": "請輸入正確的手機號碼",
@@ -434,16 +434,16 @@
       "already_bound_other": "每個帳號僅可綁定一個聯盟律所邀請碼",
       "bqt_not_lawyer": "僅支援包晴天認證律師帳號掃碼登入",
       "invalid_setup_token": "驗證已過期或已使用，請重新驗證身份。",
-      "invalid_username": "用戶名格式不合法",
+      "invalid_username": "使用者名稱格式不合法",
       "legacy_email_not_supported": "此遷移流程僅適用於大陸帳號。",
       "mail_not_configured": "本站暫未啟用電子郵件驗證碼，請改用密碼登入",
       "mail_not_supported_on_site": "本站不使用電子郵件驗證碼，請使用手機號碼",
       "mail_send_failed": "郵件未能發送，請稍後重試",
       "missing_fields": "請填寫完整",
       "not_found": "帳戶不存在",
-      "password_login_required": "此帳號已設置密碼，請返回密碼登入；忘記密碼請使用重置入口。",
+      "password_login_required": "此帳號已設定密碼，請返回密碼登入；忘記密碼請使用重置入口。",
       "password_mismatch": "兩次密碼不一致。",
-      "phone_binding_required": "該帳戶尚未綁定手機號碼，已超過綁定期限。請郵件聯繫 hi@aiworkdeck.com 處理",
+      "phone_binding_required": "該帳戶尚未綁定手機號碼，已超過綁定期限。請郵件聯絡 hi@aiworkdeck.com 處理",
       "phone_password_required": "請先驗證手機號碼、建立密碼並登入，再驗證原電子郵件。",
       "phone_taken": "該手機號碼已綁定其他帳戶",
       "register_use_email": "請用電子郵件 + 驗證碼建立帳戶",
@@ -455,21 +455,21 @@
       "too_many_attempts": "嘗試次數過多，請 15 分鐘後再試",
       "too_many_requests": "驗證碼請求過於頻繁，請幾分鐘後再試",
       "unauthorized": "登入已過期，請重新登入後繼續。",
-      "username_taken": "用戶名已被佔用",
+      "username_taken": "使用者名稱已被佔用",
       "verified_email_conflict": "當前帳號已驗證其他電子郵件，不能改綁。請使用正確的手機號碼帳號。"
     },
     "firstTime": "還沒有密碼？設定密碼",
     "firstTimeHint": "第一次使用，或在桌面端建立的帳號還沒有密碼：先驗證手機號碼或電子郵件，再設定密碼。",
     "forgotPassword": "忘記密碼？",
     "legacyEmailAccountLink": "打開帳戶頁",
-    "legacyEmailComplete": "原電子郵件已驗證。現在返回 App，選擇電子郵件登入，使用原電子郵件和剛設置的密碼，繼續使用原帳號的數據。",
+    "legacyEmailComplete": "原電子郵件已驗證。現在返回 App，選擇電子郵件登入，使用原電子郵件和剛設定的密碼，繼續使用原帳號的資料。",
     "legacyEmailIntro": "原來使用電子郵件登入手機端？請先在本頁驗證手機號碼、建立密碼並登入，再驗證原電子郵件。完成這兩步後再返回 App，先不要在 App 用新手機號碼登入。",
     "legacyEmailLabel": "原來登入手機端的電子郵件",
     "legacyEmailPhoneReady": "手機號碼 {phone} 已登入，接下來驗證你原來登入手機端的電子郵件。",
     "legacyEmailRetryLogin": "切換手機號碼 / 重新登入",
     "legacyEmailStay": "請留在此頁完成電子郵件驗證，再返回 App 使用原電子郵件和新密碼登入。驗證完成前，不要先在 App 使用新手機號碼登入。",
     "legacyEmailSubmit": "驗證並綁定原電子郵件",
-    "legacyEmailTitle": "驗證原電子郵件，保留手機端原數據",
+    "legacyEmailTitle": "驗證原電子郵件，保留手機端原資料",
     "legacyEmailUnavailable": "電子郵件驗證服務暫不可用，請稍後回到本頁繼續。完成電子郵件驗證前，請不要在 App 用新手機號碼登入。",
     "legacyNotice": "存量電子郵件帳號可在 {date} 前繼續用密碼登入；登入後需要綁定手機號碼，此後統一用手機號碼登入。",
     "legacyPhonePasswordSaved": "手機號碼密碼已保存。請先在本頁用手機號碼和新密碼登入，然後繼續驗證原電子郵件；完成前不要返回 App 登入。",
@@ -478,7 +478,7 @@
     "loginTab": "登入",
     "loginTitle": "登入",
     "logout": "登出",
-    "mailAccount": "電子郵件 / 原用戶名",
+    "mailAccount": "電子郵件 / 原使用者名稱",
     "mailCode": "電子郵件驗證碼",
     "mailHint": "未註冊的電子郵件將直接建立帳戶，無需單獨註冊。",
     "mailLegacyNotice": "存量帳號仍可用密碼登入。用電子郵件驗證碼登入會同時確認這個地址屬實——帳戶與購買相關的通知都發往它。",
@@ -493,7 +493,7 @@
     "passwordSaved": "密碼已保存，請使用帳號和新密碼登入。如從 App 打開本頁，可返回 App 登入。",
     "passwordTab": "密碼登入",
     "phone": "手機號碼",
-    "phoneAccount": "手機號碼 / 原用戶名 / 電子郵件",
+    "phoneAccount": "手機號碼 / 原使用者名稱 / 電子郵件",
     "phoneHint": "未註冊的手機號碼將直接建立帳戶，無需單獨註冊。",
     "phoneLoginBtn": "登入 / 註冊",
     "phoneTab": "手機號碼登入",
@@ -509,14 +509,14 @@
     "reviewLogin": "應用程式商店審核",
     "savePassword": "保存密碼",
     "sendCode": "取得驗證碼",
-    "setupHint": "身份已驗證。設置密碼後，才能完成首次登入。",
+    "setupHint": "身份已驗證。設定密碼後，才能完成首次登入。",
     "siteNoticeBody": "這是 {site}的帳戶。{other}是另一套獨立的帳戶體系：帳戶、Credits 餘額、已購權益與帳戶 Key 都不互通，需要在那邊另行註冊。",
     "siteNoticeLink": "前往 {other}",
     "smsCode": "短信驗證碼",
     "submitNew": "提交新 Skill",
     "submitting": "請稍候…",
     "termsLink": "《服務條款》",
-    "username": "用戶名（3-30 位小寫字母/數字/連字符）",
+    "username": "使用者名稱（3-30 位小寫字母/數字/連字符）",
     "verifyContinue": "驗證並繼續",
     "viewPublic": "查看公開主頁",
     "welcome": "你好，"
@@ -605,12 +605,12 @@
         "subtitle": "人不二過，事不二做",
         "title": "不二 Agent"
       },
-      "demoDisclaimer": "界面為功能示意，非真實客戶數據",
+      "demoDisclaimer": "界面為功能示意，非真實客戶資料",
       "ecosystem": {
-        "desc1": "從盡調到轉錄，從行業到專項數據。海納百川，無遠弗屆。",
+        "desc1": "從盡調到轉錄，從行業到專項資料。海納百川，無遠弗屆。",
         "desc2": "開放之境，共生共榮。",
         "subtitle": "隨需而變，無限可能",
-        "title": "插件生態"
+        "title": "外掛生態"
       },
       "oneStop": {
         "desc1": "語音轉錄、視像識別、文書經緯,萬象森羅，一案盡攬。",
@@ -678,8 +678,8 @@
           "desc": "盡調、轉錄、脫敏，隨需裝載",
           "detail": "盡職調查，已就緒",
           "index": "03",
-          "status": "正在裝載插件",
-          "title": "插件生態"
+          "status": "正在裝載外掛",
+          "title": "外掛生態"
         }
       ],
       "cta": {
@@ -690,7 +690,7 @@
         "source": "在 GitHub 查看源碼",
         "start": "立即開始使用"
       },
-      "description": "文書編輯、AI 起草、證據核查、插件生態，收攏進同一張案頭。本地優先，文檔不出本機。",
+      "description": "文書編輯、AI 起草、證據核查、外掛生態，收攏進同一張案頭。本地優先，文件不出本機。",
       "lead": "寫、看、查、管，一站搞定。",
       "stats": [
         {
@@ -702,7 +702,7 @@
           "value": "Windows · macOS"
         },
         {
-          "label": "數據",
+          "label": "資料",
           "value": "本地優先"
         }
       ],
@@ -723,7 +723,7 @@
       "starAria": "在 GitHub 上為 AI WorkDeck 按 Star",
       "articles": "文章",
       "chatroom": "聊天室",
-      "closeNavAria": "關閉導航菜單",
+      "closeNavAria": "關閉導航選單",
       "community": "社區",
       "communityEdition": "社區版",
       "deployment": "本地部署",
@@ -737,7 +737,7 @@
       "mainNavAria": "主導航",
       "marketplace": "外掛市集",
       "mobileNavAria": "移動導航",
-      "openNavAria": "打開導航菜單",
+      "openNavAria": "打開導航選單",
       "plugins": "外掛",
       "pricing": "定價",
       "product": "產品",
@@ -745,12 +745,12 @@
       "signInAccount": "登入帳號",
       "skills": "技能市集",
       "start": "開始使用",
-      "submit": "創建並提交 Skill"
+      "submit": "建立並提交 Skill"
     },
     "pricing": {
       "community": {
         "cta": "免費開始使用",
-        "desc": "AGPLv3 開源，軟件免費，AI 等服務按用量計費",
+        "desc": "AGPLv3 開源，軟體免費，AI 等服務按用量計費",
         "perk1": "全部內核功能開放，AGPLv3 許可，桌面端免費使用",
         "perk2": "AI 對話、語音轉寫、OCR 等由平台統一採購，無需自備各家帳號",
         "perk3": "統一加收 20%：折中覆蓋各支付渠道手續費，官網充值最划算",
@@ -776,8 +776,8 @@
         "cta": "獲取授權",
         "desc": "律所與企業內部部署，免除 AGPL 開源義務",
         "mailSubject": "商業授權諮詢",
-        "perk1": "修改版內部網絡部署，無源碼開放義務",
-        "perk2": "閉源插件與私有集成的完整法律授權",
+        "perk1": "修改版內部網路部署，無源碼開放義務",
+        "perk2": "閉源外掛與私有整合的完整法律授權",
         "perk3": "按機構人數分檔計價，見下方檔位表",
         "perk4": "含年度更新與基礎技術支持",
         "price": "{price} / 年 起",
@@ -787,7 +787,7 @@
         "cta": "聯絡銷售",
         "desc": "將 AI WorkDeck 內核嵌入你的產品，服務你的客戶",
         "mailSubject": "OEM 授權諮詢",
-        "perk1": "面向法律科技公司與集成商的再分發權利",
+        "perk1": "面向法律科技公司與整合商的再分發權利",
         "perk2": "保底年費 + 相關收入分成，結構面談",
         "perk3": "終端客戶無 AGPL 義務",
         "perk4": "品牌與認證計畫（\"Powered by AI WorkDeck\"）可選",
@@ -807,7 +807,7 @@
         "colSize": "機構規模",
         "feePerYear": "{fee} / 年",
         "feePerYearFrom": "{fee} / 年 起",
-        "note": "人數按可存取系統的執業人員與員工總數計算。實施部署、客製開發與企業插件按 {rate} / 人天另行報價。",
+        "note": "人數按可存取系統的執業人員與員工總數計算。實施部署、客製開發與企業外掛按 {rate} / 人天另行報價。",
         "rows": [
           {
             "note": "小型律所與團隊",
@@ -862,7 +862,7 @@
       "connecting": "連接中……",
       "empty": "還沒有人說話，來開個頭。",
       "errors": {
-        "empty": "消息不能為空",
+        "empty": "訊息不能為空",
         "generic": "操作失敗，請稍後再試",
         "rate_limited": "發得太快了，稍等幾秒",
         "service_unavailable": "服務正在更新，請稍後重試",
@@ -871,11 +871,11 @@
       },
       "eyebrow": "Chatroom",
       "loginCta": "去登入",
-      "loginHint": "登錄後即可發言。",
-      "metaDescription": "AI WorkDeck 聊天室：全站同一間房，律師與法律科技同好實時聊起草、插件與 Skill。登錄即可發言，消息只保留最近 500 條。",
+      "loginHint": "登入後即可發言。",
+      "metaDescription": "AI WorkDeck 聊天室：全站同一間房，律師與法律科技同好即時聊起草、外掛與 Skill。登入即可發言，訊息只保留最近 500 條。",
       "placeholder": "說點什麼……",
       "send": "傳送",
-      "subtitle": "全站同一間房，聊什麼都行。消息只保留最近 500 條，說過就隨風。",
+      "subtitle": "全站同一間房，聊什麼都行。訊息只保留最近 500 條，說過就隨風。",
       "title": "聊天室"
     },
     "chatroomCta": "進聊天室",
@@ -895,7 +895,7 @@
       },
       "eyebrow": "New post",
       "loginCta": "去登入",
-      "loginHint": "登錄後即可發帖。",
+      "loginHint": "登入後即可發帖。",
       "submit": "發佈",
       "submitting": "發布中",
       "tagLabel": "標籤（可選）",
@@ -951,17 +951,17 @@
     "typeThread": "討論"
   },
   "deploymentPage": {
-    "metaDescription": "選擇團隊人數、模型部署方式與配套服務，查看服務器、人員要求和費用明細。基礎設施與第三方服務由客戶自行採購承擔。",
+    "metaDescription": "選擇團隊人數、模型部署方式與配套服務，查看伺服器、人員要求和費用明細。基礎設施與第三方服務由客戶自行採購承擔。",
     "metaTitle": "本地部署要求與預算"
   },
   "developerPage": {
     "applyBtn": "提交已保存的資格申請",
-    "contactChannelLabel": "私有聯繫渠道",
-    "contactDetailsLabel": "聯繫方式",
+    "contactChannelLabel": "私有聯絡渠道",
+    "contactDetailsLabel": "聯絡方式",
     "contactOther": "其他（請註明渠道）",
     "contactPhone": "電話",
-    "contactVerificationPending": "待核驗（管理員可人工聯繫確認）",
-    "contactVerificationPrefix": "聯繫核驗：",
+    "contactVerificationPending": "待核驗（管理員可人工聯絡確認）",
+    "contactVerificationPrefix": "聯絡核驗：",
     "developerNameLabel": "開發者名稱",
     "errors": {
       "contact_verification_required": "聯絡管道尚未驗證。",
@@ -986,14 +986,14 @@
     "introP2": "免費開源外掛，登入即可提交，無需權杖。 這裡用於收費或閉源投稿；聯絡資訊僅本人與管理員可見，每個外掛版本仍需安全審核與簽名。",
     "loadFailedRetry": "讀取失敗，重新載入",
     "loadingProfile": "正在讀取資料…",
-    "myPluginsHeading": "我的插件與實際權限",
+    "myPluginsHeading": "我的外掛與實際權限",
     "myPluginsIntro": "免費開源外掛，登入即可提交，無需權杖。 收費或閉源投稿，需先通過開發者資格審核。",
     "newTokenLabel": "新令牌（僅此一次）",
     "noPermissions": "無權限",
     "noSubmissionsYet": "尚無投稿。",
     "organizationNameLabel": "組織名稱（組織必填）",
-    "permissionsHint": "插件實際聲明的權限必須在資格申請範圍內；新增權限需更新資料重新審核。",
-    "permissionsLegend": "預計使用的插件權限",
+    "permissionsHint": "外掛實際聲明的權限必須在資格申請範圍內；新增權限需更新資料重新審核。",
+    "permissionsLegend": "預計使用的外掛權限",
     "planLabel": "準備開發什麼、為什麼需要這些權限",
     "profileHeading": "開發者資料",
     "profileNotice": "提交修改會重新進入資格審核；已暫停資格需由管理員恢復。已上架版本不會因此自動下架。",
@@ -1038,19 +1038,19 @@
     "devEligibilityTitle": "誰可以發布外掛",
     "downloadTemplate": "下載模板工程",
     "eyebrow": "外掛開發",
-    "goSubmit": "去提交插件",
-    "intro": "外掛給 AI WorkDeck 增加新的工具，讓 AI 在對話裡能調用你寫的代碼。下面這份指南從一個能跑通的最小例子開始，到提交上架為止。",
-    "metaDescription": "如何為 AI WorkDeck 開發一個插件：從最小示例到提交上架。",
-    "metaTitle": "插件開發指南",
+    "goSubmit": "去提交外掛",
+    "intro": "外掛給 AI WorkDeck 增加新的工具，讓 AI 在對話裡能調用你寫的程式碼。下面這份指南從一個能跑通的最小例子開始，到提交上架為止。",
+    "metaDescription": "如何為 AI WorkDeck 開發一個外掛：從最小示例到提交上架。",
+    "metaTitle": "外掛開發指南",
     "pluginLabel": "外掛",
     "s1Lead": "這兩個東西經常被搞混，選錯會白做很多工作。區別只有一句話：",
-    "s1LeadStrong": "要寫代碼才能辦到的事用插件，靠說清楚就能辦到的事用 Skill。",
+    "s1LeadStrong": "要寫程式碼才能辦到的事用外掛，靠說清楚就能辦到的事用 Skill。",
     "s1P2a": "Skill 是純文本（提示詞 + 觸發詞），提交即用、無需審核，寫起來快得多。如果你的需求 Skill 能滿足，",
     "s1P2b": "，不用往下讀了。",
     "s1P2Link": "直接去寫一個 Skill",
     "s1Rows": [
       [
-        "調用某個外部系統的接口取數據",
+        "調用某個外部系統的接口取資料",
         "plugin"
       ],
       [
@@ -1068,19 +1068,19 @@
     ],
     "s1ThScenario": "場景",
     "s1ThUse": "該用",
-    "s1Title": "先想清楚：你需要的是插件還是 Skill",
-    "s2P1a": "插件是一個 Java 工程，編譯出 JAR，配一份 ",
+    "s1Title": "先想清楚：你需要的是外掛還是 Skill",
+    "s2P1a": "外掛是一個 Java 工程，編譯出 JAR，配一份 ",
     "s2P1b": "，打成 zip 提交。需要 JDK 21 和 Maven。",
     "s2P2": "下載上面的模板工程，它本身就是一個能跑的完整例子。核心只有兩個文件。第一個是工具類：",
     "s2P3": "，它直接決定 AI 會不會在恰當的時候調用你的工具。寫「什麼時候該用它」比寫「這個方法做了什麼」有用得多——AI 需要判斷的是前者。",
     "s2P3Strong": "@Tool 裡的描述是寫給 AI 看的",
-    "s2P4": "第二個是 manifest.json，描述這個插件是什麼：",
+    "s2P4": "第二個是 manifest.json，描述這個外掛是什麼：",
     "s2P5a": "：",
     "s2P5b": " 要等於 Java 裡的方法名，不一致的話工具註冊不上，AI 看不見它。",
     "s2P5Strong": "工具名必須兩邊對上",
     "s2P6": "然後打包：",
     "s2P7": "注意 zip 裡是文件本身，不要多套一層目錄——解壓出來應該直接看到 manifest.json，而不是一個文件夾。",
-    "s2Title": "五分鐘跑通第一個插件",
+    "s2Title": "五分鐘跑通第一個外掛",
     "s3P1a": "不用等審核。把 ",
     "s3P1b": " 整個目錄複製到本機的外掛目錄，重啟 AI WorkDeck 就能看到：",
     "s3P2": "在「外掛市集 → 已安裝」裡應該出現你的外掛。啟用後，在對話中提一個會用到你工具的問題，看 AI 是否調用了它。沒調用的話，八成是 @Tool 的描述沒寫清楚使用時機。",
@@ -1088,7 +1088,7 @@
     "s4Rows": [
       [
         "id",
-        "全局唯一，小寫字母數字連字符。一旦上架就不能改——它是升級時認定「同一個插件」的依據。"
+        "全局唯一，小寫字母數字連字符。一旦上架就不能改——它是升級時認定「同一個外掛」的依據。"
       ],
       [
         "version",
@@ -1096,15 +1096,15 @@
       ],
       [
         "name / description",
-        "展示在外掛市集卡片上。描述寫清楚替用戶做什麼，別寫技術實現。"
+        "展示在外掛市集卡片上。描述寫清楚替使用者做什麼，別寫技術實現。"
       ],
       [
         "author / homepage",
-        "作者與項目主頁，可選但建議填，用戶會據此判斷是否信任。"
+        "作者與專案主頁，可選但建議填，使用者會據此判斷是否信任。"
       ],
       [
         "permissions",
-        "這個插件會用到的能力，見下一節。"
+        "這個外掛會用到的能力，見下一節。"
       ],
       [
         "tools",
@@ -1118,40 +1118,40 @@
     "s4ThDesc": "說明",
     "s4ThField": "字段",
     "s4Title": "manifest.json 每個字段的意思",
-    "s5BoxP1": "外掛與主程序在同一個進程裡運行，技術上攔不住未聲明的行為——聲明瞭空權限的工具，代碼裡照樣能讀文件。所以這不是運行時限制，而是",
-    "s5BoxP2": "：我們會拿它跟 JAR 的靜態掃描結果交叉核對。聲明瞭沒有 network 卻引用網絡 API，或者用到了卻沒聲明，都會被駁回。",
+    "s5BoxP1": "外掛與主程序在同一個進程裡運行，技術上攔不住未聲明的行為——聲明瞭空權限的工具，程式碼裡照樣能讀文件。所以這不是運行時限制，而是",
+    "s5BoxP2": "：我們會拿它跟 JAR 的靜態掃描結果交叉核對。聲明瞭沒有 network 卻引用網路 API，或者用到了卻沒聲明，都會被駁回。",
     "s5BoxStrong": "審核依據",
     "s5BoxTitle": "這不是沙箱",
     "s5Intro": "四個可選值，按需聲明：",
     "s5Perms": [
       [
         "file_read",
-        "讀取項目文件"
+        "讀取專案文件"
       ],
       [
         "file_write",
-        "創建、修改或刪除文件"
+        "建立、修改或刪除文件"
       ],
       [
         "network",
-        "訪問外部網絡"
+        "訪問外部網路"
       ],
       [
         "editor",
-        "操作文檔編輯器"
+        "操作文件編輯器"
       ]
     ],
     "s5Title": "permissions：如實聲明，審核會交叉核對",
     "s6P1": "每個版本都要人工過一遍，通常一到兩個工作日。提交後自動掃描先跑一遍，掃描報告和你的 permissions 聲明會一起擺在審核臺上。",
     "s6P2": "通過後平台會用私鑰對整個包簽名，使用者端安裝時驗簽。這意味著上架之後任何人（包括我們）都無法在不重新簽名的情況下改動包內容。",
-    "s6P3": "如果上架後發現問題，我們會撤銷該版本。用戶端拉到撤銷名單後會自動停用它並提示使用者。",
+    "s6P3": "如果上架後發現問題，我們會撤銷該版本。使用者端拉到撤銷名單後會自動停用它並提示使用者。",
     "s6RejectLead": "這些情況會被直接駁回：",
     "s6Rejects": [
       "聲明的 permissions 與實際調用的 API 對不上",
       "自定義 TrustManager 或以其他方式繞過證書校驗",
-      "硬編碼的 IP 地址、明文 HTTP 外傳數據",
-      "通過反射訪問主程序內部對象（數據庫連接、配置服務等）",
-      "代碼混淆、加殼，或任何讓人看不懂它在幹什麼的處理",
+      "硬編碼的 IP 地址、明文 HTTP 外傳資料",
+      "通過反射訪問主程序內部對象（資料庫連接、配置服務等）",
+      "程式碼混淆、加殼，或任何讓人看不懂它在幹什麼的處理",
       "版本號沒有比上一版高"
     ],
     "s6Title": "審核會看什麼",
@@ -1176,7 +1176,7 @@
     "s8ThResult": "回傳",
     "s8Title": "Web 外掛：用 HTML/JS 做介面",
     "skillLabel": "Skill",
-    "title": "寫一個插件"
+    "title": "寫一個外掛"
   },
   "featureRequestPage": {
     "errors": {
@@ -1186,14 +1186,14 @@
       "server": "提交失敗，請稍後重試。"
     },
     "fields": {
-      "contact": "聯繫方式（選填）",
-      "contactHint": "僅用於就這條需求與你聯繫，不會用於任何營銷用途。",
-      "contactPlaceholder": "郵箱 / 手機號 / 微信號",
+      "contact": "聯絡方式（選填）",
+      "contactHint": "僅用於就這條需求與你聯絡，不會用於任何營銷用途。",
+      "contactPlaceholder": "電子郵件 / 手機號 / 微信號",
       "text": "需求描述",
       "textPlaceholder": "例如：希望合同審查能按我們所裡的審查清單逐條出具意見……場景越具體，越容易被排上日程。"
     },
     "floatLabel": "提交需求",
-    "intro": "寫下你在工作中希望產品解決的問題或想要的功能。每一條提交都會直接進入我們的分診隊列，由維護團隊逐條閱讀；留下聯繫方式的話，被採納或需要進一步瞭解時我們會聯繫你。",
+    "intro": "寫下你在工作中希望產品解決的問題或想要的功能。每一條提交都會直接進入我們的分診隊列，由維護團隊逐條閱讀；留下聯絡方式的話，被採納或需要進一步瞭解時我們會聯絡你。",
     "privacyLink": "隱私權政策",
     "privacyNote": "提交內容的處理方式見",
     "submit": "提交",
@@ -1225,7 +1225,7 @@
         "videoLoading": "正在載入影片…",
         "videoError": "影片暫時無法播放，可能是網路較慢或連結已過期。",
         "videoRetry": "重試",
-        "introOffer": "新用戶專享：個人 Pro 首 {months} 個月 {intro}/月（原價 {standard}/月，不自動扣款） →"
+        "introOffer": "新使用者專享：個人 Pro 首 {months} 個月 {intro}/月（原價 {standard}/月，不自動扣款） →"
       },
       "facts": {
         "license": "開源授權",
@@ -1271,7 +1271,7 @@
           {
             "title": "和社群一起擴充",
             "body": "Skill、外掛、MCP 在外掛市場一鍵安裝；把團隊的方法、檢核清單、範本裝進工作台，人人都能重複使用。你也可以上架自己的作品，付費作品作者分得淨收入的 85%。",
-            "alt": "插件市場：Skill、插件與 MCP 列表和詳情頁"
+            "alt": "外掛市場：Skill、外掛與 MCP 列表和詳情頁"
           }
         ]
       },
@@ -1307,9 +1307,9 @@
     }
   },
   "marketplacePage": {
-    "eyebrow": "外掛市集 · 與桌面端實時同步",
+    "eyebrow": "外掛市集 · 與桌面端即時同步",
     "metaDescription": "Skill 是 AI 完成任務時採用的工作方法。 Plugin 擴充桌面端本身的功能與介面。 MCP 將外部工具和資料接入 AI 對話與任務。",
-    "statPlugins": "個插件",
+    "statPlugins": "個外掛",
     "subtitle": "Skill 是 AI 完成任務時採用的工作方法。 Plugin 擴充桌面端本身的功能與介面。 MCP 將外部工具和資料接入 AI 對話與任務。",
     "tabPlugins": "外掛",
     "tabSkills": "技能",
@@ -1346,7 +1346,7 @@
     "title": "充得多、用得多，等級越高送得越多。",
     "yourStatusGrowth": "成長值",
     "yourStatusLevel": "當前等級",
-    "yourStatusLoginHint": "登錄後查看你的等級與成長進度",
+    "yourStatusLoginHint": "登入後查看你的等級與成長進度",
     "yourStatusMax": "已是最高等級",
     "yourStatusNext": "距離{name}還需 {points} 成長值",
     "yourStatusTitle": "你的當前等級"
@@ -1364,7 +1364,7 @@
     "filesPicked": "已選擇 {n} 個文件",
     "formatIntro": "先貼 manifest 草案，再選擇草案裡聲明的全部組件歸檔；歸檔逐個流式上傳，全部傳完後才做受理檢查。",
     "formatTitle": "提交物與流程",
-    "intro": "原生資源包裝的是被代碼消費的重資源：腳本運行時、平台原生二進制、靜態資產。它不進 JVM，也不含提示詞，由聲明依賴它的外掛在安裝時聯動下載。每個版本經人工審核後由平台簽名分發。",
+    "intro": "原生資源包裝的是被程式碼消費的重資源：腳本運行時、平台原生二進位、靜態資產。它不進 JVM，也不含提示詞，由聲明依賴它的外掛在安裝時聯動下載。每個版本經人工審核後由平台簽名分發。",
     "manifestHint": "components 裡每一項需含 name / platforms / archive / size / sha256 / unpackDir。",
     "manifestLabel": "manifest 草案（JSON）",
     "manifestPlaceholder": "{\n  \"schema\": 1,\n  \"id\": \"my-pack\",\n  \"version\": \"1.0.0\",\n  \"minAppVersion\": \"0.21.0\",\n  \"engineApi\": 1,\n  \"components\": [ ... ]\n}",
@@ -1372,7 +1372,7 @@
     "mineTitle": "我的資源包提交",
     "missingFiles": "以下組件歸檔沒有選擇：{files}",
     "networkError": "網路錯誤，請重試",
-    "noteHint": "說明這個資源包裝了什麼、被哪個插件消費、二進制從哪來、怎麼復現構建。這是審核的主要依據。",
+    "noteHint": "說明這個資源包裝了什麼、被哪個外掛消費、二進位從哪來、怎麼復現構建。這是審核的主要依據。",
     "noteLabel": "用途自述",
     "okMsg": "已收到 {id} v{version}，進入人工審核佇列。",
     "phaseFinalize": "正在做受理檢查（逐條目防護與哈希對帳）…",
@@ -1396,35 +1396,35 @@
     "tabPlugin": "JAR 外掛",
     "title": "提交原生資源包",
     "uploading": "提交中…",
-    "warnBody": "Python 腳本會被解釋執行、原生二進制會被 spawn，信任等級與 JAR 外掛相同。原生二進制沒有可交叉驗證的面，審核主要看來源可信度——請在用途自述裡給出上遊開源地址與可復現的構建腳本，拿不準的提交會被駁回。",
+    "warnBody": "Python 腳本會被解釋執行、原生二進位會被 spawn，信任等級與 JAR 外掛相同。原生二進位沒有可交叉驗證的面，審核主要看來源可信度——請在用途自述裡給出上遊開源地址與可復現的構建腳本，拿不準的提交會被駁回。",
     "warnTitle": "資源包裡的內容會被宿主直接運行。"
   },
   "pluginsPage": {
-    "communityTitle": "社區插件",
-    "develop": "開發插件",
+    "communityTitle": "社區外掛",
+    "develop": "開發外掛",
     "emptyBody": "外掛是一個 Java 工程，編譯出 JAR 加一份 manifest.json 打包提交。每個版本經自動掃描與人工審核後由平台簽名，客戶端安裝時驗簽。",
-    "emptyTitle": "還沒有社區插件",
-    "featureIntro": "解除桌面端內置小功能的免費額度限制。購買後在桌面端設置裡粘貼帳戶 Key 即可生效。",
+    "emptyTitle": "還沒有社區外掛",
+    "featureIntro": "解除桌面端內置小功能的免費額度限制。購買後在桌面端設定裡粘貼帳戶 Key 即可生效。",
     "featureTag": "一次購買，帳戶內永久有效",
     "featureTitle": "功能解鎖",
-    "footNote": "插件與宿主同進程運行，擁有與應用相同的權限。安裝前請確認來源可信——上方的權限標籤是作者的自述，審核會交叉核對，但不構成運行時限制。",
+    "footNote": "外掛與宿主同進程運行，擁有與應用相同的權限。安裝前請確認來源可信——上方的權限標籤是作者的自述，審核會交叉核對，但不構成運行時限制。",
     "guide": "看開發指南",
     "howToDevelop": "如何開發",
     "installsSuffix": "次安裝",
-    "intro": "外掛為 AI WorkDeck 帶來新的工具與界面。與 Skill 不同，外掛包含可執行代碼，因此每個版本都經過人工審核並由平台簽名，客戶端安裝時驗簽。",
-    "metaDescription": "AI WorkDeck 外掛市集：Word/WPS 加載項、OCR、轉寫、盡職調查等擴展，逐版本人工審核並簽名，律師裝進桌面端即可用於法律實務。",
+    "intro": "外掛為 AI WorkDeck 帶來新的工具與界面。與 Skill 不同，外掛包含可執行程式碼，因此每個版本都經過人工審核並由平台簽名，客戶端安裝時驗簽。",
+    "metaDescription": "AI WorkDeck 外掛市集：Word/WPS 載入項、OCR、轉寫、盡職調查等擴展，逐版本人工審核並簽名，律師裝進桌面端即可用於法律實務。",
     "officialIntro": "我們自己開發和維護的外掛。大多數隨桌面版一起發佈、常駐左欄，全部經外掛市集自動更新。第三方外掛能達到的深度與它們相同。",
     "officialTag": "由 AI WorkDeck 開發並簽署",
-    "officialTitle": "官方插件",
+    "officialTitle": "官方外掛",
     "permissions": {
       "editor": "編輯器",
       "file_read": "讀取文件",
       "file_write": "寫入文件",
-      "network": "網絡訪問",
+      "network": "網路訪問",
       "ai": "AI 調用",
       "im": "聊天、會話成員與聊天附件",
-      "notifications": "消息通知",
-      "lawfirm": "團隊信息",
+      "notifications": "訊息通知",
+      "lawfirm": "團隊資訊",
       "speech": "語音合成與錄音",
       "tasks": "日程與事項",
       "clipboard": "剪貼板",
@@ -1503,7 +1503,7 @@
   "pricingPage": {
     "cardsAria": "訂閱檔位",
     "commercialBrief": {
-      "body": "在 AGPL 之外，若你需要閉源交付、專有插件、SaaS 運營或官方認證標識，請洽談商業授權與 Certified 計劃（部署認證、插件認證、夥伴計劃等）。",
+      "body": "在 AGPL 之外，若你需要閉源交付、專有外掛、SaaS 運營或官方認證標識，請洽談商業授權與 Certified 計劃（部署認證、外掛認證、夥伴計劃等）。",
       "cta": "郵件諮詢 hi@aiworkdeck.com",
       "disclaimer": "本頁不構成商標或認證授予；Certified / 商標使用以書面協議為準。",
       "eyebrow": "Licensing",
@@ -1515,15 +1515,15 @@
       "label": "常見問題 · 怎麼收費"
     },
     "deploymentBanner": {
-      "body": "按人數、模型部署方式和配套服務，在線測算服務器、人員與首年投入。",
+      "body": "按人數、模型部署方式和配套服務，在線測算伺服器、人員與首年投入。",
       "cta": "打開部署計算器",
       "eyebrow": "PRIVATE DEPLOYMENT",
-      "title": "需要部署在您自己的服務器與網絡？"
+      "title": "需要部署在您自己的伺服器與網路？"
     },
     "eyebrow": "定價",
     "faq": {
       "community": {
-        "a": "官網下載的就是社區版，與商業授權客戶拿到的是同一個安裝包——差別在法律授權，不在功能。個人使用、以及按 AGPLv3 條件使用的團隊都不需要購買授權。只有當機構要部署修改版而不公開源碼、或要做閉源插件與私有集成時，才需要內部使用授權；把內核嵌進自己的產品再賣給客戶，則需要 OEM 授權。",
+        "a": "官網下載的就是社區版，與商業授權客戶拿到的是同一個安裝包——差別在法律授權，不在功能。個人使用、以及按 AGPLv3 條件使用的團隊都不需要購買授權。只有當機構要部署修改版而不公開源碼、或要做閉源外掛與私有整合時，才需要內部使用授權；把內核嵌進自己的產品再賣給客戶，則需要 OEM 授權。",
         "q": "社區版是什麼？我需要買授權嗎？"
       },
       "negotiate": {
@@ -1545,11 +1545,11 @@
         "q": "帳目公開嗎？"
       },
       "vendors": {
-        "a": "以各服務商官方價格頁上的實時價格為準，我們不另行標價，實際扣款為上游扣款 × 1.2。軟件會調用的外部服務及其官方價格頁如下。",
+        "a": "以各服務商官方價格頁上的即時價格為準，我們不另行標價，實際扣款為上游扣款 × 1.2。軟體會調用的外部服務及其官方價格頁如下。",
         "q": "外部服務的單價是多少？"
       }
     },
-    "faqPricesBriefBody": "若你需要閉源交付、專有插件、SaaS 運營或官方認證標識，請洽談商業授權與 Certified 計劃。人數檔表與 OEM 明細走郵件詢價，不再佔用本頁主視覺。",
+    "faqPricesBriefBody": "若你需要閉源交付、專有外掛、SaaS 運營或官方認證標識，請洽談商業授權與 Certified 計劃。人數檔表與 OEM 明細走郵件詢價，不再佔用本頁主視覺。",
     "faqPricesBriefCta": "郵件諮詢商業授權",
     "faqPricesBriefTitle": "商業授權詢價",
     "heroAside": "充值餘額長期保留；訂閱額度按週期重置，兩筆帳分開看。",
@@ -1563,17 +1563,17 @@
     },
     "metaDescription": "按需充值、個人 Pro 149 元/月、獨立部署。Pro 含週期 Credits、不限量剪貼板與暫存區、3GB 持久雲空間。",
     "openSource": {
-      "agplCan": "研究、個人使用、按 AGPL-3.0 義務自託管與再分發（含相應源代碼披露義務）。",
+      "agplCan": "研究、個人使用、按 AGPL-3.0 義務自託管與再分發（含相應源程式碼披露義務）。",
       "agplCanLabel": "可以：",
       "agplFootnote": "以上為不完全列舉；細節以倉庫 legal/（含 COMMERCIAL-LICENSE）為準；有疑義請郵件 hi@aiworkdeck.com。",
       "agplLegalLink": "查看 COMMERCIAL-LICENSE",
-      "agplNeed": "將 WorkDeck 或其衍生作為閉源產品/SaaS 對外提供；在不遵守 AGPL 網絡交互披露義務的前提下提供網絡服務；開發需保持專有的同進程插件/二次開發並用於商業閉源交付；需要商標、認證標識或官方「Certified」背書。",
+      "agplNeed": "將 WorkDeck 或其衍生作為閉源產品/SaaS 對外提供；在不遵守 AGPL 網路交互披露義務的前提下提供網路服務；開發需保持專有的同進程外掛/二次開發並用於商業閉源交付；需要商標、認證標識或官方「Certified」背書。",
       "agplNeedLabel": "需要商業授權的典型情形：",
       "agplTitle": "AGPL 邊界（不完全列舉）",
       "ctaPrimary": "免費下載",
       "ctaSecondary": "充值與解鎖",
       "desc": "隨用隨充，需要哪項再解鎖。",
-      "perk1": "本地項目、文檔編輯與資料整理",
+      "perk1": "本地專案、文件編輯與資料整理",
       "perk2": "充值 {topup} = 100 Credits，按服務用量扣除",
       "perk3": "剪貼板與暫存區可單獨解鎖",
       "perk4": "200MB 雲中轉空間，取件確認後釋放",
@@ -1589,7 +1589,7 @@
         "close": "暫不支付",
         "comingSoon": "Pro 購買暫未開放",
         "continue": "微信支付",
-        "creating": "正在創建訂單…",
+        "creating": "正在建立訂單…",
         "failed": "下單失敗",
         "monthly": "月付",
         "perMonth": "/ 月",
@@ -1599,7 +1599,7 @@
         "successAccount": "查看 Pro 權益",
         "successBody": "支付成功。個人 Pro 已開通，有效期至 {date}。雲端 AI 可繼續使用。一次性購買，不會自動扣款。",
         "successBodyPending": "支付成功。個人 Pro 已開通，有效期見帳戶頁。雲端 AI 可繼續使用。一次性購買，不會自動扣款。",
-        "successDownload": "回到項目 / 下載桌面端",
+        "successDownload": "回到專案 / 下載桌面端",
         "successPending": "正在確認支付結果…",
         "successTitle": "歡迎使用個人 Pro",
         "successUnknown": "暫未查到支付結果，如已扣款請稍後在帳戶頁查看。",
@@ -1615,7 +1615,7 @@
       "footnote": "訂閱額度不結轉、不提現；超額預設暫停，可自行開啟使用充值餘額。不限量指本地功能，雲空間按配額。",
       "perk1": "{monthlyCredits} Credits / 30 天，每 7 天最多 {weeklyCredits} Credits",
       "perk2": "無線剪貼板與文件暫存區不限量",
-      "perk3": "3GB 持久雲存儲，項目目錄跨端統一",
+      "perk3": "3GB 持久雲存儲，專案目錄跨端統一",
       "perk4": "週期用量、剩餘額度與重置時間清楚可查",
       "price": "{monthly} / 月",
       "title": "個人 Pro",
@@ -1652,7 +1652,7 @@
       },
       "title": "常見問題",
       "trial": {
-        "a": "新用戶試用為 14 天或 80 次 AI 調用，以先到者為準。進度在應用內可見；用盡或到期後可升級個人 Pro，或繼續使用不依賴雲 AI 的本地能力（以產品實際為準）。「1 次」= 一次用戶發起的 AI 回合且返回了可展示的助手結果（流式整段算 1 次）；失敗未出結果、純本地操作不計。細則以購買/試用協議與應用內說明為準。",
+        "a": "新使用者試用為 14 天或 80 次 AI 調用，以先到者為準。進度在應用內可見；用盡或到期後可升級個人 Pro，或繼續使用不依賴雲 AI 的本地能力（以產品實際為準）。「1 次」= 一次使用者發起的 AI 回合且返回了可展示的助手結果（流式整段算 1 次）；失敗未出結果、純本地操作不計。細則以購買/試用協議與應用內說明為準。",
         "q": "試用規則是什麼？"
       },
       "intro": {
@@ -1662,7 +1662,7 @@
     },
     "subscriptionCrossLinkLabel": "三檔方案：按需使用 / 個人 Pro / 獨立部署",
     "team": {
-      "billingNote": "根據部署規模、數據管理要求與集成範圍約定服務方案。",
+      "billingNote": "根據部署規模、資料管理要求與整合範圍約定服務方案。",
       "consultSubject": "諮詢 AI WorkDeck Team / 企業方案",
       "ctaPrimary": "預約演示",
       "ctaSecondary": "郵件諮詢",
@@ -1698,15 +1698,15 @@
         },
         {
           "key": "pkulaw",
-          "name": "法律數據庫 · 北大法寶 MCP"
+          "name": "法律資料庫 · 北大法寶 MCP"
         },
         {
           "key": "bocha",
-          "name": "聯網搜索 · 博查 AI"
+          "name": "聯網搜尋 · 博查 AI"
         },
         {
           "key": "tushare",
-          "name": "財經數據 · Tushare"
+          "name": "財經資料 · Tushare"
         }
       ],
       "linkLabel": "官方價格頁",
@@ -1718,15 +1718,15 @@
       "stepJoiner": "。",
       "steps": [
         {
-          "body": "桌面端以 AGPLv3 開源，源碼全部公開。下載、安裝、使用、修改都不付費，沒有訂閱，也沒有功能閹割——商業授權和社區版是同一個安裝包，差別在法律授權，不在功能。項目不靠賣軟件賺錢，下面這 20% 也不是利潤率。",
-          "title": "開源、公益性質，軟件免費"
+          "body": "桌面端以 AGPLv3 開源，源碼全部公開。下載、安裝、使用、修改都不付費，沒有訂閱，也沒有功能閹割——商業授權和社區版是同一個安裝包，差別在法律授權，不在功能。專案不靠賣軟體賺錢，下面這 20% 也不是利潤率。",
+          "title": "開源、公益性質，軟體免費"
         },
         {
-          "body": "AI 對話要調模型 API，此外還有企查查、北大法寶、OCR、語音轉寫、聯網搜索、財經資料——這些都是外部服務商按次計費的。我們統一採購，你不必自己去開七個帳號、簽七份協議，但這筆錢本來就是你要花的。之所以統一加收 20%，是因為不同支付渠道的手續費差別很大：走蘋果 App Store 內購，要加到 130% 甚至更高；微信支付又是另一個比例；其他渠道各不相同。逐個渠道分別定價太繁瑣，使用者也難理解，所以折中按 20% 統一收——也更推薦你走官網充值，那是費率最低的渠道。",
+          "body": "AI 對話要調模型 API，此外還有企查查、北大法寶、OCR、語音轉寫、聯網搜尋、財經資料——這些都是外部服務商按次計費的。我們統一採購，你不必自己去開七個帳號、簽七份協議，但這筆錢本來就是你要花的。之所以統一加收 20%，是因為不同支付渠道的手續費差別很大：走蘋果 App Store 內購，要加到 130% 甚至更高；微信支付又是另一個比例；其他渠道各不相同。逐個渠道分別定價太繁瑣，使用者也難理解，所以折中按 20% 統一收——也更推薦你走官網充值，那是費率最低的渠道。",
           "title": "你付的是外部服務的實際費用，外加統一 20%"
         },
         {
-          "body": "維持網站與後台運行的伺服器、域名等固定開銷，一開始不向使用者收，由項目發起人先行墊付。收到的錢扣除渠道費與第三方成本後如果有結餘，會優先用來攤銷這部分前期墊付——畢竟伺服器域名也是大家在用。",
+          "body": "維持網站與後台運行的伺服器、域名等固定開銷，一開始不向使用者收，由專案發起人先行墊付。收到的錢扣除渠道費與第三方成本後如果有結餘，會優先用來攤銷這部分前期墊付——畢竟伺服器域名也是大家在用。",
           "title": "前期費用由發起人先墊付，盈餘優先攤銷"
         },
         {
@@ -1734,7 +1734,7 @@
           "title": "攤完再捐贈，帳目每半年公佈"
         }
       ],
-      "title": "既然是開源項目，為什麼還要收費？",
+      "title": "既然是開源專案，為什麼還要收費？",
       "transparencyLine": "每半年在 GitHub 與官網公佈一次帳目與使用情況"
     },
     "heroSubtitleIntro": "桌面軟體開源免費、檔案在本機。個人 Pro 前 {months} 個月享 {intro}/月體驗價（原價 {standard}/月），含週期 Credits、3GB 雲空間與不限量剪貼簿，一次買 30 天，不自動扣款。",
@@ -1746,11 +1746,11 @@
     "amountLabel": "金額",
     "buy": "購買",
     "close": "關閉",
-    "creating": "正在創建訂單…",
+    "creating": "正在建立訂單…",
     "failed": "支付遇到問題",
-    "loginToBuy": "登錄後購買",
+    "loginToBuy": "登入後購買",
     "owned": "已擁有",
-    "qrHint": "支付完成後自動確認，無需刷新",
+    "qrHint": "支付完成後自動確認，無需重新整理",
     "redirecting": "正在跳轉至 Stripe 收銀臺…",
     "retry": "重試",
     "scan": "請使用微信掃碼支付",
@@ -1801,7 +1801,7 @@
     "viewProfile": "查看個人主頁",
     "wechatGate": {
       "copied": "已複製，去瀏覽器粘貼打開",
-      "copy": "複製鏈接",
+      "copy": "複製連結",
       "desc": "微信內暫不支持答題。點右上角「···」，選擇「在瀏覽器打開」即可開始。",
       "preview": "測完你會得到這樣一張專屬結果卡：",
       "title": "在瀏覽器中打開，馬上開測"
@@ -1835,7 +1835,7 @@
       },
       "loading": "留言載入中……",
       "loginCta": "去登入",
-      "loginHint": "登錄後即可參與討論。",
+      "loginHint": "登入後即可參與討論。",
       "placeholder": "友善交流，支援多層回覆。留言以你的公開身分展示。",
       "postCta": "發布留言",
       "posting": "發布中",
@@ -1853,7 +1853,7 @@
     "downloads": "次安裝",
     "edit": "編輯",
     "empty": "還沒有匹配的 Skill，來提交第一個吧",
-    "eyebrow": "Skill Plaza · 與桌面端實時同步",
+    "eyebrow": "Skill Plaza · 與桌面端即時同步",
     "featured": "精選",
     "founderChip": "創始貢獻者 No.{n}",
     "free": "免費",
@@ -1862,13 +1862,13 @@
     "installSteps": [
       "打開 AI WorkDeck 桌面端，進入「外掛市集」",
       "在「在線技能市集」區塊找到本 Skill",
-      "點擊「安裝」，對話中輸入觸發詞即可激活"
+      "點擊「安裝」，對話中輸入觸發詞即可啟用"
     ],
     "installTitle": "在桌面端安裝",
     "joinedAt": "加入於",
     "lastPublished": "最近更新",
     "noSkillsYet": "還沒有提交過 Skill",
-    "originNote": "本 Skill 改編自開源項目，原作者",
+    "originNote": "本 Skill 改編自開源專案，原作者",
     "output": "輸出約定",
     "profileEmptyCta": "去市集看看",
     "profileEmptyHint": "TA 的作品發佈後會出現在這裡。",
@@ -1884,10 +1884,10 @@
       "addSection": "添加模塊：",
       "cancel": "取消",
       "contactEmail": "電子郵件",
-      "contactEmailPh": "郵箱（選填）",
+      "contactEmailPh": "電子郵件（選填）",
       "contactPhone": "電話",
       "contactPhonePh": "電話（選填）",
-      "contactPublicNote": "聯繫方式將公開展示在你的主頁上，便於訪客與你建立聯繫；不填則不顯示。",
+      "contactPublicNote": "聯絡方式將公開展示在你的主頁上，便於訪客與你建立聯絡；不填則不顯示。",
       "contactQrAlt": "微信掃碼添加",
       "contactQrRemove": "移除",
       "contactQrReplace": "更換微信二維碼",
@@ -1909,9 +1909,9 @@
       "educationDegreePh": "學位（如：法律碩士）",
       "educationEndPh": "畢業",
       "educationPh": "一行一條（如：北京大學 法律碩士）",
-      "educationSchoolPh": "輸入學校名稱搜索（也可直接輸入）",
+      "educationSchoolPh": "輸入學校名稱搜尋（也可直接輸入）",
       "educationStartPh": "入學",
-      "emptyOwnHint": "把職業、單位、教育背景等信息補充到主頁——證書掃碼進來的訪客會先看到這張名片。",
+      "emptyOwnHint": "把職業、單位、教育背景等資訊補充到主頁——證書掃碼進來的訪客會先看到這張名片。",
       "expertisePh": "一行一個專業領域（如：公司並購）",
       "heroEduHint": "在「編輯主頁」裡添加教育經歷，這裡會陳列學校與學位",
       "heroNote": "（顯示在頁首）",
@@ -1924,22 +1924,22 @@
       "saveFailed": "儲存失敗，請重試",
       "saving": "保存中",
       "sections": {
-        "contact": "聯繫方式",
+        "contact": "聯絡方式",
         "education": "教育背景",
         "expertise": "專業領域",
         "highlights": "代表業績",
         "positions": "社會任職",
-        "practice": "執業信息"
+        "practice": "執業資訊"
       },
       "title": "簡歷"
     },
-    "searchPlaceholder": "搜索 Skill、觸發詞…",
+    "searchPlaceholder": "搜尋 Skill、觸發詞…",
     "sortNewest": "最新",
     "sortPopular": "熱門",
     "statContributors": "位貢獻者",
-    "statPlugins": "個插件",
+    "statPlugins": "個外掛",
     "statSkills": "個 Skill",
-    "submit": "創建並提交 Skill",
+    "submit": "建立並提交 Skill",
     "subtitle": "社區共建的 AI 技能庫，提交後即刻同步桌面端外掛市集，一鍵安裝。",
     "syncNote": "提交後即刻同步桌面端，一鍵安裝",
     "title": "技能市集",
@@ -1987,20 +1987,20 @@
       "browseCta": "技能市集",
       "browseHint": "回到電腦之前，可以先逛逛",
       "copied": "已複製",
-      "copyLink": "複製下載頁鏈接",
+      "copyLink": "複製下載頁連結",
       "desktopStep": "在電腦瀏覽器打開",
       "emailFailed": "發送失敗，請稍後再試",
-      "emailLink": "把鏈接發到我的郵箱",
+      "emailLink": "把連結發到我的電子郵件",
       "emailSending": "發送中",
       "emailSent": "已發送，請查收",
       "loggedOutHint": "先驗證手機號碼或電子郵件並建立密碼，再使用同一區域的帳戶登入電腦或手機應用程式。",
-      "readyDesc": "AI WorkDeck 桌面端需要在電腦上安裝。回到電腦打開下面的地址並登錄，即可下載。",
+      "readyDesc": "AI WorkDeck 桌面端需要在電腦上安裝。回到電腦打開下面的地址並登入，即可下載。",
       "readyTitle": "帳戶已就緒",
       "wxButton": "打開小程序",
-      "wxDesc": "在小程序中進入註冊頁面，驗證手機號後創建密碼。之後使用手機號和密碼登錄，還能拍照、錄音直傳電腦上的項目。",
-      "wxFailed": "沒能打開小程序，可在下方驗證身份並創建密碼。",
+      "wxDesc": "在小程序中進入註冊頁面，驗證手機號後建立密碼。之後使用手機號和密碼登入，還能拍照、錄音直傳電腦上的專案。",
+      "wxFailed": "沒能打開小程序，可在下方驗證身份並建立密碼。",
       "wxOpening": "正在打開小程序",
-      "wxOr": "或者在下方驗證身份並創建密碼",
+      "wxOr": "或者在下方驗證身份並建立密碼",
       "wxTitle": "打開 AI WorkDeck 小程序"
     },
     "mobileSubtitle": "先在手機上建立帳戶，再回到電腦安裝並開始使用。",
@@ -2018,10 +2018,10 @@
       },
       "currency": "幣種",
       "desc": "AI WorkDeck 有兩個站，軟體同一套，帳戶體系各自獨立：註冊、Credits 餘額與已購權益都不互通。在哪個站登入，帳戶就建在哪個站，事後無法搬遷。",
-      "domainLoginNote": "兩個國際域名的瀏覽器登錄狀態分別保留，切換域名時可能需要再次登錄。",
+      "domainLoginNote": "兩個國際域名的瀏覽器登入狀態分別保留，切換域名時可能需要再次登入。",
       "editionPrefix": "社區版",
-      "intlSiteDesc": "美國以外的國際用戶；美元與銀行卡支付。",
-      "language": "默認語言",
+      "intlSiteDesc": "美國以外的國際使用者；美元與銀行卡支付。",
+      "language": "預設語言",
       "languages": {
         "en": "English",
         "zh": "中文"
@@ -2042,10 +2042,10 @@
     },
     "steps": {
       "download": {
-        "addinDesc": "想在 Word / Excel / PowerPoint 裡直接用 AI WorkDeck，裝任務窗格外掛即可：下載安裝器雙擊運行，重啟 Office 後「開始」選項卡會出現「打開 AI WorkDeck」。用 WPS Office 的話不用下載安裝器——打開「WPS 一鍵安裝頁」點「安裝」，重啟 WPS 即可（支持文字/表格/演示，Windows 與 Linux 版 WPS）。預設連官方雲，手機號碼或電子郵件登入就能用；也可在外掛設置裡改連本機桌面端或律所伺服器。",
+        "addinDesc": "想在 Word / Excel / PowerPoint 裡直接用 AI WorkDeck，裝任務窗格外掛即可：下載安裝器雙擊運行，重啟 Office 後「開始」選項卡會出現「打開 AI WorkDeck」。用 WPS Office 的話不用下載安裝器——打開「WPS 一鍵安裝頁」點「安裝」，重啟 WPS 即可（支持文字/表格/演示，Windows 與 Linux 版 WPS）。預設連官方雲，手機號碼或電子郵件登入就能用；也可在外掛設定裡改連本機桌面端或律所伺服器。",
         "addinMac": "macOS 安裝器（.dmg）",
-        "addinNote": "macOS 安裝器已由 Apple 公證，系統詢問「訪問其他 App 的數據」時請點「允許」；Windows 安裝器出現 SmartScreen 提示時選「仍要運行」；WPS 安裝頁需要本機已裝 WPS，瀏覽器詢問是否打開 WPS Office 時請允許。",
-        "addinTitle": "Office / WPS 插件（選裝）",
+        "addinNote": "macOS 安裝器已由 Apple 公證，系統詢問「訪問其他 App 的資料」時請點「允許」；Windows 安裝器出現 SmartScreen 提示時選「仍要運行」；WPS 安裝頁需要本機已裝 WPS，瀏覽器詢問是否打開 WPS Office 時請允許。",
+        "addinTitle": "Office / WPS 外掛（選裝）",
         "addinWin": "Windows 安裝器（.exe）",
         "addinWps": "WPS 一鍵安裝頁",
         "allReleases": "到發佈頁找歷史版本",
@@ -2074,16 +2074,16 @@
         "descPhone": "安裝完成後開啟 AI WorkDeck，第一個畫面就是登入頁。用手機號碼和密碼登入；第一次使用，點「還沒有密碼？設定密碼」，驗證手機號碼後設定密碼即可。",
         "emailPlaceholder": "電子郵件地址",
         "mockSubtitle": "面向法律工作者的 AI 工作台",
-        "note": "登入後 Credits 餘額、已購內容與 Skill 自動同步。同一帳戶最多同時連接 3 臺設備，可在官網帳戶頁查看或斷開。",
+        "note": "登入後 Credits 餘額、已購內容與 Skill 自動同步。同一帳戶最多同時連接 3 臺裝置，可在官網帳戶頁查看或斷開。",
         "phonePlaceholder": "手機號碼",
-        "title": "打開桌面端，登錄"
+        "title": "打開桌面端，登入"
       }
     },
     "title": "兩步，把 AI WorkDeck 用起來"
   },
   "submitPage": {
     "advanced": {
-      "title": "高級設置"
+      "title": "高級設定"
     },
     "aiAssist": {
       "billingBalance": "餘額 {balance}",
@@ -2091,7 +2091,7 @@
       "billingOnHouse": "本輪消耗 {amount}，餘額不足，此次由平台承擔",
       "cancel": "取消",
       "consent": "我瞭解這段說明會發送至境外的 OpenRouter, Inc.（美國）用於生成草稿，並同意此次傳輸。",
-      "consentLink": "隱私政策·個人信息出境",
+      "consentLink": "隱私政策·個人資料出境",
       "deepHint": "深度思考模型更慢但更周全，請耐心等待",
       "done": "草稿已填入下方表單，請檢查並按需修改後發佈。",
       "errors": {
@@ -2135,7 +2135,7 @@
         "chat_busy": "上一輪還在生成中，請先停止或等它結束。",
         "daily_limit": "今天的對話輪數已用完，明天再來吧。",
         "generic": "出錯了，請稍後再試。",
-        "invalid_message": "消息不能為空且不超過 4000 字。",
+        "invalid_message": "訊息不能為空且不超過 4000 字。",
         "not_found": "對話不存在或已刪除。",
         "session_limit": "這個對話輪數太多了，請開一個新對話繼續。"
       },
@@ -2204,10 +2204,10 @@
       "triggersHint": "回車、逗號或頓號分隔，最多 20 個。使用者的話裡出現任意一個詞，這個 Skill 就會啟用——常用簡稱一並寫上（「審合同」「合同審查」），寧多勿漏。",
       "triggersPlaceholder": "輸入後按回車，如：審勞動合同"
     },
-    "goLogin": "去登錄 / 註冊",
+    "goLogin": "去登入 / 註冊",
     "intro": "Skill 就是教 AI 做一件具體的事：什麼時候出手、能用哪些能力、按什麼套路乾。填完立刻出現在市集與桌面端。",
-    "loginRequired": "提交 Skill 需要先登錄",
-    "publishNotice": "登錄即發佈，無需等待審核：提交後立刻出現在 技能市集與桌面端。違反規範或侵權的內容會被事後下架。",
+    "loginRequired": "提交 Skill 需要先登入",
+    "publishNotice": "登入即發佈，無需等待審核：提交後立刻出現在 技能市集與桌面端。違反規範或侵權的內容會被事後下架。",
     "steps": {
       "basics": "這個 Skill 做什麼",
       "prompt": "讓它怎麼做",
@@ -2215,38 +2215,38 @@
       "tools": "它能用哪些能力",
       "toolsHint": "沒勾的就用不了，別漏",
       "triggers": "什麼時候用它",
-      "triggersHint": "用戶說到這些詞就自動出手"
+      "triggersHint": "使用者說到這些詞就自動出手"
     },
     "submitBtn": "發佈到市集",
     "submitting": "提交中…",
     "success": "發佈成功！",
     "tabs": {
-      "chat": "對話創建",
-      "form": "表單創建"
+      "chat": "對話建立",
+      "form": "表單建立"
     },
     "templates": {
       "label": "或從模板開始："
     },
     "tips": {
       "items": [
-        "觸發詞覆蓋用戶會自然說出的短語（含簡稱，如「審合同」「合同審查」），寧多勿漏；",
-        "能力按需勾全：要出 Word 就勾「出具文檔」，要引法條就勾「查法規」，漏勾等於把手綁上；",
+        "觸發詞覆蓋使用者會自然說出的短語（含簡稱，如「審合同」「合同審查」），寧多勿漏；",
+        "能力按需勾全：要出 Word 就勾「出具文件」，要引法條就勾「查法規」，漏勾等於把手綁上；",
         "工作指令用「角色 → 分步流程（每步指明用什麼能力）→ 要求」的結構，步驟具體可執行；",
         "先窄後寬：一個 Skill 只做好一件事，場景太寬會兩頭不討好。"
       ],
       "title": "寫好一個 Skill 的 4 個要點"
     },
-    "title": "創建並提交 Skill",
+    "title": "建立並提交 Skill",
     "tools": {
       "customAdd": "添加",
       "customHint": "上面沒收錄的工具（例如某個外掛自帶的），可直接填代號。只能含字母、數字、下劃線、連字符。",
       "customPlaceholder": "如 my_plugin_tool",
       "customTitle": "手動添加工具代號",
-      "emptyWarning": "一個都沒勾：這個 Skill 將只能讀取文檔、列出文件、檢索記憶，寫文檔與查法規都用不了。除非有意為之，建議至少勾上「讀文檔」。",
-      "notice": "能力是白名單：這裡不勾的，這個 Skill 就用不了——不勾「出具文檔」它就寫不出 Word 成稿。已默認勾好大多數法律場景夠用的三組，按需增減即可。",
+      "emptyWarning": "一個都沒勾：這個 Skill 將只能讀取文件、列出文件、檢索記憶，寫文件與查法規都用不了。除非有意為之，建議至少勾上「讀文件」。",
+      "notice": "能力是白名單：這裡不勾的，這個 Skill 就用不了——不勾「出具文件」它就寫不出 Word 成稿。已預設勾好大多數法律場景夠用的三組，按需增減即可。",
       "partial": "已選 {n}/{total}",
       "remove": "移除",
-      "summary": "已選 {n} 個工具。此外「讀取文檔、列出文件、檢索記憶」始終可用，無需勾選。",
+      "summary": "已選 {n} 個工具。此外「讀取文件、列出文件、檢索記憶」始終可用，無需勾選。",
       "viewTools": "查看這 {n} 個工具"
     },
     "updateBtn": "保存更新",
@@ -2255,26 +2255,26 @@
   "supportDialog": {
     "amountLabel": "支持金額",
     "amountPlaceholder": "金額（{currency}）",
-    "anonymousHint": "無需登入。捐贈用於支持項目，不計入帳戶充值餘額。",
+    "anonymousHint": "無需登入。捐贈用於支持專案，不計入帳戶充值餘額。",
     "autoClose": "支付完成後將自動關閉此窗口",
     "canceled": "已取消進入收銀臺，尚未確認捐贈成功。",
     "close": "關閉",
     "confirmationPending": "暫未確認支付結果。如已付款，請稍後再次查詢，不要重復支付。",
     "confirming": "正在核實捐贈結果…",
     "continueStripe": "前往捐贈收銀臺",
-    "createFailed": "創建訂單失敗",
-    "creating": "創建訂單中…",
+    "createFailed": "建立訂單失敗",
+    "creating": "建立訂單中…",
     "currencyNames": {
       "CNY": "元",
       "USD": "美元"
     },
     "invalidAmount": "請輸入至少 {min} 的金額，最多兩位小數",
     "motto": "您的支持是我們持續改進的動力",
-    "networkError": "網絡錯誤",
+    "networkError": "網路錯誤",
     "openCheckout": "打開收銀臺 · 銀行卡支付",
     "orderAmountPrefix": "訂單金額：",
     "orderDescription": "支持 AI WorkDeck",
-    "orderUnavailable": "未找到這筆捐贈。請檢查返回鏈接，或回到發起支付的設備查看。",
+    "orderUnavailable": "未找到這筆捐贈。請檢查返回連結，或回到發起支付的裝置查看。",
     "payError": "支付遇到問題",
     "paySuccess": "支付成功！",
     "qrAlt": "微信支付二維碼",
@@ -2301,7 +2301,7 @@
       "eyebrow": "錢從哪來，到哪去",
       "paragraphs": [
         "這一頁每半年公佈一次帳目與使用情況，包括收入、各支付渠道的成本、第三方服務成本、其他開支和捐贈記錄，官網與 GitHub 各一份。",
-        "扣除渠道費與第三方成本後的結餘，先攤銷發起人前期墊付的服務器與域名費用，再有剩餘則全部捐給全國性慈善組織，完整說明見常見問題。"
+        "扣除渠道費與第三方成本後的結餘，先攤銷發起人前期墊付的伺服器與域名費用，再有剩餘則全部捐給全國性慈善組織，完整說明見常見問題。"
       ],
       "pricingCta": "查看定價說明",
       "repoCta": "在 GitHub 查看源碼與歷期帳目",
@@ -2312,11 +2312,11 @@
       "activeNote": "近 30 天內有遙測上報的安裝數。",
       "downloads": "安裝包下載",
       "downloadsNote": "GitHub Releases 全部安裝包資產的累計下載數。",
-      "eyebrow": "實時",
+      "eyebrow": "即時",
       "installs": "累計安裝",
       "installsNote": "匿名遙測口徑。遙測可關閉、滾動保留 24 個月，此數為下限。",
       "title": "當前使用情況",
-      "users": "註冊用戶",
+      "users": "註冊使用者",
       "usersNote": "國內站與國際站帳號合計。"
     },
     "metaDescription": "AI WorkDeck 每半年公佈一次帳目與使用情況：收入、支付通道費、第三方服務成本、發起人前期墊付開銷與捐贈去向，憑證原件一並公開，官網與 GitHub 同步發佈。",
@@ -2330,16 +2330,16 @@
       },
       "costKeys": {
         "aliyun_ai": "語音轉寫 / OCR / 短信（阿里雲）",
-        "bocha": "聯網搜索（博查）",
+        "bocha": "聯網搜尋（博查）",
         "cdn": "CDN",
         "domain": "域名",
         "openrouter": "AI 模型（OpenRouter）",
         "oss": "對象存儲",
         "other": "其他",
-        "pkulaw": "法律數據庫（北大法寶）",
-        "qichacha": "企業信息（企查查）",
+        "pkulaw": "法律資料庫（北大法寶）",
+        "qichacha": "企業資訊（企查查）",
         "server": "伺服器",
-        "tushare": "財經數據（Tushare）"
+        "tushare": "財經資料（Tushare）"
       },
       "costs": {
         "amount": "金額",
@@ -2355,17 +2355,17 @@
         "title": "捐贈"
       },
       "empty": "首期帳目將在首個完整半年結束後公佈",
-      "emptyHint": "在此之前，上面的實時使用數字隨時可查。",
+      "emptyHint": "在此之前，上面的即時使用數字隨時可查。",
       "eyebrow": "半年報",
-      "founderCosts": "發起人前期墊付（服務器 / 域名等，盈餘優先攤銷）",
-      "founderCostsNote": "不計入用戶側成本，也不參與盈餘計算。",
+      "founderCosts": "發起人前期墊付（伺服器 / 域名等，盈餘優先攤銷）",
+      "founderCostsNote": "不計入使用者側成本，也不參與盈餘計算。",
       "metrics": {
         "downloads": "安裝包下載",
         "installsActive": "30 天活躍",
         "installsTotal": "累計安裝",
         "title": "使用情況",
         "usersNew": "本期新增",
-        "usersTotal": "註冊用戶"
+        "usersTotal": "註冊使用者"
       },
       "notFilled": "—",
       "periodH1": "{year} 年上半年",
@@ -2403,17 +2403,17 @@
       "title": "每一版更新了什麼"
     },
     "integrity": {
-      "body": "更新清單由發佈方 Ed25519 私鑰簽名，軟件內置公鑰逐次驗簽；每個補丁文件另有 SHA-256 哈希校驗。任一校驗不通過即整體放棄本次更新，絕不安裝未經驗證的內容。",
+      "body": "更新清單由發佈方 Ed25519 私鑰簽名，軟體內置公鑰逐次驗簽；每個補丁文件另有 SHA-256 哈希校驗。任一校驗不通過即整體放棄本次更新，絕不安裝未經驗證的內容。",
       "title": "更新的完整性與安全"
     },
     "major": {
-      "body": "大版本涉及運行時與核心組件變更，需要下載完整安裝包覆蓋安裝。您的文檔、項目與設置保存在用戶目錄中，覆蓋安裝不會丟失任何數據。軟件檢測到新大版本時會在應用內提示並引導下載。",
+      "body": "大版本涉及運行時與核心組件變更，需要下載完整安裝包覆蓋安裝。您的文件、專案與設定保存在使用者目錄中，覆蓋安裝不會丟失任何資料。軟體檢測到新大版本時會在應用內提示並引導下載。",
       "title": "大版本更新（完整安裝包）"
     },
     "mechanicsTitle": "更新機制說明",
-    "metaDescription": "AI WorkDeck 桌面端版本與更新說明：每一版為法律起草、插件與加載項帶來的改動，以及小版本應用內補丁、大版本全量安裝包的更新方式。",
+    "metaDescription": "AI WorkDeck 桌面端版本與更新說明：每一版為法律起草、外掛與載入項帶來的改動，以及小版本應用內補丁、大版本全量安裝包的更新方式。",
     "minor": {
-      "body": "軟體在後台自動下載僅包含變化部分的補丁（通常不足 10MB），完成後提示「重啟後生效」。補丁經數字簽名與哈希校驗，來源可信、內容完整；更新失敗會自動回退到上一版本，不影響正常使用。也可在軟體的「設置 - 軟體更新」中手動檢查。",
+      "body": "軟體在後台自動下載僅包含變化部分的補丁（通常不足 10MB），完成後提示「重啟後生效」。補丁經數字簽名與哈希校驗，來源可信、內容完整；更新失敗會自動回退到上一版本，不影響正常使用。也可在軟體的「設定 - 軟體更新」中手動檢查。",
       "title": "小版本更新（應用內補丁）"
     },
     "offline": {
@@ -2441,7 +2441,7 @@
     "release0770": {
       "headline": "雲端同步恢復保護與帳戶相容更新",
       "items": [
-        "為雲端按量付費補齊帳戶與用戶端支援。具體開放狀態以帳戶頁面為準，安裝新版不會自動同意新的計費政策。",
+        "為雲端按量付費補齊帳戶與使用者端支援。具體開放狀態以帳戶頁面為準，安裝新版不會自動同意新的計費政策。",
         "雲端清理或帳戶切換後，舊上傳佇列不會自動重新上傳；需要核對狀態並由你明確恢復，本機檔案不受雲端清理影響。",
         "保留訂閱贈送額度與原有權益，完善多裝置間帳戶和雲端狀態的核對。"
       ]
@@ -2505,41 +2505,41 @@
     "closeCta": "開始使用 AI WorkDeck",
     "closeLead": "把資料、編輯和 AI，放回同一張工作台。",
     "eyebrow": "產品 · 左側功能",
-    "metaDescription": "通過真實客戶端截圖，瞭解 AI WorkDeck 的資源管理器、項目概覽、搜索、文件脫敏、插件、Skill、剪貼板與收藏夾。",
-    "metaTitle": "左側工具與項目工作區",
+    "metaDescription": "通過真實客戶端截圖，瞭解 AI WorkDeck 的資源管理器、專案概覽、搜尋、文件脫敏、外掛、Skill、剪貼板與收藏夾。",
+    "metaTitle": "左側工具與專案工作區",
     "navAria": "左側功能",
     "navNote": "每張圖片都來自真實客戶端。",
-    "subtitle": "資源管理器、專案概覽、檔案搜尋、檔案脫敏、外掛、Skill——每張圖都是真實用戶端截圖，案卷為虛構。",
+    "subtitle": "資源管理器、專案概覽、檔案搜尋、檔案脫敏、外掛、Skill——每張圖都是真實使用者端截圖，案卷為虛構。",
     "title": "左邊一欄，管住整個案子的材料。",
     "tools": {
       "files": {
-        "body": "左側的文件樹是整個項目的入口。在文件夾裡瀏覽材料、建立文件、整理目錄，再把需要處理的文件打開到中間工作區。",
+        "body": "左側的文件樹是整個專案的入口。在文件夾裡瀏覽材料、建立文件、整理目錄，再把需要處理的文件打開到中間工作區。",
         "label": "資源管理員",
         "location": "左側導航 → 資源管理器",
         "points": [
-          "按項目集中管理材料",
+          "按專案集中管理材料",
           "新建文件與文件夾，批量選擇和排序",
           "打開文件，繼續預覽與編輯"
         ],
-        "title": "項目材料，從這裡展開。"
+        "title": "專案材料，從這裡展開。"
       },
       "overview": {
-        "body": "概覽也在左側。客戶、事項類型、下一步安排和項目動態集中在這裡，讓重新進入一個項目時有跡可循。",
+        "body": "概覽也在左側。客戶、事項類型、下一步安排和專案動態集中在這裡，讓重新進入一個專案時有跡可循。",
         "label": "專案概覽",
-        "location": "左側導航 → 項目概覽",
+        "location": "左側導航 → 專案概覽",
         "points": [
-          "登記客戶、對方和事項信息",
+          "登記客戶、對方和事項資訊",
           "查看文件、參與人與後台任務概況",
           "回顧動態、日程與 AI 對話"
         ],
-        "title": "先看清項目，再開始工作。"
+        "title": "先看清專案，再開始工作。"
       },
       "plugins": {
         "body": "外掛市集就在左側。查看已安裝的工具和啟用狀態，再按需要從 外掛市集 擴展工作台；脫敏、語音、訴訟可視化等工具各有自己的面板。",
         "label": "外掛",
-        "location": "左側導航 → 插件中心 → 插件",
+        "location": "左側導航 → 外掛中心 → 外掛",
         "points": [
-          "查看本機已安裝插件",
+          "查看本機已安裝外掛",
           "從市集發現適合工作的工具",
           "回到左側導航打開工具面板"
         ],
@@ -2557,11 +2557,11 @@
         "title": "分享材料前，多一道核查。"
       },
       "search": {
-        "body": "在左側輸入關鍵詞，查看匹配的文件與正文片段。截圖展示了在演示案卷中搜索「證據」的真實結果，命中內容仍然留在項目上下文裡。",
-        "label": "文件搜索",
-        "location": "左側導航 → 搜索",
+        "body": "在左側輸入關鍵詞，查看匹配的文件與正文片段。截圖展示了在演示案卷中搜尋「證據」的真實結果，命中內容仍然留在專案上下文裡。",
+        "label": "文件搜尋",
+        "location": "左側導航 → 搜尋",
         "points": [
-          "搜索文件名與文件內容",
+          "搜尋文件名與文件內容",
           "查看匹配數量和命中片段",
           "從結果繼續定位原始材料"
         ],
@@ -2570,9 +2570,9 @@
       "skills": {
         "body": "在同一個外掛市集裡切換到 Skill，查看已安裝的工作方法與狀態。合同審查、條款標引、事項匯總等能力從這裡管理。",
         "label": "Skill",
-        "location": "左側導航 → 插件中心 → Skill",
+        "location": "左側導航 → 外掛中心 → Skill",
         "points": [
-          "插件與 Skill 分欄查看",
+          "外掛與 Skill 分欄查看",
           "查看已安裝條目和啟用狀態",
           "進入 Marketplace 瞭解更多方法"
         ],
@@ -2581,7 +2581,7 @@
     },
     "utilities": {
       "clipboard": {
-        "body": "搜索暫存的片段，再複製或插入到文檔。此處僅展示篩選後的虛構測試文字。",
+        "body": "搜尋暫存的片段，再複製或插入到文件。此處僅展示篩選後的虛構測試文字。",
         "label": "剪貼簿"
       },
       "eyebrow": "工作台底部 / 隨手可用",
@@ -2599,7 +2599,7 @@
   "adminSites": {
     "lastLoginAt": "最後登入時間",
     "lastLoginUnknown": "暫無紀錄",
-    "lastLoginHint": "記錄官網或用戶端成功登入的時間；歷史未記錄的登入無法還原。",
+    "lastLoginHint": "記錄官網或使用者端成功登入的時間；歷史未記錄的登入無法還原。",
     "lastActiveAt": "最後活躍",
     "lastActiveHint": "桌面端呼叫、平台模型使用或錢包流水中最晚的一次（精確到小時級）；比最後登入更能反映是否在用。",
     "bailianManaged": "國內平台使用百煉。金鑰與預設模型由伺服器設定，此處唯讀；餘額請到百煉控制台查看。",
@@ -2658,7 +2658,7 @@
   "mobileAssistantPrivacy": {
     "security": "網路傳輸使用 HTTPS，正式環境存取限於必要人員。沒有系統能保證絕對安全；發生影響個人資訊的安全事件時，我們依適用法律處理和通知。",
     "mobileTitle": "AI WorkDeck 行動端隱私政策",
-    "mobileIntro": "本政策說明 {operator} 如何處理 AI WorkDeck iOS、Android、鴻蒙用戶端及微信小程式的帳戶、現場採集、專案檔案、雲端傳輸和可選 AI 功能中的個人資訊。檔案會按你選擇的專案傳輸；桌面端本機儲存的說明不代表手機檔案不會上傳。",
+    "mobileIntro": "本政策說明 {operator} 如何處理 AI WorkDeck iOS、Android、鴻蒙使用者端及微信小程式的帳戶、現場採集、專案檔案、雲端傳輸和可選 AI 功能中的個人資訊。檔案會按你選擇的專案傳輸；桌面端本機儲存的說明不代表手機檔案不會上傳。",
     "platformDifferences": "下文裝置權限與本機歸檔的具體說明以 Android 為對象。iOS 和鴻蒙也可將獲準讀取的採集座標儲存在本機歸檔記錄中；上傳表單不另傳座標或歸檔清單，但上傳原媒體可能包含檔案本身的位置中繼資料。微信小程式不呼叫定位介面。系統相簿副本在 iOS 預設開啟，在鴻蒙和微信小程式預設關閉，可依各端設定選擇。iOS 背景錄音使用系統音訊能力及即時動態，不等同於 Android 的持續通知。各端個人行事曆與提醒不讀寫系統行事曆。",
     "androidPermissionsTitle": "三、Android 裝置權限與背景活動",
     "androidRecordsLabel": "Android 本機歸檔記錄",
