@@ -7,9 +7,9 @@ on:
 permissions:
   contents: read
 concurrency:
-  # PR: a new push cancels the superseded scan. master / release branches: each push keeps its own scan
-  # (run_id group), so a later push never cancels or supersedes the scan of an earlier commit.
-  group: security-${{ github.event.pull_request.number || github.run_id }}
+  # PR: a new push cancels the superseded scan. master / release branches: a scan in progress is never
+  # cancelled; pending scans collapse to the newest commit (one pending run per group).
+  group: security-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   static:

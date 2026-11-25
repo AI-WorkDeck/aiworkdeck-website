@@ -3,8 +3,8 @@
  *
  *   npx tsx scripts/verify-workflow-concurrency.mts
  *
- * - security.yml: PR scans cancel their superseded run; master / release pushes never cancel or
- *   supersede an earlier commit's scan (run_id group).
+ * - security.yml: PR scans cancel their superseded run; on master / release branches a running scan is
+ *   never cancelled and pending scans collapse to the newest commit.
  * - ci.yml: PR runs cancel their superseded run; master keeps the per-ref group with no cancelling,
  *   which serializes master runs (deploy jobs must never overlap or be cut off mid-deploy).
  * Text checks only (no YAML dependency in this repo); the blocks are short and stable.
@@ -23,9 +23,9 @@ const block = (src: string) => {
 };
 
 const security = block(read('security.yml'));
-assert.ok(security.includes('group: security-${{ github.event.pull_request.number || github.run_id }}'), `security.yml group: ${security}`);
+assert.ok(security.includes('group: security-${{ github.event.pull_request.number || github.ref }}'), `security.yml group: ${security}`);
 assert.ok(security.includes("cancel-in-progress: ${{ github.event_name == 'pull_request' }}"), `security.yml cancel: ${security}`);
-console.log('[1] security.yml: PR-only cancel, master/release scans never superseded  OK');
+console.log('[1] security.yml: PR-only cancel, master/release running scans never cancelled  OK');
 
 const ci = block(read('ci.yml'));
 assert.ok(ci.includes('group: ci-${{ github.ref }}'), `ci.yml group: ${ci}`);
