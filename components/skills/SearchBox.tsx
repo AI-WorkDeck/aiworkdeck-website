@@ -63,7 +63,7 @@ export function SearchBox({ lang, defaultValue, activeSort, suggestions, placeho
     return (
         <form action={`/${lang}/marketplace`} method="GET" className="relative max-w-xl">
             {activeSort !== 'newest' && <input type="hidden" name="sort" value={activeSort} />}
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#7d877f] pointer-events-none z-10" strokeWidth={1.75} />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-ink-muted pointer-events-none z-10" strokeWidth={1.75} />
             <input
                 type="text"
                 name="q"
@@ -75,12 +75,12 @@ export function SearchBox({ lang, defaultValue, activeSort, suggestions, placeho
                     hasValue.current = !!e.target.value;
                     setIdle(true);
                 }}
-                className="w-full h-13 pl-13 pr-5 py-3.5 rounded-lg bg-[#fffdf8] border border-[#e3dccb] text-[#14261f] placeholder:text-[#7d877f] focus:outline-none focus:border-[#1f3b34] focus:bg-white transition-colors duration-300"
+                className="w-full h-13 pl-13 pr-5 py-3.5 rounded-lg bg-neutral-white border border-neutral-gray-light text-ink placeholder:text-neutral-gray-faint focus:outline-none focus:border-pine focus:bg-white transition-colors duration-300"
             />
             {showGhost && (
-                <span className="absolute left-13 top-1/2 -translate-y-1/2 text-[#7d877f] pointer-events-none select-none">
+                <span className="absolute left-13 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none select-none">
                     {ghost}
-                    <span className="animate-caret text-[#1f3b34]">▏</span>
+                    <span className="animate-caret text-pine">▏</span>
                 </span>
             )}
         </form>
