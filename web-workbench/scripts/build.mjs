@@ -23,6 +23,8 @@ const sizes=await resourceSizes(assetDir,assets);
 await build({configFile:false,root,base:'/web/',build:{outDir:out,emptyOutDir:true,target:'es2022'}});
 await build({configFile:false,root:path.join(root,'vendor/core/frontend/src/zetaoffice'),base:'./',plugins:[{name:'web-editor-transport',transform(code,id){if(id===path.join(root,'vendor/core/frontend/src/zetaoffice/editor-main.js'))return `import {configureBootProgress} from ${JSON.stringify(path.join(root,'src/load-progress.js'))};\nconfigureBootProgress(${JSON.stringify(sizes)});\n`+mapFontRequests(code);if(id===path.join(root,'vendor/core/frontend/src/composables/zetaOfficeBoot.js'))return mapRuntimeTransport(mapFontFetching(code,path.join(root,'src/font-transport.js')),path.join(root,'src/runtime-transport.js'))}}],build:{outDir:path.join(out,'editor'),emptyOutDir:true,target:'esnext',rollupOptions:{input:path.join(root,'vendor/core/frontend/src/zetaoffice/editor.html')}}});
 await fs.cp(assetDir,path.join(out,'editor'),{recursive:true});
+// The shared editor asks for desktop system fonts at ./sysfonts/enabled.json; the web has none, so answer with an empty list instead of a 404.
+await fs.mkdir(path.join(out,'editor','sysfonts'),{recursive:true});await fs.writeFile(path.join(out,'editor','sysfonts','enabled.json'),'{"fonts":[]}\n');
 await encodeFontRepresentations(out,assets);
 await fs.copyFile(path.join(root,'UPSTREAM.md'),path.join(out,'UPSTREAM.md'));
 await fs.copyFile(path.join(root,'vendor/core/LICENSE'),path.join(out,'LICENSE'));

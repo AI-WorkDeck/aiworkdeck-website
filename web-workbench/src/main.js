@@ -120,6 +120,7 @@ function importStatus(phase,input,index,total,percent){
  for(const action of ['retry-import','dismiss-import'])$(`[data-action="${action}"]`).hidden=true;
  $('[data-action="cancel-import"]').hidden=!['reading','validating'].includes(phase);
 }
+const IMPORT_DONE_VISIBLE_MS=4000;
 async function importFiles(files,retrySaved=null){
  if(!files.length)return;
  if(importing||state.busy||activeAgentRun){toast(t('当前操作完成后，请重新选择文件。','Please select files again after the current operation finishes.'));return}
@@ -146,6 +147,9 @@ async function importFiles(files,retrySaved=null){
   }
   $('#import-status').dataset.phase='complete';$('#import-title').textContent=t(`已导入 ${files.length} 份文档`,`Imported ${files.length} document(s)`);
   $('#import-detail').textContent=t('已保存到此浏览器，文档已打开，可以开始编辑。','Saved in this browser. The document is open and ready to edit.');
+  // Replace the 'still working' note; the success box then gets out of the way of the page.
+  $('#import-safety').textContent=t('在此浏览器本地导入，原文件未上传、未改变。','Imported locally in this browser; the original file was not uploaded or changed.');
+  setTimeout(()=>{if($('#import-status').dataset.phase==='complete')$('#import-status').hidden=true},IMPORT_DONE_VISIBLE_MS);
  }catch(e){
   if(!state.session.file){state.activeId=null;render()}
   $('#import-status').dataset.phase='error';$('#import-title').textContent=e.name==='AbortError'?t('已取消导入','Import cancelled'):t('导入未完成','Import did not finish');
