@@ -38,13 +38,11 @@ export function MembershipYourStatus({ lang, dict }: { lang: Locale; dict: any }
         let cancelled = false;
         (async () => {
             try {
-                const res = await fetch('/api/account/membership');
-                if (!res.ok) {
-                    // 401 = 未登录：给一行提示让访客知道登录后这里有个人化进度，其余失败仍静默
-                    if (res.status === 401 && !cancelled) setGuest(true);
-                    return;
-                }
+                const res = await fetch('/api/account/membership?optional=1');
+                if (!res.ok) return; // 其余失败静默
                 const json = await res.json();
+                // 未登录：给一行提示让访客知道登录后这里有个人化进度（不再走 401，控制台不报错）
+                if (json?.signedIn === false) { if (!cancelled) setGuest(true); return; }
                 if (!cancelled) setData(json);
             } catch {
                 // 静默跳过：网络失败不打扰这个公开页
