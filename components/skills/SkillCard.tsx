@@ -67,7 +67,8 @@ export function SkillCard({ lang, dict, skill: rawSkill, author }: SkillCardProp
                 </p>
 
                 <footer className="mt-auto pt-4 border-t border-neutral-gray-light/70 flex items-center justify-between text-xs text-neutral-gray-medium">
-                    <span className="truncate">{authorName || 'Unknown'}</span>
+                    {/* No author: leave the slot empty rather than print "Unknown" (POLISH W17) */}
+                    <span className="truncate">{authorName}</span>
                     <span className="flex items-center gap-1.5 flex-shrink-0">
                         <Download className="w-3.5 h-3.5" strokeWidth={1.75} />
                         {skill.downloads} {t.downloads}

@@ -506,7 +506,7 @@
     "submit": "Submit a Plugin",
     "officialTitle": "Official Plugins",
     "officialTag": "Built and signed by AI WorkDeck",
-    "officialIntro": "Plugins we build and maintain. Most ship with the desktop app and live in the left sidebar; all of them update automatically through Plugin Center. Third-party plugins can reach the same depth.",
+    "officialIntro": "Plugins we build and maintain. Most ship with the desktop app and live in the left sidebar; all of them update automatically through the Marketplace. Third-party plugins can reach the same depth.",
     "featureTitle": "Feature Unlocks",
     "featureTag": "Buy once, valid on your account for good",
     "featureIntro": "Remove the free-tier limits of built-in desktop features. After purchase, paste your account key into the desktop settings to activate.",
