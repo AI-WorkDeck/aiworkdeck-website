@@ -114,14 +114,14 @@ export function FeatureRequestWidget({ lang, t }: FeatureRequestWidgetProps) {
                     {done ? (
                         <div className="flex flex-col items-center gap-4 py-6 text-center">
                             <CheckCircle2 className="h-10 w-10 text-king-forest" strokeWidth={1.75} />
-                            <h2 className="font-display text-2xl font-bold text-neutral-gray-dark">{t.successTitle}</h2>
+                            <h2 className="text-2xl font-bold text-neutral-gray-dark">{t.successTitle}</h2>
                             <p className="max-w-md text-sm leading-relaxed text-neutral-gray-medium">{t.successBody}</p>
                             <Button variant="outline" onClick={() => setDone(false)}>{t.submitAnother}</Button>
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                             <div className="flex flex-col gap-2 pr-8">
-                                <h2 className="font-display text-xl font-bold text-neutral-gray-dark">{t.title}</h2>
+                                <h2 className="text-xl font-bold text-neutral-gray-dark">{t.title}</h2>
                                 <p className="text-sm leading-relaxed text-neutral-gray-medium">{t.intro}</p>
                             </div>
 

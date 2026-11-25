@@ -236,7 +236,7 @@ export function RechargeDialog({ open, onOpenChange, dict, onPaid }: RechargeDia
         <Dialog open={open} onOpenChange={handleClose}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle className="text-center text-xl font-display">
+                    <DialogTitle className="font-semibold text-center text-xl">
                         {/* 回跳落地时这个对话框是「支付结果」而不是「钱包充值」：
                             同一个落点也会接到购买单，顶着充值标题说话就是答非所问 */}
                         {status === 'success'

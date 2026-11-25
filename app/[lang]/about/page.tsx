@@ -97,7 +97,7 @@ export default async function AboutPage({
             <div className="container mx-auto px-4 md:px-8 max-w-3xl pt-2">
 
                 <section id="company" className="mt-14 scroll-mt-28">
-                    <h2 className="font-display mb-6 text-2xl font-semibold tracking-tight text-neutral-dark-bg">
+                    <h2 className="mb-6 text-2xl font-semibold tracking-tight text-neutral-dark-bg">
                         {copy.companyTitle}
                     </h2>
                     <dl className="rounded-xl border border-neutral-gray-light/90 bg-white">
@@ -127,7 +127,7 @@ export default async function AboutPage({
                 </section>
 
                 <section id="verify" className="mt-14 scroll-mt-28">
-                    <h2 className="font-display mb-6 text-2xl font-semibold tracking-tight text-neutral-dark-bg">
+                    <h2 className="mb-6 text-2xl font-semibold tracking-tight text-neutral-dark-bg">
                         {copy.registryLinkLabel}
                     </h2>
                     <div className="border-l-2 border-king-forest bg-king-forest-lightest/40 py-5 pl-5 pr-4">

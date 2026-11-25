@@ -225,7 +225,7 @@ export function SubmitPluginForm({ lang, t, developerApproved }: { lang: string;
 
             <section>
                 <div className="mb-3 flex items-center gap-3">
-                    <h2 className="font-display text-xl font-semibold text-neutral-dark-bg">{t.mineTitle}</h2>
+                    <h2 className="text-xl font-semibold text-neutral-dark-bg">{t.mineTitle}</h2>
                     <button
                         type="button"
                         disabled={refreshing}

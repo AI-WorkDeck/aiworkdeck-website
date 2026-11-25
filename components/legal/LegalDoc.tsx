@@ -108,13 +108,13 @@ export function LegalDoc({ doc, referenceNotice, relatedResources }: { doc: Lega
 
                 {/* 重点提示：格式条款的提示义务落在这里，位置必须在正文之前 */}
                 <section className="mt-10 max-w-3xl rounded-xl border border-king-forest/25 bg-white p-6 md:p-8">
-                    <h2 className="font-display mb-5 text-lg font-semibold text-neutral-dark-bg">
+                    <h2 className="mb-5 text-lg font-semibold text-neutral-dark-bg">
                         {doc.highlightsTitle}
                     </h2>
                     <ul className="flex flex-col gap-4">
                         {doc.highlights.map((item, i) => (
                             <li key={i} className="flex gap-3.5">
-                                <span className="font-display mt-[0.15em] flex-shrink-0 text-[13px] font-bold tabular-nums text-king-forest">
+                                <span className="mt-[0.15em] flex-shrink-0 text-[13px] font-bold tabular-nums text-king-forest">
                                     {String(i + 1).padStart(2, '0')}
                                 </span>
                                 <p className="text-[15px] leading-[1.9] text-neutral-gray-dark">
@@ -152,7 +152,7 @@ export function LegalDoc({ doc, referenceNotice, relatedResources }: { doc: Lega
                                 id={section.id}
                                 className="mb-12 scroll-mt-28 border-t border-neutral-gray-light pt-8 first:border-t-0 first:pt-0"
                             >
-                                <h2 className="font-display mb-5 text-2xl font-semibold tracking-tight text-neutral-dark-bg">
+                                <h2 className="mb-5 text-2xl font-semibold tracking-tight text-neutral-dark-bg">
                                     {section.title}
                                 </h2>
                                 <div className="flex flex-col gap-5">

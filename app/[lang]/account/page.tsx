@@ -185,13 +185,13 @@ export default async function AccountPage({
 
                 <GroupHeading>{ta.groupCreate}</GroupHeading>
                 <div className="mb-6 rounded-xl border border-neutral-gray-light bg-white p-5">
-                    <h2 className="font-display text-xl font-semibold text-neutral-dark-bg">{ta.developerCenterTitle}</h2>
+                    <h2 className="text-xl font-semibold text-neutral-dark-bg">{ta.developerCenterTitle}</h2>
                     <p className="my-3 text-sm text-neutral-gray-medium">{ta.developerCenterDesc}</p>
                     <Link href={`/${lang}/plugins/developer`}><Button variant="accent" size="sm">{ta.developerCenterCta}</Button></Link>
                 </div>
                 <div id="creations" className="scroll-mt-28">
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-                        <h2 className="font-display text-xl font-semibold text-neutral-dark-bg">{t.mySkills}</h2>
+                        <h2 className="text-xl font-semibold text-neutral-dark-bg">{t.mySkills}</h2>
                         <Link href={`/${lang}/skills/submit`}>
                             <Button variant="accent" size="sm" className="font-bold gap-1">
                                 <Plus className="w-4 h-4" />

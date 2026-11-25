@@ -40,12 +40,12 @@ export function SkillsSpotlight({ lang, dict }: SkillsSpotlightProps) {
                         </div>
                         <div className="flex items-center gap-8 flex-shrink-0 text-sm text-neutral-gray-medium">
                             <span className="flex items-baseline gap-2">
-                                <CountUp value={all.length} className="font-display text-2xl font-bold text-neutral-dark-bg" />
+                                <CountUp value={all.length} className="text-2xl font-bold text-neutral-dark-bg" />
                                 {t.statSkills}
                             </span>
                             <span className="w-px h-5 bg-neutral-gray-light" />
                             <span className="flex items-baseline gap-2">
-                                <CountUp value={contributorCount} className="font-display text-2xl font-bold text-neutral-dark-bg" />
+                                <CountUp value={contributorCount} className="text-2xl font-bold text-neutral-dark-bg" />
                                 {t.statContributors}
                             </span>
                         </div>

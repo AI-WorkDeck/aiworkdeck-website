@@ -87,13 +87,13 @@ export function MembershipYourStatus({ lang, dict }: { lang: Locale; dict: any }
             <div className="flex flex-col md:flex-row md:items-center gap-6">
                 <div>
                     <p className="text-xs text-neutral-gray-medium mb-1">{t.yourStatusLevel}</p>
-                    <span className="inline-block rounded-lg border border-king-forest/25 bg-white px-3 py-1 font-display text-lg font-bold text-king-forest">
+                    <span className="inline-block rounded-lg border border-king-forest/25 bg-white px-3 py-1 text-lg font-bold text-king-forest">
                         {tierName(data.tier, lang)}
                     </span>
                 </div>
                 <div>
                     <p className="text-xs text-neutral-gray-medium mb-1">{t.yourStatusGrowth}</p>
-                    <p className="font-display text-2xl font-bold text-king-forest">
+                    <p className="text-2xl font-bold text-king-forest">
                         {data.growthPoints.toLocaleString(LOCALE_META[lang].bcp47)}
                     </p>
                 </div>

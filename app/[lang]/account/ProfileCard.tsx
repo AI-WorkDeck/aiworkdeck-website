@@ -94,7 +94,7 @@ export function ProfileCard({ lang, dict, user, joined, nameIsDefault, stats }: 
                     </button>
 
                     <div className="flex-1 min-w-0">
-                        <h1 className="break-words [overflow-wrap:anywhere] font-display text-2xl font-semibold text-neutral-dark-bg">
+                        <h1 className="break-words [overflow-wrap:anywhere] text-2xl font-semibold text-neutral-dark-bg">
                             {ta.welcome}
                             {user.displayName}
                         </h1>
@@ -143,7 +143,7 @@ export function ProfileCard({ lang, dict, user, joined, nameIsDefault, stats }: 
                             href={item.href}
                             className="group/stat min-w-0 break-words [overflow-wrap:anywhere] block rounded-lg -m-2 p-2 transition-colors hover:bg-neutral-gray-pale"
                         >
-                            <div className="font-display text-2xl font-bold text-neutral-dark-bg tabular-nums group-hover/stat:text-king-forest transition-colors">
+                            <div className="text-2xl font-bold text-neutral-dark-bg tabular-nums group-hover/stat:text-king-forest transition-colors">
                                 {item.value}
                             </div>
                             <div className="text-xs text-neutral-gray-medium mt-0.5">{item.label}</div>

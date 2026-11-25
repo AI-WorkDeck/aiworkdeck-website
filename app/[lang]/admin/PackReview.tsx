@@ -229,7 +229,7 @@ export function PackReview() {
                                 <div className="flex flex-wrap items-start gap-4 p-5">
                                     <div className="min-w-0 flex-1">
                                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                                            <span className="font-display text-lg font-bold text-neutral-dark-bg">
+                                            <span className="text-lg font-bold text-neutral-dark-bg">
                                                 {p.id}
                                             </span>
                                             <code className="font-mono text-xs text-neutral-gray-medium">

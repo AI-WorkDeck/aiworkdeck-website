@@ -194,12 +194,12 @@ export function WalletSection({ lang, dict }: { lang: Locale; dict: any }) {
             <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
                 <div className="flex items-center gap-3 flex-1">
                     <Wallet className="w-5 h-5 text-king-forest" strokeWidth={1.75} />
-                    <h2 className="font-display text-xl font-semibold text-neutral-dark-bg">{t.walletTitle}</h2>
+                    <h2 className="text-xl font-semibold text-neutral-dark-bg">{t.walletTitle}</h2>
                 </div>
                 <div className="flex min-w-0 flex-wrap items-center gap-4">
                     <div className="min-w-0 flex-1 text-left md:text-right">
                         <p className="text-xs text-neutral-gray-medium">{t.balanceLabel}</p>
-                        <p className="break-words [overflow-wrap:anywhere] font-display text-2xl font-bold text-king-forest">
+                        <p className="break-words [overflow-wrap:anywhere] text-2xl font-bold text-king-forest">
                             {data ? formatYuan(data.balanceCents) : '—'}
                         </p>
                         {/* 奖励部分会过期，必须在余额旁边就说清楚，别等用户到期了才发现 */}

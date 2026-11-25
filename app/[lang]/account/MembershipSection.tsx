@@ -69,7 +69,7 @@ export function MembershipSection({ lang, dict }: { lang: Locale; dict: any }) {
         <div className="bg-white border border-neutral-gray-light rounded-xl p-6 md:p-8 shadow-sm mb-10">
             <div className="flex items-center gap-3 mb-6">
                 <Award className="w-5 h-5 text-king-forest" strokeWidth={1.75} />
-                <h2 className="font-display text-xl font-semibold text-neutral-dark-bg">{t.membershipTitle}</h2>
+                <h2 className="text-xl font-semibold text-neutral-dark-bg">{t.membershipTitle}</h2>
             </div>
 
             {error ? (
@@ -81,13 +81,13 @@ export function MembershipSection({ lang, dict }: { lang: Locale; dict: any }) {
                     <div className="flex flex-col md:flex-row md:items-center gap-6 mb-5">
                         <div>
                             <p className="text-xs text-neutral-gray-medium mb-1">{t.membershipLevelLabel}</p>
-                            <span className="inline-block rounded-lg border border-king-forest/25 bg-king-forest/5 px-3 py-1 font-display text-lg font-bold text-king-forest">
+                            <span className="inline-block rounded-lg border border-king-forest/25 bg-king-forest/5 px-3 py-1 text-lg font-bold text-king-forest">
                                 {tierDisplayName(data.tier, lang)}
                             </span>
                         </div>
                         <div>
                             <p className="text-xs text-neutral-gray-medium mb-1">{t.membershipGrowthLabel}</p>
-                            <p className="font-display text-2xl font-bold text-king-forest">
+                            <p className="text-2xl font-bold text-king-forest">
                                 {data.growthPoints.toLocaleString(LOCALE_META[lang].bcp47)}
                             </p>
                         </div>

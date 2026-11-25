@@ -720,7 +720,7 @@ export function AdminPanel({ bailianManaged }: { bailianManaged: string }) {
             <div className="flex items-start justify-center pt-10 pb-24">
                 <div className="w-full max-w-sm bg-white/70 backdrop-blur-xl border border-neutral-gray-light/90 rounded-xl p-8 shadow-[0_18px_40px_-24px_rgba(18,58,38,0.28)]">
                     <Eyebrow>Console</Eyebrow>
-                    <h1 className="font-display text-2xl font-semibold text-neutral-dark-bg mt-3 flex items-center gap-2.5">
+                    <h1 className="text-2xl font-semibold text-neutral-dark-bg mt-3 flex items-center gap-2.5">
                         <ShieldCheck className="w-5 h-5 text-king-forest" strokeWidth={1.75} />
                         维护者登录
                     </h1>

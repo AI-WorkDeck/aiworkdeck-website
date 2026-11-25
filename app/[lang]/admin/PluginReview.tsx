@@ -220,7 +220,7 @@ export function PluginReview({ onReviewed }: { onReviewed?: () => Promise<void> 
                         <div className="flex flex-wrap items-start gap-4 p-5">
                             <div className="min-w-0 flex-1">
                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                                    <span className="font-display text-lg font-bold text-neutral-dark-bg">{p.name}</span>
+                                    <span className="text-lg font-bold text-neutral-dark-bg">{p.name}</span>
                                     <code className="font-mono text-xs text-neutral-gray-medium">
                                         {p.id}@{p.version}
                                     </code>

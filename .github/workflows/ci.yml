@@ -57,6 +57,8 @@ jobs:
         run: node scripts/check-palette.mjs
       - name: Raw colour ratchet (X30)
         run: node scripts/check-raw-colors.mjs
+      - name: Typography (serif only for display, no template fonts; W18)
+        run: node scripts/check-typography.mjs
       - name: Plugin platform template and submission contracts
         run: npm run test:plugin-platform
       - name: Plugin permission list parity (pinned with aiworkdeck PluginPermissionParityTest)

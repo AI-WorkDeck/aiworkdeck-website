@@ -312,7 +312,7 @@ cd dist && zip -r ../my-plugin-1.0.0.zip . && cd ..`}</Code>
                 <Reveal>
                     <div className="mt-16 flex flex-col items-start gap-6 rounded-2xl border border-neutral-gray-light bg-white p-8 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <p className="font-display text-lg font-semibold text-neutral-gray-darkest">
+                            <p className="text-lg font-semibold text-neutral-gray-darkest">
                                 {t.ctaTitle}
                             </p>
                             <p className="mt-3 text-sm leading-7 text-neutral-gray-dark">

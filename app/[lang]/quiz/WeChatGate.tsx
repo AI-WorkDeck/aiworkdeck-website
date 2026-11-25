@@ -24,7 +24,7 @@ export function WeChatGate({ t, url }: { t: any; url: string }) {
         <div className="flex flex-col items-center gap-6">
             <div className="w-full rounded-xl border border-neutral-gray-light bg-white p-6 text-center">
                 <Compass className="mx-auto h-8 w-8 text-king-forest" strokeWidth={1.5} />
-                <h2 className="mt-3 font-display text-xl font-semibold text-neutral-dark-bg">{t.title}</h2>
+                <h2 className="mt-3 text-xl font-semibold text-neutral-dark-bg">{t.title}</h2>
                 <p className="mx-auto mt-2 max-w-sm text-[14px] leading-relaxed text-neutral-gray-medium">{t.desc}</p>
                 <button type="button" onClick={copy}
                     className="mt-5 inline-flex h-11 items-center gap-2 rounded-lg border border-king-forest px-6 text-[14px] font-bold text-king-forest transition-colors hover:bg-king-forest hover:text-white">

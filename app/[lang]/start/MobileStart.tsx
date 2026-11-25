@@ -88,7 +88,7 @@ export function MobileStart({ lang, dict, loggedIn, email, desktopUrl, captcha, 
                 </div>
                 {wxStart && (
                     <div className="mb-6 rounded-xl border border-king-forest/40 bg-white p-6 shadow-[0_18px_40px_-18px_rgba(46,90,80,0.25)]">
-                        <p className="flex items-center gap-2 font-display text-[15px] font-bold text-neutral-dark-bg">
+                        <p className="flex items-center gap-2 text-[15px] font-bold text-neutral-dark-bg">
                             <Smartphone className="h-4 w-4 flex-shrink-0 text-king-forest" strokeWidth={1.75} />
                             {t.wxTitle}
                         </p>
@@ -120,7 +120,7 @@ export function MobileStart({ lang, dict, loggedIn, email, desktopUrl, captcha, 
     return (
         <div className="mx-auto max-w-md">
             <div className="rounded-xl border border-[#dce2de] bg-white p-6">
-                <p className="flex items-center gap-2 font-display text-lg font-bold text-neutral-dark-bg">
+                <p className="flex items-center gap-2 text-lg font-bold text-neutral-dark-bg">
                     <Check className="h-5 w-5 text-king-forest" strokeWidth={2} />
                     {t.readyTitle}
                 </p>

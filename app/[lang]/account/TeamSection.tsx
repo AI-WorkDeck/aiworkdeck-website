@@ -197,7 +197,7 @@ export function TeamSection({
             <div className={cardClass}>
                 <div className="flex items-center gap-3 mb-2">
                     <Users className="w-5 h-5 text-king-forest" strokeWidth={1.75} />
-                    <h2 className="font-display text-xl font-semibold text-neutral-dark-bg">{t.teamTitle}</h2>
+                    <h2 className="text-xl font-semibold text-neutral-dark-bg">{t.teamTitle}</h2>
                 </div>
                 <p className="text-sm text-neutral-gray-medium py-6 text-center">{loadError}</p>
             </div>
@@ -213,7 +213,7 @@ export function TeamSection({
             <div className={cardClass}>
                 <div className="flex items-center gap-3 mb-2">
                     <Users className="w-5 h-5 text-king-forest" strokeWidth={1.75} />
-                    <h2 className="font-display text-xl font-semibold text-neutral-dark-bg">{t.teamTitle}</h2>
+                    <h2 className="text-xl font-semibold text-neutral-dark-bg">{t.teamTitle}</h2>
                 </div>
                 <p className="text-sm text-neutral-gray-dark mb-6">{t.teamNoTeamDesc}</p>
 
@@ -323,7 +323,7 @@ export function TeamSection({
                 <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
                     <div className="flex items-center gap-3 flex-1">
                         <Users className="w-5 h-5 text-king-forest" strokeWidth={1.75} />
-                        <h2 className="font-display text-xl font-semibold text-neutral-dark-bg">{t.teamTitle}</h2>
+                        <h2 className="text-xl font-semibold text-neutral-dark-bg">{t.teamTitle}</h2>
                     </div>
                     <div className="text-right">
                         <p className="text-xs text-neutral-gray-medium">{t.teamMyRoleLabel}</p>
@@ -363,7 +363,7 @@ export function TeamSection({
                         </>
                     ) : (
                         <>
-                            <span className="min-w-0 break-words [overflow-wrap:anywhere] font-display text-lg font-bold text-neutral-dark-bg">
+                            <span className="min-w-0 break-words [overflow-wrap:anywhere] text-lg font-bold text-neutral-dark-bg">
                                 {team.name}
                             </span>
                             {isManager && (
@@ -597,7 +597,7 @@ export function TeamSection({
             <div className={cardClass}>
                 <div className="flex items-center gap-3 mb-2">
                     <Building2 className="w-5 h-5 text-king-forest" strokeWidth={1.75} />
-                    <h2 className="font-display text-xl font-semibold text-neutral-dark-bg">{t.teamFirmTitle}</h2>
+                    <h2 className="text-xl font-semibold text-neutral-dark-bg">{t.teamFirmTitle}</h2>
                 </div>
 
                 {!firm ? (
@@ -704,7 +704,7 @@ export function TeamSection({
                                 </>
                             ) : (
                                 <>
-                                    <span className="min-w-0 break-words [overflow-wrap:anywhere] font-display text-lg font-bold text-neutral-dark-bg">
+                                    <span className="min-w-0 break-words [overflow-wrap:anywhere] text-lg font-bold text-neutral-dark-bg">
                                         {firm.name}
                                     </span>
                                     {firm.isHead && (

@@ -36,7 +36,7 @@ export function SubmitTabs({ lang, pluginT, packT, developerApproved }: { lang: 
             </div>
 
             {/* 页级 h1 已上移到 PageHero；这里是随页签切换的分叉标题 */}
-            <h2 className="mb-2 font-display text-2xl font-semibold text-neutral-dark-bg">{t.title}</h2>
+            <h2 className="mb-2 text-2xl font-semibold text-neutral-dark-bg">{t.title}</h2>
             <p className="mb-5 text-neutral-gray-medium">{t.intro}</p>
 
             {/* 受理机制：等多久、结果去哪看。不写清楚，提交完就是无限期的沉默。

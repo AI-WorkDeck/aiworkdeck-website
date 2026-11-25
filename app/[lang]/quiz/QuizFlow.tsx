@@ -153,7 +153,7 @@ export function QuizFlow({ lang, t, tStyle, from, loggedIn, username, completes,
                 <p className="text-[12px] uppercase tracking-[0.2em] text-king-forest/80">
                     {(t.remain as string).replace('{n}', String(total - qIndex))}
                 </p>
-                <h2 className="mt-3 font-display text-xl font-semibold leading-relaxed text-neutral-dark-bg md:text-2xl">
+                <h2 className="mt-3 text-xl font-semibold leading-relaxed text-neutral-dark-bg md:text-2xl">
                     {zh ? tz(q.zh) : q.en}
                 </h2>
                 <div className="mt-6 flex flex-col gap-3">
@@ -171,7 +171,7 @@ export function QuizFlow({ lang, t, tStyle, from, loggedIn, username, completes,
     if (stage === 'nick') {
         return (
             <div className="rounded-xl border border-neutral-gray-light bg-white p-6 text-center md:p-8">
-                <h2 className="font-display text-xl font-semibold text-neutral-dark-bg">{t.nickTitle}</h2>
+                <h2 className="text-xl font-semibold text-neutral-dark-bg">{t.nickTitle}</h2>
                 <p className="mt-2 text-[13px] text-neutral-gray-medium">{t.nickHint}</p>
                 <input
                     value={nickname}
@@ -216,7 +216,7 @@ export function QuizFlow({ lang, t, tStyle, from, loggedIn, username, completes,
             <div className="text-center">
                 <p className="text-[13px] uppercase tracking-[0.22em] text-king-forest/80">
                     {t.resultEyebrow}
-                    <span className="ml-2 font-display text-[15px] font-black normal-case tracking-normal text-neutral-dark-bg">
+                    <span className="ml-2 text-[15px] font-black normal-case tracking-normal text-neutral-dark-bg">
                         {zh ? tz(type.nameZh) : type.nameEn}
                     </span>
                 </p>

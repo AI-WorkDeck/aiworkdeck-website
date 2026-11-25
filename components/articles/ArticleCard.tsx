@@ -40,7 +40,7 @@ export function ArticleCard({ lang, article, readLabel, size = 'default' }: Arti
                     <p className="mb-3 font-mono text-[12px] tabular-nums text-neutral-gray-medium">
                         {article.publishedAt}
                     </p>
-                    <h3 className="font-display text-lg font-semibold leading-snug text-neutral-dark-bg transition-colors group-hover:text-king-forest">
+                    <h3 className="text-lg font-semibold leading-snug text-neutral-dark-bg transition-colors group-hover:text-king-forest">
                         {title}
                     </h3>
                     <p className="mb-6 mt-4 flex-1 text-sm leading-7 text-neutral-gray-medium line-clamp-3">

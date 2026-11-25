@@ -83,8 +83,9 @@
   --color-pine: var(--pine);
   --color-pine-deep: var(--pine-deep);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* X30 §C: Inter for the interface, system mono (no webfont). */
+  --font-sans: var(--font-interface), -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 }
 
 /* 站点为纯浅色设计：不随系统深色模式翻转 --background/--foreground，
@@ -93,7 +94,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
   overflow-x: hidden;
 }
 
@@ -470,7 +471,7 @@ html {
 
 /* 展示级无衬线：大标题/卡片题名专用 (DESIGN.md) */
 .font-display {
-  font-family: var(--font-interface), 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC', sans-serif;
+  font-family: var(--font-interface), -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC', sans-serif;
   letter-spacing: -0.025em;
 }
 

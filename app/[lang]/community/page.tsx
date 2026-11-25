@@ -113,7 +113,7 @@ export default async function CommunityPage({
                                     <Link key={post.id} href={`/${lang}/community/post/${post.id}`}
                                         className="group relative overflow-hidden rounded-xl border border-neutral-gray-light bg-white/65 p-6 backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-king-forest/5">
                                         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-king-forest/30 to-transparent" />
-                                        <h3 className="font-display text-lg font-semibold leading-snug text-neutral-dark-bg group-hover:text-king-forest">
+                                        <h3 className="text-lg font-semibold leading-snug text-neutral-dark-bg group-hover:text-king-forest">
                                             {post.title}
                                         </h3>
                                         <p className="mt-2.5 line-clamp-2 text-[13.5px] leading-relaxed text-neutral-gray-medium">
@@ -167,7 +167,7 @@ export default async function CommunityPage({
                 {/* 信息流 */}
                 {posts.length === 0 ? (
                     <div className="rounded-2xl border border-neutral-gray-light bg-white px-6 py-16 text-center">
-                        <p className="font-display text-lg font-bold text-neutral-dark-bg">{t.empty}</p>
+                        <p className="text-lg font-bold text-neutral-dark-bg">{t.empty}</p>
                     </div>
                 ) : (
                     <div className="overflow-hidden rounded-xl border border-neutral-gray-light bg-white">
@@ -220,7 +220,7 @@ function PostRow({ lang, t, post }: { lang: Locale; t: any; post: ForumPost }) {
                                 {t.pinnedBadge}
                             </span>
                         )}
-                        <span className="truncate font-display text-[15.5px] font-bold text-neutral-dark-bg group-hover:text-king-forest">
+                        <span className="truncate text-[15.5px] font-bold text-neutral-dark-bg group-hover:text-king-forest">
                             {post.title}
                         </span>
                     </p>

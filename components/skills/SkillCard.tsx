@@ -41,7 +41,7 @@ export function SkillCard({ lang, dict, skill: rawSkill, author }: SkillCardProp
                                 </>
                             )}
                         </div>
-                        <h3 className="font-display text-xl font-semibold text-neutral-dark-bg leading-snug group-hover:text-king-forest transition-colors duration-300 truncate">
+                        <h3 className="text-xl font-semibold text-neutral-dark-bg leading-snug group-hover:text-king-forest transition-colors duration-300 truncate">
                             {skill.name}
                         </h3>
                         <p className="mt-1 text-[11px] font-mono text-neutral-gray-medium/80 truncate">

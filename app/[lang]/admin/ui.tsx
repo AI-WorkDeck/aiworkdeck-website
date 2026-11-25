@@ -34,7 +34,7 @@ export function SectionHeader({
         <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="min-w-0">
                 <Eyebrow>{eyebrow}</Eyebrow>
-                <h2 className="font-display text-2xl font-semibold text-neutral-dark-bg mt-2.5">{title}</h2>
+                <h2 className="text-2xl font-semibold text-neutral-dark-bg mt-2.5">{title}</h2>
                 {description && (
                     <p className="text-sm leading-relaxed text-neutral-gray-medium mt-1.5 max-w-2xl">{description}</p>
                 )}
@@ -68,7 +68,7 @@ export function Panel({
             {(title || actions) && (
                 <header className="flex flex-wrap items-start justify-between gap-4 px-6 pt-5 pb-4 border-b border-neutral-gray-light/70">
                     <div className="min-w-0">
-                        {title && <h3 className="font-display text-lg font-semibold text-neutral-dark-bg">{title}</h3>}
+                        {title && <h3 className="text-lg font-semibold text-neutral-dark-bg">{title}</h3>}
                         {description && (
                             <p className="text-sm leading-relaxed text-neutral-gray-medium mt-1 max-w-2xl">
                                 {description}

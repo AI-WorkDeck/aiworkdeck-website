@@ -196,7 +196,7 @@ function Board({ icon: Icon, title, note, children }: {
     return (
         <section className="overflow-hidden rounded-xl border border-neutral-gray-light/90 bg-white/65 backdrop-blur-xl">
             <header className="flex items-center justify-between border-b border-neutral-gray-light/80 px-5 py-4">
-                <h2 className="flex items-center gap-2.5 font-display text-[17px] font-semibold text-neutral-dark-bg">
+                <h2 className="flex items-center gap-2.5 text-[17px] font-semibold text-neutral-dark-bg">
                     <Icon className="h-[18px] w-[18px] text-king-forest" strokeWidth={1.75} />
                     {title}
                 </h2>
@@ -221,7 +221,7 @@ function Row({ rank, children }: { rank: number; children: React.ReactNode }) {
 function RankNum({ rank }: { rank: number }) {
     return (
         <span className={cn(
-            'w-8 flex-shrink-0 text-center font-display text-lg font-bold tabular-nums',
+            'w-8 flex-shrink-0 text-center text-lg font-bold tabular-nums',
             rank === 1 ? 'text-king-forest'
                     : rank <= 3 ? 'text-king-forest-lighter'
                         : 'text-neutral-gray-medium'
