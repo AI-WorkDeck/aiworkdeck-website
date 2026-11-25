@@ -83,6 +83,8 @@ jobs:
         run: node scripts/verify-og-card.mjs
       - name: Skill charts, 404 and submit page titles
         run: npx tsx --tsconfig tsconfig.json scripts/verify-charts-and-titles.mts
+      - name: /get-app page for desktop and phone visitors
+        run: npx tsx --tsconfig tsconfig.json scripts/verify-get-app.mts
       - name: Plugin store lists each plugin once
         run: npm run test:store-plugins
       - name: Pricing page offers only what each site sells

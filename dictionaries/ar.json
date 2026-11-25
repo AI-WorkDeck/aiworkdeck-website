@@ -1676,7 +1676,9 @@
       "tencentMyApp": "Tencent MyApp",
       "apkLink": "تنزيل APK لنظام Android",
       "details": "الإصدار {version} · {size} MB",
-      "checksum": "عرض بصمة الملف"
+      "checksum": "عرض بصمة الملف",
+      "desktopHint": "هل تستخدم حاسوبًا؟",
+      "desktopLink": "نزّل الإصدار لنظامي Windows / macOS ←"
     },
     "mobile": {
       "loggedOutHint": "تحقق من رقم الهاتف أو البريد الإلكتروني وأنشئ كلمة مرور، ثم سجّل الدخول إلى تطبيق الحاسوب أو الهاتف بحساب من المنطقة نفسها.",

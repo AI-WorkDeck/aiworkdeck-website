@@ -1676,7 +1676,9 @@
       "tencentMyApp": "Tencent MyApp",
       "apkLink": "Android-APK downloaden",
       "details": "Versie {version} · {size} MB",
-      "checksum": "Bestandschecksum bekijken"
+      "checksum": "Bestandschecksum bekijken",
+      "desktopHint": "Op een computer?",
+      "desktopLink": "Downloaden voor Windows / macOS →"
     },
     "mobile": {
       "loggedOutHint": "Verifieer uw telefoonnummer of e-mail en maak een wachtwoord aan. Meld u daarna aan bij de desktop- of mobiele app met een account uit dezelfde regio.",

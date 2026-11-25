@@ -1676,7 +1676,9 @@
       "tencentMyApp": "Tencent MyApp",
       "apkLink": "Λήψη Android APK",
       "details": "Έκδοση {version} · {size} MB",
-      "checksum": "Προβολή αθροίσματος ελέγχου"
+      "checksum": "Προβολή αθροίσματος ελέγχου",
+      "desktopHint": "Είστε σε υπολογιστή;",
+      "desktopLink": "Λήψη για Windows / macOS →"
     },
     "mobile": {
       "loggedOutHint": "Επαληθεύστε τηλέφωνο ή email και δημιουργήστε κωδικό, έπειτα συνδεθείτε στην εφαρμογή υπολογιστή ή κινητού με λογαριασμό της ίδιας περιοχής.",

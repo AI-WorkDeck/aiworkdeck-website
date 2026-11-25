@@ -1676,7 +1676,9 @@
       "tencentMyApp": "Tencent MyApp",
       "apkLink": "Tải APK Android",
       "details": "Phiên bản {version} · {size} MB",
-      "checksum": "Xem mã kiểm tra tệp"
+      "checksum": "Xem mã kiểm tra tệp",
+      "desktopHint": "Đang dùng máy tính?",
+      "desktopLink": "Tải bản Windows / macOS →"
     },
     "mobile": {
       "loggedOutHint": "Xác minh số điện thoại hoặc email và tạo mật khẩu, rồi đăng nhập ứng dụng máy tính hoặc di động bằng tài khoản cùng khu vực.",

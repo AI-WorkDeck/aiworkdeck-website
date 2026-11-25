@@ -1676,7 +1676,9 @@
       "tencentMyApp": "Tencent MyApp",
       "apkLink": "Télécharger l’APK Android",
       "details": "Version {version} · {size} Mo",
-      "checksum": "Voir la somme de contrôle"
+      "checksum": "Voir la somme de contrôle",
+      "desktopHint": "Sur un ordinateur ?",
+      "desktopLink": "Télécharger pour Windows / macOS →"
     },
     "mobile": {
       "loggedOutHint": "Vérifiez votre numéro de téléphone ou votre e-mail et créez un mot de passe, puis connectez-vous à l’application ordinateur ou mobile avec un compte de la même région.",

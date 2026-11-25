@@ -1676,7 +1676,9 @@
       "tencentMyApp": "Tencent MyApp",
       "apkLink": "Transferir APK Android",
       "details": "Versão {version} · {size} MB",
-      "checksum": "Ver soma de verificação"
+      "checksum": "Ver soma de verificação",
+      "desktopHint": "Está em um computador?",
+      "desktopLink": "Baixar para Windows / macOS →"
     },
     "mobile": {
       "loggedOutHint": "Valide o telefone ou e-mail e crie uma palavra-passe; depois entre na aplicação de computador ou móvel com uma conta da mesma região.",

@@ -1963,7 +1963,9 @@
       "tencentMyApp": "應用寶",
       "apkLink": "直接下載安裝包（APK）",
       "details": "版本 {version} · {size} MB",
-      "checksum": "查看檔案校驗值"
+      "checksum": "查看檔案校驗值",
+      "desktopHint": "在電腦上？",
+      "desktopLink": "下載 Windows / macOS 桌面版 →"
     },
     "after": {
       "plugins": {

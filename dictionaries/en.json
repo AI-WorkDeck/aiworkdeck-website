@@ -1676,7 +1676,9 @@
       "tencentMyApp": "Tencent MyApp",
       "apkLink": "Download the APK directly",
       "details": "Version {version} · {size} MB",
-      "checksum": "View file checksum"
+      "checksum": "View file checksum",
+      "desktopHint": "On a computer?",
+      "desktopLink": "Download AI WorkDeck for Windows or macOS →"
     },
     "mobile": {
       "loggedOutHint": "Verify your phone number or email and create a password, then sign in to the desktop or mobile app with an account from the same region.",

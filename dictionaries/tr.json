@@ -1676,7 +1676,9 @@
       "tencentMyApp": "Tencent MyApp",
       "apkLink": "Android APK indir",
       "details": "Sürüm {version} · {size} MB",
-      "checksum": "Dosya sağlama toplamını göster"
+      "checksum": "Dosya sağlama toplamını göster",
+      "desktopHint": "Bilgisayarda mısınız?",
+      "desktopLink": "Windows / macOS için indirin →"
     },
     "mobile": {
       "loggedOutHint": "Telefon numaranızı veya e-postanızı doğrulayıp parola oluşturun, ardından aynı bölgedeki hesapla masaüstü veya mobil uygulamada oturum açın.",

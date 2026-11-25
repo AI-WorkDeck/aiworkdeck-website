@@ -14,7 +14,7 @@ type Copy = {
 };
 
 /** Store buttons first (device-matching store on top), direct APK last and quiet (cn only). */
-export async function MobileAppSection({ t, ua, showQr = false }: { t: Copy; ua: string; showQr?: boolean }) {
+export async function MobileAppSection({ t, ua, showQr = false, hideTitle = false }: { t: Copy; ua: string; showQr?: boolean; /** The page hero already says it. */ hideTitle?: boolean }) {
     const cn = SITE_ID === 'cn';
     const ios = /iPhone|iPad|iPod/i.test(ua);
     const android = /Android/i.test(ua);
@@ -28,7 +28,7 @@ export async function MobileAppSection({ t, ua, showQr = false }: { t: Copy; ua:
 
     return (
         <section className="mb-5 rounded-xl border border-neutral-gray-light bg-white p-5">
-            <h2 className="text-lg font-semibold text-neutral-dark-bg">{t.title}</h2>
+            {!hideTitle && <h2 className="text-lg font-semibold text-neutral-dark-bg">{t.title}</h2>}
             <p className="mt-2 text-sm text-neutral-gray-dark">{t.body}</p>
             <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-4">
                 <div className="flex flex-wrap gap-3">
