@@ -10,6 +10,7 @@ import { PageHero } from '@/components/layout/PageHero';
 import { Button } from '@/components/ui/button';
 import { pageAlternates } from '@/lib/page-metadata';
 import { cn } from '@/lib/utils';
+import { MIN_SHOWN_INSTALLS } from '@/lib/store-plugins';
 
 /**
  * Skill 榜单页（dev-board#301）：免费/收费/创作者/收益四榜齐发。
@@ -19,7 +20,8 @@ import { cn } from '@/lib/utils';
  */
 export const dynamic = 'force-dynamic';
 
-const TOP_N = 10;
+/** A board is shown only from this many real entries (CEO 2026-11-25, POLISH W8). */
+const MIN_BOARD_ROWS = 5;
 
 export async function generateMetadata({
     params,
@@ -51,13 +53,16 @@ export default async function ChartsPage({
     const charts = computeCharts();
     const freeRows = weekly ? charts.free.weekly : charts.free.all;
     const paidRows = weekly ? charts.paid.weekly : charts.paid.all;
+    // A board with a handful of '1 install' rows reads as an empty room; show a board once it is real.
+    const show = { free: freeRows.length >= MIN_BOARD_ROWS, paid: paidRows.length >= MIN_BOARD_ROWS, creators: charts.creators.length >= MIN_BOARD_ROWS, earnings: charts.earnings.length >= MIN_BOARD_ROWS };
+    const anyBoard = Object.values(show).some(Boolean);
 
     return (
         <div className="min-h-screen bg-neutral-gray-pale pb-24">
             {/* 全站统一深色刊物式页头（dev-board#328） */}
             <PageHero eyebrow={t.eyebrow} title={t.title} subtitle={t.lead} size="compact" width="6xl" />
             <div className="container mx-auto px-4 md:px-8 max-w-6xl pt-10">
-                <header className="mb-8">
+                {anyBoard && <header className="mb-8">
                     {/* 总榜 / 本周 切换（只作用于两个 Skill 榜）：编辑式下划线（DESIGN.md §四），不用胶囊 */}
                     <nav className="flex items-center justify-end gap-6 border-b border-neutral-gray-light">
                         {[
@@ -78,18 +83,18 @@ export default async function ChartsPage({
                             </Link>
                         ))}
                     </nav>
-                </header>
+                </header>}
 
-                <div className="grid gap-6 lg:grid-cols-2">
-                    <Reveal>
+                {anyBoard && <div className="grid gap-6 lg:grid-cols-2">
+                    {show.free && <Reveal>
                         <SkillBoard lang={lang} t={t} icon={TrendingUp} title={t.freeTitle}
                             note={weekly ? t.weeklyNote : t.freeNote} rows={freeRows} valueLabel={t.installs} />
-                    </Reveal>
-                    <Reveal delay={60}>
+                    </Reveal>}
+                    {show.paid && <Reveal delay={60}>
                         <SkillBoard lang={lang} t={t} icon={Gem} title={t.paidTitle}
                             note={weekly ? t.weeklyNote : t.paidNote} rows={paidRows} valueLabel={t.purchases} />
-                    </Reveal>
-                    <Reveal delay={120}>
+                    </Reveal>}
+                    {show.creators && <Reveal delay={120}>
                         <Board lang={lang} t={t} icon={Feather} title={t.creatorsTitle} note={t.creatorsNote}
                             count={charts.creators.length}>
                             {charts.creators.map(row => (
@@ -111,14 +116,16 @@ export default async function ChartsPage({
                                     </Link>
                                     <span className="text-right font-mono text-[13px] text-neutral-gray-medium whitespace-nowrap">
                                         {(t.worksCount as string).replace('{n}', String(row.works))}
-                                        <span className="mx-1.5 text-neutral-gray-light">·</span>
-                                        {(t.installsCount as string).replace('{n}', String(row.installs))}
+                                        {row.installs >= MIN_SHOWN_INSTALLS && <>
+                                            <span className="mx-1.5 text-neutral-gray-light">·</span>
+                                            {(t.installsCount as string).replace('{n}', String(row.installs))}
+                                        </>}
                                     </span>
                                 </Row>
                             ))}
                         </Board>
-                    </Reveal>
-                    <Reveal delay={180}>
+                    </Reveal>}
+                    {show.earnings && <Reveal delay={180}>
                         <Board lang={lang} t={t} icon={Coins} title={t.earningsTitle} note={t.earningsNote}
                             count={charts.earnings.length}>
                             {charts.earnings.map(row => (
@@ -137,8 +144,8 @@ export default async function ChartsPage({
                                 </Row>
                             ))}
                         </Board>
-                    </Reveal>
-                </div>
+                    </Reveal>}
+                </div>}
 
                 <div className="mt-10 flex flex-col items-center gap-3">
                     <p className="text-[13px] text-neutral-gray-medium">{t.joinHint}</p>
@@ -173,20 +180,19 @@ function SkillBoard({ lang, t, icon: Icon, title, note, rows, valueLabel }: {
                             <span className="block truncate text-[12px] text-neutral-gray-medium">{row.authorName}</span>
                         )}
                     </span>
-                    <span className="text-right font-mono text-[13px] text-neutral-gray-medium whitespace-nowrap">
+                    {row.value >= MIN_SHOWN_INSTALLS && <span className="text-right font-mono text-[13px] text-neutral-gray-medium whitespace-nowrap">
                         {row.value.toLocaleString()} {valueLabel}
-                    </span>
+                    </span>}
                 </Row>
             ))}
         </Board>
     );
 }
 
-/** 榜卡骨架：不足 TOP_N 的名次渲染「虚位以待」占位行（冷启动裁决：空位即召唤） */
-function Board({ lang, t, icon: Icon, title, note, count, children }: {
+/** 榜卡骨架。只在有足够真实条目时渲染，不再放「虚位以待」占位行（CEO 2026-11-25，POLISH W8）。 */
+function Board({ icon: Icon, title, note, children }: {
     lang: Locale; t: any; icon: any; title: string; note: string; count: number; children: React.ReactNode;
 }) {
-    const empty = Math.max(0, TOP_N - count);
     return (
         <section className="overflow-hidden rounded-xl border border-neutral-gray-light/90 bg-white/65 backdrop-blur-xl">
             <header className="flex items-center justify-between border-b border-neutral-gray-light/80 px-5 py-4">
@@ -198,15 +204,6 @@ function Board({ lang, t, icon: Icon, title, note, count, children }: {
             </header>
             <ol>
                 {children}
-                {empty > 0 && (
-                    <li className="flex items-center gap-4 border-b border-neutral-gray-light/50 px-5 py-3 last:border-b-0">
-                        <RankNum rank={count + 1} ghost />
-                        <Link href={`/${lang}/skills/submit`}
-                            className="flex-1 text-[13px] text-neutral-gray-medium hover:text-king-forest transition-colors">
-                            {t.emptySlot}
-                        </Link>
-                    </li>
-                )}
             </ol>
         </section>
     );
@@ -221,16 +218,15 @@ function Row({ rank, children }: { rank: number; children: React.ReactNode }) {
     );
 }
 
-function RankNum({ rank, ghost }: { rank: number; ghost?: boolean }) {
+function RankNum({ rank }: { rank: number }) {
     return (
         <span className={cn(
             'w-8 flex-shrink-0 text-center font-display text-lg font-bold tabular-nums',
-            ghost ? 'text-neutral-gray-light'
-                : rank === 1 ? 'text-king-forest'
+            rank === 1 ? 'text-king-forest'
                     : rank <= 3 ? 'text-king-forest-lighter'
                         : 'text-neutral-gray-medium'
         )}>
-            {rank === 1 && !ghost ? <Crown className="mx-auto h-5 w-5" strokeWidth={1.75} /> : rank}
+            {rank === 1 ? <Crown className="mx-auto h-5 w-5" strokeWidth={1.75} /> : rank}
         </span>
     );
 }

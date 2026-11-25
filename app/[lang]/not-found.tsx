@@ -1,4 +1,5 @@
 import { getDictionary } from '@/get-dictionary';
+import { i18n } from '@/i18n-config';
 import { NotFoundContent } from './NotFoundContent';
 
 /**
@@ -10,6 +11,7 @@ import { NotFoundContent } from './NotFoundContent';
  * 由客户端组件按 `useParams()` 挑一份，见 NotFoundContent.tsx。
  */
 export default async function NotFound() {
-    const [en, zh] = await Promise.all([getDictionary('en'), getDictionary('zh')]);
-    return <NotFoundContent copy={{ en: en.notFoundPage, zh: zh.notFoundPage }} />;
+    // Every locale's (short) copy, so zh-hant and the other 17 languages get their own 404 text (X32).
+    const copy = Object.fromEntries(await Promise.all(i18n.locales.map(async l => [l, (await getDictionary(l)).notFoundPage])));
+    return <NotFoundContent copy={copy as Parameters<typeof NotFoundContent>[0]['copy']} />;
 }
