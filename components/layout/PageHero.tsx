@@ -36,7 +36,7 @@ export function PageHero({
     const tall = size === 'tall';
     // 2026-11 全站「纸与墨」：页头与首页同一套纸面、横格、墨色衬线标题（原深林绿整块页头退役）。
     return (
-        <section className="page-hero relative overflow-hidden border-b border-[#e3dccb]">
+        <section className="page-hero relative overflow-hidden border-b border-neutral-gray-light">
             <div className={cn(
                 'relative container mx-auto px-4 md:px-8',
                 WIDTHS[width],
@@ -44,15 +44,15 @@ export function PageHero({
                 tabs ? 'pb-0' : tall ? 'pb-8 md:pb-10' : 'pb-4 md:pb-6',
             )}>
                 <p className="page-hero-eyebrow mb-4 inline-flex items-center gap-2.5">
-                    <span aria-hidden className="h-px w-6 bg-[#d7c5a1]" />
+                    <span aria-hidden className="h-px w-6 bg-king-gold" />
                     {eyebrow}
                 </p>
                 <h1 className={cn(
-                    'font-display text-[#14261f]',
+                    'font-display text-ink',
                     tall ? 'text-[40px] md:text-[56px]' : 'text-[34px] md:text-[44px]',
                     'leading-[1.1]',
                 )}>{title}</h1>
-                {subtitle && <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-[#2a3a33] md:text-[19px]">{subtitle}</p>}
+                {subtitle && <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-ink-body md:text-[19px]">{subtitle}</p>}
                 {children && <div className="mt-7">{children}</div>}
                 {tabs && <div className="mt-8">{tabs}</div>}
             </div>

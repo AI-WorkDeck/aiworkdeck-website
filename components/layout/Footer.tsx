@@ -90,7 +90,7 @@ export async function Footer({ lang, dict }: FooterProps) {
     ];
 
     return (
-        <footer className="site-footer border-t border-[#d7c5a1]/60 bg-[#efebe1]">
+        <footer className="site-footer border-t border-king-gold/60 bg-neutral-gray-pale">
             {/* Main Footer Content */}
             <div className="mx-auto max-w-7xl px-4 md:px-8 py-12 md:py-16">
                 <div className="mb-10 flex flex-col gap-3 min-[480px]:flex-row">

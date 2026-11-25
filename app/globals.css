@@ -33,6 +33,14 @@
   --neutral-gray-light: #DFDBCE;
   --neutral-gray-pale: #F1EFE7;
   /* AWD-TOKENS:END website-root */
+  /* Website paper-and-ink ramp (marketing pages only; lane X token map, POLISH X30). Product colours use the
+     palette tokens above; these six carry the 纸与墨 look and replace the raw hex that drifted into components. */
+  --paper: #F6F4EE;     /* page background of marketing pages; light text on ink/pine */
+  --ink: #14261F;       /* display headings, strongest text */
+  --ink-body: #4A5650;  /* body copy on paper */
+  --ink-muted: #5C655F; /* secondary text, notes, captions */
+  --pine: #1F3B34;      /* dark green bands and primary dark buttons */
+  --pine-deep: #17302A; /* hover/pressed on pine */
 
   --background: var(--neutral-white);
   --foreground: var(--neutral-gray-dark);
@@ -68,6 +76,12 @@
   --color-neutral-gray-light: var(--neutral-gray-light);
   --color-neutral-gray-pale: var(--neutral-gray-pale);
   /* AWD-TOKENS:END website-theme */
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-body: var(--ink-body);
+  --color-ink-muted: var(--ink-muted);
+  --color-pine: var(--pine);
+  --color-pine-deep: var(--pine-deep);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
