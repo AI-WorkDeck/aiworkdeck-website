@@ -1,20 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import {
-    Blocks,
-    ShieldCheck,
-    Wrench,
-    Download,
-    FileSearch,
-    Users,
-    AudioLines,
-    Check,
-    Code2,
-} from 'lucide-react';
-import { toBaseLocale, type Locale } from '@/i18n-config';
+import { Blocks, ShieldCheck, Wrench, Download, Code2 } from 'lucide-react';
+import { toBaseLocale, LOCALE_META, type Locale } from '@/i18n-config';
 import { getDictionary } from '@/get-dictionary';
-import { listPlugins, getPluginDisplay } from '@/lib/plugins-store';
-import { OFFICIAL_PLUGINS, type OfficialPlugin } from '@/lib/official-plugins';
+import { listStorePlugins, MIN_SHOWN_INSTALLS, type StorePlugin } from '@/lib/store-plugins';
 import { listFeatureProducts } from '@/lib/products';
 import { hasEntitlement } from '@/lib/purchases';
 import { getSessionUser } from '@/lib/sessions';
@@ -26,13 +15,6 @@ import { MarketplaceHero } from '../MarketplaceHero';
 import { pageAlternates } from '@/lib/page-metadata';
 
 export const dynamic = 'force-dynamic';
-
-const OFFICIAL_ICONS: Record<OfficialPlugin['icon'], typeof FileSearch> = {
-    FileSearch,
-    Users,
-    ShieldCheck,
-    AudioLines,
-};
 
 /** 统一卡片模板（DESIGN.md §五，SkillCard 为准）——替换掉旧插件页自成一派的 rounded-2xl */
 const CARD =
@@ -74,15 +56,83 @@ export default async function MarketplacePluginsPage({ params }: { params: Promi
         ...p,
         owned: !!me && hasEntitlement(me.id, p.key),
     }));
-    // 只展示审核通过的版本；同 id 多版本时取最新发布的那个
-    const approved = listPlugins({ status: 'approved' });
-    const latest = new Map<string, (typeof approved)[number]>();
-    for (const p of approved) {
-        const prev = latest.get(p.id);
-        if (!prev || (p.publishedAt ?? '') > (prev.publishedAt ?? '')) latest.set(p.id, p);
-    }
-    const plugins = [...latest.values()].map(p => ({ ...p, ...getPluginDisplay(p, lang) })).sort(
-        (a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''),
+    // One list from the registry: official plugins first, then community ones. No hand-written duplicates.
+    const all = listStorePlugins(lang);
+    const official = all.filter(p => p.official);
+    const plugins = all.filter(p => !p.official);
+    const card = (p: StorePlugin, i: number) => (
+        <Reveal key={p.id} delay={180 + i * 55} className="h-full">
+            <article className={CARD}>
+                <header className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                        {/* 微标签行：签名状态用图标+小字承载语义，不做彩色胶囊 */}
+                        <p className="mb-2 flex items-center gap-1.5 text-[11px] tracking-[0.14em] uppercase text-king-forest/80">
+                            <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
+                            {t.signed}
+                        </p>
+                        <h3 className="truncate font-display text-xl font-semibold text-neutral-dark-bg">
+                            {p.name}
+                        </h3>
+                        <p className="mt-1 text-[11px] font-mono text-neutral-gray-medium/80 truncate">
+                            v{p.version} · {p.author}
+                        </p>
+                    </div>
+                    {(p.priceCents ?? 0) > 0 && (
+                        <span className="shrink-0 font-display text-lg font-bold text-king-forest">
+                            {formatPrice(p.priceCents!)}
+                        </span>
+                    )}
+                </header>
+
+                <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-neutral-gray-dark">
+                    {p.description}
+                </p>
+
+                {/* 工具数与权限自述：细字排版替代满屏胶囊（DESIGN.md §一.2）；没有 AI 工具时不写「0 个」 */}
+                <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-neutral-gray-medium">
+                    {p.tools.length > 0 && (
+                        <span className="inline-flex items-center gap-1">
+                            <Wrench className="h-3.5 w-3.5" strokeWidth={1.75} />
+                            {p.tools.length} {t.toolsSuffix}
+                        </span>
+                    )}
+                    {p.permissions.map((perm, j) => (
+                        <span key={perm} className="inline-flex items-center gap-2">
+                            {(j > 0 || p.tools.length > 0) && <span className="text-neutral-gray-light">·</span>}
+                            {(t.permissions as Record<string, string>)[perm] ?? perm}
+                        </span>
+                    ))}
+                </p>
+
+                <footer className="mt-5 flex items-center gap-1.5 border-t border-neutral-gray-light/70 pt-4 text-xs text-neutral-gray-medium">
+                    {p.downloads >= MIN_SHOWN_INSTALLS && (
+                        <>
+                            <Download className="h-3.5 w-3.5" strokeWidth={1.75} />
+                            {p.downloads} {t.installsSuffix}
+                        </>
+                    )}
+                    {p.publishedAt && (
+                        <span className="ml-auto">
+                            {new Date(p.publishedAt).toLocaleDateString(LOCALE_META[lang].bcp47)}
+                        </span>
+                    )}
+                </footer>
+                {(p.priceCents ?? 0) > 0 && (
+                    <div className="mt-4">
+                        <BuyButton
+                            lang={lang}
+                            labels={dict.purchase}
+                            skuId={`plugin:${p.id}`}
+                            priceCents={p.priceCents!}
+                            itemName={p.name}
+                            owned={!!me && hasEntitlement(me.id, `plugin:${p.id}`)}
+                            loggedIn={!!me}
+                            compact
+                        />
+                    </div>
+                )}
+            </article>
+        </Reveal>
     );
 
     return (
@@ -118,39 +168,7 @@ export default async function MarketplacePluginsPage({ params }: { params: Promi
                     </div>
                 </Reveal>
 
-                <div className="mt-6 grid gap-5 md:grid-cols-2">
-                    {OFFICIAL_PLUGINS.map((p, i) => {
-                        const Icon = OFFICIAL_ICONS[p.icon];
-                        return (
-                            <Reveal key={p.key} delay={120 + i * 55} className="h-full">
-                                <article className={CARD}>
-                                    <div className="flex items-center gap-3">
-                                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-king-mint-light text-king-forest">
-                                            <Icon className="h-5 w-5" strokeWidth={1.75} />
-                                        </span>
-                                        <h3 className="font-display text-lg font-semibold text-neutral-dark-bg">
-                                            {en ? p.nameEn : p.name}
-                                        </h3>
-                                    </div>
-                                    <p className="mt-4 text-sm leading-relaxed text-neutral-gray-dark">
-                                        {en ? p.summaryEn : p.summary}
-                                    </p>
-                                    <ul className="mt-4 space-y-2">
-                                        {(en ? p.highlightsEn : p.highlights).map((h) => (
-                                            <li key={h} className="flex gap-2.5 text-sm text-neutral-gray-dark">
-                                                <Check
-                                                    className="mt-1 h-3.5 w-3.5 shrink-0 text-king-forest/70"
-                                                    strokeWidth={2.5}
-                                                />
-                                                <span className="leading-relaxed">{h}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </article>
-                            </Reveal>
-                        );
-                    })}
-                </div>
+                <div className="mt-6 grid gap-5 md:grid-cols-2">{official.map(card)}</div>
 
                 {/* 社区插件：真正的分发区，排在功能解锁（商业区）之前 */}
                 <Reveal delay={140}>
@@ -191,76 +209,7 @@ export default async function MarketplacePluginsPage({ params }: { params: Promi
                         </div>
                     </Reveal>
                 ) : (
-                    <div className="mt-6 grid gap-5 md:grid-cols-2">
-                        {plugins.map((p, i) => (
-                            <Reveal key={p.id} delay={180 + i * 55} className="h-full">
-                                <article className={CARD}>
-                                    <header className="flex items-start justify-between gap-4">
-                                        <div className="min-w-0">
-                                            {/* 微标签行：签名状态用图标+小字承载语义，不做彩色胶囊 */}
-                                            <p className="mb-2 flex items-center gap-1.5 text-[11px] tracking-[0.14em] uppercase text-king-forest/80">
-                                                <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
-                                                {t.signed}
-                                            </p>
-                                            <h3 className="truncate font-display text-xl font-semibold text-neutral-dark-bg">
-                                                {p.name}
-                                            </h3>
-                                            <p className="mt-1 text-[11px] font-mono text-neutral-gray-medium/80 truncate">
-                                                v{p.version} · {p.author}
-                                            </p>
-                                        </div>
-                                        {(p.priceCents ?? 0) > 0 && (
-                                            <span className="shrink-0 font-display text-lg font-bold text-king-forest">
-                                                {formatPrice(p.priceCents!)}
-                                            </span>
-                                        )}
-                                    </header>
-
-                                    <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-neutral-gray-dark">
-                                        {p.description}
-                                    </p>
-
-                                    {/* 工具数与权限自述：细字排版替代满屏胶囊（DESIGN.md §一.2） */}
-                                    <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-neutral-gray-medium">
-                                        <span className="inline-flex items-center gap-1">
-                                            <Wrench className="h-3.5 w-3.5" strokeWidth={1.75} />
-                                            {p.tools.length} {t.toolsSuffix}
-                                        </span>
-                                        {p.permissions.map((perm) => (
-                                            <span key={perm} className="inline-flex items-center gap-2">
-                                                <span className="text-neutral-gray-light">·</span>
-                                                {(t.permissions as Record<string, string>)[perm] ?? perm}
-                                            </span>
-                                        ))}
-                                    </p>
-
-                                    <footer className="mt-5 flex items-center gap-1.5 border-t border-neutral-gray-light/70 pt-4 text-xs text-neutral-gray-medium">
-                                        <Download className="h-3.5 w-3.5" strokeWidth={1.75} />
-                                        {p.downloads} {t.installsSuffix}
-                                        {p.publishedAt && (
-                                            <span className="ml-auto">
-                                                {new Date(p.publishedAt).toLocaleDateString(en ? 'en-US' : 'zh-CN')}
-                                            </span>
-                                        )}
-                                    </footer>
-                                    {(p.priceCents ?? 0) > 0 && (
-                                        <div className="mt-4">
-                                            <BuyButton
-                                                lang={lang}
-                                                labels={dict.purchase}
-                                                skuId={`plugin:${p.id}`}
-                                                priceCents={p.priceCents!}
-                                                itemName={p.name}
-                                                owned={!!me && hasEntitlement(me.id, `plugin:${p.id}`)}
-                                                loggedIn={!!me}
-                                                compact
-                                            />
-                                        </div>
-                                    )}
-                                </article>
-                            </Reveal>
-                        ))}
-                    </div>
+                    <div className="mt-6 grid gap-5 md:grid-cols-2">{plugins.map(card)}</div>
                 )}
 
                 {/* 功能解锁 SKU（PR-W3）：桌面端本地小功能的一次性解锁，购买后写入账户权益，
