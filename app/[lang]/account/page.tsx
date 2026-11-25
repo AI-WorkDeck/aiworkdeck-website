@@ -75,10 +75,10 @@ export default async function AccountPage({
     searchParams,
 }: {
     params: Promise<{ lang: Locale }>;
-    searchParams: Promise<{ next?: string; flow?: string; legacyEmail?: string }>;
+    searchParams: Promise<{ next?: string; flow?: string; legacyEmail?: string; review?: string }>;
 }) {
     const { lang } = await params;
-    const { next, flow, legacyEmail } = await searchParams;
+    const { next, flow, legacyEmail, review } = await searchParams;
     const migrateEmail = phoneIsAccount() && legacyEmail === '1';
     const dict = await getDictionary(lang);
     const t = dict.authPage;
@@ -98,7 +98,7 @@ export default async function AccountPage({
                 <div className="container mx-auto px-4 max-w-md">
                     {/* 注册前就要知道自己在哪个站注册——注册完再发现走错门，账户已经建在别处了 */}
                     <SiteNotice lang={lang} dict={dict} />
-                    <AuthForms bqtEnabled={bqtScanEnabled()} lang={lang} dict={dict} next={next} legacyEmail={migrateEmail} codeChannelReady={codeChannelReady()} captcha={captchaClientConfig()} />
+                    <AuthForms bqtEnabled={bqtScanEnabled()} lang={lang} dict={dict} next={next} legacyEmail={migrateEmail} codeChannelReady={codeChannelReady()} captcha={captchaClientConfig()} reviewEntry={review === '1'} />
                     {/* 直接落到这张登录卡的新用户，此前没有任何去处 */}
                     <p className="mt-6 text-center text-sm text-neutral-gray-medium">
                         {t.newHere}{' '}
