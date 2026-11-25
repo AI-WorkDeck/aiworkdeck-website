@@ -178,7 +178,7 @@ function pluginDisplayText(value: unknown, fallback: string, files: Map<string, 
 export function getPluginDisplay(entry: PluginEntry, language?: string): Pick<PluginEntry, 'name' | 'description'> {
   const fallback = { name: entry.name, description: entry.description };
   try {
-    const manifestBytes = readPluginFile(entry.id, entry.version, 'manifest.json');
+    const manifestBytes = readEntryFile(entry, 'manifest.json');
     if (!manifestBytes) return fallback;
     const manifest = JSON.parse(manifestBytes.toString('utf8'));
     if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) return fallback;
@@ -186,7 +186,7 @@ export function getPluginDisplay(entry: PluginEntry, language?: string): Pick<Pl
     const locales = pluginDisplayLocales(language);
     for (const locale of locales) {
       const name = `l10n/${locale}.json`;
-      const bytes = readPluginFile(entry.id, entry.version, name);
+      const bytes = readEntryFile(entry, name);
       if (bytes) files.set(name, bytes);
     }
     return {
@@ -488,9 +488,15 @@ export function incrementDownloads(id: string, version: string) {
 export function readPluginFile(id: string, version: string, relPath: string): Buffer | undefined {
   if (!PLUGIN_ID_RE.test(id) || !SEMVER_RE.test(version) || !isSafeEntryPath(relPath)) return undefined;
   const entry = getPlugin(id, version);
-  if (!entry || !Object.prototype.hasOwnProperty.call(entry.files, relPath)) return undefined;
-  const target = path.join(FILES_ROOT, id, version, relPath);
-  const root = path.join(FILES_ROOT, id, version);
+  return entry ? readEntryFile(entry, relPath) : undefined;
+}
+
+/** Same checks as readPluginFile, for an entry already in hand: no registry re-read per file. */
+function readEntryFile(entry: PluginEntry, relPath: string): Buffer | undefined {
+  if (!PLUGIN_ID_RE.test(entry.id) || !SEMVER_RE.test(entry.version) || !isSafeEntryPath(relPath)) return undefined;
+  if (!Object.prototype.hasOwnProperty.call(entry.files, relPath)) return undefined;
+  const root = path.join(FILES_ROOT, entry.id, entry.version);
+  const target = path.join(root, relPath);
   if (!isInside(root, target) || !fs.existsSync(target)) return undefined;
   return fs.readFileSync(target);
 }
