@@ -166,7 +166,7 @@ export function ProfileEditor({ t, initial }: {
                 <div className="fixed inset-0 z-50 overflow-y-auto bg-neutral-gray-pale">
                     <div className="sticky top-0 z-10 border-b border-neutral-gray-light bg-white/90 backdrop-blur-xl">
                         <div className="container mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3.5 md:px-8">
-                            <h2 className="font-display text-lg font-semibold text-neutral-dark-bg">{t.title}</h2>
+                            <h2 className="text-lg font-semibold text-neutral-dark-bg">{t.title}</h2>
                             <div className="flex items-center gap-2">
                                 <Button variant="ghost" className="font-medium" onClick={() => { setOpen(false); setError(''); }}>
                                     <X className="mr-1 h-3.5 w-3.5" strokeWidth={1.75} />
@@ -243,7 +243,7 @@ function SectionCard({ type, t, data, patch, onRemove, onUploadQr, onDeleteQr }:
                     <GripVertical className="h-4 w-4" strokeWidth={1.75} />
                 </button>
                 <Icon className="h-4 w-4 text-king-forest" strokeWidth={1.75} />
-                <h3 className="flex-1 font-display text-[15px] font-semibold text-neutral-dark-bg">
+                <h3 className="flex-1 text-[15px] font-semibold text-neutral-dark-bg">
                     {t.sections[type]}
                     {HERO_TYPES.includes(type) && (
                         <span className="ml-2 text-[11px] font-normal text-neutral-gray-medium">{t.heroNote}</span>

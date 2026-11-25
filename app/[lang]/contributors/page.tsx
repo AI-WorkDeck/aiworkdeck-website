@@ -38,7 +38,7 @@ export default async function ContributorsPage({ params }: { params: Promise<{ l
           <div className="mb-6 max-w-3xl">
             <div className="flex items-center gap-3">
               <Code2 className="h-5 w-5 text-king-forest" strokeWidth={1.6} />
-              <h2 id="code-contributors" className="font-display text-2xl font-semibold text-neutral-dark-bg">{t.codeTitle}</h2>
+              <h2 id="code-contributors" className="text-2xl font-semibold text-neutral-dark-bg">{t.codeTitle}</h2>
             </div>
             <p className="mt-3 text-[15px] leading-relaxed text-neutral-gray-medium">{t.codeIntro}</p>
           </div>
@@ -52,11 +52,11 @@ export default async function ContributorsPage({ params }: { params: Promise<{ l
                   className="group flex min-h-24 items-center gap-4 px-5 py-5 transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-king-forest"
                   aria-label={`${contributor.login} — ${t.githubProfile}`}
                 >
-                  <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-king-forest/20 bg-king-forest-lightest font-display text-lg font-semibold text-king-forest">
+                  <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-king-forest/20 bg-king-forest-lightest text-lg font-semibold text-king-forest">
                     {contributor.login.slice(0, 1).toUpperCase()}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-display text-[16px] font-semibold text-neutral-dark-bg">{contributor.login}</span>
+                    <span className="block truncate text-[16px] font-semibold text-neutral-dark-bg">{contributor.login}</span>
                     <span className="mt-1 block text-xs text-neutral-gray-medium">
                       {t.mergedContributions.replace('{count}', contributor.contributions.toLocaleString(LOCALE_META[lang].bcp47))}
                     </span>
@@ -72,7 +72,7 @@ export default async function ContributorsPage({ params }: { params: Promise<{ l
           <div className="mb-6 max-w-3xl">
             <div className="flex items-center gap-3">
               <Puzzle className="h-5 w-5 text-king-forest" strokeWidth={1.6} />
-              <h2 id="marketplace-contributors" className="font-display text-2xl font-semibold text-neutral-dark-bg">{t.marketplaceTitle}</h2>
+              <h2 id="marketplace-contributors" className="text-2xl font-semibold text-neutral-dark-bg">{t.marketplaceTitle}</h2>
             </div>
             <p className="mt-3 text-[15px] leading-relaxed text-neutral-gray-medium">{t.marketplaceIntro}</p>
           </div>
@@ -96,7 +96,7 @@ export default async function ContributorsPage({ params }: { params: Promise<{ l
                         shape="circle"
                       />
                       <div className="min-w-0">
-                        <h3 className="truncate font-display text-[17px] font-semibold text-neutral-dark-bg group-hover:text-king-forest">{contributor.user.displayName}</h3>
+                        <h3 className="truncate text-[17px] font-semibold text-neutral-dark-bg group-hover:text-king-forest">{contributor.user.displayName}</h3>
                         <p className="truncate text-xs text-neutral-gray-medium">@{contributor.user.username}</p>
                       </div>
                     </div>
@@ -123,7 +123,7 @@ export default async function ContributorsPage({ params }: { params: Promise<{ l
 
         <section className="mt-16 border-y border-[#d7c5a1] py-8 md:flex md:items-center md:justify-between md:gap-10">
           <div className="max-w-2xl">
-            <h2 className="font-display text-2xl font-semibold text-neutral-dark-bg">{t.joinTitle}</h2>
+            <h2 className="text-2xl font-semibold text-neutral-dark-bg">{t.joinTitle}</h2>
             <p className="mt-3 text-[15px] leading-relaxed text-neutral-gray-medium">{t.joinText}</p>
           </div>
           <div className="mt-6 flex flex-wrap gap-3 md:mt-0 md:justify-end">

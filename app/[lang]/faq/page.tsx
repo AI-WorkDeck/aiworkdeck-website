@@ -190,7 +190,7 @@ export default async function FaqPage({ params }: { params: Promise<{ lang: Loca
                             <span aria-hidden="true" className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-king-mint-lightest font-mono text-xs font-bold tabular-nums text-king-forest">
                                 {String(index + 1).padStart(2, '0')}
                             </span>
-                            <h2 className="font-display text-xl font-semibold tracking-tight text-neutral-dark-bg md:text-2xl">{section.title}</h2>
+                            <h2 className="text-xl font-semibold tracking-tight text-neutral-dark-bg md:text-2xl">{section.title}</h2>
                         </div>
                         <FaqList items={section.items} />
                     </section>
@@ -199,7 +199,7 @@ export default async function FaqPage({ params }: { params: Promise<{ lang: Loca
                     <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
                         <div>
                             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-king-mint">{t.deploymentEyebrow}</p>
-                            <h2 id="deployment-title" className="font-display text-xl font-semibold tracking-tight md:text-2xl">{t.deploymentTitle}</h2>
+                            <h2 id="deployment-title" className="text-xl font-semibold tracking-tight md:text-2xl">{t.deploymentTitle}</h2>
                             <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-white/80">{t.deploymentBody}</p>
                         </div>
                         <a href={`/${lang}/deployment`} className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-white px-5 text-sm font-bold text-king-forest-darker transition-colors hover:bg-king-mint-lightest">
@@ -213,7 +213,7 @@ export default async function FaqPage({ params }: { params: Promise<{ lang: Loca
                         <span aria-hidden="true" className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-king-mint-lightest font-mono text-xs font-bold tabular-nums text-king-forest">
                             {String(t.sections.length + 1).padStart(2, '0')}
                         </span>
-                        <h2 className="font-display text-xl font-semibold tracking-tight text-neutral-dark-bg md:text-2xl">{t.pricingTitle}</h2>
+                        <h2 className="text-xl font-semibold tracking-tight text-neutral-dark-bg md:text-2xl">{t.pricingTitle}</h2>
                     </div>
                     <p className="mb-6 max-w-3xl text-sm leading-7 text-neutral-gray-medium">{dict.communityFaq.pricingIntro}</p>
                     <p className="mb-6 max-w-3xl text-sm leading-7 text-neutral-gray-medium">

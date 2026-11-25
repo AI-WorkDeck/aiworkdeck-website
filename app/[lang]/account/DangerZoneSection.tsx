@@ -116,7 +116,7 @@ export function DangerZoneSection({ lang, dict }: { lang: Locale; dict: any }) {
                 <div className="flex flex-1 items-start gap-3">
                     <TriangleAlert className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" strokeWidth={1.75} />
                     <div className="min-w-0">
-                        <h2 className="font-display text-xl font-semibold text-neutral-dark-bg">{t.dangerTitle}</h2>
+                        <h2 className="text-xl font-semibold text-neutral-dark-bg">{t.dangerTitle}</h2>
                         <p className="mt-1.5 text-sm leading-relaxed text-neutral-gray-medium">{t.dangerDesc}</p>
                     </div>
                 </div>

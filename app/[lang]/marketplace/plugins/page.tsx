@@ -24,7 +24,7 @@ const CARD =
 function SectionHead({ title, tag }: { title: string; tag?: React.ReactNode }) {
     return (
         <div className="flex items-baseline justify-between gap-4">
-            <h2 className="font-display text-2xl font-semibold tracking-tight text-neutral-dark-bg">{title}</h2>
+            <h2 className="text-2xl font-semibold tracking-tight text-neutral-dark-bg">{title}</h2>
             {tag ? <span className="text-xs text-neutral-gray-medium">{tag}</span> : null}
         </div>
     );
@@ -70,7 +70,7 @@ export default async function MarketplacePluginsPage({ params }: { params: Promi
                             <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
                             {t.signed}
                         </p>
-                        <h3 className="truncate font-display text-xl font-semibold text-neutral-dark-bg">
+                        <h3 className="truncate text-xl font-semibold text-neutral-dark-bg">
                             {p.name}
                         </h3>
                         <p className="mt-1 text-[11px] font-mono text-neutral-gray-medium/80 truncate">
@@ -78,7 +78,7 @@ export default async function MarketplacePluginsPage({ params }: { params: Promi
                         </p>
                     </div>
                     {(p.priceCents ?? 0) > 0 && (
-                        <span className="shrink-0 font-display text-lg font-bold text-king-forest">
+                        <span className="shrink-0 text-lg font-bold text-king-forest">
                             {formatPrice(p.priceCents!)}
                         </span>
                     )}
@@ -228,10 +228,10 @@ export default async function MarketplacePluginsPage({ params }: { params: Promi
                         <Reveal key={p.key} delay={240 + i * 55} className="h-full">
                             <article className={`${CARD} flex flex-col`}>
                                 <div className="flex items-start justify-between gap-4">
-                                    <h3 className="font-display text-lg font-semibold text-neutral-dark-bg">
+                                    <h3 className="text-lg font-semibold text-neutral-dark-bg">
                                         {en ? p.nameEn : p.name}
                                     </h3>
-                                    <span className="shrink-0 font-display text-lg font-bold text-king-forest">
+                                    <span className="shrink-0 text-lg font-bold text-king-forest">
                                         {formatPrice(p.priceCents)}
                                     </span>
                                 </div>

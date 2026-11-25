@@ -18,7 +18,7 @@ export function CommercialBrief({ p }: { /** dict.pricingPage.commercialBrief */
                         <span aria-hidden className="h-px w-4 bg-king-forest/45" />
                         {p.eyebrow}
                     </p>
-                    <h2 className="font-display text-xl font-semibold tracking-tight text-neutral-dark-bg md:text-2xl">
+                    <h2 className="text-xl font-semibold tracking-tight text-neutral-dark-bg md:text-2xl">
                         {p.title}
                     </h2>
                     <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-neutral-gray-medium">{p.body}</p>

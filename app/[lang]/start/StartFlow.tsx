@@ -196,7 +196,7 @@ export function StartFlow({ lang, dict, release, releasesPageUrl }: StartFlowPro
                                         <span className="min-w-0 flex-1">
                                             <span
                                                 className={cn(
-                                                    'font-display block text-[17px] font-bold md:text-[19px]',
+                                                    'block text-[17px] font-bold md:text-[19px]',
                                                     isActive || isDone ? 'text-neutral-dark-bg' : 'text-neutral-gray-dark'
                                                 )}
                                             >
@@ -243,7 +243,7 @@ export function StartFlow({ lang, dict, release, releasesPageUrl }: StartFlowPro
             {/* 走完之后去哪儿：不要让页面停在一堵墙上 */}
             <Reveal delay={200}>
                 <div className="mt-10 border-t border-neutral-gray-light pt-8">
-                    <h2 className="font-display mb-4 text-base font-semibold text-neutral-dark-bg">{t.after.title}</h2>
+                    <h2 className="mb-4 text-base font-semibold text-neutral-dark-bg">{t.after.title}</h2>
                     <div className="grid gap-3.5 sm:grid-cols-3">
                         {[
                             { ...t.after.skills, href: `/${lang}/marketplace` },
@@ -255,7 +255,7 @@ export function StartFlow({ lang, dict, release, releasesPageUrl }: StartFlowPro
                                 href={item.href}
                                 className="group rounded-xl border border-neutral-gray-light/90 bg-white/85 px-5 py-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-king-forest/35 hover:bg-white hover:shadow-[0_16px_36px_-18px_rgba(18,58,38,0.22)]"
                             >
-                                <p className="font-display flex items-center justify-between gap-1.5 text-[15px] font-bold text-neutral-dark-bg">
+                                <p className="flex items-center justify-between gap-1.5 text-[15px] font-bold text-neutral-dark-bg">
                                     {item.title}
                                     <ArrowUpRight
                                         className="h-4 w-4 text-neutral-gray-medium transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-king-forest"
@@ -565,7 +565,7 @@ function LoginStep({ lang, t, auth }: { lang: Locale; t: any; auth: any }) {
                     <span className="ml-2 font-mono text-[10px] text-neutral-gray-medium">AI WorkDeck Desktop</span>
                 </div>
                 <div className="px-5 py-5 text-center">
-                    <p className="font-display text-base font-bold text-neutral-dark-bg">AI WorkDeck</p>
+                    <p className="text-base font-bold text-neutral-dark-bg">AI WorkDeck</p>
                     <p className="mt-0.5 text-[11.5px] text-neutral-gray-medium">{t.mockSubtitle}</p>
                     {/* Same fields as the desktop sign-in: account + password, and the first-time link */}
                     <div className="mt-4 rounded-lg border border-neutral-gray-light bg-neutral-gray-pale px-3 py-2 text-left">

@@ -304,7 +304,7 @@ export default async function ContributorPage({
                                     <ol className="flex flex-col gap-5">
                                         {sections.highlights.map((item, i) => (
                                             <li key={i} className="flex items-baseline gap-5">
-                                                <span className="w-11 flex-shrink-0 font-display text-[26px] font-black leading-none text-king-forest/25">
+                                                <span className="w-11 flex-shrink-0 text-[26px] font-black leading-none text-king-forest/25">
                                                     {String(i + 1).padStart(2, '0')}
                                                 </span>
                                                 <span className="text-[15px] leading-relaxed text-neutral-gray-dark">{item}</span>
@@ -331,7 +331,7 @@ export default async function ContributorPage({
                         <SectionRule title={t.contributorSkills} />
                         {skills.length === 0 ? (
                             <div className="rounded-xl border border-[#dce2de] bg-white px-6 py-14 text-center">
-                                <p className="font-display text-lg font-bold text-neutral-dark-bg">
+                                <p className="text-lg font-bold text-neutral-dark-bg">
                                     {isOwner ? t.profileEmptyOwnTitle : t.profileEmptyTitle}
                                 </p>
                                 <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-neutral-gray-medium">
@@ -373,7 +373,7 @@ export default async function ContributorPage({
                                                 }`}>
                                                     {post.type === 'blog' ? tc.typeBlog : post.tag ? tc.tags[post.tag] : tc.typeThread}
                                                 </span>
-                                                <span className="min-w-0 flex-1 truncate font-display text-[14.5px] font-bold text-neutral-dark-bg group-hover:text-king-forest">
+                                                <span className="min-w-0 flex-1 truncate text-[14.5px] font-bold text-neutral-dark-bg group-hover:text-king-forest">
                                                     {post.title}
                                                 </span>
                                                 <span className="flex flex-shrink-0 items-center gap-3 text-[12px] text-neutral-gray-medium">
@@ -413,7 +413,7 @@ export default async function ContributorPage({
                                                     <div>
                                                         <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-gray-medium">{t.resume.contactPhone}</p>
                                                         <a href={`tel:${contact.phone}`}
-                                                            className="mt-0.5 block font-display text-lg font-bold text-neutral-dark-bg hover:text-king-forest">
+                                                            className="mt-0.5 block text-lg font-bold text-neutral-dark-bg hover:text-king-forest">
                                                             {contact.phone}
                                                         </a>
                                                     </div>
@@ -422,7 +422,7 @@ export default async function ContributorPage({
                                                     <div>
                                                         <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-gray-medium">{t.resume.contactEmail}</p>
                                                         <a href={`mailto:${contact.email}`}
-                                                            className="mt-0.5 block break-all font-display text-lg font-bold text-neutral-dark-bg hover:text-king-forest">
+                                                            className="mt-0.5 block break-all text-lg font-bold text-neutral-dark-bg hover:text-king-forest">
                                                             {contact.email}
                                                         </a>
                                                     </div>
@@ -448,7 +448,7 @@ export default async function ContributorPage({
                                                 <p className="text-[11px] uppercase tracking-[0.22em] text-king-mint/80">
                                                     {tq.resultEyebrow}
                                                 </p>
-                                                <p className="mt-2 font-display text-2xl font-black text-king-mint-lighter">
+                                                <p className="mt-2 text-2xl font-black text-king-mint-lighter">
                                                     {toBaseLocale(lang) === 'zh' ? quizType.nameZh : quizType.nameEn}
                                                 </p>
                                                 <p className="mt-2 text-[12.5px] leading-relaxed text-white/65">
@@ -487,7 +487,7 @@ export default async function ContributorPage({
                                                                 <Icon className="h-[18px] w-[18px]" strokeWidth={1.5} />
                                                             </span>
                                                             <span className="min-w-0">
-                                                                <span className="block font-display text-[14px] font-bold text-neutral-dark-bg group-hover:text-king-forest">
+                                                                <span className="block text-[14px] font-bold text-neutral-dark-bg group-hover:text-king-forest">
                                                                     {toBaseLocale(lang) === 'zh' ? def.nameZh : def.nameEn}
                                                                 </span>
                                                                 <span className="block font-mono text-[11px] text-neutral-gray-medium">

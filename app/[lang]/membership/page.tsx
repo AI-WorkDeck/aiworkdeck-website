@@ -82,10 +82,10 @@ export default async function MembershipPage({
                     <SectionEyebrow>{t.algoTitle}</SectionEyebrow>
                     <div className="mt-2 grid gap-4 sm:grid-cols-2">
                         <div className="rounded-xl border border-neutral-gray-light/80 bg-neutral-gray-pale/55 p-4.5">
-                            <p className="font-display text-xl font-bold text-king-forest">{t.algoTopup}</p>
+                            <p className="text-xl font-bold text-king-forest">{t.algoTopup}</p>
                         </div>
                         <div className="rounded-xl border border-neutral-gray-light/80 bg-neutral-gray-pale/55 p-4.5">
-                            <p className="font-display text-xl font-bold text-king-forest">{t.algoSpend}</p>
+                            <p className="text-xl font-bold text-king-forest">{t.algoSpend}</p>
                         </div>
                     </div>
                     <p className="mt-3.5 text-xs leading-relaxed text-neutral-gray-medium">{t.algoNote}</p>

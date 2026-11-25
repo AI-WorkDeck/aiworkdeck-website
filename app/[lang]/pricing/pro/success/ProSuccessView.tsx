@@ -90,7 +90,7 @@ export function ProSuccessView({
             {state === 'paid' && (
                 <>
                     <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-                    <h1 className="font-display text-2xl text-neutral-dark-bg">{labels.successTitle}</h1>
+                    <h1 className="font-semibold text-2xl text-neutral-dark-bg">{labels.successTitle}</h1>
                     <p className="text-neutral-gray-medium">{successBody}</p>
                 </>
             )}

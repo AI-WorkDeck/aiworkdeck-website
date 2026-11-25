@@ -57,7 +57,7 @@ export function PurchasesSection({ lang, dict }: { lang: Locale; dict: any }) {
             <div className="bg-white border border-neutral-gray-light rounded-xl p-6 md:p-8 shadow-sm mb-10">
                 <div className="flex items-center gap-3 mb-6">
                     <ShoppingBag className="w-5 h-5 text-king-forest" strokeWidth={1.75} />
-                    <h2 className="font-display text-xl font-semibold text-neutral-dark-bg">{t.purchasesTitle}</h2>
+                    <h2 className="text-xl font-semibold text-neutral-dark-bg">{t.purchasesTitle}</h2>
                 </div>
                 {error ? (
                     <p className="text-sm text-neutral-gray-medium py-6 text-center">{t.loadFailed}</p>
@@ -100,25 +100,25 @@ export function PurchasesSection({ lang, dict }: { lang: Locale; dict: any }) {
                 <div className="bg-white border border-neutral-gray-light rounded-xl p-6 md:p-8 shadow-sm mb-10">
                     <div className="flex items-center gap-3 mb-2">
                         <HandCoins className="w-5 h-5 text-king-forest" strokeWidth={1.75} />
-                        <h2 className="font-display text-xl font-semibold text-neutral-dark-bg">{t.earningsTitle}</h2>
+                        <h2 className="text-xl font-semibold text-neutral-dark-bg">{t.earningsTitle}</h2>
                     </div>
                     <p className="text-sm text-neutral-gray-medium mb-6">{t.earningsHint}</p>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <div className="min-w-0 break-words [overflow-wrap:anywhere] bg-neutral-gray-pale/60 rounded-xl p-4">
                             <p className="text-xs text-neutral-gray-medium">{t.earningsTotal}</p>
-                            <p className="font-display text-2xl font-bold text-neutral-dark-bg mt-1">
+                            <p className="text-2xl font-bold text-neutral-dark-bg mt-1">
                                 {formatYuan(earnings.totalCents)}
                             </p>
                         </div>
                         <div className="min-w-0 break-words [overflow-wrap:anywhere] bg-neutral-gray-pale/60 rounded-xl p-4">
                             <p className="text-xs text-neutral-gray-medium">{t.earningsPending}</p>
-                            <p className="font-display text-2xl font-bold text-king-forest mt-1">
+                            <p className="text-2xl font-bold text-king-forest mt-1">
                                 {formatYuan(earnings.pendingCents)}
                             </p>
                         </div>
                         <div className="min-w-0 break-words [overflow-wrap:anywhere] bg-neutral-gray-pale/60 rounded-xl p-4">
                             <p className="text-xs text-neutral-gray-medium">{t.earningsSettled}</p>
-                            <p className="font-display text-2xl font-bold text-neutral-gray-medium mt-1">
+                            <p className="text-2xl font-bold text-neutral-gray-medium mt-1">
                                 {formatYuan(earnings.settledCents)}
                             </p>
                         </div>

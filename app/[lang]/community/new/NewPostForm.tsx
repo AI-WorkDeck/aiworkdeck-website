@@ -118,7 +118,7 @@ export function NewPostForm({ lang, t, tagLabels }: {
                 maxLength={120}
                 placeholder={t.titlePlaceholder}
                 onChange={e => setTitle(e.target.value)}
-                className="w-full rounded-xl border border-neutral-gray-light bg-white px-4 py-3 font-display text-[16px] font-bold text-neutral-dark-bg placeholder:font-sans placeholder:text-sm placeholder:font-normal placeholder:text-neutral-gray-medium/60 focus:border-king-forest/50 focus:outline-none"
+                className="w-full rounded-xl border border-neutral-gray-light bg-white px-4 py-3 text-[16px] font-bold text-neutral-dark-bg placeholder:font-sans placeholder:text-sm placeholder:font-normal placeholder:text-neutral-gray-medium/60 focus:border-king-forest/50 focus:outline-none"
             />
 
             <p className="mb-2.5 mt-6 text-[11px] uppercase tracking-[0.18em] text-neutral-gray-medium">{t.contentLabel}</p>

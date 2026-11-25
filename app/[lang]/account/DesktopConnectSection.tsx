@@ -50,7 +50,7 @@ export function DesktopConnectSection({ lang, dict }: { lang: Locale; dict: any 
         <div className="bg-white border border-neutral-gray-light rounded-xl p-6 md:p-8 shadow-sm mb-10">
             <div className="flex items-center gap-3 mb-2">
                 <KeyRound className="w-5 h-5 text-king-forest" strokeWidth={1.75} />
-                <h2 className="font-display text-xl font-semibold text-neutral-dark-bg">{t.devicesTitle}</h2>
+                <h2 className="text-xl font-semibold text-neutral-dark-bg">{t.devicesTitle}</h2>
             </div>
             {/* 这一栏此前是「生成 Key 粘到桌面端」。桌面端 v0.18.0 起直接用手机号/邮箱登录，
                 Key 由服务端在登录时自动签发，用户不再需要看到它，所以生成流程整个删掉了。

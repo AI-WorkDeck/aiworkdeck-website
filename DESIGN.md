@@ -23,7 +23,12 @@
 
 ## 字体与层级
 
-西文使用现有自托管 Inter（Next 构建生成本地字体），中文用 PingFang SC / Microsoft YaHei 系统栈。显示与正文同一无衬线家族；不再为标题额外下载中文衬线字体。
+（2026-11 X30 §C 定稿，与代码一致；`scripts/check-typography.mjs` 在 CI 守住。）
+
+- **界面字体 Inter**（`next/font` 自托管，`--font-interface`）；回落 `-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC', sans-serif`。不再出现 Plus Jakarta Sans、Geist、Arial。
+- **衬线只用于展示**：Instrument Serif（西文）+ Noto Serif SC（中文，不预加载），即 `.font-display`。只用在 hero 标题、≥ 28 px 的区块标题、引语/证言。正文、按钮、导航、表单、表格、价格一律不用衬线；小于 28 px 的标题用 Inter 600。斜体 Instrument Serif 只用于 hero 那一行副标题。俄、希、阿、印、泰、韩、越回落界面无衬线。
+- **等宽**用系统栈 `ui-monospace, 'SF Mono', Menlo, Consolas, monospace`，不加载网络字体；只用于代码、版本号、文件路径和小号大写眉题（字距 0.2em）。
+- 正文：营销页 16–17 px、行高 1.7；账户与表单 15 px、行高 1.6。中日文标题不用负字距；西文展示字可保留 −0.012em。
 
 - 新首页 display：48–82 px、字重600、行高1.04、字距不低于 -0.04em。
 - 社区 hero：42–68 px、字重600、行高1.08。
@@ -98,7 +103,7 @@
 
 ## 全站 · 纸与墨（2026-11-06，用户要求整站升级）
 
-首页之外全部页面沿用同一套语汇：`.site-shell` 底色纸面 `#f6f4ee`、线 `#e3dccb`、正文墨色；`.font-display` 全站用 Instrument Serif + Noto Serif SC（俄希阿印泰韩越回落无衬线）。`PageHero` 改为纸面横格页头、茶金等宽眉题、墨色衬线标题（API 不变，原深林绿整块页头退役），页头内的搜索框、页签、按钮、统计条同步改墨色。`Button` 主色 `#1f3b34`、`Card` 纸白底暖线；正文里的纯白块统一映射为纸白 `#fffdf8`。个人名片页页头用 `.profile-hero-paper` 把原深色类名映射为墨色。深色仅保留为小面积强调卡（如部署说明、商业授权），不再做整幅页头。
+首页之外全部页面沿用同一套语汇：`.site-shell` 底色纸面 `#f6f4ee`、线 `#e3dccb`、正文墨色；`.font-display` 全站用 Instrument Serif + Noto Serif SC（俄希阿印泰韩越回落无衬线），只用于 ≥ 28 px 的展示标题（见「字体与层级」）。`PageHero` 改为纸面横格页头、茶金等宽眉题、墨色衬线标题（API 不变，原深林绿整块页头退役），页头内的搜索框、页签、按钮、统计条同步改墨色。`Button` 主色 `#1f3b34`、`Card` 纸白底暖线；正文里的纯白块统一映射为纸白 `#fffdf8`。个人名片页页头用 `.profile-hero-paper` 把原深色类名映射为墨色。深色仅保留为小面积强调卡（如部署说明、商业授权），不再做整幅页头。
 
 ### PageHero 使用规则（首屏审计，2026-11）
 

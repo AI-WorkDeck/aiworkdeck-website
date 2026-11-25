@@ -270,7 +270,7 @@ function ProCheckoutModal({
             <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : handleClose())}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle className="text-center text-xl font-display">
+                        <DialogTitle className="font-semibold text-center text-xl">
                             {step === 'pending' ? labels.scan : labels.choosePlan}
                         </DialogTitle>
                     </DialogHeader>

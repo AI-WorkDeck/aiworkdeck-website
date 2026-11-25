@@ -59,7 +59,7 @@ export default async function McpPage({ params }: { params: Promise<{ lang: Loca
                                             {provider.official ? 'BUILTIN' : provider.oauth ? 'OAUTH' : 'MCP'}
                                         </span>
                                     </div>
-                                    <h2 className="font-display text-xl font-bold text-neutral-dark-bg">
+                                    <h2 className="text-xl font-bold text-neutral-dark-bg">
                                         {t.providers[provider.id as keyof typeof t.providers] || provider.name}
                                     </h2>
                                     <p className="mt-2.5 text-sm leading-relaxed text-neutral-gray-dark">
@@ -98,7 +98,7 @@ export default async function McpPage({ params }: { params: Promise<{ lang: Loca
 
                 <section id="configure" className="mt-12 scroll-mt-28 rounded-2xl border border-neutral-gray-light bg-white p-6 md:p-8">
                     <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-neutral-gray-light/80 pb-4">
-                        <h2 className="font-display text-xl font-bold text-neutral-dark-bg md:text-2xl">{t.configure}</h2>
+                        <h2 className="text-xl font-bold text-neutral-dark-bg md:text-2xl">{t.configure}</h2>
                         <p className="font-mono text-xs text-neutral-gray-medium">{t.releaseNote}</p>
                     </div>
                     <div className="mt-6 grid gap-5 md:grid-cols-3">

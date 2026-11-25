@@ -121,7 +121,7 @@ export function TelemetryDashboard() {
       <div className="flex items-start justify-center pt-10 pb-24">
         <div className="w-full max-w-sm bg-white/70 backdrop-blur-xl border border-neutral-gray-light/90 rounded-xl p-8 text-center shadow-[0_18px_40px_-24px_rgba(18,58,38,0.28)]">
           <ShieldCheck className="w-6 h-6 text-king-forest mx-auto mb-3" strokeWidth={1.75} />
-          <p className="font-display text-xl font-bold text-neutral-dark-bg mb-1.5">需要维护者登录</p>
+          <p className="text-xl font-bold text-neutral-dark-bg mb-1.5">需要维护者登录</p>
           <p className="text-sm leading-relaxed text-neutral-gray-medium mb-6">
             请先在站点后台输入管理口令，再回到本页。
           </p>
@@ -244,7 +244,7 @@ export function TelemetryDashboard() {
       ) : !hasData ? (
         <Panel>
           <div className="py-16 text-center">
-            <p className="font-display text-xl font-bold text-neutral-dark-bg mb-2">暂无上报数据</p>
+            <p className="text-xl font-bold text-neutral-dark-bg mb-2">暂无上报数据</p>
             <p className="text-sm text-neutral-gray-medium">
               所选区间（{data.range.from} 至 {data.range.to}）内还没有收到桌面端遥测。
             </p>

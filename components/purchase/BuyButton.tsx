@@ -207,7 +207,7 @@ export function BuyButton({
             <Dialog open={open} onOpenChange={v => (v ? setOpen(true) : handleClose())}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle className="text-center text-xl font-display">
+                        <DialogTitle className="font-semibold text-center text-xl">
                             {status === 'success'
                                 ? labels.success
                                 : isRedirectChannel

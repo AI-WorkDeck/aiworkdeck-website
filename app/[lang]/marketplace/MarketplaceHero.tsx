@@ -79,17 +79,17 @@ export function MarketplaceHero({
                 <div className="min-w-0 md:flex-1">{children}</div>
                 {active !== 'mcp' && <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-muted">
                     <span className="flex items-baseline gap-1.5">
-                        <CountUp value={allSkills.length} className="font-display text-[22px] text-ink" />
+                        <CountUp value={allSkills.length} className="font-semibold text-[22px] text-ink" />
                         {st.statSkills}
                     </span>
                     <span className="w-px h-4 bg-neutral-gray-light hidden sm:block" />
                     <span className="flex items-baseline gap-1.5">
-                        <CountUp value={pluginCount} className="font-display text-[22px] text-ink" />
+                        <CountUp value={pluginCount} className="font-semibold text-[22px] text-ink" />
                         {t.statPlugins}
                     </span>
                     <span className="w-px h-4 bg-neutral-gray-light hidden sm:block" />
                     <span className="flex items-baseline gap-1.5">
-                        <CountUp value={contributorCount} className="font-display text-[22px] text-ink" />
+                        <CountUp value={contributorCount} className="font-semibold text-[22px] text-ink" />
                         {st.statContributors}
                     </span>
                 </div>}

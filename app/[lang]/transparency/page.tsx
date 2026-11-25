@@ -113,7 +113,7 @@ function ReportCard({ report, lang, t }: { report: PublicReport; lang: Locale; t
     return (
         <article className={`${CARD} overflow-hidden`}>
             <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-neutral-gray-light/70 px-6 py-5">
-                <h3 className="font-display text-xl font-semibold text-neutral-dark-bg">
+                <h3 className="text-xl font-semibold text-neutral-dark-bg">
                     {periodLabel(report.period, t)}
                 </h3>
                 {report.publishedAt && (
@@ -126,14 +126,14 @@ function ReportCard({ report, lang, t }: { report: PublicReport; lang: Locale; t
             <div className="flex flex-col gap-8 px-6 py-6">
                 {/* 使用情况 */}
                 <section>
-                    <h4 className="font-display mb-3 text-sm font-semibold text-neutral-dark-bg">{r.metrics.title}</h4>
+                    <h4 className="mb-3 text-sm font-semibold text-neutral-dark-bg">{r.metrics.title}</h4>
                     <dl className="grid grid-cols-2 gap-x-5 gap-y-4 md:grid-cols-5">
                         {metricRows.map(([label, n]) => (
                             <div key={label}>
                                 <dt className="text-[11px] uppercase tracking-[0.14em] text-neutral-gray-medium">
                                     {label}
                                 </dt>
-                                <dd className="font-display mt-1 text-lg font-bold text-neutral-dark-bg tabular-nums">
+                                <dd className="mt-1 text-lg font-bold text-neutral-dark-bg tabular-nums">
                                     {fmtCount(n, lang, dash)}
                                 </dd>
                                 <NoteLine note={n?.note} lang={lang} />
@@ -144,7 +144,7 @@ function ReportCard({ report, lang, t }: { report: PublicReport; lang: Locale; t
 
                 {/* 收入与渠道费 */}
                 <section>
-                    <h4 className="font-display mb-3 text-sm font-semibold text-neutral-dark-bg">{r.revenue.title}</h4>
+                    <h4 className="mb-3 text-sm font-semibold text-neutral-dark-bg">{r.revenue.title}</h4>
                     {data.revenue.length === 0 ? (
                         <p className="text-sm text-neutral-gray-medium">{r.revenue.none}</p>
                     ) : (
@@ -189,7 +189,7 @@ function ReportCard({ report, lang, t }: { report: PublicReport; lang: Locale; t
 
                 {/* 第三方成本 */}
                 <section>
-                    <h4 className="font-display mb-3 text-sm font-semibold text-neutral-dark-bg">{r.costs.title}</h4>
+                    <h4 className="mb-3 text-sm font-semibold text-neutral-dark-bg">{r.costs.title}</h4>
                     {data.costs.length === 0 ? (
                         <p className="text-sm text-neutral-gray-medium">{r.costs.none}</p>
                     ) : (
@@ -231,7 +231,7 @@ function ReportCard({ report, lang, t }: { report: PublicReport; lang: Locale; t
                 {/* 盈余 */}
                 {summary.byCurrency.length > 0 && (
                     <section>
-                        <h4 className="font-display mb-1 text-sm font-semibold text-neutral-dark-bg">{r.summary.title}</h4>
+                        <h4 className="mb-1 text-sm font-semibold text-neutral-dark-bg">{r.summary.title}</h4>
                         <p className="mb-1 text-xs text-neutral-gray-medium">{r.summary.formula}</p>
                         <p className="mb-3 text-xs text-neutral-gray-medium">{r.summary.amortizeNote}</p>
                         <div className="overflow-x-auto">
@@ -294,7 +294,7 @@ function ReportCard({ report, lang, t }: { report: PublicReport; lang: Locale; t
                 {/* 捐赠 */}
                 {(data.donation.amount.cents !== null || data.donation.org || report.receipts.length > 0) && (
                     <section className="rounded-lg border border-neutral-gray-light/80 bg-neutral-gray-pale/60 px-5 py-4">
-                        <h4 className="font-display mb-3 text-sm font-semibold text-neutral-dark-bg">{r.donation.title}</h4>
+                        <h4 className="mb-3 text-sm font-semibold text-neutral-dark-bg">{r.donation.title}</h4>
                         <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[8rem_minmax(0,1fr)]">
                             <dt className="text-neutral-gray-medium">{r.donation.amount}</dt>
                             <dd className="font-mono text-neutral-gray-dark tabular-nums">
@@ -352,7 +352,7 @@ function ReportCard({ report, lang, t }: { report: PublicReport; lang: Locale; t
 
                 {data.remarks.trim() && (
                     <section>
-                        <h4 className="font-display mb-2 text-sm font-semibold text-neutral-dark-bg">{r.remarks.title}</h4>
+                        <h4 className="mb-2 text-sm font-semibold text-neutral-dark-bg">{r.remarks.title}</h4>
                         <p className="whitespace-pre-line text-sm leading-relaxed text-neutral-gray-medium">
                             {data.remarks}
                         </p>
@@ -392,7 +392,7 @@ export default async function TransparencyPage({
                 <section className="pt-10">
                     <Reveal>
                         <SectionEyebrow>{t.live.eyebrow}</SectionEyebrow>
-                        <h2 className="font-display mb-5 text-2xl font-semibold tracking-tight text-neutral-dark-bg">
+                        <h2 className="mb-5 text-2xl font-semibold tracking-tight text-neutral-dark-bg">
                             {t.live.title}
                         </h2>
                     </Reveal>
@@ -416,7 +416,7 @@ export default async function TransparencyPage({
                 <section className="mt-12 rounded-2xl border border-[#dce2de] bg-white p-6 shadow-[0_12px_32px_-20px_rgba(22,42,33,0.1)] md:p-8">
                     <Reveal>
                         <SectionEyebrow>{t.intro.eyebrow}</SectionEyebrow>
-                        <h2 className="font-display mb-5 text-2xl font-semibold tracking-tight text-neutral-dark-bg">
+                        <h2 className="mb-5 text-2xl font-semibold tracking-tight text-neutral-dark-bg">
                             {t.intro.title}
                         </h2>
                     </Reveal>
@@ -452,7 +452,7 @@ export default async function TransparencyPage({
                 <section className="mt-12">
                     <Reveal>
                         <SectionEyebrow>{t.reports.eyebrow}</SectionEyebrow>
-                        <h2 className="font-display mb-6 text-2xl font-semibold tracking-tight text-neutral-dark-bg">
+                        <h2 className="mb-6 text-2xl font-semibold tracking-tight text-neutral-dark-bg">
                             {t.reports.title}
                         </h2>
                     </Reveal>

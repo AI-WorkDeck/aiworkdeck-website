@@ -84,7 +84,7 @@ export default async function UpdatesPage({
                             {t.history.eyebrow}
                         </span>
                     </div>
-                    <h2 className="font-display mb-6 text-2xl font-semibold tracking-tight text-neutral-dark-bg">
+                    <h2 className="mb-6 text-2xl font-semibold tracking-tight text-neutral-dark-bg">
                         {t.history.title}
                     </h2>
 
