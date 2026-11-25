@@ -25,7 +25,7 @@ import { provisionSubscriptionPeriods } from './subscription';
 export type ProPlan = 'monthly' | 'yearly';
 
 export interface ProProduct {
-  skuId: 'pro_monthly_intro' | 'pro_monthly' | 'pro_yearly';
+  skuId: 'pro_monthly_intro' | 'pro_monthly' | 'pro_yearly' | 'pro_test';
   plan: ProPlan;
   name: string;
   nameEn: string;
@@ -65,6 +65,24 @@ export const PRO_PRODUCTS: readonly ProProduct[] = [
   },
 ];
 
+/**
+ * Production payment test only (M3, owner-approved 1-fen check): one day of Pro for 1 fen. Never in PRO_PRODUCTS, so
+ * the website checkout (isProSku) rejects it; it is quoted only to accounts listed in MOBILE_WXPAY_PRO_TEST_ACCOUNTS
+ * (lib/mobile-pro.ts) and does not use up an intro month.
+ */
+export const PRO_TEST_PRODUCT: ProProduct = {
+  skuId: 'pro_test',
+  plan: 'monthly',
+  name: 'AI WorkDeck 个人 Pro（支付测试，1 天）',
+  nameEn: 'AI WorkDeck Pro (payment test, 1 day)',
+  priceCents: 1,
+  days: 1,
+};
+
+export function isProTestSku(skuId: unknown): boolean {
+  return skuId === PRO_TEST_PRODUCT.skuId;
+}
+
 export interface ProIntroQuote {
   eligible: boolean;
   priceCents: number;
@@ -80,7 +98,9 @@ export interface ProIntroQuote {
 export function getProIntroQuote(db: Database.Database, userId: string): ProIntroQuote {
   const wechatRow = db
     .prepare(
-      "SELECT COALESCE(SUM(CASE WHEN plan = 'yearly' THEN 12 ELSE 1 END), 0) AS n FROM pro_payment WHERE userId = ?"
+      // Payment-test orders (pro_test) do not use up the intro offer.
+      "SELECT COALESCE(SUM(CASE WHEN p.plan = 'yearly' THEN 12 ELSE 1 END), 0) AS n FROM pro_payment p WHERE p.userId = ? " +
+        "AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.outTradeNo = p.outTradeNo AND o.skuId = 'pro_test')"
     )
     .get(userId) as { n: number };
   let appStoreCycles = 0;
@@ -126,6 +146,7 @@ export function isLegacyProSku(skuId: unknown): boolean {
 /** 现行 SKU 直查；旧写法 pro:* 映射到现行商品（仅用于旧单履约，不放开建单）。 */
 export function getProProduct(skuId: unknown): ProProduct | undefined {
   const id = typeof skuId === 'string' && isLegacyProSku(skuId) ? LEGACY_PRO_SKU[skuId] : skuId;
+  if (isProTestSku(id)) return PRO_TEST_PRODUCT;
   return PRO_PRODUCTS.find((p) => p.skuId === id);
 }
 

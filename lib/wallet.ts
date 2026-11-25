@@ -1,7 +1,7 @@
 import { getDb, withTransaction } from './db';
 import { getOrder, markOrderPaid, markOrderRefunded, MarkPaidResult, type Order } from './orders';
 import { fulfillPurchase } from './purchases';
-import { fulfillProPayment, isLegacyProSku, isProSku } from './pro-products';
+import { fulfillProPayment, isLegacyProSku, isProSku, isProTestSku } from './pro-products';
 import { fulfillPluginSubscription, isPluginSubSku } from './plugin-subscriptions';
 import {
     APPSTORE_SOURCE_KIND,
@@ -144,7 +144,7 @@ export function settleOrderPaid(
                 });
             }
         } else if (
-            (order.kind === 'subscription' && isProSku(order.skuId)) ||
+            (order.kind === 'subscription' && (isProSku(order.skuId) || isProTestSku(order.skuId))) ||
             // #228（e31e951）旧单：kind='purchase' + pro:monthly / pro:yearly。切换前已建的 pending 单
             // 付款后回调必须照常履约（含年付）；建单侧的年付/开关拦截不作用于这里。
             (order.kind === 'purchase' && isLegacyProSku(order.skuId))

@@ -7,6 +7,9 @@ import { accountSubscriptionView } from '@/lib/account-subscription-view';
 import { verifySubscriptionTransaction, appstoreEnv } from '@/lib/payments/appstore-adapter';
 import { prepareAppstoreSubscription, appstoreAccountToken, applyAppstoreSubscription, appstoreSubscriptionCapability, SubscriptionRejected } from '@/lib/appstore-subscription';
 import { subscriptionSnapshot } from '@/lib/subscription';
+import { mobileProQuote } from '@/lib/mobile-pro';
+import { getDb } from '@/lib/db';
+import { getProProduct } from '@/lib/pro-products';
 import { accountBillingFields, refreshBqtSnapshot } from '@/lib/bqt-account';
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
@@ -577,6 +580,69 @@ async function handleCreateRecharge(
 }
 
 // ---------------------------------------------------------------------------
+// action: pro-quote / create-pro (Android mainland: personal Pro via WeChat APP pay, POLISH M3)
+// ---------------------------------------------------------------------------
+
+function handleProQuote(userId: string | null): NextResponse {
+  return NextResponse.json(mobileProQuote(getDb(), userId));
+}
+
+/**
+ * One Pro month via WeChat APP pay. The server is the price authority: the request must name the SKU and amount
+ * the current quote gives (a stale app gets 400 product_mismatch and re-quotes). Settlement is the existing
+ * notify/app callback or action=query; fulfilment is fulfillProPayment, exactly as for website Pro.
+ */
+async function handleCreatePro(userId: string, body: Record<string, unknown>): Promise<NextResponse> {
+  const quote = mobileProQuote(getDb(), userId);
+  if (!quote.available) {
+    return quote.reason === 'appstore_subscription_active' ? fail(409, quote.reason) : fail(503, quote.reason);
+  }
+  if (body.skuId !== quote.skuId || body.amountCents !== quote.amountCents) {
+    return fail(400, 'product_mismatch', { skuId: quote.skuId, amountCents: quote.amountCents });
+  }
+  const idempotencyKey =
+    typeof body.idempotencyKey === 'string' && body.idempotencyKey.length > 0 && body.idempotencyKey.length <= 128
+      ? body.idempotencyKey
+      : null;
+  if (!idempotencyKey) return fail(400, 'idempotency_key_required');
+
+  const existing = findOrderByIdempotencyKey(userId, idempotencyKey);
+  if (existing) {
+    if (existing.status === 'paid') return fail(409, 'order_already_paid', { outTradeNo: existing.outTradeNo });
+    if (
+      existing.amount !== quote.amountCents ||
+      existing.kind !== 'subscription' ||
+      existing.channel !== wxpayAppAdapter.id ||
+      existing.skuId !== quote.skuId
+    ) {
+      return fail(409, 'idempotency_conflict', { outTradeNo: existing.outTradeNo });
+    }
+  }
+  const product = getProProduct(quote.skuId)!;
+  const description = product.name.slice(0, 127);
+  const outTradeNo = existing?.outTradeNo ?? generateOrderNo('SUBSCRIPTION');
+  if (!existing) {
+    createOrder({
+      id: outTradeNo,
+      outTradeNo,
+      description,
+      amount: quote.amountCents,
+      status: 'pending',
+      userId,
+      kind: 'subscription',
+      channel: wxpayAppAdapter.id,
+      currency: wxpayAppAdapter.currency,
+      skuId: quote.skuId,
+      idempotencyKey,
+    });
+  }
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || siteConfig.origin;
+  const charge = await wxpayAppAdapter.createCharge({ outTradeNo, description, amountMinor: quote.amountCents, baseUrl });
+  if (charge.channel !== 'wxpay-app') return fail(500, 'unexpected_channel');
+  return NextResponse.json({ present: 'app', outTradeNo, amountCents: quote.amountCents, skuId: quote.skuId, ...charge.appPay });
+}
+
+// ---------------------------------------------------------------------------
 // action: confirm-appstore
 // ---------------------------------------------------------------------------
 
@@ -878,6 +944,8 @@ export async function POST(request: NextRequest) {
     if (action === 'wx-phone') return await handleWxPhone(body);
     // Shadow report about cloud users that have no account mapping; carries cloud ids only.
     if (action === 'shadow-unmapped') return NextResponse.json(recordShadowUnmapped(body as unknown as {observedAt:string;users:number;bytes:string;sample?:unknown}));
+    // Like the App Store capability, a Pro quote may be read without an account (a new user sees the intro offer).
+    if (action === 'pro-quote' && !body.accountId) return handleProQuote(null);
     if (action === 'appstore-subscription-capability') {
       const account = typeof body.accountId === 'string' ? findUserById(body.accountId) : undefined;
       if (account && !isDeletedUser(account) && siteConfig.currency === 'CNY' && sandboxAllowed(account.id) && appstoreAdapter.isConfigured()) {
@@ -964,6 +1032,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'query') return await handleQuery(user.id, body);
+    if (action === 'pro-quote') return handleProQuote(user.id);
+    if (action === 'create-pro') return await handleCreatePro(user.id, body);
 
     if (action === 'delete-account') return await handleDeleteAccount(user.id);
 
