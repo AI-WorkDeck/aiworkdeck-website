@@ -151,19 +151,27 @@ function pluginDisplayLocales(language?: string): string[] {
   return [...new Set([LOCALE_META[locale].bcp47, 'en-US', 'zh-CN'])];
 }
 
-function pluginDisplayText(value: unknown, fallback: string, files: Map<string, Buffer>, locales = pluginDisplayLocales()): string {
+function pluginDisplayText(value: unknown, fallback: string, files: Map<string, Buffer>, locales = pluginDisplayLocales(), literalKeys: string[] = []): string {
   const text = String(value || fallback);
   const token = /^%([^%]+)%$/.exec(text);
-  if (!token) return text;
-  for (const locale of locales) {
+  if (!token && !literalKeys.length) return text;
+  // A literal manifest string is in the author's own language. Translate it only from the visitor's
+  // dictionary, or English for non-Chinese visitors; never swap it for Chinese or another fallback.
+  const visitor = locales[0];
+  const tryLocales = token ? locales : visitor.startsWith('zh-') ? [visitor] : [...new Set([visitor, 'en-US'])];
+  const keys = token ? [token[1]] : literalKeys;
+  for (const locale of tryLocales) {
     const bytes = files.get(`l10n/${locale}.json`);
     if (!bytes) continue;
     try {
-      const translated = JSON.parse(bytes.toString('utf8'))?.[token[1]];
-      if (typeof translated === 'string' && translated.trim() && !/^%[^%]+%$/.test(translated)) return translated;
+      const dict = JSON.parse(bytes.toString('utf8'));
+      for (const key of keys) {
+        const translated = dict?.[key];
+        if (typeof translated === 'string' && translated.trim() && !/^%[^%]+%$/.test(translated)) return translated;
+      }
     } catch { /* Invalid optional dictionary: try the fallback language. */ }
   }
-  return fallback;
+  return token ? fallback : text;
 }
 
 /** Resolve display at read time: INTL mirrors CN-signed entries without rewriting them. */
@@ -182,8 +190,8 @@ export function getPluginDisplay(entry: PluginEntry, language?: string): Pick<Pl
       if (bytes) files.set(name, bytes);
     }
     return {
-      name: pluginDisplayText(manifest.name, entry.name, files, locales),
-      description: pluginDisplayText(manifest.description, entry.description, files, locales),
+      name: pluginDisplayText(manifest.name, entry.name, files, locales, ['plugin.name']),
+      description: pluginDisplayText(manifest.description, entry.description, files, locales, ['plugin.description', 'plugin.desc']),
     };
   } catch { // Older mirrored entries may not have readable package metadata.
     return fallback;
