@@ -69,6 +69,8 @@ jobs:
         run: npx tsx --tsconfig tsconfig.json scripts/verify-zh-hant-content.mts
       - name: zh-hant deployment planner
         run: npx tsx --tsconfig tsconfig.json scripts/verify-zh-hant-deployment.mts
+      - name: zh-hant quiz and result card
+        run: npx tsx --tsconfig tsconfig.json scripts/verify-zh-hant-quiz.mts
       - name: Web engine prefetch targets real assets
         run: npx tsx --tsconfig tsconfig.json scripts/verify-web-engine-prefetch.mts
       - name: Marketplace terminology (X-S3)

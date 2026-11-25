@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { QUIZ_ZH_HANT } from '@/lib/quiz-data.zh-hant';
 import { toBaseLocale } from '@/i18n-config';
 import {
     renderQuizCardPng,
@@ -27,7 +28,8 @@ export async function GET(request: NextRequest) {
     if (!type) {
         return NextResponse.json({ error: 'not_found' }, { status: 404 });
     }
-    const lang = toBaseLocale(sp.get('lang') ?? 'zh');
+    const requested = sp.get('lang') ?? 'zh';
+    const lang = requested === 'zh-hant' ? 'zh-hant' : toBaseLocale(requested);
     const dims: [number, number, number] = [
         parseDim(sp.get('a'), type.dims[0]),
         parseDim(sp.get('b'), type.dims[1]),
@@ -55,7 +57,7 @@ export async function GET(request: NextRequest) {
         const displayFile =
             lang === 'en'
                 ? `Legal Persona - ${type.nameEn}.png`
-                : `法人格 - ${type.nameZh}.png`;
+                : `法人格 - ${lang === 'zh-hant' ? QUIZ_ZH_HANT[type.nameZh] ?? type.nameZh : type.nameZh}.png`;
         headers['Content-Disposition'] =
             `attachment; filename="AI-WorkDeck-persona-${type.id}.png"; filename*=UTF-8''${encodeURIComponent(displayFile)}`;
     }

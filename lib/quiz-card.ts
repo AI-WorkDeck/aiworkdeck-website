@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { QUIZ_ZH_HANT } from './quiz-data.zh-hant';
 import QRCode from 'qrcode';
 import sharp from 'sharp';
 import { QUIZ_TYPE_MAP, type QuizType } from './quiz-data';
@@ -174,7 +175,7 @@ export interface QuizCardInput {
     typeId: string;
     dims: [number, number, number];
     nickname?: string;
-    lang: 'zh' | 'en';
+    lang: 'zh' | 'zh-hant' | 'en';
     layout?: QuizCardLayout;
     palette?: CertPalette;
     /** 全网第几位解锁该类型（参与感编号，客户端按完成统计传入；无则只显稀缺行） */
@@ -186,11 +187,15 @@ export interface QuizCardInput {
 export async function renderQuizCardPng(input: QuizCardInput): Promise<Buffer | null> {
     const type: QuizType | undefined = QUIZ_TYPE_MAP[input.typeId];
     if (!type) return null;
-    const zh = input.lang === 'zh';
+    const zh = input.lang !== 'en';
+    const hant = input.lang === 'zh-hant';
+    // zh-hant: the same card in Traditional (generated map, POLISH Q12) and the TC faces of Noto CJK on the server.
+    const tz = (v: unknown): any => (typeof v === 'string' ? (hant ? QUIZ_ZH_HANT[v] ?? v : v) : Array.isArray(v) ? v.map(tz) : v);
+    const fill = (tpl: string) => tpl.replace('{seq}', String(input.seq)).replace('{r}', String(type.rarity));
     const p = PALETTES[input.palette ?? 'forest'];
 
     const name = zh ? type.nameZh : type.nameEn;
-    const dimLabels = zh ? ['卷度', '抗压', '锋利'] : ['GRIND', 'NERVE', 'EDGE'];
+    const dimLabels = zh ? tz(['卷度', '抗压', '锋利']) : ['GRIND', 'NERVE', 'EDGE'];
     const qrUrl = `${siteConfig.origin}/${siteConfig.defaultLocale}/quiz?from=qcard`;
     const qrDataUri = await QRCode.toDataURL(qrUrl, {
         margin: 1, width: 320,
@@ -216,10 +221,10 @@ export async function renderQuizCardPng(input: QuizCardInput): Promise<Buffer | 
         praise: zh ? type.praiseZh : type.praiseEn,
         rarityLine: input.seq
             ? (zh
-                ? `全国第 ${input.seq} 位解锁 · 仅 ${type.rarity}% 的法律人是这个类型`
+                ? fill(tz('全国第 {seq} 位解锁 · 仅 {r}% 的法律人是这个类型'))
                 : `No.${input.seq} nationwide · only ${type.rarity}% share this type`)
             : (zh
-                ? `全国仅 ${type.rarity}% 的法律人是这个类型`
+                ? fill(tz('全国仅 {r}% 的法律人是这个类型'))
                 : `Only ${type.rarity}% of legal minds share this type`),
         scan1: zh ? '扫码测测' : 'Scan to find',
         scan2: zh ? '你是哪种法律人' : 'your legal persona',
@@ -229,6 +234,8 @@ export async function renderQuizCardPng(input: QuizCardInput): Promise<Buffer | 
         watermarkChar: name.slice(0, 1),
     };
 
-    const svg = LAYOUT_FNS[input.layout ?? 'seal'](m, p);
+    const model = hant ? (Object.fromEntries(Object.entries(m).map(([k, v]) => [k, k === 'qrDataUri' ? v : tz(v)])) as typeof m) : m;
+    const drawn = LAYOUT_FNS[input.layout ?? 'seal'](model, p);
+    const svg = hant ? drawn.replaceAll('CJK SC', 'CJK TC') : drawn;
     return sharp(Buffer.from(svg), { density: 96 }).png().toBuffer();
 }

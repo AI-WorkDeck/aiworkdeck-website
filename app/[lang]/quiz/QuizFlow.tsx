@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, Check, Download, RotateCcw, Share2, Smartphone } from 'lucide-react';
 import { Locale, toBaseLocale } from '@/i18n-config';
+import { QUIZ_ZH_HANT } from '@/lib/quiz-data.zh-hant';
 import { Button } from '@/components/ui/button';
 import {
     QUIZ_QUESTIONS, QUIZ_TYPE_MAP, QUIZ_TYPES,
@@ -71,6 +72,8 @@ export function QuizFlow({ lang, t, tStyle, from, loggedIn, username, completes,
     }, []);
 
     const zh = toBaseLocale(lang) === 'zh';
+    // zh-hant reads the quiz copy in Traditional (generated map, POLISH Q12); zh and en are unchanged.
+    const tz = (text: string) => (lang === 'zh-hant' ? QUIZ_ZH_HANT[text] ?? text : text);
     const total = QUIZ_QUESTIONS.length;
 
     const start = () => {
@@ -131,7 +134,7 @@ export function QuizFlow({ lang, t, tStyle, from, loggedIn, username, completes,
                     {QUIZ_TYPES.filter(x => x.pool !== 'egg').map(x => (
                         <span key={x.id}
                             className="rounded-full border border-neutral-gray-light px-2.5 py-0.5 text-[11.5px] text-neutral-gray-medium">
-                            {zh ? x.nameZh : x.nameEn}
+                            {zh ? tz(x.nameZh) : x.nameEn}
                         </span>
                     ))}
                     <span className="rounded-full border border-dashed border-king-forest/40 px-2.5 py-0.5 text-[11.5px] text-king-forest/80">
@@ -151,13 +154,13 @@ export function QuizFlow({ lang, t, tStyle, from, loggedIn, username, completes,
                     {(t.remain as string).replace('{n}', String(total - qIndex))}
                 </p>
                 <h2 className="mt-3 font-display text-xl font-semibold leading-relaxed text-neutral-dark-bg md:text-2xl">
-                    {zh ? q.zh : q.en}
+                    {zh ? tz(q.zh) : q.en}
                 </h2>
                 <div className="mt-6 flex flex-col gap-3">
                     {q.options.map((opt, i) => (
                         <button key={i} type="button" onClick={() => answer(i)}
                             className="rounded-lg border border-neutral-gray-light bg-white px-5 py-3.5 text-left text-[14.5px] leading-relaxed text-neutral-gray-dark transition-colors hover:border-king-forest/60 hover:bg-king-forest/[0.04] hover:text-neutral-dark-bg">
-                            {zh ? opt.zh : opt.en}
+                            {zh ? tz(opt.zh) : opt.en}
                         </button>
                     ))}
                 </div>
@@ -197,7 +200,7 @@ export function QuizFlow({ lang, t, tStyle, from, loggedIn, username, completes,
         .slice(0, 3);
     const qs = `type=${result.typeId}&a=${result.dims[0]}&b=${result.dims[1]}&c=${result.dims[2]}` +
         `&layout=${layout}&palette=${palette}&s=${unlockSeq}${variant === 'biz' ? '&v=biz' : ''}` +
-        `${nickname ? `&n=${encodeURIComponent(nickname)}` : ''}${zh ? '' : '&lang=en'}`;
+        `${nickname ? `&n=${encodeURIComponent(nickname)}` : ''}${lang === 'zh-hant' ? '&lang=zh-hant' : zh ? '' : '&lang=en'}`;
 
     const shareCard = async () => {
         track('share', { typeId: result.typeId, v: variant, ...(nickname ? { n: nickname } : {}) });
@@ -214,7 +217,7 @@ export function QuizFlow({ lang, t, tStyle, from, loggedIn, username, completes,
                 <p className="text-[13px] uppercase tracking-[0.22em] text-king-forest/80">
                     {t.resultEyebrow}
                     <span className="ml-2 font-display text-[15px] font-black normal-case tracking-normal text-neutral-dark-bg">
-                        {zh ? type.nameZh : type.nameEn}
+                        {zh ? tz(type.nameZh) : type.nameEn}
                     </span>
                 </p>
                 <p className="mt-2 text-[13px] text-neutral-gray-dark">
@@ -224,7 +227,7 @@ export function QuizFlow({ lang, t, tStyle, from, loggedIn, username, completes,
                     <p className="mt-1 text-[12px] text-neutral-gray-medium">
                         {t.hotLine}
                         {hotTop.map(([id, n]) =>
-                            `${zh ? QUIZ_TYPE_MAP[id].nameZh : QUIZ_TYPE_MAP[id].nameEn} ×${n}`
+                            `${zh ? tz(QUIZ_TYPE_MAP[id].nameZh) : QUIZ_TYPE_MAP[id].nameEn} ×${n}`
                         ).join(' · ')}
                     </p>
                 )}
@@ -233,7 +236,7 @@ export function QuizFlow({ lang, t, tStyle, from, loggedIn, username, completes,
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
                 src={`/api/quiz/card?${qs}`}
-                alt={zh ? type.nameZh : type.nameEn}
+                alt={zh ? tz(type.nameZh) : type.nameEn}
                 width={540} height={720}
                 onLoad={() => setImgLoading(false)}
                 className={`w-full max-w-[420px] rounded-lg shadow-[0_30px_80px_-24px_rgba(46,90,80,0.45)] transition-opacity duration-200 ${imgLoading ? 'opacity-60' : 'opacity-100'}`}
@@ -321,7 +324,7 @@ export function QuizFlow({ lang, t, tStyle, from, loggedIn, username, completes,
                     <div className="bg-gradient-to-br from-king-forest-darker via-king-forest to-king-forest-darker p-5">
                         <p className="text-[11px] uppercase tracking-[0.22em] text-king-mint/80">{t.bridge.eyebrow}</p>
                         <p className="mt-2.5 text-[14.5px] leading-relaxed text-white/90">
-                            {zh ? type.pitchZh : type.pitchEn}
+                            {zh ? tz(type.pitchZh) : type.pitchEn}
                         </p>
                         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2.5">
                             <Link href={`/${lang}/start?ref=quiz-${result.typeId}`}
