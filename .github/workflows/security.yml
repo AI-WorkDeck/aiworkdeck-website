@@ -7,8 +7,10 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: security-${{ github.ref }}
-  cancel-in-progress: true
+  # PR: a new push cancels the superseded scan. master / release branches: a scan in progress is never
+  # cancelled; pending scans collapse to the newest commit (one pending run per group).
+  group: security-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   static:
     name: Semgrep security rules

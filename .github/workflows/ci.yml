@@ -90,6 +90,9 @@ jobs:
         # Unset = production config unchanged; set = this site's origin/host/addin/same-site list only; malformed = build fails.
         run: npx tsx --tsconfig tsconfig.json scripts/verify-site-origin-override.mts
 
+      - name: Workflow concurrency rules
+        run: npx tsx scripts/verify-workflow-concurrency.mts
+
       - name: Web AI deployment flag fixtures (no server access)
         run: node --test scripts/web-ai-flag.test.mjs
 
