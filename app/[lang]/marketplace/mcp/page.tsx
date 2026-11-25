@@ -48,7 +48,7 @@ export default async function McpPage({ params }: { params: Promise<{ lang: Loca
                             <article
                                 key={provider.id}
                                 id={provider.id}
-                                className="flex scroll-mt-28 flex-col justify-between rounded-2xl border border-[#dce2de] bg-white p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-king-forest/35 hover:shadow-[0_18px_40px_-18px_rgba(18,58,38,0.2)]"
+                                className="flex scroll-mt-28 flex-col justify-between rounded-2xl border border-neutral-gray-light bg-white p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-king-forest/35 hover:shadow-[0_18px_40px_-18px_rgba(18,58,38,0.2)]"
                             >
                                 <div>
                                     <div className="mb-4 flex items-center justify-between gap-3">
@@ -96,7 +96,7 @@ export default async function McpPage({ params }: { params: Promise<{ lang: Loca
                     </div>
                 </section>
 
-                <section id="configure" className="mt-12 scroll-mt-28 rounded-2xl border border-[#dce2de] bg-white p-6 md:p-8">
+                <section id="configure" className="mt-12 scroll-mt-28 rounded-2xl border border-neutral-gray-light bg-white p-6 md:p-8">
                     <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-neutral-gray-light/80 pb-4">
                         <h2 className="font-display text-xl font-bold text-neutral-dark-bg md:text-2xl">{t.configure}</h2>
                         <p className="font-mono text-xs text-neutral-gray-medium">{t.releaseNote}</p>

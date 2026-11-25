@@ -78,14 +78,14 @@ export default async function PluginDevelopPage({ params }: { params: Promise<{ 
                     </a>
                     <Link
                         href={`/${lang}/plugins/submit`}
-                        className="inline-flex h-10 items-center rounded-lg border border-[#e3dccb] bg-[#fffdf8] px-5 text-sm font-medium text-[#1f3b34] transition-colors hover:border-[#c9bd9f] hover:bg-white"
+                        className="inline-flex h-10 items-center rounded-lg border border-neutral-gray-light bg-neutral-white px-5 text-sm font-medium text-pine transition-colors hover:border-king-gold-line hover:bg-white"
                     >
                         {t.goSubmit}
                     </Link>
                 </div>
-                <p className="mt-4 text-[13px] leading-relaxed text-[#4a5650]">
+                <p className="mt-4 text-[13px] leading-relaxed text-ink-body">
                     {t.devEligibilityP1} {t.devEligibilityP2}{' '}
-                    <Link className="text-[#1f3b34] underline underline-offset-2" href={`/${lang}/plugins/developer`}>{t.devEligibilityLink}</Link>
+                    <Link className="text-pine underline underline-offset-2" href={`/${lang}/plugins/developer`}>{t.devEligibilityLink}</Link>
                 </p>
             </PageHero>
             <div className="container mx-auto max-w-3xl px-4 md:px-8 pt-4">
