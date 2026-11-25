@@ -1676,7 +1676,9 @@
       "tencentMyApp": "Tencent MyApp",
       "apkLink": "Unduh APK Android",
       "details": "Versi {version} · {size} MB",
-      "checksum": "Lihat checksum berkas"
+      "checksum": "Lihat checksum berkas",
+      "desktopHint": "Memakai komputer?",
+      "desktopLink": "Unduh untuk Windows / macOS →"
     },
     "mobile": {
       "loggedOutHint": "Verifikasi nomor telepon atau email dan buat kata sandi, lalu masuk ke aplikasi desktop atau seluler dengan akun dari wilayah yang sama.",

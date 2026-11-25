@@ -1678,7 +1678,9 @@
       "tencentMyApp": "应用宝",
       "apkLink": "直接下载安装包（APK）",
       "details": "版本 {version} · {size} MB",
-      "checksum": "查看文件校验值"
+      "checksum": "查看文件校验值",
+      "desktopHint": "在电脑上？",
+      "desktopLink": "下载 Windows / macOS 桌面版 →"
     },
     "mobile": {
       "loggedOutHint": "先验证手机号或邮箱并创建密码，再使用同一区域的账户登录电脑或手机应用。",

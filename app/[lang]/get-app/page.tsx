@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { headers } from 'next/headers';
 import { getDictionary } from '@/get-dictionary';
 import { Locale } from '@/i18n-config';
@@ -22,6 +23,8 @@ export default async function GetAppPage({ params }: { params: Promise<{ lang: L
     const ua = (await headers()).get('user-agent') ?? '';
     const decision = resolveAppLink(ua, SITE_ID);
     const wechatBlocked = decision.kind === 'choose' && decision.wechatBlocked;
+    // Desktop browsers land here from the /app smart link; offer them the desktop app too.
+    const onComputer = !/iPhone|iPad|Android|Mobile/i.test(ua);
     return (
         <div className="min-h-screen bg-neutral-gray-pale pb-24">
             <PageHero eyebrow="AI WorkDeck" title={t.title} size="compact" width="4xl" />
@@ -29,7 +32,13 @@ export default async function GetAppPage({ params }: { params: Promise<{ lang: L
                 {wechatBlocked && (
                     <p className="mb-5 rounded-xl border border-neutral-gray-light bg-white p-4 text-sm text-neutral-gray-dark">{t.wechatHint}</p>
                 )}
-                <MobileAppSection t={t} ua={ua} showQr />
+                <MobileAppSection t={t} ua={ua} showQr hideTitle />
+                {onComputer && (
+                    <p className="mt-6 text-sm text-neutral-gray-dark">
+                        {t.desktopHint}{' '}
+                        <Link href={`/${lang}/start`} className="font-semibold text-king-forest underline underline-offset-4">{t.desktopLink}</Link>
+                    </p>
+                )}
             </div>
         </div>
     );

@@ -1676,7 +1676,9 @@
       "tencentMyApp": "Tencent MyApp",
       "apkLink": "Android APK をダウンロード",
       "details": "バージョン {version} · {size} MB",
-      "checksum": "ファイルのチェックサムを表示"
+      "checksum": "ファイルのチェックサムを表示",
+      "desktopHint": "パソコンをお使いですか？",
+      "desktopLink": "Windows / macOS 版をダウンロード →"
     },
     "mobile": {
       "loggedOutHint": "電話番号またはメールを確認してパスワードを作成し、同じリージョンのアカウントでデスクトップまたはモバイルアプリにログインしてください。",
