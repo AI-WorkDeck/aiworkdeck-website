@@ -13,6 +13,12 @@ for (const f of ['privacy-zh-hant', 'terms-zh-hant', 'privacy-intl-zh-hant', 'te
   const src = fs.readFileSync(`content/legal/${f}.ts`, 'utf8');
   files[f] = [...src.slice(src.indexOf('export const legalDoc')).matchAll(/"((?:[^"\\\n]|\\.)*)"/g)].map(m => m[1]);
 }
+{
+  const faq = fs.readFileSync('lib/community-faq.ts', 'utf8');
+  const block = faq.slice(faq.indexOf('const zhHant: FaqContent'), faq.indexOf('const en: FaqContent'));
+  assert.ok(block.length > 1000, 'zh-hant FAQ content exists');
+  files['lib/community-faq.ts (zhHant)'] = [...block.matchAll(/'((?:[^'\\\n]|\\.)*)'/g)].map(m => m[1]);
+}
 for (const [file, list] of Object.entries(files)) {
   const bad = list.map(s => EXEMPT.reduce((t, e) => t.split(e).join(''), s)).filter(s => [...s].some(ch => SIMPLIFIED.has(ch)));
   assert.equal(bad.length, 0, `${file}: ${bad.length} strings with Simplified characters, e.g. ${JSON.stringify(bad.slice(0, 3))}`);
