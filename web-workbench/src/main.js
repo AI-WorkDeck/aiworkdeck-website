@@ -114,8 +114,15 @@ async function showPreview(file){
  const el=$('#doc-preview');state.previewing=true;
  try{const p=await docxPreview(file.bytes);preview={file,paragraphs:p.paragraphs};el.innerHTML=p.html;$('#preview-badge').hidden=false}
  catch{preview={file,paragraphs:[]};el.innerHTML=`<article class="pv-sheet pv-message"><p>${esc(t('这份文档无法预览，编辑器准备好后会直接打开。',"This document can't be previewed; it will open as soon as the editor is ready."))}</p></article>`}
- el.hidden=false;$('#editor-cover').hidden=true;$('#prep-bar').hidden=false;prepStarted=Date.now();renderPrep(0);setAsleep(true);render();renderCapabilities();
- setInterval(()=>{if(state.previewing)renderPrep()},5000);
+ const first=!prepStarted;el.scrollTop=0;el.hidden=false;$('#editor-cover').hidden=true;$('#prep-bar').hidden=false;
+ if(first){prepStarted=Date.now();renderPrep(0);setInterval(()=>{if(state.previewing)renderPrep()},5000)}
+ setAsleep(true);render();renderCapabilities();
+}
+/** Imported while the engine loads: preview it now and make it the tab the editor opens when ready. */
+async function previewImported(file){
+ state.tabs=[...new Set([...state.tabs,file.id])];
+ await state.store.setSetting('tabs:'+state.projectId,{tabs:state.tabs,activeId:file.id});
+ await showPreview(file);
 }
 function previewFailed(code){
  $('#prep-bar').hidden=true;$('#prep-error').hidden=false;const unsupported=code==='EDITOR_UNSUPPORTED';$('#prep-desktop').hidden=!unsupported;
@@ -200,10 +207,10 @@ async function importFiles(files,retrySaved=null){
     state.files.push(job.saved);render();
    }
    importStatus('opening',input,index,files.length);
-   await openFile(job.saved.id);job.saved=null;
+   if(state.booting||state.previewing)await previewImported(job.saved);else await openFile(job.saved.id);job.saved=null;
   }
   $('#import-status').dataset.phase='complete';$('#import-title').textContent=t(`已导入 ${files.length} 份文档`,`Imported ${files.length} document(s)`);
-  $('#import-detail').textContent=t('已保存到此浏览器，文档已打开，可以开始编辑。','Saved in this browser. The document is open and ready to edit.');
+  $('#import-detail').textContent=state.previewing?t('已保存到此浏览器。现在可以阅读，编辑器准备好后即可编辑。','Saved in this browser. You can read it now and edit it once the editor is ready.'):t('已保存到此浏览器，文档已打开，可以开始编辑。','Saved in this browser. The document is open and ready to edit.');
   // Replace the 'still working' note; the success box then gets out of the way of the page.
   $('#import-safety').textContent=t('在此浏览器本地导入，原文件未上传、未改变。','Imported locally in this browser; the original file was not uploaded or changed.');
   setTimeout(()=>{if($('#import-status').dataset.phase==='complete')$('#import-status').hidden=true},IMPORT_DONE_VISIBLE_MS);
@@ -422,6 +429,7 @@ const actions={
 document.addEventListener('click',e=>{
  const target=e.target.closest('button');if(!target)return;
  const task=target.dataset.conversation?()=>conversationAction('switch',target.dataset.conversation):target.dataset.renameConversation?()=>conversationAction('rename',target.dataset.renameConversation):target.dataset.deleteConversation?()=>conversationAction('delete',target.dataset.deleteConversation):target.dataset.restoreAgent?()=>restoreAgent(target.dataset.restoreAgent):target.dataset.checkRequest?()=>checkReceipt(target.dataset.checkRequest):target.dataset.file?()=>openFile(target.dataset.file):target.dataset.close?()=>closeFile(target.dataset.close):target.dataset.fileMenu?()=>fileMenu(target.dataset.fileMenu):target.dataset.apply!==undefined?()=>applySuggestion(Number(target.dataset.apply)):target.dataset.prompt?()=>{$('#chat-input').value=target.dataset.prompt;$('#chat-input').focus()}:actions[target.dataset.action];
+ if((state.previewing||state.booting)&&target.dataset.action==='import'&&!importing){$('#file-input').click();return}
  if(state.previewing){if(['download','preview-download'].includes(target.dataset.action)){downloadFile(preview.file.name,preview.file.bytes);return}if(target.getAttribute('aria-disabled')==='true'||target.id==='send-button'){blockedToast();return}}
  if(task){if(historyBusy){toast(t('正在保存对话，请稍候。','Saving conversation. Please wait.'));return}if(importing&&!['cancel-import','toggle-files','toggle-ai'].includes(target.dataset.action)){toast(t('正在导入文件，请稍候。','Importing files. Please wait.'));return}if(activeAgentRun&&!target.dataset.checkRequest&&!['stop-ai','toggle-files','toggle-ai','refresh-ai','check-active'].includes(target.dataset.action)){toast(t('AI 正在操作当前文档，请先停止。','AI is working on this document. Stop it before another operation.'));return}if(state.booting&&target.dataset.action!=='reload')return;if(state.busy&&!['stop-ai','toggle-files','toggle-ai','reload'].includes(target.dataset.action))return;Promise.resolve().then(task).catch(fail)}
 });

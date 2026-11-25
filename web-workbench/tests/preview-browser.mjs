@@ -11,6 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import puppeteer from 'puppeteer-core';
 import {createPreviewServer} from '../scripts/preview.mjs';
+import {createDocument} from '../src/docx.js';
 
 const server=createPreviewServer();
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -55,6 +56,28 @@ await run('cold throttled load: readable preview fast, edits blocked, then the s
  assert.equal(await page.$eval('#preview-badge',e=>e.hidden),true,'badge gone after the swap');
  assert.equal(await page.$eval('[data-action="bold"]',b=>b.getAttribute('aria-disabled')),null,'toolbar enabled at the swap');
  await shot(page,'after-swap');
+});
+
+await run('importing your own DOCX while the engine loads: preview at once, then it opens in the editor',async page=>{
+ const cdp=await page.createCDPSession();await cdp.send('Network.enable');
+ await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:40,downloadThroughput:1.5e6,uploadThroughput:5e5});
+ page.cdp=cdp;
+},async page=>{
+ await page.goto(`${base}/web/?lang=en`,{waitUntil:'domcontentloaded'});
+ await until(page,previewText,'sample preview',15000);
+ const file=path.join(os.tmpdir(),`awd-import-${process.pid}.docx`);
+ await fs.writeFile(file,await createDocument(['Mutual NDA · Northwind','1. Confidential Information','Each party keeps the other party’s information confidential.']));
+ const t0=Date.now();await (await page.$('input[type=file]')).uploadFile(file);
+ await until(page,()=>/Mutual NDA · Northwind/.test(document.querySelector('#doc-preview')?.innerText||''),'imported preview',10000);
+ const shown=Date.now()-t0;assert.ok(shown<=3000,`imported document readable in ${shown} ms`);
+ assert.match(await page.$eval('#breadcrumb',e=>e.textContent),/awd-import-/,'breadcrumb names the imported file');
+ assert.match(await page.$eval('#import-detail',e=>e.textContent),/read it now and edit it once the editor is ready/);
+ await shot(page,'import-preview');
+ await page.cdp.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
+ await until(page,()=>{const p=document.querySelector('#doc-preview');return p.hidden&&!document.querySelector('.document-toolbar').classList.contains('asleep')},'swap');
+ assert.match(await page.$eval('#breadcrumb',e=>e.textContent),/awd-import-/,'the editor opened the imported document');
+ assert.match(await page.$eval('#tabs .tab.active',e=>e.textContent),/awd-import-/,'its tab is active');
+ await fs.rm(file,{force:true});
 });
 
 await run('engine failure keeps the preview with an inline error',async page=>{
