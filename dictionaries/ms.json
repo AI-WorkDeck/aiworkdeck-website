@@ -1701,7 +1701,7 @@
     },
     "eyebrow": "Mula",
     "title": "Dua langkah untuk bermula dengan AI WorkDeck",
-    "lead": "AI WorkDeck berjalan pada mesin anda sendiri — dokumen anda tidak pernah meninggalkannya. Selepas memasang, log masuk terus di dalam aplikasi untuk bermula; akaun anda dicipta secara automatik apabila anda log masuk buat kali pertama.",
+    "lead": "AI WorkDeck berjalan pada komputer anda sendiri, dan dokumen anda kekal di situ melainkan anda meminta AI mengusahakannya. Selepas memasang, log masuk terus di dalam aplikasi. Pengguna baharu? Anda boleh mencipta akaun dalam dialog yang sama.",
     "mobileSubtitle": "Cipta akaun anda di sini, kemudian pasang AI WorkDeck pada komputer anda untuk bermula.",
     "siteChoice": {
       "title": "Pertama, pilih laman yang betul",
@@ -1736,7 +1736,7 @@
         "en": "English"
       },
       "switch": "Pergi ke {site}",
-      "clientNote": "Kedua-dua tapak menggunakan klien desktop yang sama, daripada pemasang yang sama. Antara mukanya buat masa ini hanya tersedia dalam Bahasa Cina."
+      "clientNote": "Kedua-dua tapak menggunakan klien desktop dan pemasang yang sama. Antara muka tersedia dalam 20 bahasa; tukar di bawah Tetapan › Bahasa."
     },
     "progress": "Langkah {current} daripada {total}",
     "steps": {
@@ -1758,7 +1758,7 @@
         "openSourceNote": "Apa yang anda muat turun ialah Edisi Komuniti: aplikasi desktop adalah sumber terbuka di bawah AGPLv3, dan sumbernya terdapat di {repo}. Ciri premium seperti sembang AI, OCR dan transkripsi menggunakan perkhidmatan pihak ketiga berbayar, jadi ia memerlukan Kredit terlebih dahulu — {pricing} menerangkan cara pengebilan berfungsi.",
         "openSourceRepo": "GitHub",
         "openSourcePricing": "halaman harga",
-        "bilingualNote": "Satu pemasang menyokong kedua-dua Bahasa Inggeris dan Bahasa Cina Dipermudahkan. Selepas memasang, tukar di bawah Tetapan - Bahasa; antara muka, penyunting dokumen dan balasan AI semuanya akan mengikutinya. Tiada muat turun Bahasa Inggeris yang berasingan.",
+        "bilingualNote": "Satu pemasang merangkumi semua bahasa antara muka. Selepas memasang, tukar di bawah Tetapan › Bahasa; antara muka, penyunting dokumen dan balasan AI semuanya akan mengikutinya. Tiada muat turun Bahasa Inggeris yang berasingan.",
         "addinTitle": "Add-in Office / WPS (pilihan)",
         "addinDesc": "Untuk menggunakan AI WorkDeck di dalam Word, Excel atau PowerPoint, pasang add-in panel tugas: muat turun pemasang, jalankannya, dan mulakan semula Office — butang \"Buka AI WorkDeck\" akan muncul pada tab Utama. Untuk WPS Office, tiada apa-apa perlu dimuat turun: buka halaman pemasangan satu klik, klik Pasang, dan mulakan semula WPS (Writer, Spreadsheets dan Presentation pada Windows dan Linux). Ia bersambung ke awan rasmi secara lalai (log masuk dengan nombor telefon atau e-mel anda), atau arahkan ia ke aplikasi desktop tempatan anda atau pelayan firma dalam tetapan add-in.",
         "addinMac": "Pemasang macOS (.dmg)",
@@ -1768,13 +1768,11 @@
       },
       "login": {
         "title": "Buka aplikasi desktop dan log masuk",
-        "descPhone": "Selepas pemasangan, buka AI WorkDeck — skrin log masuk adalah perkara pertama yang anda lihat. Masukkan nombor telefon anda untuk menerima kod dan log masuk; akaun anda dicipta secara automatik buat kali pertama, tiada pendaftaran berasingan diperlukan.",
-        "descEmail": "Selepas pemasangan, buka AI WorkDeck — skrin log masuk adalah perkara pertama yang anda lihat. Masukkan e-mel anda untuk menerima kod dan log masuk; akaun anda dicipta secara automatik buat kali pertama, tiada pendaftaran berasingan diperlukan.",
+        "descPhone": "Buka AI WorkDeck — skrin log masuk adalah perkara pertama yang anda lihat. Log masuk dengan nombor telefon dan kata laluan anda. Pengguna baharu? Pilih “Belum ada kata laluan? Tetapkan satu”, sahkan nombor anda dan tetapkan kata laluan.",
+        "descEmail": "Buka AI WorkDeck — skrin log masuk adalah perkara pertama yang anda lihat. Log masuk dengan e-mel dan kata laluan anda. Pengguna baharu? Pilih “Belum ada kata laluan? Tetapkan satu”, sahkan e-mel anda dan tetapkan kata laluan.",
         "mockSubtitle": "Meja kerja AI untuk profesional undang-undang",
         "phonePlaceholder": "Nombor telefon",
         "emailPlaceholder": "Alamat e-mel",
-        "codePlaceholder": "Kod pengesahan",
-        "sendCode": "Hantar kod",
         "button": "Daftar masuk",
         "note": "Selepas log masuk, baki Kredit anda, pembelian dan kemahiran disegerakkan secara automatik. Sehingga 3 peranti boleh disambungkan ke akaun yang sama pada satu masa — lihat atau putuskan sambungan daripada halaman akaun anda.",
         "accountLink": "Pergi ke akaun anda"
@@ -2204,9 +2202,9 @@
       "cta": "Buka perancang pelancaran"
     },
     "heroSubtitleIntro": "Ruang kerja desktop sumber terbuka percuma. Personal Pro hanya {intro}/bln bagi {months} bulan pertama (biasa {standard}/bln) termasuk Credits, storan awan 3GB dan papan keratan tanpa had untuk 30 hari.",
-    "heroTitleIntl": "Percuma dengan kunci AI anda sendiri. Atau bayar ikut penggunaan.",
-    "heroSubtitleIntl": "Apl desktop adalah sumber terbuka dan percuma, dan fail anda kekal di komputer anda. Sambungkan penyedia AI anda sendiri tanpa sebarang caj daripada kami, atau tambah nilai dompet USD dan bayar hanya apa yang anda guna. Firma boleh bertanya tentang penggunaan khusus.",
-    "metaDescriptionIntl": "AI WorkDeck percuma dengan kunci AI anda sendiri. Atau tambah nilai dompet USD dan bayar ikut penggunaan. Penggunaan khusus untuk firma disebut harga secara berasingan."
+    "heroTitleIntl": "Percuma dan sumber terbuka. Bayar hanya untuk AI yang anda guna.",
+    "heroSubtitleIntl": "Apl desktop adalah sumber terbuka dan percuma, dan fail anda kekal di komputer anda. AI dan perkhidmatan dalam talian lain dibayar ikut penggunaan daripada dompet USD: harga penyedia ditambah 20% tetap, tanpa langganan. Perlukan semuanya kekal secara dalaman? Hos sendiri dan halakan AI kepada model anda sendiri atau akaun model anda; firma juga boleh bertanya tentang penggunaan khusus.",
+    "metaDescriptionIntl": "AI WorkDeck percuma dan sumber terbuka. Bayar AI ikut penggunaan daripada dompet USD, atau hos sendiri dan gunakan model anda sendiri. Penggunaan khusus untuk firma disebut harga secara berasingan."
   },
   "notFoundPage": {
     "code": "404",

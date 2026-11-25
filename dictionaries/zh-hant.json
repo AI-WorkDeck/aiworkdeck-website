@@ -2070,14 +2070,12 @@
       "login": {
         "accountLink": "前往賬戶頁",
         "button": "登入",
-        "codePlaceholder": "驗證碼",
         "descEmail": "安裝完成後開啟 AI WorkDeck，第一個畫面就是登入頁。用電子郵件和密碼登入；第一次使用，點「還沒有密碼？設定密碼」，驗證電子郵件後設定密碼即可。",
         "descPhone": "安裝完成後開啟 AI WorkDeck，第一個畫面就是登入頁。用手機號碼和密碼登入；第一次使用，點「還沒有密碼？設定密碼」，驗證手機號碼後設定密碼即可。",
         "emailPlaceholder": "電子郵件地址",
         "mockSubtitle": "面向法律工作者的 AI 工作台",
         "note": "登錄後 Credits 餘額、已購內容與 Skill 自動同步。同一賬戶最多同時連接 3 台設備，可在官網賬戶頁查看或斷開。",
         "phonePlaceholder": "手機號碼",
-        "sendCode": "取得驗證碼",
         "title": "打開桌面端，登錄"
       }
     },

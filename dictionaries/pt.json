@@ -1701,7 +1701,7 @@
     },
     "eyebrow": "Começar",
     "title": "Dois passos para começar com o AI WorkDeck",
-    "lead": "O AI WorkDeck roda na sua própria máquina — seus documentos nunca saem dela. Após a instalação, faça login diretamente no aplicativo para começar; sua conta é criada automaticamente na primeira vez que você entrar.",
+    "lead": "O AI WorkDeck roda no seu próprio computador, e seus documentos ficam nele, a menos que você peça à IA para trabalhar com eles. Após a instalação, faça login diretamente no aplicativo. É novo por aqui? Você pode criar sua conta na mesma janela.",
     "mobileSubtitle": "Crie sua conta aqui e depois instale o AI WorkDeck no seu computador para começar.",
     "siteChoice": {
       "title": "Primeiro, escolha o site certo",
@@ -1736,7 +1736,7 @@
         "en": "English"
       },
       "switch": "Ir para {site}",
-      "clientNote": "Ambos os sites usam o mesmo cliente de desktop, do mesmo instalador. Sua interface está disponível atualmente apenas em chinês."
+      "clientNote": "Ambos os sites usam o mesmo cliente de desktop e o mesmo instalador. A interface está disponível em 20 idiomas; altere em Configurações › Idioma."
     },
     "progress": "Etapa {current} de {total}",
     "steps": {
@@ -1758,7 +1758,7 @@
         "openSourceNote": "O que você baixa é a Community Edition: o aplicativo de desktop é de código aberto sob a AGPLv3, e o código-fonte está em {repo}. Recursos premium como chat de IA, OCR e transcrição acionam serviços pagos de terceiros, portanto exigem Créditos primeiro — a {pricing} explica como funciona a cobrança.",
         "openSourceRepo": "GitHub",
         "openSourcePricing": "página de preços",
-        "bilingualNote": "Um único instalador suporta inglês e chinês simplificado. Após instalar, alterne em Configurações - Idioma; a interface, o editor de documentos e as respostas da IA seguem a escolha. Não há um download separado em inglês.",
+        "bilingualNote": "Um único instalador inclui todos os idiomas da interface. Após instalar, alterne em Configurações › Idioma; a interface, o editor de documentos e as respostas da IA seguem a escolha. Não há um download separado em inglês.",
         "addinTitle": "Suplemento do Office / WPS (opcional)",
         "addinDesc": "Para usar o AI WorkDeck dentro do Word, Excel ou PowerPoint, instale o suplemento do painel de tarefas: baixe o instalador, execute-o e reinicie o Office — um botão \"Abrir AI WorkDeck\" aparecerá na guia Página Inicial. Para o WPS Office não há nada para baixar: abra a página de instalação com um clique, clique em Instalar e reinicie o WPS (Writer, Spreadsheets e Presentation no Windows e Linux). Ele se conecta à nuvem oficial por padrão (faça login com seu número de telefone ou e-mail), ou aponte para o seu aplicativo de desktop local ou para um servidor do escritório nas configurações do suplemento.",
         "addinMac": "Instalador do macOS (.dmg)",
@@ -1768,13 +1768,11 @@
       },
       "login": {
         "title": "Abra o aplicativo de desktop e faça login",
-        "descPhone": "Após instalar, abra o AI WorkDeck — a tela de login é a primeira coisa que você verá. Digite seu número de telefone para receber um código e fazer login; sua conta é criada automaticamente na primeira vez, sem necessidade de registro separado.",
-        "descEmail": "Após instalar, abra o AI WorkDeck — a tela de login é a primeira coisa que você verá. Digite seu e-mail para receber um código e fazer login; sua conta é criada automaticamente na primeira vez, sem necessidade de registro separado.",
+        "descPhone": "Abra o AI WorkDeck — a tela de login é a primeira coisa que você verá. Faça login com seu número de telefone e senha. É novo por aqui? Escolha “Ainda sem senha? Crie uma”, verifique seu número e defina uma senha.",
+        "descEmail": "Abra o AI WorkDeck — a tela de login é a primeira coisa que você verá. Faça login com seu e-mail e senha. É novo por aqui? Escolha “Ainda sem senha? Crie uma”, verifique seu e-mail e defina uma senha.",
         "mockSubtitle": "A bancada de trabalho com IA para profissionais do direito",
         "phonePlaceholder": "Número de telefone",
         "emailPlaceholder": "Endereço de e-mail",
-        "codePlaceholder": "Código de verificação",
-        "sendCode": "Enviar código",
         "button": "Entrar",
         "note": "Depois de fazer login, seu saldo de Créditos, compras e habilidades são sincronizados automaticamente. Até 3 dispositivos podem ser conectados à mesma conta ao mesmo tempo — visualize-os ou desconecte-os na sua página de conta.",
         "accountLink": "Ir para sua conta"
@@ -2204,9 +2202,9 @@
       "cta": "Abrir o planejador de implantação"
     },
     "heroSubtitleIntro": "Workspace desktop gratuito e open-source. Personal Pro por {intro}/mês nos primeiros {months} meses (normal {standard}/mês), com Credits, 3 GB na nuvem e área de transferência ilimitada, compra avulsa de 30 dias.",
-    "heroTitleIntl": "Grátis com sua própria chave de IA. Ou pague conforme o uso.",
-    "heroSubtitleIntl": "O aplicativo desktop é de código aberto e gratuito, e seus arquivos ficam no seu computador. Conecte seu próprio provedor de IA sem nos pagar nada, ou recarregue uma carteira em USD e pague só pelo que usar. Escritórios podem solicitar uma implantação dedicada.",
-    "metaDescriptionIntl": "O AI WorkDeck é grátis com sua própria chave de IA. Ou recarregue uma carteira em USD e pague conforme o uso. Implantações dedicadas para escritórios têm orçamento à parte."
+    "heroTitleIntl": "Gratuito e de código aberto. Pague só pela IA que usar.",
+    "heroSubtitleIntl": "O aplicativo desktop é de código aberto e gratuito, e seus arquivos ficam no seu computador. A IA e outros serviços online são pagos conforme o uso, a partir de uma carteira em USD: o preço do provedor mais 20% fixos, sem assinatura. Precisa manter tudo internamente? Hospede você mesmo e conecte a IA aos seus próprios modelos ou à sua própria conta de modelos; escritórios também podem solicitar uma implantação dedicada.",
+    "metaDescriptionIntl": "O AI WorkDeck é gratuito e de código aberto. Pague pela IA conforme o uso com uma carteira em USD, ou hospede você mesmo e use seus próprios modelos. Implantações dedicadas para escritórios têm orçamento à parte."
   },
   "notFoundPage": {
     "code": "404",

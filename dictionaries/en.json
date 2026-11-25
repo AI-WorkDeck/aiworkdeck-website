@@ -1773,8 +1773,6 @@
         "mockSubtitle": "The AI workbench for legal professionals",
         "phonePlaceholder": "Phone number",
         "emailPlaceholder": "Email address",
-        "codePlaceholder": "Verification code",
-        "sendCode": "Send code",
         "button": "Sign in",
         "note": "Once you're signed in, your Credits balance, purchases and skills sync automatically. Up to 3 devices can stay signed in to one account at a time; view or sign out devices on your account page.",
         "accountLink": "Go to your account"

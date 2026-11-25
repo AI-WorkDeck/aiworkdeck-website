@@ -1701,7 +1701,7 @@
     },
     "eyebrow": "Bắt đầu",
     "title": "Hai bước để bắt đầu với AI WorkDeck",
-    "lead": "AI WorkDeck chạy trên chính máy của bạn — tài liệu của bạn không bao giờ rời khỏi đó. Sau khi cài đặt, đăng nhập ngay trong ứng dụng để bắt đầu; tài khoản của bạn được tạo tự động lần đầu bạn đăng nhập.",
+    "lead": "AI WorkDeck chạy trên chính máy tính của bạn, và tài liệu của bạn ở lại đó trừ khi bạn yêu cầu AI xử lý chúng. Sau khi cài đặt, hãy đăng nhập ngay trong ứng dụng. Người dùng mới? Bạn có thể tạo tài khoản ngay trong cùng hộp thoại.",
     "mobileSubtitle": "Tạo tài khoản tại đây, sau đó cài đặt AI WorkDeck trên máy tính của bạn để bắt đầu.",
     "siteChoice": {
       "title": "Trước tiên, chọn đúng trang web",
@@ -1736,7 +1736,7 @@
         "en": "English"
       },
       "switch": "Truy cập {site}",
-      "clientNote": "Cả hai trang web đều sử dụng cùng một ứng dụng máy tính, từ cùng một bộ cài đặt. Giao diện hiện chỉ có tiếng Trung."
+      "clientNote": "Cả hai trang web đều sử dụng cùng một ứng dụng máy tính và cùng một bộ cài đặt. Giao diện có 20 ngôn ngữ; chuyển đổi trong Cài đặt › Ngôn ngữ."
     },
     "progress": "Bước {current} trên {total}",
     "steps": {
@@ -1758,7 +1758,7 @@
         "openSourceNote": "Những gì bạn tải xuống là Bản Community Edition: ứng dụng máy tính là mã nguồn mở theo giấy phép AGPLv3, và mã nguồn được lưu trữ trên {repo}. Các tính năng cao cấp như trò chuyện AI, OCR và chuyển giọng nói thành văn bản sử dụng dịch vụ của bên thứ ba có tính phí, vì vậy chúng cần Credits trước — trang {pricing} giải thích cách thức tính phí hoạt động.",
         "openSourceRepo": "GitHub",
         "openSourcePricing": "trang bảng giá",
-        "bilingualNote": "Một bộ cài hỗ trợ cả tiếng Anh và tiếng Trung giản thể. Sau khi cài đặt, hãy chuyển đổi trong Cài đặt - Ngôn ngữ; giao diện, trình soạn thảo tài liệu và phản hồi AI đều sẽ thay đổi theo. Không có bản tải xuống tiếng Anh riêng biệt.",
+        "bilingualNote": "Một bộ cài bao gồm tất cả ngôn ngữ giao diện. Sau khi cài đặt, hãy chuyển đổi trong Cài đặt › Ngôn ngữ; giao diện, trình soạn thảo tài liệu và phản hồi AI đều sẽ thay đổi theo. Không có bản tải xuống tiếng Anh riêng biệt.",
         "addinTitle": "Tiện ích bổ sung Office / WPS (tùy chọn)",
         "addinDesc": "Để sử dụng AI WorkDeck trong Word, Excel hoặc PowerPoint, hãy cài đặt tiện ích khung tác vụ: tải bộ cài xuống, chạy nó và khởi động lại Office — nút \"Open AI WorkDeck\" sẽ xuất hiện trên tab Home. Với WPS Office, bạn không cần tải gì cả: mở trang cài đặt một lần nhấp, nhấp vào Install và khởi động lại WPS (Writer, Spreadsheets và Presentation trên Windows và Linux). Theo mặc định, nó kết nối với đám mây chính thức (đăng nhập bằng số điện thoại hoặc email của bạn), hoặc bạn có thể trỏ nó đến ứng dụng máy tính cục bộ của mình hoặc máy chủ của công ty trong cài đặt tiện ích.",
         "addinMac": "Bộ cài macOS (.dmg)",
@@ -1768,13 +1768,11 @@
       },
       "login": {
         "title": "Mở ứng dụng máy tính và đăng nhập",
-        "descPhone": "Sau khi cài đặt, mở AI WorkDeck — màn hình đăng nhập là thứ đầu tiên bạn thấy. Nhập số điện thoại của bạn để nhận mã và đăng nhập; tài khoản của bạn được tạo tự động trong lần đầu tiên, không cần đăng ký riêng.",
-        "descEmail": "Sau khi cài đặt, mở AI WorkDeck — màn hình đăng nhập là thứ đầu tiên bạn thấy. Nhập email của bạn để nhận mã và đăng nhập; tài khoản của bạn được tạo tự động trong lần đầu tiên, không cần đăng ký riêng.",
+        "descPhone": "Mở AI WorkDeck — màn hình đăng nhập là thứ đầu tiên bạn thấy. Đăng nhập bằng số điện thoại và mật khẩu. Người dùng mới? Chọn “Chưa có mật khẩu? Đặt mật khẩu”, xác minh số điện thoại và đặt mật khẩu.",
+        "descEmail": "Mở AI WorkDeck — màn hình đăng nhập là thứ đầu tiên bạn thấy. Đăng nhập bằng email và mật khẩu. Người dùng mới? Chọn “Chưa có mật khẩu? Đặt mật khẩu”, xác minh email và đặt mật khẩu.",
         "mockSubtitle": "Bàn làm việc AI dành cho chuyên gia pháp lý",
         "phonePlaceholder": "Số điện thoại",
         "emailPlaceholder": "Địa chỉ email",
-        "codePlaceholder": "Mã xác minh",
-        "sendCode": "Gửi mã",
         "button": "Đăng nhập",
         "note": "Sau khi đăng nhập, số dư Credits, các giao dịch mua và kỹ năng của bạn sẽ được đồng bộ tự động. Cùng lúc có thể kết nối tối đa 3 thiết bị với một tài khoản — xem hoặc ngắt kết nối chúng từ trang tài khoản của bạn.",
         "accountLink": "Đi đến tài khoản của bạn"
@@ -2204,9 +2202,9 @@
       "cta": "Mở công cụ lập kế hoạch triển khai"
     },
     "heroSubtitleIntro": "Không gian làm việc máy tính mã nguồn mở miễn phí. Personal Pro chỉ {intro}/tháng trong {months} tháng đầu (giá gốc {standard}/tháng), gồm Credits, 3GB lưu trữ đám mây và khay nhớ tạm không giới hạn cho 30 ngày.",
-    "heroTitleIntl": "Miễn phí với khóa AI của riêng bạn. Hoặc trả theo mức dùng.",
-    "heroSubtitleIntl": "Ứng dụng desktop là mã nguồn mở và miễn phí, tệp của bạn nằm trên máy của bạn. Kết nối nhà cung cấp AI của riêng bạn mà không phải trả phí cho chúng tôi, hoặc nạp ví USD và chỉ trả cho phần đã dùng. Các hãng luật có thể hỏi về triển khai riêng.",
-    "metaDescriptionIntl": "AI WorkDeck miễn phí với khóa AI của riêng bạn. Hoặc nạp ví USD và trả theo mức dùng. Triển khai riêng cho hãng luật được báo giá riêng."
+    "heroTitleIntl": "Miễn phí và mã nguồn mở. Chỉ trả tiền cho AI bạn dùng.",
+    "heroSubtitleIntl": "Ứng dụng desktop là mã nguồn mở và miễn phí, tệp của bạn nằm trên máy của bạn. AI và các dịch vụ trực tuyến khác được trả theo mức dùng từ ví USD: giá của nhà cung cấp cộng cố định 20%, không thuê bao. Cần giữ mọi thứ trong nội bộ? Hãy tự lưu trữ trên máy chủ của bạn và trỏ AI tới mô hình riêng hoặc tài khoản mô hình của bạn; các hãng luật cũng có thể hỏi về triển khai riêng.",
+    "metaDescriptionIntl": "AI WorkDeck miễn phí và mã nguồn mở. Trả tiền AI theo mức dùng từ ví USD, hoặc tự lưu trữ và dùng mô hình của riêng bạn. Triển khai riêng cho hãng luật được báo giá riêng."
   },
   "notFoundPage": {
     "code": "404",

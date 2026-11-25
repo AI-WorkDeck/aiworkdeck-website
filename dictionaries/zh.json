@@ -1775,8 +1775,6 @@
         "mockSubtitle": "面向法律工作者的 AI 工作台",
         "phonePlaceholder": "手机号",
         "emailPlaceholder": "邮箱地址",
-        "codePlaceholder": "验证码",
-        "sendCode": "获取验证码",
         "button": "登录",
         "note": "登录后 Credits 余额、已购内容与 Skill 自动同步。同一账户最多同时连接 3 台设备，可在官网账户页查看或断开。",
         "accountLink": "前往账户页"

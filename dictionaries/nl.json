@@ -1701,7 +1701,7 @@
     },
     "eyebrow": "Aan de slag",
     "title": "Twee stappen om met AI WorkDeck te beginnen",
-    "lead": "AI WorkDeck draait op je eigen machine — je documenten verlaten deze nooit. Installeer de app, meld je daarna rechtstreeks in de app aan om te beginnen; je account wordt automatisch aangemaakt bij je eerste aanmelding.",
+    "lead": "AI WorkDeck draait op je eigen computer, en je documenten blijven daar, tenzij je de AI vraagt ermee aan de slag te gaan. Meld je na de installatie rechtstreeks in de app aan. Nieuw hier? Je kunt je account in hetzelfde venster aanmaken.",
     "mobileSubtitle": "Maak hier je account aan en installeer vervolgens AI WorkDeck op je computer om te beginnen.",
     "siteChoice": {
       "title": "Kies eerst de juiste site",
@@ -1736,7 +1736,7 @@
         "en": "English"
       },
       "switch": "Ga naar {site}",
-      "clientNote": "Beide sites gebruiken dezelfde desktopclient, van hetzelfde installatiebestand. De interface is momenteel alleen in het Chinees beschikbaar."
+      "clientNote": "Beide sites gebruiken dezelfde desktopclient en hetzelfde installatiebestand. De interface is beschikbaar in 20 talen; wisselen kan onder Instellingen › Taal."
     },
     "progress": "Stap {current} van {total}",
     "steps": {
@@ -1758,7 +1758,7 @@
         "openSourceNote": "Wat u downloadt is de Community Edition: de desktopapp is open source onder de AGPLv3 en de broncode staat op {repo}. Premiumfuncties zoals AI-chat, OCR en transcriptie maken gebruik van betaalde diensten van derden en vereisen daarom eerst Credits — op de {pricing} staat uitgelegd hoe de afrekening werkt.",
         "openSourceRepo": "GitHub",
         "openSourcePricing": "prijspagina",
-        "bilingualNote": "Eén installatiebestand ondersteunt zowel Engels als Vereenvoudigd Chinees. Na installatie kunt u wisselen onder Instellingen - Taal; de interface, documenteditor en AI-antwoorden volgen allemaal. Er is geen aparte Engelse download.",
+        "bilingualNote": "Eén installatiebestand bevat alle interfacetalen. Na installatie kunt u wisselen onder Instellingen › Taal; de interface, documenteditor en AI-antwoorden volgen allemaal. Er is geen aparte Engelse download.",
         "addinTitle": "Office / WPS-invoegtoepassing (optioneel)",
         "addinDesc": "Om AI WorkDeck in Word, Excel of PowerPoint te gebruiken, installeert u de taakvenster-invoegtoepassing: download het installatiebestand, voer het uit en start Office opnieuw — er verschijnt een knop \"Open AI WorkDeck\" op het tabblad Start. Voor WPS Office hoeft u niets te downloaden: open de pagina voor installatie met één klik, klik op Installeren en start WPS opnieuw (Writer, Spreadsheets en Presentation op Windows en Linux). Het maakt standaard verbinding met de officiële cloud (meld u aan met uw telefoonnummer of e-mailadres), of wijs het in de instellingen van de invoegtoepassing naar uw lokale desktopapplicatie of een server van uw kantoor.",
         "addinMac": "macOS-installatiebestand (.dmg)",
@@ -1768,13 +1768,11 @@
       },
       "login": {
         "title": "Open de desktopapp en meld u aan",
-        "descPhone": "Na installatie opent u AI WorkDeck — het aanmeldscherm is het eerste wat u ziet. Voer uw telefoonnummer in om een code te ontvangen en meld u aan; uw account wordt automatisch aangemaakt bij het eerste gebruik, aparte registratie is niet nodig.",
-        "descEmail": "Na installatie opent u AI WorkDeck — het aanmeldscherm is het eerste wat u ziet. Voer uw e-mailadres in om een code te ontvangen en meld u aan; uw account wordt automatisch aangemaakt bij het eerste gebruik, aparte registratie is niet nodig.",
+        "descPhone": "Open AI WorkDeck — het aanmeldscherm is het eerste wat u ziet. Meld u aan met uw telefoonnummer en wachtwoord. Nieuw hier? Kies ‘Nog geen wachtwoord? Stel er een in’, verifieer uw nummer en stel een wachtwoord in.",
+        "descEmail": "Open AI WorkDeck — het aanmeldscherm is het eerste wat u ziet. Meld u aan met uw e-mailadres en wachtwoord. Nieuw hier? Kies ‘Nog geen wachtwoord? Stel er een in’, verifieer uw e-mailadres en stel een wachtwoord in.",
         "mockSubtitle": "De AI-werkbank voor juridische professionals",
         "phonePlaceholder": "Telefoonnummer",
         "emailPlaceholder": "E-mailadres",
-        "codePlaceholder": "Verificatiecode",
-        "sendCode": "Code verzenden",
         "button": "Inloggen",
         "note": "Na het inloggen worden je Credits-saldo, aankopen en Skills automatisch gesynchroniseerd. Er kunnen tegelijk maximaal 3 apparaten aan hetzelfde account zijn gekoppeld — bekijk of koppel ze los via je accountpagina.",
         "accountLink": "Naar je account"
@@ -2204,9 +2202,9 @@
       "cta": "Implementatieplanner openen"
     },
     "heroSubtitleIntro": "Gratis open-source desktopwerkplek. Personal Pro kost de eerste {months} maanden {intro}/mnd (normaal {standard}/mnd) incl. Credits, 3GB cloudopslag en onbeperkt klembord – eenmalige pas voor 30 dagen.",
-    "heroTitleIntl": "Gratis met je eigen AI-sleutel. Of betaal naar gebruik.",
-    "heroSubtitleIntl": "De desktop-app is open source en gratis, en je bestanden blijven op je eigen computer. Koppel je eigen AI-aanbieder zonder ons iets te betalen, of laad een USD-tegoed op en betaal alleen wat je gebruikt. Kantoren kunnen een eigen installatie aanvragen.",
-    "metaDescriptionIntl": "AI WorkDeck is gratis met je eigen AI-sleutel. Of laad een USD-tegoed op en betaal naar gebruik. Eigen installaties voor kantoren krijgen een aparte offerte."
+    "heroTitleIntl": "Gratis en open source. Betaal alleen voor de AI die je gebruikt.",
+    "heroSubtitleIntl": "De desktop-app is open source en gratis, en je bestanden blijven op je eigen computer. AI en andere onlinediensten betaal je naar gebruik vanuit een USD-tegoed: de prijs van de aanbieder plus een vaste 20%, zonder abonnement. Moet alles in huis blijven? Host de app zelf en koppel de AI aan je eigen modellen of je eigen modelaccount; kantoren kunnen ook een eigen installatie aanvragen.",
+    "metaDescriptionIntl": "AI WorkDeck is gratis en open source. Betaal voor AI naar gebruik vanuit een USD-tegoed, of host zelf en gebruik je eigen modellen. Eigen installaties voor kantoren krijgen een aparte offerte."
   },
   "notFoundPage": {
     "code": "404",
