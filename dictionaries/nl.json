@@ -1701,7 +1701,7 @@
     },
     "eyebrow": "Aan de slag",
     "title": "Twee stappen om met AI WorkDeck te beginnen",
-    "lead": "AI WorkDeck draait op je eigen computer, en je documenten blijven daar, tenzij je de AI vraagt ermee aan de slag te gaan. Meld je na de installatie rechtstreeks in de app aan. Nieuw hier? Je kunt je account in hetzelfde venster aanmaken.",
+    "lead": "AI WorkDeck draait op uw eigen computer, en uw documenten blijven daar, tenzij u de AI vraagt ermee aan de slag te gaan. Meld u na de installatie rechtstreeks in de app aan. Nieuw hier? U kunt uw account in hetzelfde venster aanmaken.",
     "mobileSubtitle": "Maak hier je account aan en installeer vervolgens AI WorkDeck op je computer om te beginnen.",
     "siteChoice": {
       "title": "Kies eerst de juiste site",
@@ -1736,7 +1736,7 @@
         "en": "English"
       },
       "switch": "Ga naar {site}",
-      "clientNote": "Beide sites gebruiken dezelfde desktopclient en hetzelfde installatiebestand. De interface is beschikbaar in 20 talen; wisselen kan onder Instellingen › Taal."
+      "clientNote": "Beide sites gebruiken dezelfde desktopclient en hetzelfde installatiebestand. De interface is beschikbaar in 20 talen; u wisselt onder Instellingen › Taal."
     },
     "progress": "Stap {current} van {total}",
     "steps": {
@@ -2202,9 +2202,9 @@
       "cta": "Implementatieplanner openen"
     },
     "heroSubtitleIntro": "Gratis open-source desktopwerkplek. Personal Pro kost de eerste {months} maanden {intro}/mnd (normaal {standard}/mnd) incl. Credits, 3GB cloudopslag en onbeperkt klembord – eenmalige pas voor 30 dagen.",
-    "heroTitleIntl": "Gratis en open source. Betaal alleen voor de AI die je gebruikt.",
-    "heroSubtitleIntl": "De desktop-app is open source en gratis, en je bestanden blijven op je eigen computer. AI en andere onlinediensten betaal je naar gebruik vanuit een USD-tegoed: de prijs van de aanbieder plus een vaste 20%, zonder abonnement. Moet alles in huis blijven? Host de app zelf en koppel de AI aan je eigen modellen of je eigen modelaccount; kantoren kunnen ook een eigen installatie aanvragen.",
-    "metaDescriptionIntl": "AI WorkDeck is gratis en open source. Betaal voor AI naar gebruik vanuit een USD-tegoed, of host zelf en gebruik je eigen modellen. Eigen installaties voor kantoren krijgen een aparte offerte."
+    "heroTitleIntl": "Gratis en open source. U betaalt alleen voor de AI die u gebruikt.",
+    "heroSubtitleIntl": "De desktop-app is open source en gratis, en uw bestanden blijven op uw eigen computer. AI en andere onlinediensten betaalt u naar gebruik vanuit een USD-tegoed: de prijs van de aanbieder plus een vaste 20%, zonder abonnement. Moet alles in huis blijven? Host de app zelf en koppel de AI aan uw eigen modellen of uw eigen modelaccount; kantoren kunnen ook een eigen installatie aanvragen.",
+    "metaDescriptionIntl": "AI WorkDeck is gratis en open source. Betaal voor AI naar gebruik vanuit een USD-tegoed, of host zelf en gebruik uw eigen modellen. Eigen installaties voor kantoren krijgen een aparte offerte."
   },
   "notFoundPage": {
     "code": "404",

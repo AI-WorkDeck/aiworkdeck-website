@@ -1736,7 +1736,7 @@
         "en": "English"
       },
       "switch": "Ir a {site}",
-      "clientNote": "Ambos sitios utilizan la misma aplicación de escritorio y el mismo instalador. La interfaz está disponible en 20 idiomas; se cambia en Ajustes › Idioma."
+      "clientNote": "Ambos sitios utilizan la misma aplicación de escritorio y el mismo instalador. La interfaz está disponible en 20 idiomas; puede cambiarlo en Ajustes › Idioma."
     },
     "progress": "Paso {current} de {total}",
     "steps": {
@@ -1758,7 +1758,7 @@
         "openSourceNote": "Lo que descargas es la Community Edition: la aplicación de escritorio es de código abierto bajo la AGPLv3, y el código fuente está en {repo}. Las funciones premium como el chat con IA, el OCR y la transcripción utilizan servicios de terceros de pago, por lo que requieren Credits; la {pricing} explica cómo funciona la facturación.",
         "openSourceRepo": "GitHub",
         "openSourcePricing": "página de precios",
-        "bilingualNote": "Un solo instalador incluye todos los idiomas de la interfaz. Tras la instalación, cambia el idioma en Ajustes › Idioma; la interfaz, el editor de documentos y las respuestas de IA lo seguirán. No existe una descarga independiente en inglés.",
+        "bilingualNote": "Un solo instalador incluye todos los idiomas de la interfaz. Tras la instalación, cambie el idioma en Ajustes › Idioma; la interfaz, el editor de documentos y las respuestas de la IA lo seguirán. No existe una descarga independiente en inglés.",
         "addinTitle": "Complemento para Office / WPS (opcional)",
         "addinDesc": "Para usar AI WorkDeck dentro de Word, Excel o PowerPoint, instala el complemento del panel de tareas: descarga el instalador, ejecútalo y reinicia Office; aparecerá un botón \"Open AI WorkDeck\" en la pestaña Inicio. Para WPS Office no hay nada que descargar: abre la página de instalación de un clic, pulsa Instalar y reinicia WPS (Writer, Spreadsheets y Presentation en Windows y Linux). Se conecta a la nube oficial de forma predeterminada (inicia sesión con tu número de teléfono o correo electrónico), o puedes apuntarlo a tu aplicación de escritorio local o a un servidor de la empresa en la configuración del complemento.",
         "addinMac": "Instalador para macOS (.dmg)",
@@ -1768,8 +1768,8 @@
       },
       "login": {
         "title": "Abrir la aplicación de escritorio e iniciar sesión",
-        "descPhone": "Abre AI WorkDeck: lo primero que verás es la pantalla de inicio de sesión. Inicia sesión con tu número de teléfono y tu contraseña. ¿Eres nuevo? Elige «¿Aún sin contraseña? Crea una», verifica tu número y establece una contraseña.",
-        "descEmail": "Abre AI WorkDeck: lo primero que verás es la pantalla de inicio de sesión. Inicia sesión con tu correo electrónico y tu contraseña. ¿Eres nuevo? Elige «¿Aún sin contraseña? Crea una», verifica tu correo electrónico y establece una contraseña.",
+        "descPhone": "Abra AI WorkDeck: lo primero que verá es la pantalla de inicio de sesión. Inicie sesión con su número de teléfono y su contraseña. ¿Es nuevo? Elija «¿Aún sin contraseña? Crea una», verifique su número y establezca una contraseña.",
+        "descEmail": "Abra AI WorkDeck: lo primero que verá es la pantalla de inicio de sesión. Inicie sesión con su correo electrónico y su contraseña. ¿Es nuevo? Elija «¿Aún sin contraseña? Crea una», verifique su correo electrónico y establezca una contraseña.",
         "mockSubtitle": "El banco de trabajo de IA para profesionales del Derecho",
         "phonePlaceholder": "Número de teléfono",
         "emailPlaceholder": "Dirección de correo electrónico",
@@ -2202,9 +2202,9 @@
       "cta": "Abrir el planificador de despliegue"
     },
     "heroSubtitleIntro": "Espacio de trabajo de escritorio gratuito y de código abierto. Personal Pro a {intro}/mes durante los primeros {months} meses (normal {standard}/mes) con Credits, 3 GB en la nube y portapapeles ilimitado; pase único de 30 días.",
-    "heroTitleIntl": "Gratis y de código abierto. Paga solo por la IA que uses.",
-    "heroSubtitleIntl": "La aplicación de escritorio es de código abierto y gratuita, y tus archivos se quedan en tu equipo. La IA y los demás servicios en línea se pagan según el uso desde un monedero en USD: el precio del proveedor más un 20 % fijo, sin suscripción. ¿Necesitas que todo quede en casa? Alójala tú mismo y conecta la IA a tus propios modelos o a tu propia cuenta de modelos; los despachos también pueden solicitar un despliegue dedicado.",
-    "metaDescriptionIntl": "AI WorkDeck es gratis y de código abierto. Paga la IA según el uso desde un monedero en USD, o alójalo tú mismo y usa tus propios modelos. Los despliegues dedicados para despachos se cotizan aparte."
+    "heroTitleIntl": "Gratis y de código abierto. Pague solo por la IA que utilice.",
+    "heroSubtitleIntl": "La aplicación de escritorio es de código abierto y gratuita, y sus archivos permanecen en su equipo. La IA y los demás servicios en línea se pagan según el uso desde un monedero en USD: el precio del proveedor más un 20 % fijo, sin suscripción. ¿Necesita que todo quede en casa? Alójela en sus propios servidores y conecte la IA a sus propios modelos o a su propia cuenta de modelos; los despachos también pueden solicitar un despliegue dedicado.",
+    "metaDescriptionIntl": "AI WorkDeck es gratis y de código abierto. Pague la IA según el uso desde un monedero en USD, o alójelo en sus propios servidores y use sus propios modelos. Los despliegues dedicados para despachos se cotizan aparte."
   },
   "notFoundPage": {
     "code": "404",
