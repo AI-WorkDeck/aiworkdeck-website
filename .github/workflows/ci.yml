@@ -83,6 +83,8 @@ jobs:
         run: npx tsx --tsconfig tsconfig.json scripts/verify-pricing-by-site.mts
       - name: FAQ links keep the visitor's language
         run: npx tsx --tsconfig tsconfig.json scripts/verify-faq-links.mts
+      - name: Marketplace wording and no "Unknown" author (W16, W17)
+        run: npx tsx --tsconfig tsconfig.json scripts/verify-w16-w17.mts
       - name: Typecheck
         # 生产构建关掉了类型检查（见 next.config.ts），这一步是唯一的类型闸
         run: npm run typecheck
