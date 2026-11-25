@@ -8,7 +8,10 @@ import path from 'node:path';
 const RAW_COLOR_BASELINE = Number(fs.readFileSync('scripts/raw-color-baseline.txt', 'utf8').trim());
 const HEX = /#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b(?![0-9a-fA-F])/g;
 const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? (e.name === 'node_modules' ? [] : walk(path.join(d, e.name))) : /\.(tsx|ts|css)$/.test(e.name) ? [path.join(d, e.name)] : []);
-const files = [...walk('app'), ...walk('components')].filter(f => f !== path.join('app', 'globals.css')); // the token definitions themselves
+// Excluded: the token definitions themselves; app/api (email HTML and badge SVG rendered outside the site CSS) and the
+// certificate theme picker (themes the user chooses) — both by lane X's X30 decision.
+const EXCLUDED = f => f === path.join('app', 'globals.css') || f.startsWith(path.join('app', 'api') + path.sep) || f.endsWith('CertStylePicker.tsx');
+const files = [...walk('app'), ...walk('components')].filter(f => !EXCLUDED(f));
 let total = 0; const perFile = [];
 for (const f of files) {
     const src = fs.readFileSync(f, 'utf8').replace(/\/\/.*$|\/\*[\s\S]*?\*\//gm, '');
