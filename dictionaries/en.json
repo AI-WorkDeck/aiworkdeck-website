@@ -2067,7 +2067,7 @@
     "faqPricesBriefBody": "If you need closed-source distribution, proprietary plugins, SaaS operation, or official certification marks, talk to us about commercial licensing and Certified programs. Headcount tables and OEM details move to email inquiries and no longer dominate this page.",
     "faqPricesBriefCta": "Email about commercial licensing",
     "creditsCrossLink": {
-      "before": "For Credits top-ups, upstream ×1.2 metering, and vendor price lists, see",
+      "before": "For how Credits are charged and what each AI service costs, see",
       "label": "FAQ · How we charge"
     },
     "openSource": {
@@ -2158,7 +2158,7 @@
     },
     "marketplaceAuthor": {
       "title": "Sell Skills / plugins on the marketplace",
-      "body": "Sell paid workflows for legal and document work. Platform {platform}% / author {author}% of net receipts per MARKETPLACE-TERMS (not a raw gross×split). Settlement details in the terms.",
+      "body": "Sell paid workflows for legal and document work. Authors keep {author}% of net receipts and the platform keeps {platform}%. The marketplace terms explain how settlement works.",
       "ctaTerms": "Marketplace terms",
       "ctaSubmit": "Submit & listing guide"
     },
@@ -2170,7 +2170,7 @@
       },
       "seats": {
         "q": "How are seats counted?",
-        "a": "Personal Pro = one paid account. Firms / enterprises count activated paid seats: 5 seats = 5. Contract amount and ARR are tracked separately — not “one contract = one user”."
+        "a": "Personal Pro is one paid account. Firm and enterprise plans count activated paid seats: 5 seats means 5 people can sign in."
       },
       "agpl": {
         "q": "How does AGPL differ from a commercial license?",
@@ -2178,11 +2178,11 @@
       },
       "refund": {
         "q": "What is the refund policy?",
-        "a": "Refunds follow the purchase agreement (until counsel confirms in writing, this page does not promise specific days or percentages). Contact hi@aiworkdeck.com."
+        "a": "Refunds follow the purchase agreement. To ask for one, email hi@aiworkdeck.com."
       },
       "regions": {
         "q": "Mainland vs international site?",
-        "a": "Users in mainland China should prefer aiworkdeck.com (payments and invoices follow the mainland site). International users may use workdeck.ai. Product capability is aligned; growth prioritizes mainland."
+        "a": "Users in mainland China should use aiworkdeck.com, where payments and invoices are handled. Everyone else can use workdeck.ai. The product is the same on both."
       },
       "allowance": {
         "q": "How do allowance and wallet balance differ?",
@@ -2203,7 +2203,10 @@
       "body": "Estimate servers, staffing and first-year budget by team size, model mode and optional services.",
       "cta": "Open deployment planner"
     },
-    "heroSubtitleIntro": "Free open-source desktop workspace with local files. Get Personal Pro for {intro}/mo for your first {months} months (regularly {standard}/mo), including Credits, 3GB cloud storage, and unlimited clipboard. 30-day one-time pass, no auto-renewal."
+    "heroSubtitleIntro": "Free open-source desktop workspace with local files. Get Personal Pro for {intro}/mo for your first {months} months (regularly {standard}/mo), including Credits, 3GB cloud storage, and unlimited clipboard. 30-day one-time pass, no auto-renewal.",
+    "heroTitleIntl": "Free with your own AI key. Or pay as you go.",
+    "heroSubtitleIntl": "The desktop app is open source and free, and your files stay on your machine. Connect your own AI provider at no cost from us, or top up a USD wallet and pay only for what you use. Firms can ask for a dedicated deployment.",
+    "metaDescriptionIntl": "AI WorkDeck is free with your own AI key. Or top up a USD wallet and pay as you go. Dedicated deployments for firms are quoted individually."
   },
   "notFoundPage": {
     "code": "404",

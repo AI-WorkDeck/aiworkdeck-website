@@ -2067,7 +2067,7 @@
     "faqPricesBriefBody": "Wenn Sie Closed-Source-Distribution, proprietäre Plugins, SaaS-Betrieb oder offizielle Zertifizierungszeichen benötigen, sprechen Sie mit uns über kommerzielle Lizenzierung und Certified-Programme. Personalschlüssel-Tabellen und OEM-Details werden per E-Mail-Anfrage behandelt und dominieren diese Seite nicht mehr.",
     "faqPricesBriefCta": "E-Mail zur kommerziellen Lizenzierung",
     "creditsCrossLink": {
-      "before": "Für Guthaben-Aufladungen, Anbieter-Messung ×1,2 und Preislisten der Anbieter siehe",
+      "before": "Wie Credits abgerechnet werden und was jeder KI-Dienst kostet, steht unter",
       "label": "FAQ · So berechnen wir Gebühren"
     },
     "openSource": {
@@ -2158,7 +2158,7 @@
     },
     "marketplaceAuthor": {
       "title": "Skills / Plugins im Marketplace verkaufen",
-      "body": "Verkaufen Sie kostenpflichtige Workflows für Rechts- und Dokumentarbeit. Plattform {platform}% / Autor {author}% der Netto-Einnahmen gemäß MARKETPLACE-TERMS (keine rohe Brutto-Aufteilung). Abrechnungsdetails finden Sie in den Bedingungen.",
+      "body": "Verkaufen Sie kostenpflichtige Workflows für juristische und Dokumentenarbeit. Autoren erhalten {author} % der Nettoeinnahmen, die Plattform {platform} %. Die Marketplace-Bedingungen erklären die Abrechnung.",
       "ctaTerms": "Marketplace-Bedingungen",
       "ctaSubmit": "Einreichungs- & Listing-Leitfaden"
     },
@@ -2170,7 +2170,7 @@
       },
       "seats": {
         "q": "Wie werden Plätze gezählt?",
-        "a": "Personal Pro = ein bezahltes Konto. Bei Kanzleien / Unternehmen zählen aktivierte bezahlte Plätze: 5 Plätze = 5. Vertragssumme und ARR werden separat erfasst – nicht „ein Vertrag = ein Nutzer“."
+        "a": "Personal Pro ist ein bezahltes Konto. Kanzlei- und Unternehmenspläne zählen aktivierte bezahlte Plätze: 5 Plätze bedeuten, dass sich 5 Personen anmelden können."
       },
       "agpl": {
         "q": "Worin unterscheidet sich AGPL von einer kommerziellen Lizenz?",
@@ -2178,11 +2178,11 @@
       },
       "refund": {
         "q": "Wie ist die Rückerstattungsrichtlinie?",
-        "a": "Rückerstattungen folgen dem Kaufvertrag (bis eine schriftliche Bestätigung der Kanzlei vorliegt, verspricht diese Seite keine konkreten Tage oder Prozentsätze). Kontakt: hi@aiworkdeck.com."
+        "a": "Erstattungen richten sich nach dem Kaufvertrag. Für eine Erstattung schreiben Sie an hi@aiworkdeck.com."
       },
       "regions": {
         "q": "Festland- vs. internationale Website?",
-        "a": "Nutzer auf dem chinesischen Festland sollten aiworkdeck.com bevorzugen (Zahlungen und Rechnungen folgen der Festland-Website). Internationale Nutzer können workdeck.ai verwenden. Die Produktfunktionen sind gleich; das Wachstum priorisiert das Festland."
+        "a": "Nutzer in Festlandchina verwenden bitte aiworkdeck.com, wo Zahlungen und Rechnungen abgewickelt werden. Alle anderen können workdeck.ai nutzen. Das Produkt ist auf beiden Seiten gleich."
       },
       "allowance": {
         "q": "Worin unterscheiden sich Kontingent und Wallet-Guthaben?",
@@ -2203,7 +2203,10 @@
       "body": "Schätzen Sie Server, Personal und Erstjahresbudget je nach Teamgröße, Modellmodus und optionalen Diensten.",
       "cta": "Deployment-Planer öffnen"
     },
-    "heroSubtitleIntro": "Kostenloser Open-Source-Desktop. Personal Pro kostet in den ersten {months} Monaten {intro}/Monat (statt {standard}/Monat) inkl. Credits, 3 GB Cloud-Speicher und unbegrenzter Zwischenablage – Einmalkauf für 30 Tage."
+    "heroSubtitleIntro": "Kostenloser Open-Source-Desktop. Personal Pro kostet in den ersten {months} Monaten {intro}/Monat (statt {standard}/Monat) inkl. Credits, 3 GB Cloud-Speicher und unbegrenzter Zwischenablage – Einmalkauf für 30 Tage.",
+    "heroTitleIntl": "Kostenlos mit Ihrem eigenen KI-Schlüssel. Oder nutzungsbasiert bezahlen.",
+    "heroSubtitleIntl": "Die Desktop-App ist Open Source und kostenlos, und Ihre Dateien bleiben auf Ihrem Rechner. Verbinden Sie Ihren eigenen KI-Anbieter, ohne uns etwas zu zahlen, oder laden Sie ein USD-Guthaben auf und zahlen Sie nur, was Sie nutzen. Kanzleien können eine dedizierte Bereitstellung anfragen.",
+    "metaDescriptionIntl": "AI WorkDeck ist mit Ihrem eigenen KI-Schlüssel kostenlos. Oder laden Sie ein USD-Guthaben auf und zahlen nutzungsbasiert. Dedizierte Bereitstellungen für Kanzleien werden individuell angeboten."
   },
   "notFoundPage": {
     "code": "404",

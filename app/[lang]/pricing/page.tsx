@@ -6,7 +6,7 @@ import { PricingPageView } from '@/components/pricing/PricingPageView';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { faqPageJsonLd } from '@/lib/structured-data';
 import { PRO_INTRO_MONTHS, SAAS_PRICING } from '@/lib/saas-pricing';
-import { siteConfig } from '@/lib/site-config';
+import { siteConfig, SITE_ID } from '@/lib/site-config';
 
 /**
  * 独立订阅定价页（定稿 v2）。
@@ -21,9 +21,10 @@ export async function generateMetadata({
     const dict = await getDictionary(lang);
     const t = dict.pricingPage;
     const heroPrice = siteConfig.paymentChannel === 'wxpay' ? SAAS_PRICING.proIntroMonthly : SAAS_PRICING.proMonthly;
+    const intl = SITE_ID === 'intl';
     return {
-        title: t.heroTitle.replace('{price}', heroPrice),
-        description: t.metaDescription,
+        title: intl ? t.heroTitleIntl : t.heroTitle.replace('{price}', heroPrice),
+        description: intl ? t.metaDescriptionIntl : t.metaDescription,
         alternates: pageAlternates(lang, '/pricing', { crossSite: true }),
     };
 }
@@ -41,10 +42,11 @@ export default async function PricingPage({
         .replace('{intro}', SAAS_PRICING.proIntroMonthly)
         .replace('{standard}', SAAS_PRICING.proMonthly);
 
+    const intl = SITE_ID === 'intl';
     const faqLd = [
-        ...(t.saasFaq.intro ? [{ q: formatIntro(t.saasFaq.intro.q), a: formatIntro(t.saasFaq.intro.a) }] : []),
-        { q: t.saasFaq.trial.q, a: t.saasFaq.trial.a },
-        { q: t.saasFaq.seats.q, a: t.saasFaq.seats.a },
+        ...(t.saasFaq.intro && !intl ? [{ q: formatIntro(t.saasFaq.intro.q), a: formatIntro(t.saasFaq.intro.a) }] : []),
+        ...(intl ? [] : [{ q: t.saasFaq.trial.q, a: t.saasFaq.trial.a }]),
+        ...(intl ? [] : [{ q: t.saasFaq.seats.q, a: t.saasFaq.seats.a }]),
         { q: t.saasFaq.agpl.q, a: t.saasFaq.agpl.a },
         { q: t.saasFaq.refund.q, a: t.saasFaq.refund.a },
         { q: t.saasFaq.regions.q, a: t.saasFaq.regions.a },

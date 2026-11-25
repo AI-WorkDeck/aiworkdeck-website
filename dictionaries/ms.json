@@ -2067,7 +2067,7 @@
     "faqPricesBriefBody": "Jika anda memerlukan pengedaran sumber tertutup, pemalam milik eksklusif, operasi SaaS, atau tanda pensijilan rasmi, hubungi kami mengenai pelesenan komersial dan program Certified. Jadual bilangan pekerja dan butiran OEM dipindahkan ke pertanyaan e-mel dan tidak lagi mendominasi halaman ini.",
     "faqPricesBriefCta": "E-mel mengenai pelesenan komersial",
     "creditsCrossLink": {
-      "before": "Untuk tambah nilai Kredit, pemeteran huluan ×1.2, dan senarai harga vendor, lihat",
+      "before": "Untuk cara Kredit dicaj dan kos setiap perkhidmatan AI, lihat",
       "label": "Soalan Lazim · Cara kami mengenakan caj"
     },
     "openSource": {
@@ -2158,7 +2158,7 @@
     },
     "marketplaceAuthor": {
       "title": "Jual Skill / plugin di marketplace",
-      "body": "Jual aliran kerja berbayar untuk kerja guaman dan dokumen. Platform {platform}% / penulis {author}% daripada penerimaan bersih setiap MARKETPLACE-TERMS (bukan pecahan kasar mentah). Butiran penyelesaian terdapat dalam terma.",
+      "body": "Jual aliran kerja berbayar untuk kerja undang-undang dan dokumen. Pengarang menerima {author}% daripada penerimaan bersih dan platform menerima {platform}%. Terma pasaran menerangkan cara penyelesaian.",
       "ctaTerms": "Terma marketplace",
       "ctaSubmit": "Panduan penghantaran & penyenaraian"
     },
@@ -2170,7 +2170,7 @@
       },
       "seats": {
         "q": "Bagaimanakah kerusi dikira?",
-        "a": "Personal Pro = satu akaun berbayar. Firma / enterprise mengira kerusi berbayar yang diaktifkan: 5 kerusi = 5. Jumlah kontrak dan ARR direkodkan secara berasingan — bukan \"satu kontrak = satu pengguna\"."
+        "a": "Personal Pro ialah satu akaun berbayar. Pelan firma dan perusahaan dikira mengikut tempat berbayar yang diaktifkan: 5 tempat bermakna 5 orang boleh log masuk."
       },
       "agpl": {
         "q": "Bagaimanakah AGPL berbeza daripada lesen komersial?",
@@ -2178,11 +2178,11 @@
       },
       "refund": {
         "q": "Apakah polisi bayaran balik?",
-        "a": "Bayaran balik mengikut perjanjian pembelian (sehingga peguam mengesahkan secara bertulis, halaman ini tidak menjanjikan hari atau peratusan tertentu). Hubungi hi@aiworkdeck.com."
+        "a": "Bayaran balik mengikut perjanjian pembelian. Untuk memohon, e-mel hi@aiworkdeck.com."
       },
       "regions": {
         "q": "Laman tanah besar vs antarabangsa?",
-        "a": "Pengguna di tanah besar China digalakkan menggunakan aiworkdeck.com (pembayaran dan invois mengikut laman tanah besar). Pengguna antarabangsa boleh menggunakan workdeck.ai. Keupayaan produk adalah selari; pertumbuhan mengutamakan tanah besar."
+        "a": "Pengguna di tanah besar China patut menggunakan aiworkdeck.com, tempat pembayaran dan invois diuruskan. Pengguna lain boleh menggunakan workdeck.ai. Produknya sama di kedua-dua laman."
       },
       "allowance": {
         "q": "Bagaimanakah elaun dan baki dompet berbeza?",
@@ -2203,7 +2203,10 @@
       "body": "Anggarkan pelayan, kakitangan dan bajet tahun pertama mengikut saiz pasukan, mod model dan perkhidmatan pilihan.",
       "cta": "Buka perancang pelancaran"
     },
-    "heroSubtitleIntro": "Ruang kerja desktop sumber terbuka percuma. Personal Pro hanya {intro}/bln bagi {months} bulan pertama (biasa {standard}/bln) termasuk Credits, storan awan 3GB dan papan keratan tanpa had untuk 30 hari."
+    "heroSubtitleIntro": "Ruang kerja desktop sumber terbuka percuma. Personal Pro hanya {intro}/bln bagi {months} bulan pertama (biasa {standard}/bln) termasuk Credits, storan awan 3GB dan papan keratan tanpa had untuk 30 hari.",
+    "heroTitleIntl": "Percuma dengan kunci AI anda sendiri. Atau bayar ikut penggunaan.",
+    "heroSubtitleIntl": "Apl desktop adalah sumber terbuka dan percuma, dan fail anda kekal di komputer anda. Sambungkan penyedia AI anda sendiri tanpa sebarang caj daripada kami, atau tambah nilai dompet USD dan bayar hanya apa yang anda guna. Firma boleh bertanya tentang penggunaan khusus.",
+    "metaDescriptionIntl": "AI WorkDeck percuma dengan kunci AI anda sendiri. Atau tambah nilai dompet USD dan bayar ikut penggunaan. Penggunaan khusus untuk firma disebut harga secara berasingan."
   },
   "notFoundPage": {
     "code": "404",

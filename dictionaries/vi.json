@@ -2067,7 +2067,7 @@
     "faqPricesBriefBody": "Nếu bạn cần phân phối mã nguồn đóng, plugin độc quyền, vận hành SaaS hoặc nhãn chứng nhận chính thức, hãy trao đổi với chúng tôi về cấp phép thương mại và các chương trình Certified. Bảng số lượng nhân sự và chi tiết OEM được chuyển sang trao đổi qua email và không còn hiển thị trên trang này.",
     "faqPricesBriefCta": "Email về cấp phép thương mại",
     "creditsCrossLink": {
-      "before": "Để biết về việc nạp Credits, cách tính phí thượng nguồn ×1.2 và bảng giá của các nhà cung cấp, xem",
+      "before": "Về cách trừ Credits và giá của từng dịch vụ AI, xem",
       "label": "Câu hỏi thường gặp · Cách chúng tôi tính phí"
     },
     "openSource": {
@@ -2158,7 +2158,7 @@
     },
     "marketplaceAuthor": {
       "title": "Bán Skills / plugin trên marketplace",
-      "body": "Bán các quy trình trả phí cho công việc pháp lý và tài liệu. Nền tảng {platform}% / tác giả {author}% trên khoản thu ròng theo MARKETPLACE-TERMS (không phải tổng doanh thu nhân chia thô). Chi tiết thanh toán nằm trong điều khoản.",
+      "body": "Bán quy trình trả phí cho công việc pháp lý và tài liệu. Tác giả nhận {author}% doanh thu ròng, nền tảng nhận {platform}%. Điều khoản marketplace giải thích cách quyết toán.",
       "ctaTerms": "Điều khoản marketplace",
       "ctaSubmit": "Gửi sản phẩm & hướng dẫn niêm yết"
     },
@@ -2170,7 +2170,7 @@
       },
       "seats": {
         "q": "Số chỗ sử dụng được tính như thế nào?",
-        "a": "Personal Pro = một tài khoản trả phí. Công ty / doanh nghiệp tính số chỗ trả phí đã kích hoạt: 5 chỗ = 5. Giá trị hợp đồng và ARR được theo dõi riêng — không phải “một hợp đồng = một người dùng”."
+        "a": "Personal Pro là một tài khoản trả phí. Gói cho hãng luật và doanh nghiệp tính theo số chỗ trả phí đã kích hoạt: 5 chỗ nghĩa là 5 người có thể đăng nhập."
       },
       "agpl": {
         "q": "AGPL khác gì so với giấy phép thương mại?",
@@ -2178,11 +2178,11 @@
       },
       "refund": {
         "q": "Chính sách hoàn tiền là gì?",
-        "a": "Hoàn tiền tuân theo thỏa thuận mua hàng (cho đến khi luật sư xác nhận bằng văn bản, trang này không cam kết số ngày hoặc tỷ lệ cụ thể). Liên hệ hi@aiworkdeck.com."
+        "a": "Hoàn tiền theo thỏa thuận mua hàng. Để yêu cầu hoàn tiền, hãy gửi email tới hi@aiworkdeck.com."
       },
       "regions": {
         "q": "Trang phiên bản nội địa hay quốc tế?",
-        "a": "Người dùng tại Trung Quốc đại lục nên ưu tiên aiworkdeck.com (thanh toán và hóa đơn theo trang web đại lục). Người dùng quốc tế có thể sử dụng workdeck.ai. Năng lực sản phẩm được đồng bộ; tăng trưởng ưu tiên thị trường đại lục."
+        "a": "Người dùng tại Trung Quốc đại lục nên dùng aiworkdeck.com, nơi xử lý thanh toán và hóa đơn. Người dùng ở nơi khác có thể dùng workdeck.ai. Sản phẩm giống nhau trên cả hai trang."
       },
       "allowance": {
         "q": "Hạn mức và số dư ví khác nhau như thế nào?",
@@ -2203,7 +2203,10 @@
       "body": "Ước tính máy chủ, nhân sự và ngân sách năm đầu theo quy mô nhóm, chế độ mô hình và các dịch vụ tùy chọn.",
       "cta": "Mở công cụ lập kế hoạch triển khai"
     },
-    "heroSubtitleIntro": "Không gian làm việc máy tính mã nguồn mở miễn phí. Personal Pro chỉ {intro}/tháng trong {months} tháng đầu (giá gốc {standard}/tháng), gồm Credits, 3GB lưu trữ đám mây và khay nhớ tạm không giới hạn cho 30 ngày."
+    "heroSubtitleIntro": "Không gian làm việc máy tính mã nguồn mở miễn phí. Personal Pro chỉ {intro}/tháng trong {months} tháng đầu (giá gốc {standard}/tháng), gồm Credits, 3GB lưu trữ đám mây và khay nhớ tạm không giới hạn cho 30 ngày.",
+    "heroTitleIntl": "Miễn phí với khóa AI của riêng bạn. Hoặc trả theo mức dùng.",
+    "heroSubtitleIntl": "Ứng dụng desktop là mã nguồn mở và miễn phí, tệp của bạn nằm trên máy của bạn. Kết nối nhà cung cấp AI của riêng bạn mà không phải trả phí cho chúng tôi, hoặc nạp ví USD và chỉ trả cho phần đã dùng. Các hãng luật có thể hỏi về triển khai riêng.",
+    "metaDescriptionIntl": "AI WorkDeck miễn phí với khóa AI của riêng bạn. Hoặc nạp ví USD và trả theo mức dùng. Triển khai riêng cho hãng luật được báo giá riêng."
   },
   "notFoundPage": {
     "code": "404",

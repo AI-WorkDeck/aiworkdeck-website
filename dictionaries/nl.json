@@ -2067,7 +2067,7 @@
     "faqPricesBriefBody": "Als u closed-source distributie, propriëtaire plugins, SaaS-exploitatie of officiële certificeringsmerken nodig heeft, neem dan contact met ons op over zakelijke licenties en Certified-programma's. Personeelstabellen en OEM-details worden per e-mail behandeld en domineren deze pagina niet langer.",
     "faqPricesBriefCta": "E-mail over zakelijke licenties",
     "creditsCrossLink": {
-      "before": "Voor Credits-opwaardering, upstream ×1,2-meters en prijzenlijsten van leveranciers, zie",
+      "before": "Hoe Credits worden afgeschreven en wat elke AI-dienst kost, lees je bij",
       "label": "FAQ · Hoe wij rekenen"
     },
     "openSource": {
@@ -2158,7 +2158,7 @@
     },
     "marketplaceAuthor": {
       "title": "Verkoop Skills / plugins op de marketplace",
-      "body": "Verkoop betaalde workflows voor juridisch en documentwerk. Platform {platform}% / auteur {author}% van de netto-ontvangsten volgens de MARKETPLACE-TERMS (geen ruwe bruto×splitsing). Afrekeningsdetails staan in de voorwaarden.",
+      "body": "Verkoop betaalde workflows voor juridisch en documentwerk. Auteurs ontvangen {author}% van de netto-opbrengst en het platform {platform}%. De marketplacevoorwaarden leggen uit hoe de afrekening werkt.",
       "ctaTerms": "Marktplaatsvoorwaarden",
       "ctaSubmit": "Inzend- & plaatsingsgids"
     },
@@ -2170,7 +2170,7 @@
       },
       "seats": {
         "q": "Hoe worden seats geteld?",
-        "a": "Personal Pro = één betaald account. Kantoren / bedrijven tellen geactiveerde betaalde seats: 5 seats = 5. Contractbedrag en ARR worden apart bijgehouden — niet “één contract = één gebruiker”."
+        "a": "Personal Pro is één betaald account. Kantoor- en bedrijfsplannen tellen geactiveerde betaalde plaatsen: 5 plaatsen betekent dat 5 mensen kunnen inloggen."
       },
       "agpl": {
         "q": "Wat is het verschil tussen AGPL en een commerciële licentie?",
@@ -2178,11 +2178,11 @@
       },
       "refund": {
         "q": "Wat is het restitutiebeleid?",
-        "a": "Restituties volgen de aankoopovereenkomst (tot een advocaat schriftelijk bevestigt, belooft deze pagina geen specifieke dagen of percentages). Neem contact op met hi@aiworkdeck.com."
+        "a": "Terugbetalingen volgen de koopovereenkomst. Mail hi@aiworkdeck.com om er een aan te vragen."
       },
       "regions": {
         "q": "Mainland versus internationale site?",
-        "a": "Gebruikers in mainland China geven de voorkeur aan aiworkdeck.com (betalingen en facturen volgen de mainland-site). Internationale gebruikers kunnen workdeck.ai gebruiken. De productfunctionaliteit is gelijk; groei heeft prioriteit op mainland."
+        "a": "Gebruikers in het Chinese vasteland gebruiken aiworkdeck.com, waar betalingen en facturen worden afgehandeld. Alle anderen kunnen workdeck.ai gebruiken. Het product is op beide sites hetzelfde."
       },
       "allowance": {
         "q": "Wat is het verschil tussen toelage en portemonneesaldo?",
@@ -2203,7 +2203,10 @@
       "body": "Bereken servers, personeel en first-year budget op basis van teamgrootte, modelmodus en optionele diensten.",
       "cta": "Implementatieplanner openen"
     },
-    "heroSubtitleIntro": "Gratis open-source desktopwerkplek. Personal Pro kost de eerste {months} maanden {intro}/mnd (normaal {standard}/mnd) incl. Credits, 3GB cloudopslag en onbeperkt klembord – eenmalige pas voor 30 dagen."
+    "heroSubtitleIntro": "Gratis open-source desktopwerkplek. Personal Pro kost de eerste {months} maanden {intro}/mnd (normaal {standard}/mnd) incl. Credits, 3GB cloudopslag en onbeperkt klembord – eenmalige pas voor 30 dagen.",
+    "heroTitleIntl": "Gratis met je eigen AI-sleutel. Of betaal naar gebruik.",
+    "heroSubtitleIntl": "De desktop-app is open source en gratis, en je bestanden blijven op je eigen computer. Koppel je eigen AI-aanbieder zonder ons iets te betalen, of laad een USD-tegoed op en betaal alleen wat je gebruikt. Kantoren kunnen een eigen installatie aanvragen.",
+    "metaDescriptionIntl": "AI WorkDeck is gratis met je eigen AI-sleutel. Of laad een USD-tegoed op en betaal naar gebruik. Eigen installaties voor kantoren krijgen een aparte offerte."
   },
   "notFoundPage": {
     "code": "404",

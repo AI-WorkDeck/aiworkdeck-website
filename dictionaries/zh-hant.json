@@ -1513,7 +1513,7 @@
       "title": "商業授權與認證"
     },
     "creditsCrossLink": {
-      "before": "Credits 充值、上游扣款 ×1.2 與服務商價目見",
+      "before": "Credits 如何扣費、各項 AI 服務的價格，請見",
       "label": "常見問題 · 怎麼收費"
     },
     "deploymentBanner": {
@@ -1558,7 +1558,7 @@
     "heroSubtitle": "桌面軟體開源免費、檔案在本機。Pro 加週期 Credits、3GB 雲端空間和不限量剪貼簿，一次買 30 天，不自動扣款。",
     "heroTitle": "社群版免費，個人 Pro {price} / 月。",
     "marketplaceAuthor": {
-      "body": "為律師與文書場景上架付費工作流。平台抽成 {platform}%，作者保留 {author}%（以 MARKETPLACE-TERMS 對淨收據抽成後為準，非毛成交額直接×比例；月結閾值等以條款為準）。",
+      "body": "為律師與文書情境上架付費工作流程。作者保留淨收入的 {author}%，平台收取 {platform}%。結算方式請見市集條款。",
       "ctaSubmit": "投稿與上架指南",
       "ctaTerms": "瞭解市場條款",
       "title": "在市場出售 Skill / 插件"
@@ -1637,15 +1637,15 @@
         "q": "訂閱額度與充值餘額有什麼區別？"
       },
       "refund": {
-        "a": "退款規則以購買協議為準（法務書面確認前，本頁不承諾具體天數或比例）。咨詢請聯繫 hi@aiworkdeck.com。",
+        "a": "退款依購買協議辦理。如需退款，請寄信至 hi@aiworkdeck.com。",
         "q": "退款政策？"
       },
       "regions": {
-        "a": "中國大陸用戶優先使用 aiworkdeck.com（支付與發票體驗以大陸站為準）。國際用戶可使用 workdeck.ai。產品能力對齊，獲客與運營節奏以大陸為主。",
+        "a": "中國大陸使用者請使用 aiworkdeck.com，付款和發票皆在大陸站辦理。其他地區使用者可使用 workdeck.ai。兩個網站的產品功能相同。",
         "q": "大陸站與國際站如何選？"
       },
       "seats": {
-        "a": "個人 Pro = 1 個付費賬號。律所 / 企業按開通的付費席位計數：開 5 席 = 5。合同金額與 ARR 另表統計，不是「一份合同算 1 人」。",
+        "a": "個人 Pro 是 1 個付費帳號。律所和企業方案按開通的付費席位計算：開 5 個席位，就是 5 個人可以登入。",
         "q": "「席位」怎麼算？"
       },
       "storage": {
@@ -1739,7 +1739,10 @@
       "title": "既然是開源項目，為什麼還要收費？",
       "transparencyLine": "每半年在 GitHub 與官網公佈一次賬目與使用情況"
     },
-    "heroSubtitleIntro": "桌面軟體開源免費、檔案在本機。個人 Pro 前 {months} 個月享 {intro}/月體驗價（原價 {standard}/月），含週期 Credits、3GB 雲空間與不限量剪貼簿，一次買 30 天，不自動扣款。"
+    "heroSubtitleIntro": "桌面軟體開源免費、檔案在本機。個人 Pro 前 {months} 個月享 {intro}/月體驗價（原價 {standard}/月），含週期 Credits、3GB 雲空間與不限量剪貼簿，一次買 30 天，不自動扣款。",
+    "heroTitleIntl": "自備 AI 金鑰即可免費使用，也可按量付費。",
+    "heroSubtitleIntl": "桌面版開源免費，檔案留在你的電腦上。接入你自己的 AI 服務商，我們不收費；或者為美元錢包儲值，用多少付多少。律所可洽詢專屬部署。",
+    "metaDescriptionIntl": "自備 AI 金鑰即可免費使用 AI WorkDeck；也可為美元錢包儲值、按量付費。律所專屬部署另行報價。"
   },
   "purchase": {
     "amountLabel": "金額",
