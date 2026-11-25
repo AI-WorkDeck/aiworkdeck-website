@@ -263,5 +263,35 @@ console.log('\n[5] an active Apple subscription blocks a new sale');
   ok('pro.appstore active → 409, no order');
 }
 
+console.log('\n[6] 1-fen payment test: allowlisted accounts only, even with sales off');
+{
+  const { isProSku, getProIntroQuote } = await import('@/lib/pro-products');
+  const tester = (await (await POST(req({ action: 'resolve', phone: '13800138666', create: true }))).json()).accountId as string;
+  const other = (await (await POST(req({ action: 'resolve', phone: '13800138555', create: true }))).json()).accountId as string;
+  process.env.MOBILE_WXPAY_PRO_ENABLED = 'false';
+  process.env.MOBILE_WXPAY_PRO_TEST_ACCOUNTS = ` ${tester} ,someone-else`;
+  const tq = await (await POST(req({ action: 'pro-quote', accountId: tester }))).json();
+  assert.deepStrictEqual([tq.available, tq.skuId, tq.amountCents, tq.days], [true, 'pro_test', 1, 1]);
+  assert.deepStrictEqual(await (await POST(req({ action: 'pro-quote', accountId: other }))).json(), { available: false, reason: 'disabled' });
+  assert.deepStrictEqual(await (await POST(req({ action: 'pro-quote' }))).json(), { available: false, reason: 'disabled' }, 'no account never gets the test product');
+  const forged = await POST(req({ action: 'create-pro', accountId: other, skuId: 'pro_test', amountCents: 1, idempotencyKey: 'forged-1' }));
+  assert.strictEqual(forged.status, 503, 'a non-listed account cannot order the test product');
+  assert.strictEqual(isProSku('pro_test'), false, 'the website checkout (isProSku gate) never sells it');
+  const introBefore = getProIntroQuote(getDb(), tester).remainingMonths;
+  const o = await (await POST(req({ action: 'create-pro', accountId: tester, skuId: 'pro_test', amountCents: 1, idempotencyKey: 'test-1' }))).json();
+  assert.strictEqual(getOrder(o.outTradeNo)!.skuId, 'pro_test');
+  tradeStates.set(o.outTradeNo, { trade_state: 'SUCCESS', amount: 1 });
+  await new Promise((r) => setTimeout(r, 2100));
+  const paid = await (await POST(req({ action: 'query', accountId: tester, outTradeNo: o.outTradeNo }))).json();
+  assert.strictEqual(paid.paid, true);
+  const ent = getDb().prepare("SELECT expiresAt FROM entitlements WHERE userId=? AND feature='pro'").get(tester) as { expiresAt: string };
+  const hours = (Date.parse(ent.expiresAt) - Date.now()) / 3600_000;
+  assert.ok(hours > 23 && hours < 25, `one day of Pro, got ${hours}h`);
+  assert.strictEqual(getProIntroQuote(getDb(), tester).remainingMonths, introBefore, 'the test does not use an intro month');
+  delete process.env.MOBILE_WXPAY_PRO_TEST_ACCOUNTS;
+  process.env.MOBILE_WXPAY_PRO_ENABLED = 'true';
+  ok('listed account: 1-fen pro_test while sales are off → 1 day of Pro, intro untouched; others, no-account and the website checkout never get it');
+}
+
 fs.rmSync(tmpDir, { recursive: true, force: true });
 console.log(`\n全部通过：${passed} 项`);

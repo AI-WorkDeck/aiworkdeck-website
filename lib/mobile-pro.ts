@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3';
-import { getProIntroQuote } from './pro-products';
+import { getProIntroQuote, PRO_TEST_PRODUCT } from './pro-products';
 import { isProPurchaseEnabled } from './pro-purchase-flag';
 import { siteConfig } from './site-config';
 import { wxpayAppAdapter } from './payments/wxpay-app-adapter';
@@ -20,13 +20,21 @@ export function mobileWxpayProEnabled(env: Record<string, string | undefined> = 
   return ['true', '1', 'on', 'yes'].includes(v);
 }
 
+/** Unified account ids allowed the 1-fen payment test (comma-separated). Empty = nobody. */
+export const MOBILE_WXPAY_PRO_TEST_ACCOUNTS = 'MOBILE_WXPAY_PRO_TEST_ACCOUNTS';
+
+export function isProPaymentTester(userId: string | null, env: Record<string, string | undefined> = process.env): boolean {
+  if (!userId) return false;
+  return (env[MOBILE_WXPAY_PRO_TEST_ACCOUNTS] ?? '').split(',').map((s) => s.trim()).filter(Boolean).includes(userId);
+}
+
 export type MobileProUnavailable = 'disabled' | 'channel_unavailable' | 'appstore_subscription_active';
 
 export type MobileProQuote =
   | { available: false; reason: MobileProUnavailable }
   | {
       available: true;
-      skuId: 'pro_monthly_intro' | 'pro_monthly';
+      skuId: 'pro_monthly_intro' | 'pro_monthly' | 'pro_test';
       amountCents: number;
       standardAmountCents: number;
       introEligible: boolean;
@@ -44,6 +52,12 @@ export function mobileProQuote(
   env: Record<string, string | undefined> = process.env,
   now: string = new Date().toISOString()
 ): MobileProQuote {
+  // The owner-approved payment test: allowlisted accounts get the 1-fen test product even while sales are switched off.
+  if (isProPaymentTester(userId, env)) {
+    if (siteConfig.currency !== 'CNY' || !wxpayAppAdapter.isConfigured()) return { available: false, reason: 'channel_unavailable' };
+    return { available: true, skuId: 'pro_test', amountCents: PRO_TEST_PRODUCT.priceCents, standardAmountCents: PRO_TEST_PRODUCT.priceCents,
+      introEligible: false, introRemainingMonths: 0, days: PRO_TEST_PRODUCT.days };
+  }
   if (!mobileWxpayProEnabled(env) || !isProPurchaseEnabled(env)) return { available: false, reason: 'disabled' };
   if (siteConfig.currency !== 'CNY' || !wxpayAppAdapter.isConfigured()) return { available: false, reason: 'channel_unavailable' };
   // Same rule as the website: no new sale on top of an active Apple subscription.
