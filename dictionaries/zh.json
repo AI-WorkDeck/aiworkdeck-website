@@ -75,7 +75,7 @@
     },
     "seo": {
       "homeTitle": "AI WorkDeck——律师的 AI 法律文书工作台（Windows / macOS 桌面端）",
-      "homeDescription": "AI WorkDeck 是开源、本地优先的律师 AI 工作台：带修订留痕的文档编辑器、可核验引用的 AI 起草、Word/WPS 插件与 Skill 广场，文件不出本机。"
+      "homeDescription": "AI WorkDeck 是开源、本地优先的律师 AI 工作台：带修订留痕的文档编辑器、可核验引用的 AI 起草、Word/WPS 插件与 技能市场，文件不出本机。"
     },
     "nav": {
       "videos": "视频教程",
@@ -84,8 +84,8 @@
       "articles": "文章",
       "pricing": "定价",
       "download": "下载",
-      "skills": "Skill 广场",
-      "marketplace": "Marketplace",
+      "skills": "技能市场",
+      "marketplace": "插件市场",
       "plugins": "插件",
       "submit": "创建并提交 Skill",
       "start": "开始使用",
@@ -161,8 +161,8 @@
         "download": "下载桌面端",
         "source": "在 GitHub 查看源码",
         "pricing": "查看定价",
-        "plugins": "逛插件广场",
-        "skills": "探索 Skill 广场",
+        "plugins": "逛插件市场",
+        "skills": "探索 技能市场",
         "start": "立即开始使用"
       }
     },
@@ -289,7 +289,6 @@
       "pricing": "定价",
       "transparency": "账目公开",
       "sourceGithub": "源码 GitHub",
-      "plugins": "插件广场",
       "articles": "文章",
       "sections": {
         "overview": "综述"
@@ -318,7 +317,7 @@
     },
     "skillsSpotlight": {
       "badge": "社区共建 · 桌面端一键安装",
-      "title": "Skill 广场",
+      "title": "技能市场",
       "subtitle": "来自法律人与开源社区的即用 AI 技能：审合同、写文书、做核查，装上就能用。",
       "statSkills": "{n} 个 Skill",
       "statContributors": "{n} 位贡献者",
@@ -344,7 +343,7 @@
   },
   "skillsPage": {
     "detailMetaTitle": "{name}——法律 AI Skill",
-    "detailMetaSuffix": "AI WorkDeck 广场上的法律 AI Skill，律师可一键装入桌面端，在本机文档上直接运行。",
+    "detailMetaSuffix": "AI WorkDeck 市场上的法律 AI Skill，律师可一键装入桌面端，在本机文档上直接运行。",
     "profileMetaTitle": "{name} · 贡献者",
     "profileMetaDescription": "{name} 在 AI WorkDeck 发布的 Skill、插件与社区帖子。AI WorkDeck 是面向律师与文档工作者的开源法律 AI 工作台。",
     "comments": {
@@ -436,8 +435,8 @@
     "certBannerQuiz": "顺便测测你是哪种法律人",
     "chartsLink": "榜单",
     "detailEyebrow": "Skill",
-    "title": "Skill 广场",
-    "subtitle": "社区共建的 AI 技能库，提交后即刻同步桌面端插件广场，一键安装。",
+    "title": "技能市场",
+    "subtitle": "社区共建的 AI 技能库，提交后即刻同步桌面端插件市场，一键安装。",
     "searchPlaceholder": "搜索 Skill、触发词…",
     "sortNewest": "最新",
     "sortPopular": "热门",
@@ -455,14 +454,14 @@
     "copied": "已复制",
     "installTitle": "在桌面端安装",
     "installSteps": [
-      "打开 AI WorkDeck 桌面端，进入「插件广场」",
-      "在「在线 Skill 广场」区块找到本 Skill",
+      "打开 AI WorkDeck 桌面端，进入「插件市场」",
+      "在「在线技能市场」区块找到本 Skill",
       "点击「安装」，对话中输入触发词即可激活"
     ],
     "installNote": "也可以手动安装：把 skill.yml 与 prompt.md 放入后端工作目录 skills/{id}/ 后重扫。",
     "version": "版本",
     "edit": "编辑",
-    "detailBack": "返回广场",
+    "detailBack": "返回市场",
     "contributorSkills": "TA 的 Skill",
     "joinedAt": "加入于",
     "noSkillsYet": "还没有提交过 Skill",
@@ -480,19 +479,19 @@
     "lastPublished": "最近更新",
     "profileEmptyTitle": "这位贡献者还没有公开发布的 Skill",
     "profileEmptyHint": "TA 的作品发布后会出现在这里。",
-    "profileEmptyCta": "去广场看看",
+    "profileEmptyCta": "去市场看看",
     "profileEmptyOwnTitle": "你还没有公开作品",
     "profileEmptyOwnHint": "把在实务里打磨过的提示词整理成 Skill，别人就能一键装进自己的工作台。",
     "profileEmptyOwnCta": "提交第一个 Skill",
     "watermark": "技"
   },
   "marketplacePage": {
-    "eyebrow": "资源广场 · 与桌面端实时同步",
-    "title": "Marketplace",
+    "eyebrow": "插件市场 · 与桌面端实时同步",
+    "title": "插件市场",
     "heroTitle": "Skill、插件与 MCP，一键装进桌面端。",
     "metaDescription": "Skill 是 AI 完成任务时采用的工作方法。 Plugin 扩展桌面端本身的功能与界面。 MCP 将外部工具和数据接入 AI 对话与任务。",
     "subtitle": "Skill 是 AI 完成任务时采用的工作方法。 Plugin 扩展桌面端本身的功能与界面。 MCP 将外部工具和数据接入 AI 对话与任务。",
-    "tabSkills": "Skill 广场",
+    "tabSkills": "技能",
     "tabPlugins": "插件",
     "statPlugins": "个插件",
     "watermark": "集",
@@ -591,7 +590,7 @@
     "s3Title": "提交前先在自己机器上试",
     "s3P1a": "不用等审核。把 ",
     "s3P1b": " 整个目录复制到本机的插件目录，重启 AI WorkDeck 就能看到：",
-    "s3P2": "在「插件广场 → 已安装」里应该出现你的插件。启用后，在对话中提一个会用到你工具的问题，看 AI 是否调用了它。没调用的话，八成是 @Tool 的描述没写清楚使用时机。",
+    "s3P2": "在「插件市场 → 已安装」里应该出现你的插件。启用后，在对话中提一个会用到你工具的问题，看 AI 是否调用了它。没调用的话，八成是 @Tool 的描述没写清楚使用时机。",
     "s4Title": "manifest.json 每个字段的意思",
     "s4ThField": "字段",
     "s4ThDesc": "说明",
@@ -606,7 +605,7 @@
       ],
       [
         "name / description",
-        "展示在插件广场卡片上。描述写清楚替用户做什么，别写技术实现。"
+        "展示在插件市场卡片上。描述写清楚替用户做什么，别写技术实现。"
       ],
       [
         "author / homepage",
@@ -750,7 +749,7 @@
     "pageLead": "插件与资源包都含可执行载荷：逐版本人工审核，通过后由平台签名分发。",
     "developerNoticeBody": "免费开源插件，登录即可提交，无需令牌。 manifest.homepage 需填写公开源码 HTTPS 地址。 收费或闭源投稿，需先通过开发者资格审核。 ",
     "developerNoticeLink": "开发者中心",
-    "attributionNotice": "插件审核上架后，你的公开显示名与作者主页将展示在广场作品页和贡献者名录中。",
+    "attributionNotice": "插件审核上架后，你的公开显示名与作者主页将展示在市场作品页和贡献者名录中。",
     "submissionRegionNotice": "国际站只展示已审核插件，不在本地接收投稿，以避免镜像覆盖。请前往国内站提交；两站账号独立，按页面提示登录。",
     "submissionRegionLink": "前往国内站提交"
   },
@@ -799,8 +798,8 @@
     "title": "创建并提交 Skill",
     "eyebrow": "社区共建",
     "editTitle": "编辑 Skill",
-    "intro": "Skill 就是教 AI 做一件具体的事：什么时候出手、能用哪些能力、按什么套路干。填完立刻出现在广场与桌面端。",
-    "publishNotice": "登录即发布，无需等待审核：提交后立刻出现在 Skill 广场与桌面端。违反规范或侵权的内容会被事后下架。",
+    "intro": "Skill 就是教 AI 做一件具体的事：什么时候出手、能用哪些能力、按什么套路干。填完立刻出现在市场与桌面端。",
+    "publishNotice": "登录即发布，无需等待审核：提交后立刻出现在 技能市场与桌面端。违反规范或侵权的内容会被事后下架。",
     "draft": {
       "found": "检测到一份未提交的草稿",
       "restore": "恢复",
@@ -831,7 +830,7 @@
       "priceHint": "0 = 免费。付费上限 1999 元；作者 85% / 平台 15%（以 MARKETPLACE-TERMS 对净收据抽成后为准，非毛成交额直接×85%；月结细则等以条款为准）；收益在账户页查看。",
       "priceUnavailable": "本站首期只接收免费条目。付费提交涉及美元结算与向创作者跨境付款，暂不在本期范围，你的 Skill 将以免费发布。需要付费发布请前往国内站。"
     },
-    "submitBtn": "发布到广场",
+    "submitBtn": "发布到市场",
     "updateBtn": "保存更新",
     "submitting": "提交中…",
     "success": "发布成功！",
@@ -911,7 +910,7 @@
         "meta": "触发词 {triggers} 个 · 能力 {tools} 项",
         "publish": "确认发布",
         "refine": "填入表单微调",
-        "publishHint": "发布即上架广场，参与创作分成"
+        "publishHint": "发布即上架市场，参与创作分成"
       },
       "billing": {
         "charged": "本轮消耗 {amount}，已从你的余额抵扣",
@@ -1247,7 +1246,7 @@
       "已购的 Skill、插件与功能无法再取回，也不会转移到另一个站。",
       "充值余额不随注销退还：账上还有可退余额时需先来信申请退还，办结后才能注销；奖励 Credits 按条款作废。",
       "交易记录因法定留存义务不能删除，但会与你的身份解除关联。",
-      "你提交的 Skill 与插件仍留在广场（作者显示为「已注销用户」，付费的改为免费），已分发的副本不受影响。"
+      "你提交的 Skill 与插件仍留在市场（作者显示为「已注销用户」，付费的改为免费），已分发的副本不受影响。"
     ],
     "dangerConfirmHint": "确认无误，请逐字输入你的用户名：",
     "dangerConfirmPlaceholder": "输入用户名",
@@ -1699,7 +1698,7 @@
       "emailSent": "已发送，请查收",
       "emailFailed": "发送失败，请稍后再试",
       "browseHint": "回到电脑之前，可以先逛逛",
-      "browseCta": "Skill 广场"
+      "browseCta": "技能市场"
     },
     "eyebrow": "开始使用",
     "title": "两步，把 AI WorkDeck 用起来",
@@ -1785,7 +1784,7 @@
     "after": {
       "title": "装好之后",
       "skills": {
-        "title": "Skill 广场",
+        "title": "技能市场",
         "desc": "现成的审查、起草、核查技能，桌面端一键安装。"
       },
       "plugins": {
@@ -1962,7 +1961,7 @@
       "eyebrow": "AI WorkDeck · 法律人的 AI 工作台",
       "start": "开始使用",
       "articles": "产品实录",
-      "marketplace": "Skill 广场"
+      "marketplace": "技能市场"
     },
     "profileTitle": "法人格",
     "profileCta": "测测你是哪种法律人",
@@ -2099,7 +2098,7 @@
       "perk2": "无线剪贴板与文件暂存区不限量",
       "perk3": "3GB 持久云存储，项目目录跨端统一",
       "perk4": "周期用量、剩余额度与重置时间清楚可查",
-      "excludes": "不含：律所多人席位、私有化、商业闭源授权、Certified 部署；市场付费 Skill 按 listing 另计。",
+      "excludes": "不含：律所多人席位、私有化、商业闭源授权、Certified 部署；市场付费技能 按 listing 另计。",
       "ctaPrimary": "先试用，再订阅",
       "ctaSecondary": "开通个人 Pro",
       "footnote": "订阅额度不结转、不提现；超额默认暂停，可自行开启使用充值余额。不限量指本地功能，云空间按配额。",
@@ -2213,9 +2212,9 @@
   "notFoundPage": {
     "code": "404",
     "title": "页面不存在",
-    "body": "这个地址已经变动，或者从未存在过。回首页看看，或者去 Skill 广场逛逛。",
+    "body": "这个地址已经变动，或者从未存在过。回首页看看，或者去 技能市场逛逛。",
     "home": "返回首页",
-    "marketplace": "去 Skill 广场"
+    "marketplace": "去 技能市场"
   },
   "transparencyPage": {
     "eyebrow": "账目公开",
@@ -2516,7 +2515,7 @@
     "captureAlt": "AI WorkDeck 真实左侧面板：{label}",
     "captionDefault": "桌面端实拍 · 点击放大",
     "captionOverview": "桌面端实拍 · 点击放大",
-    "visitMarketplace": "去 Marketplace 看看",
+    "visitMarketplace": "去 插件市场 看看",
     "tools": {
       "files": {
         "label": "资源管理器",
@@ -2565,10 +2564,10 @@
       "plugins": {
         "label": "插件",
         "title": "让专门的工具，进入工作台。",
-        "body": "插件广场就在左侧。查看已安装的工具和启用状态，再按需要从 Marketplace 扩展工作台；脱敏、语音、诉讼可视化等工具各有自己的面板。",
+        "body": "插件市场就在左侧。查看已安装的工具和启用状态，再按需要从 插件市场 扩展工作台；脱敏、语音、诉讼可视化等工具各有自己的面板。",
         "points": [
           "查看本机已安装插件",
-          "从广场发现适合工作的工具",
+          "从市场发现适合工作的工具",
           "回到左侧导航打开工具面板"
         ],
         "location": "左侧导航 → 插件中心 → 插件"
@@ -2576,7 +2575,7 @@
       "skills": {
         "label": "Skill",
         "title": "把常用方法，带进每次工作。",
-        "body": "在同一个插件广场里切换到 Skill，查看已安装的工作方法与状态。合同审查、条款标引、事项汇总等能力从这里管理。",
+        "body": "在同一个插件市场里切换到 Skill，查看已安装的工作方法与状态。合同审查、条款标引、事项汇总等能力从这里管理。",
         "points": [
           "插件与 Skill 分栏查看",
           "查看已安装条目和启用状态",

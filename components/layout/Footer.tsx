@@ -54,8 +54,8 @@ export async function Footer({ lang, dict }: FooterProps) {
         {
             title: dict.marketplacePage.title,
             links: [
-                { href: `/${lang}/marketplace`, label: nav.marketplace },
-                { href: `/${lang}/marketplace/plugins`, label: f.plugins },
+                { href: `/${lang}/marketplace`, label: dict.marketplacePage.tabSkills },
+                { href: `/${lang}/marketplace/plugins`, label: dict.marketplacePage.tabPlugins },
                 { href: `/${lang}/marketplace/mcp`, label: dict.marketplacePage.tabMcp },
                 { href: `/${lang}/skills/charts`, label: f.charts },
                 { href: `/${lang}/skills/submit`, label: nav.submit },
