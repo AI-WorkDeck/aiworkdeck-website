@@ -63,6 +63,8 @@ jobs:
         run: npx tsx --tsconfig tsconfig.json scripts/verify-plugin-mirror-l10n.mts
       - name: Developer eligibility and scoped submission tokens
         run: npm run test:developers
+      - name: zh-hant tier names and release notes
+        run: npx tsx --tsconfig tsconfig.json scripts/verify-zh-hant-content.mts
       - name: Web engine prefetch targets real assets
         run: npx tsx --tsconfig tsconfig.json scripts/verify-web-engine-prefetch.mts
       - name: Marketplace terminology (X-S3)

@@ -1,8 +1,9 @@
 'use client';
 
+import { tierDisplayName } from '@/lib/membership-display';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Locale, LOCALE_META, toBaseLocale } from '@/i18n-config';
+import { Locale, LOCALE_META } from '@/i18n-config';
 import { Award } from 'lucide-react';
 
 interface MembershipTier {
@@ -23,10 +24,6 @@ interface MembershipData {
     tiers: MembershipTier[];
 }
 
-/** 等级中英文名：跟随语言取 nameZh / nameEn，两者都来自 API，不在前端维护第二份翻译。 */
-function tierName(t: { nameZh: string; nameEn: string }, lang: Locale): string {
-    return toBaseLocale(lang) === 'zh' ? t.nameZh : t.nameEn;
-}
 
 export function MembershipSection({ lang, dict }: { lang: Locale; dict: any }) {
     const t = dict.accountPage;
@@ -85,7 +82,7 @@ export function MembershipSection({ lang, dict }: { lang: Locale; dict: any }) {
                         <div>
                             <p className="text-xs text-neutral-gray-medium mb-1">{t.membershipLevelLabel}</p>
                             <span className="inline-block rounded-lg border border-king-forest/25 bg-king-forest/5 px-3 py-1 font-display text-lg font-bold text-king-forest">
-                                {tierName(data.tier, lang)}
+                                {tierDisplayName(data.tier, lang)}
                             </span>
                         </div>
                         <div>
@@ -112,7 +109,7 @@ export function MembershipSection({ lang, dict }: { lang: Locale; dict: any }) {
                         <p className="mt-2 text-xs text-neutral-gray-medium">
                             {data.nextTier
                                 ? t.membershipProgressToNext
-                                      .replace('{name}', tierName(data.nextTier, lang))
+                                      .replace('{name}', tierDisplayName(data.nextTier, lang))
                                       .replace(
                                           '{points}',
                                           data.nextTier.remainingPoints.toLocaleString(

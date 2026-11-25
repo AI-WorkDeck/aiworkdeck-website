@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
+import { tierDisplayName } from '@/lib/membership-display';
 import Link from 'next/link';
-import { Locale, LOCALE_META, toBaseLocale } from '@/i18n-config';
+import { Locale, LOCALE_META } from '@/i18n-config';
 import { getDictionary } from '@/get-dictionary';
 import { Button } from '@/components/ui/button';
 import { PageHero } from '@/components/layout/PageHero';
@@ -22,9 +23,6 @@ export async function generateMetadata({
     };
 }
 
-function tierName(t: { nameZh: string; nameEn: string }, lang: Locale): string {
-    return toBaseLocale(lang) === 'zh' ? t.nameZh : t.nameEn;
-}
 
 /**
  * 眉标 + 细线，DESIGN.md 版式语言的区块标题写法（复用 account 页 GroupHeading 的思路，
@@ -112,7 +110,7 @@ export default async function MembershipPage({
                                     return (
                                         <tr key={tier.key} className="border-b border-neutral-gray-light/60 transition-colors last:border-0 hover:bg-neutral-gray-pale/35">
                                             <td className="whitespace-nowrap px-5 py-3.5 font-display font-bold text-neutral-dark-bg">
-                                                {tierName(tier, lang)}
+                                                {tierDisplayName(tier, lang)}
                                             </td>
                                             <td className="px-5 py-3.5 text-right font-mono tabular-nums text-neutral-gray-dark">
                                                 {tier.threshold.toLocaleString(LOCALE_META[lang].bcp47)}
