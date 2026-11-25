@@ -1073,6 +1073,8 @@
     "forgotPassword": "¿Olvidaste tu contraseña?",
     "backToPassword": "Volver al inicio de sesión con contraseña",
     "codeSentSimple": "Código enviado. Revisa tus mensajes o tu correo electrónico.",
+    "mailSpamHint": "¿No recibiste el código? Revisa la carpeta de spam.",
+    "mailSpamHintSender": "¿No recibiste el código? Revisa la carpeta de spam y añade {sender} a tus contactos.",
     "passwordSaved": "Contraseña guardada. Inicia sesión con tu cuenta y la nueva contraseña. Si abriste esta página desde la aplicación, vuelve allí para iniciar sesión.",
     "codeUnavailable": "La verificación no está disponible temporalmente. Inténtalo más tarde; las contraseñas existentes siguen funcionando.",
     "reviewLogin": "Revisión para tienda de aplicaciones",

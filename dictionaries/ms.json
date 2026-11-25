@@ -1073,6 +1073,8 @@
     "forgotPassword": "Lupa kata laluan?",
     "backToPassword": "Kembali ke log masuk kata laluan",
     "codeSentSimple": "Kod dihantar. Semak mesej atau e-mel anda.",
+    "mailSpamHint": "Tidak menerima kod? Semak folder spam anda.",
+    "mailSpamHintSender": "Tidak menerima kod? Semak folder spam anda dan tambah {sender} ke kenalan anda.",
     "passwordSaved": "Kata laluan disimpan. Log masuk dengan akaun dan kata laluan baharu anda. Jika anda membuka halaman ini dari aplikasi, kembali ke sana untuk log masuk.",
     "codeUnavailable": "Pengesahan tidak tersedia buat sementara waktu. Cuba lagi nanti; kata laluan sedia ada masih berfungsi.",
     "reviewLogin": "Ulasan kedai aplikasi",

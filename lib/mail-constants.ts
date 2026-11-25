@@ -21,5 +21,9 @@ export const MAIL_RESEND_COOLDOWN_MS = 60 * 1000;
 export const MAIL_MAX_ATTEMPTS = 5;
 /** 同一邮箱 24 小时内最多发几封。 */
 export const MAIL_MAX_PER_ADDRESS_PER_DAY = 20;
+/** 同一邮箱 1 小时内最多发几封（所有场景合计）。挡住借本站发信去轰炸某个地址、拖垮发信域名信誉。 */
+export const MAIL_MAX_PER_ADDRESS_PER_HOUR = 5;
+/** 每小时配额的统计窗口。 */
+export const MAIL_HOUR_WINDOW_MS = 60 * 60 * 1000;
 /** 当日配额的统计窗口。 */
 export const MAIL_DAY_WINDOW_MS = 24 * 60 * 60 * 1000;

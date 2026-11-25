@@ -25,6 +25,8 @@ import { getDb, withTransaction } from './db';
 import { assertCodeSendAllowed } from './code-send-guard';
 import { isReviewIdentity, reviewCodeAccepts } from './review-account';
 import { mailTransportConfigured, sendTransactionalMail } from './mail-transport';
+import { pickLangText } from './api-locale';
+import type { Locale } from '@/i18n-config';
 
 // 策略常量在 lib/mail-constants.ts（客户端组件也要读，不能走这条含 better-sqlite3 的链）
 export {
@@ -32,7 +34,7 @@ export {
 } from './mail-constants';
 import {
   MAIL_CODE_TTL_MS, MAIL_RESEND_COOLDOWN_MS, MAIL_MAX_ATTEMPTS,
-  MAIL_MAX_PER_ADDRESS_PER_DAY, MAIL_DAY_WINDOW_MS,
+  MAIL_MAX_PER_ADDRESS_PER_DAY, MAIL_DAY_WINDOW_MS, MAIL_MAX_PER_ADDRESS_PER_HOUR, MAIL_HOUR_WINDOW_MS,
 } from './mail-constants';
 
 
@@ -84,29 +86,34 @@ export function mailEnabled(): boolean {
   return mailTransportConfigured();
 }
 
-/** 验证码邮件正文。纯文本 + 极简 HTML，不引模板系统。 */
-function codeMessage(code: string, ttlMinutes: number, scene: string): { subject: string; text: string; html: string } {
-  const purpose = scene === SCENE_PASSWORD_RESET ? 'password reset' : 'account verification';
-  const subject = `${code} is your AI WorkDeck ${purpose} code`;
-  const text =
-    `Your AI WorkDeck ${purpose} code is ${code}.\n\n` +
-    `It expires in ${ttlMinutes} minutes and can only be used once.\n` +
-    `If you did not request this, you can safely ignore this email.\n`;
+/**
+ * 验证码邮件正文。纯文本 + 极简 HTML，不引模板系统。正文语言跟随页面语言（`pickLangText`）：
+ * 中文页面发中文信（繁体页面用台湾用语），其余发英文。纯文本与 HTML 两部分措辞一致。
+ */
+function codeMessage(code: string, ttlMinutes: number, scene: string, lang: Locale = 'en'): { subject: string; text: string; html: string } {
+  const reset = scene === SCENE_PASSWORD_RESET;
+  const L = (zh: string, en: string, zht: string) => pickLangText(lang, zh, en, { 'zh-hant': zht });
+  const kind = L(reset ? '密码重设' : '账号', reset ? 'password reset' : 'account verification', reset ? '密碼重設' : '帳號');
+  const subject = L(`${code} 是您的 AI WorkDeck ${kind}验证码`, `${code} is your AI WorkDeck ${kind} code`, `${code} 是您的 AI WorkDeck ${kind}驗證碼`);
+  const lead = L(`您的 AI WorkDeck ${kind}验证码为`, `Your AI WorkDeck ${kind} code is`, `您的 AI WorkDeck ${kind}驗證碼為`);
+  const expiry = L(`验证码 ${ttlMinutes} 分钟内有效，仅能使用一次。`, `It expires in ${ttlMinutes} minutes and can only be used once.`, `驗證碼 ${ttlMinutes} 分鐘內有效，僅能使用一次。`);
+  const ignore = L('如果这不是您本人的操作，请忽略本邮件。', 'If you did not request this, you can safely ignore this email.', '若您並未提出此要求，請忽略本信。');
+  const text = `${lead} ${code}${L('。', '.', '。')}\n\n${expiry}\n${ignore}\n`;
   const html =
     // 邮件客户端剥 CSS 变量与深色模式自动反色两条硬约束：颜色内联写死十六进制，
     // 保持白底深字（浅茶金/竹月青这类浅底浅字组合在被反色的客户端里会失去对比度）。
-    `<p>Your AI WorkDeck ${purpose} code is:</p>` +
+    `<p>${lead}${L('：', ':', '：')}</p>` +
     `<p style="font-size:28px;font-weight:700;letter-spacing:4px;margin:16px 0;color:#2E5A50">${code}</p>` +
-    `<p>It expires in ${ttlMinutes} minutes and can only be used once.</p>` +
-    `<p style="color:#6B675C;font-size:13px">If you did not request this, you can safely ignore this email.</p>`;
+    `<p>${expiry}</p>` +
+    `<p style="color:#6B675C;font-size:13px">${ignore}</p>`;
   return { subject, text, html };
 }
 
 /** 发一封验证码邮件。失败抛 {@link MailError}，文案已脱敏。 */
-async function sendMail(email: string, code: string, scene: string): Promise<void> {
+async function sendMail(email: string, code: string, scene: string, lang: Locale): Promise<void> {
   if (!mailTransportConfigured()) throw new MailError('Email sign-in is not enabled on this site');
 
-  const { subject, text, html } = codeMessage(code, Math.round(MAIL_CODE_TTL_MS / 60_000), scene);
+  const { subject, text, html } = codeMessage(code, Math.round(MAIL_CODE_TTL_MS / 60_000), scene, lang);
   const result = await sendTransactionalMail({ to: email, subject, text, html });
   if (result.ok) return;
   // 分类之外的原始 message 只进日志（mail-transport），这里不外露
@@ -146,6 +153,13 @@ function checkSendAllowed(scene: string, email: string, now: number): void {
   const dayCount = db
     .prepare('SELECT COUNT(*) AS n FROM mail_send_log WHERE scene = ? AND email = ? AND sentAt > ?')
     .get(scene, email, now - MAIL_DAY_WINDOW_MS) as { n: number };
+  // 每小时上限按地址合计所有场景（登录、重设、旧邮箱迁移），换场景绕不过
+  const hourCount = db
+    .prepare('SELECT COUNT(*) AS n FROM mail_send_log WHERE email = ? AND sentAt > ?')
+    .get(email, now - MAIL_HOUR_WINDOW_MS) as { n: number };
+  if (hourCount.n >= MAIL_MAX_PER_ADDRESS_PER_HOUR) {
+    throw new MailError('Too many codes for this address, please try again in an hour');
+  }
   if (dayCount.n >= MAIL_MAX_PER_ADDRESS_PER_DAY) {
     throw new MailError('Daily code limit reached for this address, please try tomorrow or email hi@aiworkdeck.com');
   }
@@ -158,7 +172,7 @@ function checkSendAllowed(scene: string, email: string, now: number): void {
  * 「该邮箱是否注册过」的枚举面。代价是任何地址都能触发一封信，靠上面的冷却与当日
  * 配额兜住。是否新用户只在 `verify` 成功后才透露。
  */
-export async function sendCode(scene: string, rawEmail: string, ip: string = ''): Promise<void> {
+export async function sendCode(scene: string, rawEmail: string, ip: string = '', lang: Locale = 'en'): Promise<void> {
   const email = normalizeEmail(rawEmail);
   // 审核账号（lib/review-account.ts）：它的码是固定的，没有「发一枚新码」这回事。
   // 早退在限流之前——落一条 mail_send_log 就会让审核员被冷却/日配额挡住，
@@ -171,7 +185,7 @@ export async function sendCode(scene: string, rawEmail: string, ip: string = '')
 
   const code = newCode();
   // 先发再落库：发失败就不该产生一条可用的码，也不该占冷却
-  await sendMail(email, code, scene);
+  await sendMail(email, code, scene, lang);
 
   const db = getDb();
   db.prepare(

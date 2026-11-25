@@ -1073,6 +1073,8 @@
     "forgotPassword": "Esqueceu a senha?",
     "backToPassword": "Voltar para entrada por senha",
     "codeSentSimple": "Código enviado. Verifique suas mensagens ou e-mail.",
+    "mailSpamHint": "Não recebeu o código? Verifique a pasta de spam.",
+    "mailSpamHintSender": "Não recebeu o código? Verifique a pasta de spam e adicione {sender} aos seus contatos.",
     "passwordSaved": "Senha salva. Entre com sua conta e a nova senha. Se você abriu esta página pelo aplicativo, retorne a ele para fazer login.",
     "codeUnavailable": "A verificação está temporariamente indisponível. Tente novamente mais tarde; as senhas existentes continuam funcionando.",
     "reviewLogin": "Avaliação da loja de aplicativos",

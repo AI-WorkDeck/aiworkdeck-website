@@ -1073,6 +1073,8 @@
     "forgotPassword": "Password dimenticata?",
     "backToPassword": "Torna all'accesso con password",
     "codeSentSimple": "Codice inviato. Controlla i tuoi messaggi o la tua e-mail.",
+    "mailSpamHint": "Non hai ricevuto il codice? Controlla la cartella spam.",
+    "mailSpamHintSender": "Non hai ricevuto il codice? Controlla la cartella spam e aggiungi {sender} ai tuoi contatti.",
     "passwordSaved": "Password salvata. Accedi con il tuo account e la nuova password. Se hai aperto questa pagina dall'app, torna lì per accedere.",
     "codeUnavailable": "La verifica non è temporaneamente disponibile. Riprova più tardi; le password esistenti continuano a funzionare.",
     "reviewLogin": "Revisione per app store",

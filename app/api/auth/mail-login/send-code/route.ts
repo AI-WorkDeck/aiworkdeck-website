@@ -5,6 +5,7 @@ import { emailIsAccount } from '@/lib/mail-policy';
 import { clientIp } from '@/lib/login-throttle';
 import { CodeSendBlocked } from '@/lib/code-send-guard';
 import { verifyCaptcha, CaptchaRejected } from '@/lib/captcha';
+import { resolveRequestLocale } from '@/lib/api-locale';
 
 /**
  * 邮箱免密登录/注册：发验证码。形状与 `sms-login/send-code` 逐条对应。
@@ -27,10 +28,12 @@ export async function POST(request: NextRequest) {
 
   let email: string;
   let captchaToken: string;
+  let lang = resolveRequestLocale(request);
   try {
     const body = await request.json();
     email = typeof body?.email === 'string' ? body.email : '';
     captchaToken = typeof body?.captchaToken === 'string' ? body.captchaToken : '';
+    lang = resolveRequestLocale(request, body?.lang);
   } catch {
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
@@ -39,7 +42,7 @@ export async function POST(request: NextRequest) {
     // 人机验证在**发送之前**：没过就不该产生任何外发调用，也不该占配额
     await verifyCaptcha(captchaToken, clientIp(request), { account: normalizeEmail(email), purpose: 'login' });
     if (findUserByAccount(normalizeEmail(email))?.passwordHash) return NextResponse.json({ error: 'password_login_required' }, { status: 409 });
-    await sendCode(SCENE_SIGNIN, email, clientIp(request));
+    await sendCode(SCENE_SIGNIN, email, clientIp(request), lang);
     return NextResponse.json({ ok: true });
   } catch (e) {
     // 三类失败三个码，客户端处置不同：403 你没过人机验证 / 429 你太快了 / 400 你填的东西不对

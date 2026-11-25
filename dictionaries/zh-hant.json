@@ -393,6 +393,8 @@
     "codeSent": "驗證碼已寄送至 {phone}",
     "codeSentMail": "驗證碼已發送至 {email}，可能需要一分鐘送達；沒收到請查看垃圾郵件。",
     "codeSentSimple": "驗證碼已發送，請查看簡訊或電子郵件。",
+    "mailSpamHint": "沒收到驗證碼？請查看垃圾郵件匣。",
+    "mailSpamHintSender": "沒收到驗證碼？請查看垃圾郵件匣，並將 {sender} 加入聯絡人。",
     "codeUnavailable": "驗證碼服務暫不可用，請稍後重試；已有密碼的帳號仍可登入。",
     "compatAnswer": "圖片中的 6 位字元",
     "compatAnswerFirst": "請先載入驗證圖片並填寫其中的 6 位字元",

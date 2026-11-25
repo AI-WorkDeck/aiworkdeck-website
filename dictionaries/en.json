@@ -1073,6 +1073,8 @@
     "forgotPassword": "Forgot password?",
     "backToPassword": "Back to password sign-in",
     "codeSentSimple": "Code sent. Check your messages or email.",
+    "mailSpamHint": "Didn't get the code? Check your spam or junk folder.",
+    "mailSpamHintSender": "Didn't get the code? Check your spam or junk folder, and add {sender} to your contacts.",
     "passwordSaved": "Password saved. Sign in with your account and new password. If you opened this page from the app, return there to sign in.",
     "codeUnavailable": "Verification is temporarily unavailable. Try again later; existing passwords still work.",
     "reviewLogin": "App store review",

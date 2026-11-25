@@ -1073,6 +1073,8 @@
     "forgotPassword": "Passwort vergessen?",
     "backToPassword": "Zurück zur Passwortanmeldung",
     "codeSentSimple": "Code gesendet. Prüfen Sie Ihre Nachrichten oder E-Mails.",
+    "mailSpamHint": "Keinen Code erhalten? Prüfen Sie Ihren Spam-Ordner.",
+    "mailSpamHintSender": "Keinen Code erhalten? Prüfen Sie Ihren Spam-Ordner und fügen Sie {sender} zu Ihren Kontakten hinzu.",
     "passwordSaved": "Passwort gespeichert. Melden Sie sich mit Ihrem Konto und dem neuen Passwort an. Wenn Sie diese Seite aus der App geöffnet haben, kehren Sie dorthin zurück, um sich anzumelden.",
     "codeUnavailable": "Die Verifizierung ist vorübergehend nicht verfügbar. Versuchen Sie es später erneut; vorhandene Passwörter funktionieren weiterhin.",
     "reviewLogin": "App-Store-Prüfung",

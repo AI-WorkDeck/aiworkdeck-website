@@ -1073,6 +1073,8 @@
     "forgotPassword": "Lupa kata sandi?",
     "backToPassword": "Kembali ke masuk dengan kata sandi",
     "codeSentSimple": "Kode terkirim. Periksa pesan atau email Anda.",
+    "mailSpamHint": "Belum menerima kode? Periksa folder spam Anda.",
+    "mailSpamHintSender": "Belum menerima kode? Periksa folder spam Anda dan tambahkan {sender} ke kontak Anda.",
     "passwordSaved": "Kata sandi disimpan. Masuk dengan akun dan kata sandi baru Anda. Jika Anda membuka halaman ini dari aplikasi, kembali ke sana untuk masuk.",
     "codeUnavailable": "Verifikasi sementara tidak tersedia. Coba lagi nanti; kata sandi yang ada tetap berfungsi.",
     "reviewLogin": "Tinjauan toko aplikasi",

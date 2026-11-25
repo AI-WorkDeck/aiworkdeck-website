@@ -1075,6 +1075,8 @@
     "forgotPassword": "忘记密码？",
     "backToPassword": "返回密码登录",
     "codeSentSimple": "验证码已发送，请查看短信或邮箱。",
+    "mailSpamHint": "没收到验证码？请查看垃圾邮件箱。",
+    "mailSpamHintSender": "没收到验证码？请查看垃圾邮件箱，并将 {sender} 加入联系人。",
     "passwordSaved": "密码已保存，请使用账号和新密码登录。如从 App 打开本页，可返回 App 登录。",
     "codeUnavailable": "验证码服务暂不可用，请稍后重试；已有密码的账号仍可登录。",
     "reviewLogin": "应用商店审核",

@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     await verifyCaptcha(typeof body.captchaToken === 'string' ? body.captchaToken : '', clientIp(request), { account: contact.account, purpose: 'reset' });
     // Same response and delivery for existing/unknown identities; reset never creates an account.
     if (contact.kind === 'phone') await sendSms(SCENE_PASSWORD_RESET, contact.account, clientIp(request), lang);
-    else await sendMail(SCENE_PASSWORD_RESET, contact.account, clientIp(request));
+    else await sendMail(SCENE_PASSWORD_RESET, contact.account, clientIp(request), lang);
     return NextResponse.json({ ok: true });
   } catch (e) {
     if (e instanceof CaptchaRejected) return NextResponse.json({ error: 'captcha_failed' }, { status: 403 });

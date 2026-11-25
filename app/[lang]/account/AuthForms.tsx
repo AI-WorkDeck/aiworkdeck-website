@@ -31,6 +31,9 @@ const validSignupRef = (value: string) => value.length <= 64 && /^u-[a-z0-9][a-z
 
 type Mode = 'password' | 'register' | 'setup' | 'reset' | 'review' | 'bqt-scan';
 
+// 发信地址（构建期注入，可空）：用于「把它加入联系人」的提示。
+const MAIL_SENDER = process.env.NEXT_PUBLIC_AWD_MAIL_SENDER ?? '';
+
 /** One shared flow for account, onboarding, desktop and mobile browser handoffs. */
 export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false, defaultTab = 'login', bare, codeChannelReady = true, captcha = null, mobileHandoff = false, bqtEnabled = false }: AuthFormsProps) {
     const t = dict.authPage;
@@ -154,7 +157,7 @@ export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false
             if (!compat && captcha && !captchaToken) { setError(t.errors.captcha_failed); return; }
             const url = mode === 'reset' ? '/api/auth/password/reset/send-code' : `/api/auth/${phoneSite ? 'sms' : 'mail'}-login/send-code`;
             if (compat) { setChallenge(null); setChallengeAnswer(''); }
-            const { response, data } = await post(url, { ...payload(), captchaToken });
+            const { response, data } = await post(url, { ...payload(), captchaToken, lang });
             if (!response.ok) { fail(data); return; }
             setNotice(t.codeSentSimple); setCooldown(60);
         } catch { setError(t.errors.account_network_failed); }
@@ -329,6 +332,8 @@ export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false
                 </div>}
                 {mode === 'register' && <p className="text-xs text-neutral-gray-medium">{t.agreePrefix}<Link href={mobileHandoff ? `/mobile-account/${lang}/terms` : `/${lang}/legal/terms`} className="text-king-forest hover:underline">{t.termsLink}</Link>{t.agreeMid}<Link href={mobileHandoff ? `/mobile-account/${lang}/privacy` : `/${lang}/legal/privacy`} className="text-king-forest hover:underline">{t.privacyLink}</Link>{t.agreeSuffix}</p>}
                 {notice && <FormNotice variant="success">{notice}</FormNotice>}
+                {/* 邮件验证码常被归进垃圾邮件（新发信域名）：发出后提示去垃圾邮件匣找，并把发信地址加入联系人 */}
+                {notice === t.codeSentSimple && !phoneSite && <p className="text-xs text-neutral-gray-medium">{MAIL_SENDER ? t.mailSpamHintSender.replace('{sender}', MAIL_SENDER) : t.mailSpamHint}</p>}
                 {error && <FormNotice variant="error">{error}</FormNotice>}
                 {mode === 'password' && <label className="flex items-center gap-2 text-sm text-neutral-gray-medium"><input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} className="accent-king-forest" />{t.rememberMe}</label>}
                 <Button type="submit" disabled={busy || sending || challengeLoading || (showCode && mode !== 'review' && !codeChannelReady)}>{busy ? t.submitting : mode === 'password' || mode === 'review' ? t.loginBtn : mode === 'register' ? t.verifyContinue : t.savePassword}</Button>

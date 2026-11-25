@@ -1073,6 +1073,8 @@
     "forgotPassword": "Wachtwoord vergeten?",
     "backToPassword": "Terug naar aanmelden met wachtwoord",
     "codeSentSimple": "Code verzonden. Controleer uw berichten of e-mail.",
+    "mailSpamHint": "Geen code ontvangen? Controleer je spammap.",
+    "mailSpamHintSender": "Geen code ontvangen? Controleer je spammap en voeg {sender} toe aan je contacten.",
     "passwordSaved": "Wachtwoord opgeslagen. Meld u aan met uw account en nieuwe wachtwoord. Als u deze pagina vanuit de app heeft geopend, ga dan daarheen terug om u aan te melden.",
     "codeUnavailable": "Verificatie is tijdelijk niet beschikbaar. Probeer het later opnieuw; bestaande wachtwoorden werken nog steeds.",
     "reviewLogin": "App-store-review",

@@ -180,4 +180,45 @@ console.log('--- exchange-key 的凭据形状 ---');
   ok('exchange-key 接受 {email, code}（否则 intl 验证码账号连不上桌面端）');
 }
 
+// ---------- 6. 发信：语言跟随页面、同一地址每小时上限 ----------
+// 假的 Resend 通道：截下发出去的信，不出网。
+console.log('--- 发信 ---');
+{
+  const { sendCode, SCENE_PASSWORD_RESET } = await import('@/lib/mail-auth');
+  const { MAIL_MAX_PER_ADDRESS_PER_HOUR } = await import('@/lib/mail-constants');
+  process.env.AWD_MAIL_RESEND_KEY = 're_test';
+  process.env.AWD_MAIL_FROM = 'Example <no-reply@example.com>';
+  const sent: { subject: string; text: string; html: string }[] = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (_url: unknown, init?: RequestInit) => {
+    sent.push(JSON.parse(String(init?.body)));
+    return new Response(JSON.stringify({ id: 'x' }), { status: 200 });
+  }) as typeof fetch;
+  try {
+    await sendCode(SCENE_SIGNIN, 'tw@example.com', '', 'zh-hant');
+    assert.match(sent[0].subject, /^\d{6} 是您的 .+ 帳號驗證碼$/);
+    assert.match(sent[0].text, /帳號驗證碼為 \d{6}。/);
+    assert.match(sent[0].html, /請忽略本信/);
+    ok('繁体页面发繁体中文信（主题、纯文本、HTML 一致）');
+    await sendCode(SCENE_PASSWORD_RESET, 'en@example.com', '', 'en');
+    assert.match(sent[1].subject, /^\d{6} is your .+ password reset code$/);
+    ok('英文页面发英文信');
+
+    // 同一地址：1 小时内（所有场景合计）已发满上限，再发就挡；换场景也绕不过
+    const db = getDb();
+    const now = Date.now();
+    for (let i = 0; i < MAIL_MAX_PER_ADDRESS_PER_HOUR; i++) {
+      db.prepare('INSERT INTO mail_send_log (scene, email, sentAt, ip) VALUES (?, ?, ?, NULL)')
+        .run(i % 2 ? SCENE_SIGNIN : SCENE_PASSWORD_RESET, 'bomb@example.com', now - (i + 2) * 60_000);
+    }
+    const before = sent.length;
+    await assert.rejects(sendCode(SCENE_SIGNIN, 'bomb@example.com', '', 'en'), (e: unknown) => e instanceof MailError && /hour/.test((e as Error).message));
+    await assert.rejects(sendCode(SCENE_PASSWORD_RESET, 'bomb@example.com', '', 'en'), MailError);
+    assert.strictEqual(sent.length, before, '被挡下的请求不得发出任何信');
+    ok(`同一地址每小时最多 ${MAIL_MAX_PER_ADDRESS_PER_HOUR} 封（跨场景合计），超出不发信`);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+}
+
 console.log(`\n全部通过：${passed} 项`);

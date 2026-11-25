@@ -1073,6 +1073,8 @@
     "forgotPassword": "Mot de passe oublié ?",
     "backToPassword": "Retour à la connexion par mot de passe",
     "codeSentSimple": "Code envoyé. Consultez vos messages ou votre e-mail.",
+    "mailSpamHint": "Code non reçu ? Vérifiez votre dossier de courrier indésirable.",
+    "mailSpamHintSender": "Code non reçu ? Vérifiez votre dossier de courrier indésirable et ajoutez {sender} à vos contacts.",
     "passwordSaved": "Mot de passe enregistré. Connectez-vous avec votre compte et votre nouveau mot de passe. Si vous avez ouvert cette page depuis l'application, revenez-y pour vous connecter.",
     "codeUnavailable": "La vérification est temporairement indisponible. Réessayez plus tard ; les mots de passe existants fonctionnent toujours.",
     "reviewLogin": "Évaluation pour boutique d'applications",

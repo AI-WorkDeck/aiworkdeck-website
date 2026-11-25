@@ -1073,6 +1073,8 @@
     "forgotPassword": "Quên mật khẩu?",
     "backToPassword": "Quay lại đăng nhập bằng mật khẩu",
     "codeSentSimple": "Đã gửi mã. Vui lòng kiểm tra tin nhắn hoặc email của bạn.",
+    "mailSpamHint": "Chưa nhận được mã? Hãy kiểm tra thư mục thư rác.",
+    "mailSpamHintSender": "Chưa nhận được mã? Hãy kiểm tra thư mục thư rác và thêm {sender} vào danh bạ.",
     "passwordSaved": "Đã lưu mật khẩu. Hãy đăng nhập bằng tài khoản và mật khẩu mới. Nếu bạn mở trang này từ ứng dụng, hãy quay lại ứng dụng để đăng nhập.",
     "codeUnavailable": "Xác minh tạm thời không khả dụng. Vui lòng thử lại sau; mật khẩu hiện tại vẫn hoạt động bình thường.",
     "reviewLogin": "Đánh giá cửa hàng ứng dụng",

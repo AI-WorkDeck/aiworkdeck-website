@@ -1073,6 +1073,8 @@
     "forgotPassword": "Şifrenizi mi unuttunuz?",
     "backToPassword": "Şifreyle oturum açmaya dön",
     "codeSentSimple": "Kod gönderildi. Mesajlarınızı veya e-postanızı kontrol edin.",
+    "mailSpamHint": "Kodu almadınız mı? İstenmeyen e-posta klasörünüzü kontrol edin.",
+    "mailSpamHintSender": "Kodu almadınız mı? İstenmeyen e-posta klasörünüzü kontrol edin ve {sender} adresini kişilerinize ekleyin.",
     "passwordSaved": "Şifre kaydedildi. Hesabınız ve yeni şifrenizle oturum açın. Bu sayfayı uygulamadan açtıysanız, oturum açmak için uygulamaya geri dönün.",
     "codeUnavailable": "Doğrulama geçici olarak kullanılamıyor. Daha sonra tekrar deneyin; mevcut şifreler çalışmaya devam ediyor.",
     "reviewLogin": "Uygulama mağazası incelemesi",
