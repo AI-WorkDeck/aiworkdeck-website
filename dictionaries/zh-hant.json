@@ -62,7 +62,7 @@
       "已購的 Skill、插件與功能無法再取回，也不會轉移到另一個站。",
       "充值餘額不隨註銷退還：賬上還有可退餘額時需先來信申請退還，辦結後才能註銷；獎勵 Credits 按條款作廢。",
       "交易記錄因法定留存義務不能刪除，但會與你的身份解除關聯。",
-      "你提交的 Skill 與插件仍留在廣場（作者顯示為「已註銷用戶」，付費的改為免費），已分發的副本不受影響。"
+      "你提交的 Skill 與插件仍留在市集（作者顯示為「已註銷用戶」，付費的改為免費），已分發的副本不受影響。"
     ],
     "dangerFailed": "註銷未能完成，賬戶沒有任何改動，請稍後重試。",
     "dangerLead": "這一步不可撤銷。繼續之前請逐條確認：",
@@ -640,7 +640,6 @@
       "legal": "法律資訊",
       "membership": "會員等級",
       "more": "更多",
-      "plugins": "外掛廣場",
       "pricing": "定價",
       "privacy": "隱私權政策",
       "product": "產品",
@@ -686,9 +685,9 @@
       ],
       "cta": {
         "download": "下載桌面端",
-        "plugins": "逛插件廣場",
+        "plugins": "逛外掛市集",
         "pricing": "查看定價",
-        "skills": "探索 Skill 廣場",
+        "skills": "探索 技能市集",
         "source": "在 GitHub 查看源碼",
         "start": "立即開始使用"
       },
@@ -737,7 +736,7 @@
       "github": "GitHub",
       "homeAria": "AI WorkDeck 首頁",
       "mainNavAria": "主導航",
-      "marketplace": "Marketplace",
+      "marketplace": "外掛市集",
       "mobileNavAria": "移動導航",
       "openNavAria": "打開導航菜單",
       "plugins": "外掛",
@@ -745,7 +744,7 @@
       "product": "產品",
       "signIn": "登入",
       "signInAccount": "登錄賬號",
-      "skills": "Skill 廣場",
+      "skills": "技能市集",
       "start": "開始使用",
       "submit": "創建並提交 Skill"
     },
@@ -839,7 +838,7 @@
       "open": "「"
     },
     "seo": {
-      "homeDescription": "AI WorkDeck 是開源、本地優先的律師 AI 工作台：帶修訂留痕的文檔編輯器、可核驗引用的 AI 起草、Word/WPS 插件與 Skill 廣場，文件不出本機。",
+      "homeDescription": "AI WorkDeck 是開源、本地優先的律師 AI 工作台：帶修訂留痕的文檔編輯器、可核驗引用的 AI 起草、Word/WPS 外掛與 技能市集，文件不出本機。",
       "homeTitle": "AI WorkDeck——律師的 AI 法律文書工作台（Windows / macOS 桌面端）"
     },
     "skillsSpotlight": {
@@ -849,7 +848,7 @@
       "statSkills": "{n} 個 Skill",
       "submitCta": "建立並提交我的 Skill",
       "subtitle": "來自法律人與開源社區的即用 AI 技能：審合同、寫文書、做事實查核，裝上就能用。",
-      "title": "Skill 廣場"
+      "title": "技能市集"
     },
     "skipToContent": "跳到主內容",
     "webWorkbench": {
@@ -1085,7 +1084,7 @@
     "s2Title": "五分鐘跑通第一個插件",
     "s3P1a": "不用等審核。把 ",
     "s3P1b": " 整個目錄複製到本機的插件目錄，重啓 AI WorkDeck 就能看到：",
-    "s3P2": "在「插件廣場 → 已安裝」里應該出現你的插件。啓用後，在對話中提一個會用到你工具的問題，看 AI 是否調用了它。沒調用的話，八成是 @Tool 的描述沒寫清楚使用時機。",
+    "s3P2": "在「外掛市集 → 已安裝」里應該出現你的插件。啓用後，在對話中提一個會用到你工具的問題，看 AI 是否調用了它。沒調用的話，八成是 @Tool 的描述沒寫清楚使用時機。",
     "s3Title": "提交前先在自己機器上試",
     "s4Rows": [
       [
@@ -1098,7 +1097,7 @@
       ],
       [
         "name / description",
-        "展示在插件廣場卡片上。描述寫清楚替用戶做什麼，別寫技術實現。"
+        "展示在外掛市集卡片上。描述寫清楚替用戶做什麼，別寫技術實現。"
       ],
       [
         "author / homepage",
@@ -1309,13 +1308,13 @@
     }
   },
   "marketplacePage": {
-    "eyebrow": "資源廣場 · 與桌面端實時同步",
+    "eyebrow": "外掛市集 · 與桌面端實時同步",
     "metaDescription": "Skill 是 AI 完成任務時採用的工作方法。 Plugin 擴充桌面端本身的功能與介面。 MCP 將外部工具和資料接入 AI 對話與任務。",
     "statPlugins": "個插件",
     "subtitle": "Skill 是 AI 完成任務時採用的工作方法。 Plugin 擴充桌面端本身的功能與介面。 MCP 將外部工具和資料接入 AI 對話與任務。",
     "tabPlugins": "外掛",
-    "tabSkills": "Skill 廣場",
-    "title": "Marketplace",
+    "tabSkills": "技能",
+    "title": "外掛市集",
     "heroTitle": "Skill、外掛與 MCP，一鍵裝進桌面端。",
     "watermark": "集",
     "skillDescription": "Skill 是教 AI 做一件具體事的方法：合約審查、證人準備、引用核查……提交即上架，作者拿 85%。",
@@ -1354,10 +1353,10 @@
     "yourStatusTitle": "你的當前等級"
   },
   "notFoundPage": {
-    "body": "這個地址已經變動，或者從未存在過。回首頁看看，或者去 Skill 廣場逛逛。",
+    "body": "這個地址已經變動，或者從未存在過。回首頁看看，或者去 技能市集逛逛。",
     "code": "404",
     "home": "返回首頁",
-    "marketplace": "去 Skill 廣場",
+    "marketplace": "去 技能市集",
     "title": "頁面不存在"
   },
   "packSubmitPage": {
@@ -1414,7 +1413,7 @@
     "howToDevelop": "如何開發",
     "installsSuffix": "次安裝",
     "intro": "插件為 AI WorkDeck 帶來新的工具與界面。與 Skill 不同，插件包含可執行代碼，因此每個版本都經過人工審核並由平台簽名，客戶端安裝時驗簽。",
-    "metaDescription": "AI WorkDeck 插件市場：Word/WPS 加載項、OCR、轉寫、盡職調查等擴展，逐版本人工審核並簽名，律師裝進桌面端即可用於法律實務。",
+    "metaDescription": "AI WorkDeck 外掛市集：Word/WPS 加載項、OCR、轉寫、盡職調查等擴展，逐版本人工審核並簽名，律師裝進桌面端即可用於法律實務。",
     "officialIntro": "我們自己開發和維護的外掛。大多數隨桌面版一起發佈、常駐左欄，全部經外掛中心自動更新。第三方外掛能達到的深度與它們相同。",
     "officialTag": "由 AI WorkDeck 開發並簽署",
     "officialTitle": "官方插件",
@@ -1498,7 +1497,7 @@
     "webDocLink": "SDK 快速上手",
     "webTemplateBtn": "下載 Web 外掛範本",
     "webTitle": "Web 外掛：不寫 Java 也能做介面",
-    "attributionNotice": "外掛審核上架後，你的公開顯示名稱與作者主頁將展示在廣場作品頁和貢獻者名錄中。",
+    "attributionNotice": "外掛審核上架後，你的公開顯示名稱與作者主頁將展示在市集作品頁和貢獻者名錄中。",
     "submissionRegionNotice": "國際站只展示已審核外掛，不在本地接收投稿，以避免鏡像覆蓋。請前往國內站提交；兩站帳號獨立，按頁面提示登入。",
     "submissionRegionLink": "前往國內站提交"
   },
@@ -1560,8 +1559,8 @@
     "marketplaceAuthor": {
       "body": "為律師與文書情境上架付費工作流程。作者保留淨收入的 {author}%，平台收取 {platform}%。結算方式請見市集條款。",
       "ctaSubmit": "投稿與上架指南",
-      "ctaTerms": "瞭解市場條款",
-      "title": "在市場出售 Skill / 插件"
+      "ctaTerms": "瞭解市集條款",
+      "title": "在市集出售技能 / 外掛"
     },
     "metaDescription": "按需充值、個人 Pro 149 元/月、獨立部署。Pro 含週期 Credits、不限量剪貼板與暫存區、3GB 持久雲空間。",
     "openSource": {
@@ -1613,7 +1612,7 @@
       },
       "ctaPrimary": "先試用，再訂閱",
       "ctaSecondary": "開通個人 Pro",
-      "excludes": "不含：律所多人席位、私有化、商業閉源授權、Certified 部署；市場付費 Skill 按 listing 另計。",
+      "excludes": "不含：律所多人席位、私有化、商業閉源授權、Certified 部署；市集付費技能 按 listing 另計。",
       "footnote": "訂閱額度不結轉、不提現；超額默認暫停，可自行開啓使用充值餘額。不限量指本地功能，雲空間按配額。",
       "perk1": "{monthlyCredits} Credits / 30 天，每 7 天最多 {weeklyCredits} Credits",
       "perk2": "無線剪貼板與文件暫存區不限量",
@@ -1766,7 +1765,7 @@
     "bridge": {
       "articles": "產品實錄",
       "eyebrow": "AI WorkDeck · 法律人的 AI 工作台",
-      "marketplace": "Skill 廣場",
+      "marketplace": "技能市集",
       "start": "開始使用"
     },
     "disclaimer": "僅供娛樂，非心理學測評。答案只在你的瀏覽器里計分，不會上傳。",
@@ -1849,8 +1848,8 @@
     "copyPrompt": "複製 Prompt",
     "ctaBannerDesc": "面向法律與文檔密集型工作的 AI 原生工作台，文檔不出本機",
     "ctaBannerTitle": "點擊立刻與{name}一起使用 AI WorkDeck",
-    "detailBack": "返回廣場",
-    "detailMetaSuffix": "AI WorkDeck 廣場上的法律 AI Skill，律師可一鍵裝入桌面端，在本機文件上直接執行。",
+    "detailBack": "返回市集",
+    "detailMetaSuffix": "AI WorkDeck 市集上的法律 AI Skill，律師可一鍵裝入桌面端，在本機文件上直接執行。",
     "detailMetaTitle": "{name}——法律 AI Skill",
     "downloads": "次安裝",
     "edit": "編輯",
@@ -1862,8 +1861,8 @@
     "heroCta": "與 TA 一起使用 AI WorkDeck",
     "installNote": "也可以手動安裝：把 skill.yml 與 prompt.md 放入後端工作目錄 skills/{id}/ 後重掃。",
     "installSteps": [
-      "打開 AI WorkDeck 桌面端，進入「插件廣場」",
-      "在「在線 Skill 廣場」區塊找到本 Skill",
+      "打開 AI WorkDeck 桌面端，進入「外掛市集」",
+      "在「在線技能市集」區塊找到本 Skill",
       "點擊「安裝」，對話中輸入觸發詞即可激活"
     ],
     "installTitle": "在桌面端安裝",
@@ -1872,7 +1871,7 @@
     "noSkillsYet": "還沒有提交過 Skill",
     "originNote": "本 Skill 改編自開源項目，原作者",
     "output": "輸出約定",
-    "profileEmptyCta": "去廣場看看",
+    "profileEmptyCta": "去市集看看",
     "profileEmptyHint": "TA 的作品發佈後會出現在這裡。",
     "profileEmptyOwnCta": "提交第一個 Skill",
     "profileEmptyOwnHint": "把在實務里打磨過的提示詞整理成 Skill，別人就能一鍵裝進自己的工作台。",
@@ -1942,9 +1941,9 @@
     "statPlugins": "個插件",
     "statSkills": "個 Skill",
     "submit": "創建並提交 Skill",
-    "subtitle": "社區共建的 AI 技能庫，提交後即刻同步桌面端插件廣場，一鍵安裝。",
+    "subtitle": "社區共建的 AI 技能庫，提交後即刻同步桌面端外掛市集，一鍵安裝。",
     "syncNote": "提交後即刻同步桌面端，一鍵安裝",
-    "title": "Skill 廣場",
+    "title": "技能市集",
     "triggers": "觸發詞",
     "uncategorized": "未分類",
     "updated": "更新於",
@@ -1973,7 +1972,7 @@
       },
       "skills": {
         "desc": "現成的審查、起草、核查技能，桌面端一鍵安裝。",
-        "title": "Skill 廣場"
+        "title": "技能市集"
       },
       "title": "裝好之後",
       "updates": {
@@ -1984,7 +1983,7 @@
     "eyebrow": "開始使用",
     "lead": "AI WorkDeck 是裝在你自己電腦上的桌面軟件，文檔不出本機。下載安裝後，直接在軟件里登錄即可開始使用——首次登錄會自動創建賬戶。",
     "mobile": {
-      "browseCta": "Skill 廣場",
+      "browseCta": "技能市集",
       "browseHint": "回到電腦之前，可以先逛逛",
       "copied": "已複製",
       "copyLink": "複製下載頁鏈接",
@@ -2130,7 +2129,7 @@
         "eyebrow": "Skill 草稿",
         "meta": "觸發詞 {triggers} 個 · 能力 {tools} 項",
         "publish": "確認發佈",
-        "publishHint": "發佈即上架廣場，參與創作分成",
+        "publishHint": "發佈即上架市集，參與創作分成",
         "refine": "填入表單微調"
       },
       "errors": {
@@ -2207,9 +2206,9 @@
       "triggersPlaceholder": "輸入後按回車，如：審勞動合同"
     },
     "goLogin": "去登錄 / 註冊",
-    "intro": "Skill 就是教 AI 做一件具體的事：什麼時候出手、能用哪些能力、按什麼套路乾。填完立刻出現在廣場與桌面端。",
+    "intro": "Skill 就是教 AI 做一件具體的事：什麼時候出手、能用哪些能力、按什麼套路乾。填完立刻出現在市集與桌面端。",
     "loginRequired": "提交 Skill 需要先登錄",
-    "publishNotice": "登錄即發佈，無需等待審核：提交後立刻出現在 Skill 廣場與桌面端。違反規範或侵權的內容會被事後下架。",
+    "publishNotice": "登錄即發佈，無需等待審核：提交後立刻出現在 技能市集與桌面端。違反規範或侵權的內容會被事後下架。",
     "steps": {
       "basics": "這個 Skill 做什麼",
       "prompt": "讓它怎麼做",
@@ -2219,7 +2218,7 @@
       "triggers": "什麼時候用它",
       "triggersHint": "用戶說到這些詞就自動出手"
     },
-    "submitBtn": "發佈到廣場",
+    "submitBtn": "發佈到市集",
     "submitting": "提交中…",
     "success": "發佈成功！",
     "tabs": {
@@ -2537,12 +2536,12 @@
         "title": "先看清項目，再開始工作。"
       },
       "plugins": {
-        "body": "插件廣場就在左側。查看已安裝的工具和啓用狀態，再按需要從 Marketplace 擴展工作台；脫敏、語音、訴訟可視化等工具各有自己的面板。",
+        "body": "外掛市集就在左側。查看已安裝的工具和啓用狀態，再按需要從 外掛市集 擴展工作台；脫敏、語音、訴訟可視化等工具各有自己的面板。",
         "label": "外掛",
         "location": "左側導航 → 插件中心 → 插件",
         "points": [
           "查看本機已安裝插件",
-          "從廣場發現適合工作的工具",
+          "從市集發現適合工作的工具",
           "回到左側導航打開工具面板"
         ],
         "title": "讓專門的工具，進入工作台。"
@@ -2570,7 +2569,7 @@
         "title": "找文件，也找正文里的線索。"
       },
       "skills": {
-        "body": "在同一個插件廣場里切換到 Skill，查看已安裝的工作方法與狀態。合同審查、條款標引、事項匯總等能力從這裡管理。",
+        "body": "在同一個外掛市集里切換到 Skill，查看已安裝的工作方法與狀態。合同審查、條款標引、事項匯總等能力從這裡管理。",
         "label": "Skill",
         "location": "左側導航 → 插件中心 → Skill",
         "points": [
@@ -2596,7 +2595,7 @@
       "title": "片段與收藏，也有自己的位置。"
     },
     "viewCaptureAria": "查看{label}原始截圖",
-    "visitMarketplace": "去 Marketplace 看看"
+    "visitMarketplace": "去 外掛市集 看看"
   },
   "adminSites": {
     "lastLoginAt": "最後登入時間",
