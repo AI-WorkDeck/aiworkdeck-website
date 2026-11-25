@@ -1,8 +1,9 @@
 import type { BudgetKey, ModelMode, OptionId } from '@/lib/deployment-planner';
 import { toBaseLocale, type Locale } from '@/i18n-config';
+import { DEPLOYMENT_ZH_HANT } from './content.zh-hant';
 
 export type Copy = readonly [string, string];
-export const pick = (lang: Locale, copy: Copy) => copy[toBaseLocale(lang) === 'zh' ? 0 : 1];
+export const pick = (lang: Locale, copy: Copy) => lang === 'zh-hant' ? (DEPLOYMENT_ZH_HANT[copy[0]] ?? copy[0]) : copy[toBaseLocale(lang) === 'zh' ? 0 : 1];
 export const modelNames: Record<ModelMode, Copy> = {
     cloud: ['云端模型 API', 'Cloud model API'],
     hybrid: ['本地 + 云端混合', 'Local + cloud models'],
