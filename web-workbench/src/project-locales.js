@@ -25,3 +25,12 @@ const rows={
 };
 export const projectLocales=Object.fromEntries(Object.entries(rows).map(([locale,values])=>[locale,Object.fromEntries(keys.map((key,i)=>[key,values[i]]))]));
 export function projectLocale(value){const locale=String(value||'zh').toLowerCase();return projectLocales[locale]?locale:'zh'}
+// First visit without ?lang=: follow the site's language cookie, then the browser, before falling back to zh.
+function fromTag(tag){const v=String(tag||'').toLowerCase();if(/^zh-(tw|hk|mo|hant)/.test(v))return 'zh-hant';const base=v.split('-')[0];return projectLocales[base]?base:null}
+export function initialLocale({query,cookie,languages}={}){
+ if(query&&projectLocales[String(query).toLowerCase()])return String(query).toLowerCase();
+ const saved=/(?:^|;\s*)awd_lang=([^;]+)/.exec(cookie||'')?.[1];
+ if(saved&&projectLocales[decodeURIComponent(saved).toLowerCase()])return decodeURIComponent(saved).toLowerCase();
+ for(const tag of languages||[]){const locale=fromTag(tag);if(locale)return locale}
+ return 'zh';
+}
