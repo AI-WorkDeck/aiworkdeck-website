@@ -42,7 +42,7 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '律所管理员可以在「设置 › 审计日志」查看本所的安全事件：登录与登录失败、设备连接与吊销、项目共享与成员变动、客户访问码与门户登录、文件下载、越权访问被拒，以及在官网上加入或退出律所、角色变更、官网登录失败。日志不记录文件内容、聊天内容和密码；记录只能追加，点「校验」可以发现被改动或删除的记录。', 'zh-hant': '律所管理員可以在「設定 › 審計日誌」查看本所的安全事件：登入與登入失敗、設備連接與吊銷、項目共享與成員變動、客戶訪問碼與門戶登入、文件下載、越權訪問被拒，以及在官網上加入或退出律所、角色變更、官網登入失敗。日誌不記錄文件內容、聊天內容和密碼；記錄只能追加，點「校驗」可以發現被改動或刪除的記錄。',
+                zh: '律所管理员可以在「设置 › 审计日志」查看本所的安全事件：登录与登录失败、设备连接与吊销、项目共享与成员变动、客户访问码与门户登录、文件下载、越权访问被拒，以及在官网上加入或退出律所、角色变更、官网登录失败。日志不记录文件内容、聊天内容和密码；记录只能追加，点「校验」可以发现被改动或删除的记录。', 'zh-hant': '律所管理員可以在「設定 › 審計日誌」查看本所的安全事件：登入與登入失敗、設備連接與吊銷、專案共享與成員變動、客戶訪問碼與門戶登入、文件下載、越權訪問被拒，以及在官網上加入或退出律所、角色變更、官網登入失敗。日誌不記錄文件內容、聊天內容和密碼；記錄只能追加，點「校驗」可以發現被改動或刪除的記錄。',
                 en: 'Firm administrators can review their firm\'s security events in Settings › Audit Log: sign-ins and failed sign-ins, devices connected and revoked, project sharing and membership changes, client access codes and portal sign-ins, file downloads, refused access attempts, and, from the website, joining or leaving the firm, role changes and failed website sign-ins. The log never contains file content, chat text or passwords; entries can only be appended, and Verify detects any entry that was altered or deleted.',
             },
             {
@@ -50,15 +50,15 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Law Firm Management 0.1.18 and later: one profile per client; once shareholders, controllers and other relationships are recorded, conflict checks follow the ownership chain and show it as the reason. Work records turn into billable time that partners review by month, write down and bill (discount first, then cap), and confirmed bills flow into the existing invoicing ledger. Client data and time collection can be shared within the firm by a firm switch; fees always stay on the local machine.',
             },
             {
-                zh: '新插件「投标与提案」0.2.1：从所里的业绩库、律师简历和 Word / PPT 模板生成投标书与提案初稿并算出报价；招标要求逐条对照原文，标出满足与缺材料；对外材料默认脱敏。项目做完可以一键整理成业绩，自行决定只给自己、团队还是全所使用。0.86.1 加强插件工具的授权确认：更新后如新增可修改数据的工具、扩大操作权限或减少确认要求，须在插件中心重新同意后才能使用这些工具。', 'zh-hant': '新外掛「投標與提案」0.2.1：從所裡的業績庫、律師簡歷和 Word / PPT 模板生成投標書與提案初稿並算出報價；招標要求逐條對照原文，標出滿足與缺材料；對外材料預設脫敏。項目做完可以一鍵整理成業績，自行決定只給自己、團隊還是全所使用。0.86.1 加強外掛工具的授權確認：更新後如新增可修改資料的工具、擴大操作權限或減少確認要求，須在外掛中心重新同意後才能使用這些工具。',
+                zh: '新插件「投标与提案」0.2.1：从所里的业绩库、律师简历和 Word / PPT 模板生成投标书与提案初稿并算出报价；招标要求逐条对照原文，标出满足与缺材料；对外材料默认脱敏。项目做完可以一键整理成业绩，自行决定只给自己、团队还是全所使用。0.86.1 加强插件工具的授权确认：更新后如新增可修改数据的工具、扩大操作权限或减少确认要求，须在插件中心重新同意后才能使用这些工具。', 'zh-hant': '新外掛「投標與提案」0.2.1：從所裡的業績庫、律師簡歷和 Word / PPT 模板生成投標書與提案初稿並算出報價；招標要求逐條對照原文，標出滿足與缺材料；對外材料預設脫敏。專案做完可以一鍵整理成業績，自行決定只給自己、團隊還是全所使用。0.86.1 加強外掛工具的授權確認：更新後如新增可修改資料的工具、擴大操作權限或減少確認要求，須在外掛中心重新同意後才能使用這些工具。',
                 en: 'New plugin, Bids and Proposals 0.2.1: drafts tenders and proposals with a fee quote from the firm\'s credentials, lawyer profiles and Word or PowerPoint templates; checks tender requirements item by item against the source; desensitizes outward material by default. A finished matter can be turned into a credential, shared with only you, your team or the whole firm. In 0.86.1, plugin tools require renewed approval in Plugin Center when an update adds tools that can modify data, expands their access or relaxes confirmation requirements.',
             },
             {
-                zh: '客户门户新增「项目沟通」：被邀请的客户用访问码登录后，可以在所属项目的群里查看和发送消息，律师看到的客户消息带「客户」标记。客户进不了其他群、看不到成员名单；访问码撤销或过期即断开；能看多少历史消息由律师在邀请时决定。需要项目沟通插件 0.2.13。', 'zh-hant': '客戶門戶新增「項目溝通」：被邀請的客戶用訪問碼登入後，可以在所屬項目的群裡查看和發送訊息，律師看到的客戶訊息帶「客戶」標記。客戶進不了其他群、看不到成員名單；訪問碼撤銷或過期即斷開；能看多少歷史訊息由律師在邀請時決定。需要項目溝通外掛 0.2.13。',
+                zh: '客户门户新增「项目沟通」：被邀请的客户用访问码登录后，可以在所属项目的群里查看和发送消息，律师看到的客户消息带「客户」标记。客户进不了其他群、看不到成员名单；访问码撤销或过期即断开；能看多少历史消息由律师在邀请时决定。需要项目沟通插件 0.2.13。', 'zh-hant': '客戶門戶新增「專案溝通」：被邀請的客戶用訪問碼登入後，可以在所屬專案的群裡查看和發送訊息，律師看到的客戶訊息帶「客戶」標記。客戶進不了其他群、看不到成員名單；訪問碼撤銷或過期即斷開；能看多少歷史訊息由律師在邀請時決定。需要專案溝通外掛 0.2.13。',
                 en: 'Project chat in the client portal: invited clients signed in with an access code can read and post in their project\'s chat, and lawyers see their messages marked "Client". Clients cannot enter other groups or see the member list; a revoked or expired code cuts access; the lawyer decides at invite time how much earlier history they see. Needs Project Chat plugin 0.2.13.',
             },
             {
-                zh: '更准、更快：法律意见书的独立核验只依据真实读到的文件和正文，没读到就如实说核验未完成；0.86.1 进一步改进核验读取，并批量读取相关材料，减少反复调用。版本比对先接受原有修订，只显示两版之间的真实差异；0.86.1 的三方合并保留各版本未处理的修订（含表格内修订），相邻段落由两边分别修改时可自动合并，并列出供复核；约 2000 个文件的项目刷新版本状态从约 1 秒降到 0.04 秒；文档引擎更新，修复偶发的启动后卡住；英文界面多处残留中文已修正，正式安装包默认关闭开发者模式。0.86.1 还修复输入后立即操作可能读到旧值的问题，切换语言时保留已打开的插件面板，审计日志与记忆页的常见标签跟随界面语言；调整窗口大小时不再重建长文档的段落索引。0.86.2 查询明确的中国内地单条法规时优先使用已启用的北大法宝检索，并遵循你指定的来源；结构化法律资料正确显示为资料卡，不再露出原始 JSON。「转存到正式项目」重新整理项目选择和文件、对话清单，修复内容无法勾选、选完项目仍不能确认的问题；转存保留原件。', 'zh-hant': '更準、更快：法律意見書的獨立核驗只依據真實讀到的文件和正文，沒讀到就如實說核驗未完成；0.86.1 進一步改進核驗讀取，並批量讀取相關材料，減少反覆調用。版本比對先接受原有修訂，只顯示兩版之間的真實差異；0.86.1 的三方合併保留各版本未處理的修訂（含表格內修訂），相鄰段落由兩邊分別修改時可自動合併，並列出供複核；約 2000 個文件的項目刷新版本狀態從約 1 秒降到 0.04 秒；文件引擎更新，修復偶發的啟動後卡住；英文界面多處殘留中文已修正，正式安裝包預設關閉開發者模式。0.86.1 還修復輸入後立即操作可能讀到舊值的問題，切換語言時保留已打開的外掛面板，審計日誌與記憶頁的常見標籤跟隨界面語言；調整窗口大小時不再重建長文件的段落索引。0.86.2 查詢明確的中國內地單條法規時優先使用已啟用的北大法寶檢索，並遵循你指定的來源；結構化法律資料正確顯示為資料卡，不再露出原始 JSON。「轉存到正式項目」重新整理項目選擇和文件、對話清單，修復內容無法勾選、選完項目仍不能確認的問題；轉存保留原件。',
+                zh: '更准、更快：法律意见书的独立核验只依据真实读到的文件和正文，没读到就如实说核验未完成；0.86.1 进一步改进核验读取，并批量读取相关材料，减少反复调用。版本比对先接受原有修订，只显示两版之间的真实差异；0.86.1 的三方合并保留各版本未处理的修订（含表格内修订），相邻段落由两边分别修改时可自动合并，并列出供复核；约 2000 个文件的项目刷新版本状态从约 1 秒降到 0.04 秒；文档引擎更新，修复偶发的启动后卡住；英文界面多处残留中文已修正，正式安装包默认关闭开发者模式。0.86.1 还修复输入后立即操作可能读到旧值的问题，切换语言时保留已打开的插件面板，审计日志与记忆页的常见标签跟随界面语言；调整窗口大小时不再重建长文档的段落索引。0.86.2 查询明确的中国内地单条法规时优先使用已启用的北大法宝检索，并遵循你指定的来源；结构化法律资料正确显示为资料卡，不再露出原始 JSON。「转存到正式项目」重新整理项目选择和文件、对话清单，修复内容无法勾选、选完项目仍不能确认的问题；转存保留原件。', 'zh-hant': '更準、更快：法律意見書的獨立核驗只依據真實讀到的文件和正文，沒讀到就如實說核驗未完成；0.86.1 進一步改進核驗讀取，並批量讀取相關材料，減少反覆呼叫。版本比對先接受原有修訂，只顯示兩版之間的真實差異；0.86.1 的三方合併保留各版本未處理的修訂（含表格內修訂），相鄰段落由兩邊分別修改時可自動合併，並列出供複核；約 2000 個文件的專案刷新版本狀態從約 1 秒降到 0.04 秒；文件引擎更新，修復偶發的啟動後卡住；英文界面多處殘留中文已修正，正式安裝包預設關閉開發者模式。0.86.1 還修復輸入後立即操作可能讀到舊值的問題，切換語言時保留已打開的外掛面板，審計日誌與記憶頁的常見標籤跟隨界面語言；調整窗口大小時不再重建長文件的段落索引。0.86.2 查詢明確的中國內地單條法規時優先使用已啟用的北大法寶檢索，並遵循你指定的來源；結構化法律資料正確顯示為資料卡，不再露出原始 JSON。「轉存到正式專案」重新整理專案選擇和文件、對話清單，修復內容無法勾選、選完專案仍不能確認的問題；轉存保留原件。',
                 en: 'More accurate and faster: the legal-opinion verifier relies only on files and text it actually read, and says so when the check did not complete. Version 0.86.1 improves those reads and batches related material to reduce repeated calls. Version compare accepts existing tracked changes first and shows only the real difference; in 0.86.1, three-way merges preserve pending tracked changes from all versions, including changes inside tables, and automatically merge edits made to adjacent paragraphs on different sides while listing them for review; version status in a 2,000-file project refreshes in 0.04 s instead of about 1 s; an updated document engine fixes an occasional hang after start-up; leftover Chinese in the English interface is fixed, and official installers default Developer mode to off. Version 0.86.1 also fixes actions reading an old input value immediately after typing, keeps open plugin panels when the language changes, localizes common audit-log and memory labels, and avoids rebuilding a long document’s paragraph index when resizing the window. In 0.86.2, explicit requests for a single mainland Chinese legal article first use PKULaw when enabled, while respecting your chosen sources; structured legal references display as cards instead of raw JSON. Copy to Project has a clearer project picker and file/conversation list, and fixes items that could not be selected and a confirmation button that stayed disabled; copying keeps the originals.',
             },
         ],
@@ -84,11 +84,11 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'A more dependable, more professional AI: claiming "added" or "frozen" without doing it is caught and corrected, and if nothing was done the answer says so plainly. Answers drop emoji, lead with the conclusion and use bold and headings sparingly. Ask in plain words (for example "which matters still have unpaid receivables") and the AI finds the tools of installed plugins and the built-in workflows, where it used to say no such tool exists.',
             },
             {
-                zh: '请客户进群时，由你决定对方能不能看之前的消息：默认只能看到入群之后的内容，要分享此前的讨论需在邀请时明确选择，附件和聊天记录导出按同一规则；在消息中心生成邀请码也要先选「成员」还是「客户」。默认规则在服务器上线后即生效；邀请时的选项需要把项目沟通插件更新到 0.2.9（已上架）。', 'zh-hant': '請客戶進群時，由你決定對方能不能看之前的訊息：預設只能看到入群之後的內容，要分享此前的討論需在邀請時明確選擇，附件和聊天記錄導出按同一規則；在訊息中心生成邀請碼也要先選「成員」還是「客戶」。預設規則在伺服器上線後即生效；邀請時的選項需要把項目溝通外掛更新到 0.2.9（已上架）。',
+                zh: '请客户进群时，由你决定对方能不能看之前的消息：默认只能看到入群之后的内容，要分享此前的讨论需在邀请时明确选择，附件和聊天记录导出按同一规则；在消息中心生成邀请码也要先选「成员」还是「客户」。默认规则在服务器上线后即生效；邀请时的选项需要把项目沟通插件更新到 0.2.9（已上架）。', 'zh-hant': '請客戶進群時，由你決定對方能不能看之前的訊息：預設只能看到入群之後的內容，要分享此前的討論需在邀請時明確選擇，附件和聊天記錄導出按同一規則；在訊息中心生成邀請碼也要先選「成員」還是「客戶」。預設規則在伺服器上線後即生效；邀請時的選項需要把專案溝通外掛更新到 0.2.9（已上架）。',
                 en: 'When you invite a client into a conversation, you decide whether they can read earlier messages. By default they see only what is sent after they join; sharing earlier discussion is an explicit choice at invite time, and attachments and chat exports follow the same rule. Creating an invite code in the message center also asks whether it is for a member or a client. The default applies as soon as the servers are updated; the option at invite time needs Project Messaging plugin 0.2.9, now available in the plugin marketplace.',
             },
             {
-                zh: '团队版与云端更安全、更稳：客户访问码输错只锁输错的那一方；客户看不到项目成员名单；本机收费台账只在桌面端可用；单个账号的 AI 对话、上传、识别有每分钟上限，超出时提示稍后再试；云端单个文件上限 200MB（团队案件库 2GB）。多人同时在一个群里时消息面板不再互相排队，没有新消息时的后台查询减少约 85%。新账号第一次登录偶尔提示「AI 额度尚未就绪」的问题已修复。', 'zh-hant': '團隊版與雲端更安全、更穩：客戶訪問碼輸錯只鎖輸錯的那一方；客戶看不到項目成員名單；本機收費臺帳只在桌面端可用；單個帳號的 AI 對話、上傳、識別有每分鐘上限，超出時提示稍後再試；雲端單個文件上限 200MB（團隊案件庫 2GB）。多人同時在一個群裡時訊息面板不再互相排隊，沒有新訊息時的後台查詢減少約 85%。新帳號第一次登入偶爾提示「AI 額度尚未就緒」的問題已修復。',
+                zh: '团队版与云端更安全、更稳：客户访问码输错只锁输错的那一方；客户看不到项目成员名单；本机收费台账只在桌面端可用；单个账号的 AI 对话、上传、识别有每分钟上限，超出时提示稍后再试；云端单个文件上限 200MB（团队案件库 2GB）。多人同时在一个群里时消息面板不再互相排队，没有新消息时的后台查询减少约 85%。新账号第一次登录偶尔提示「AI 额度尚未就绪」的问题已修复。', 'zh-hant': '團隊版與雲端更安全、更穩：客戶訪問碼輸錯只鎖輸錯的那一方；客戶看不到專案成員名單；本機收費臺帳只在桌面端可用；單個帳號的 AI 對話、上傳、識別有每分鐘上限，超出時提示稍後再試；雲端單個文件上限 200MB（團隊案件庫 2GB）。多人同時在一個群裡時訊息面板不再互相排隊，沒有新訊息時的後台查詢減少約 85%。新帳號第一次登入偶爾提示「AI 額度尚未就緒」的問題已修復。',
                 en: 'Safer, steadier team and cloud use: a mistyped client access code locks out only the party who mistyped it; clients cannot see the project member list; the local fee ledger is available only in the desktop app; each account has per-minute limits on AI chats, uploads and OCR, with a "try again shortly" message when exceeded; cloud uploads are capped at 200 MB per file (2 GB for the team case library). Message panels no longer queue behind each other in busy groups, and background queries drop by about 85% when there are no new messages. The "AI quota is not ready yet" message some new accounts saw at first sign-in is fixed.',
             },
         ],
@@ -106,7 +106,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Multi-step work is far more dependable: chains like editing a clause, adding comments, exporting a PDF, organising files or resolving revisions now succeed over 90% of the time on common models in our tests, up from roughly 40–70%, using fewer rounds and less quota. Some models used to announce an action and then silently drop it; the action now runs.',
             },
             {
-                zh: '你始终掌控：AI 运行中可以暂停、继续，或在任务窗格里补一句话改方向；对文档的改动可以一键撤销整次运行。退出时只检查本次有改动的项目，也可关闭自动检查；提交失败会说明原因，可单独重试或直接退出。', 'zh-hant': '你始終掌控：AI 運行中可以暫停、繼續，或在任務窗格里補一句話改方向；對文件的改動可以一鍵撤銷整次運行。退出時只檢查本次有改動的項目，也可關閉自動檢查；提交失敗會說明原因，可單獨重試或直接退出。',
+                zh: '你始终掌控：AI 运行中可以暂停、继续，或在任务窗格里补一句话改方向；对文档的改动可以一键撤销整次运行。退出时只检查本次有改动的项目，也可关闭自动检查；提交失败会说明原因，可单独重试或直接退出。', 'zh-hant': '你始終掌控：AI 運行中可以暫停、繼續，或在任務窗格里補一句話改方向；對文件的改動可以一鍵撤銷整次運行。退出時只檢查本次有改動的專案，也可關閉自動檢查；提交失敗會說明原因，可單獨重試或直接退出。',
                 en: 'You stay in control: pause or redirect an AI run, and undo all of its document edits in one click. Quitting checks only projects changed in this session, and automatic checks can be turned off. Failed commits explain the reason and can be retried individually or skipped.',
             },
             {
@@ -118,7 +118,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'More trustworthy legal sources: law cards backed by a live PKULaw result are marked as retrieved; when PKULaw is down the AI makes at most two fallback lookups and marks cited articles "unverified" instead of claiming they were checked.',
             },
             {
-                zh: '用起来更顺手：文件右键菜单新增打印、移动到、压缩 / 解压、复制路径；平台 AI 需要重新同意时在对话里原地确认、自动重发这一问；设置、律所管理、项目沟通等多处版式修整；诉讼可视化引擎升级到最新版。', 'zh-hant': '用起來更順手：文件右鍵選單新增打印、移動到、壓縮 / 解壓、複製路徑；平台 AI 需要重新同意時在對話裡原地確認、自動重發這一問；設定、律所管理、項目溝通等多處版式修整；訴訟可視化引擎升級到最新版。',
+                zh: '用起来更顺手：文件右键菜单新增打印、移动到、压缩 / 解压、复制路径；平台 AI 需要重新同意时在对话里原地确认、自动重发这一问；设置、律所管理、项目沟通等多处版式修整；诉讼可视化引擎升级到最新版。', 'zh-hant': '用起來更順手：文件右鍵選單新增打印、移動到、壓縮 / 解壓、複製路徑；平台 AI 需要重新同意時在對話裡原地確認、自動重發這一問；設定、律所管理、專案溝通等多處版式修整；訴訟可視化引擎升級到最新版。',
                 en: 'Smoother everyday use: the file context menu adds print, move to, compress / extract and copy path; when platform AI needs your consent again you confirm right in the chat and the question is resent; layouts are tidied across settings, firm management and project chat; the litigation-visualisation engine is updated to its latest version.',
             },
         ],
@@ -132,7 +132,7 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '让 AI 改格式（如「第三条首行缩进 2 字符」「全文 1.5 倍行距」「把第四条加粗」）时，它只改你点名的那一项。此前部分模型会顺手把对齐、行距、段前段后、缩进甚至标题级别一并重置，可能把标题打回正文；实测个别模型此前约三分之二的调用会多改，现在基本不再出现。', 'zh-hant': '讓 AI 改格式（如「第三條首行縮進 2 字符」「全文 1.5 倍行距」「把第四條加粗」）時，它只改你點名的那一項。此前部分模型會順手把對齊、行距、段前段後、縮進甚至標題級別一併重置，可能把標題打回正文；實測個別模型此前約三分之二的調用會多改，現在基本不再出現。',
+                zh: '让 AI 改格式（如「第三条首行缩进 2 字符」「全文 1.5 倍行距」「把第四条加粗」）时，它只改你点名的那一项。此前部分模型会顺手把对齐、行距、段前段后、缩进甚至标题级别一并重置，可能把标题打回正文；实测个别模型此前约三分之二的调用会多改，现在基本不再出现。', 'zh-hant': '讓 AI 改格式（如「第三條首行縮進 2 字符」「全文 1.5 倍行距」「把第四條加粗」）時，它只改你點名的那一項。此前部分模型會順手把對齊、行距、段前段後、縮進甚至標題級別一併重置，可能把標題打回正文；實測個別模型此前約三分之二的呼叫會多改，現在基本不再出現。',
                 en: 'When you ask the AI to format text (for example "indent clause 3 by two characters", "1.5 line spacing throughout" or "bold clause 4"), it now changes only that one setting. Previously some models also reset alignment, line spacing, paragraph spacing, indents and even heading levels, which could turn headings back into body text; in our tests one model did this in about two of every three calls before; now it essentially no longer happens.',
             },
             {
@@ -150,7 +150,7 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '对 AI 说一句话就能跨应用办事：把腾讯会议转成纪要、列出所有案件的近期期限、把开庭日提醒记进正确的案件——案件有多个同名或相近时，它会先问你确认，不会猜。律所管理、项目沟通、脱敏等插件也能被 AI 直接调用，全所数据只对管理员开放。', 'zh-hant': '對 AI 說一句話就能跨應用辦事：把騰訊會議轉成紀要、列出所有案件的近期期限、把開庭日提醒記進正確的案件——案件有多個同名或相近時，它會先問你確認，不會猜。律所管理、項目溝通、脫敏等外掛也能被 AI 直接調用，全所資料只對管理員開放。',
+                zh: '对 AI 说一句话就能跨应用办事：把腾讯会议转成纪要、列出所有案件的近期期限、把开庭日提醒记进正确的案件——案件有多个同名或相近时，它会先问你确认，不会猜。律所管理、项目沟通、脱敏等插件也能被 AI 直接调用，全所数据只对管理员开放。', 'zh-hant': '對 AI 說一句話就能跨應用辦事：把騰訊會議轉成紀要、列出所有案件的近期期限、把開庭日提醒記進正確的案件——案件有多個同名或相近時，它會先問你確認，不會猜。律所管理、專案溝通、脫敏等外掛也能被 AI 直接呼叫，全所資料只對管理員開放。',
                 en: 'One sentence is enough to get things done across the app: turn a Tencent Meeting into minutes, list upcoming deadlines across all your cases, and save a hearing-date reminder to the right case. If several cases look alike, the AI asks you to confirm instead of guessing. The law-firm, project-chat and redaction plugins can be driven by the AI as well, and firm-wide data is limited to administrators.',
             },
             {
@@ -158,7 +158,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'New statutory-deadline calculator that accounts for public holidays and make-up workdays, and a two-document Word comparison that gives either a summary of the differences or a redline with tracked changes.',
             },
             {
-                zh: '删除等不可逆操作，AI 动手前会先弹出确认；每次工具调用都记入审计日志，可以回头查它做了什么。', 'zh-hant': '刪除等不可逆操作，AI 動手前會先彈出確認；每次工具調用都記入審計日誌，可以回頭查它做了什麼。',
+                zh: '删除等不可逆操作，AI 动手前会先弹出确认；每次工具调用都记入审计日志，可以回头查它做了什么。', 'zh-hant': '刪除等不可逆操作，AI 動手前會先彈出確認；每次工具呼叫都記入審計日誌，可以回頭查它做了什麼。',
                 en: 'Before the AI deletes anything, it now asks you to confirm, and every tool call is written to an audit log so you can check afterwards what it did.',
             },
             {
@@ -244,7 +244,7 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '在资源管理器里对 PDF 或图片右键「识别文字（OCR）」，可复制文字、导出 TXT 或 Word；支持多选批量，带进度、可取消，单份失败不影响其余。', 'zh-hant': '在檔案總管裡對 PDF 或圖片右鍵「識別文字（OCR）」，可複製文字、導出 TXT 或 Word；支持多選批量，帶進度、可取消，單份失敗不影響其餘。',
+                zh: '在资源管理器里对 PDF 或图片右键「识别文字（OCR）」，可复制文字、导出 TXT 或 Word；支持多选批量，带进度、可取消，单份失败不影响其余。', 'zh-hant': '在檔案總管裡對 PDF 或圖片右鍵「識別文字（OCR）」，可複製文字、導出 TXT 或 Word；支援多選批量，帶進度、可取消，單份失敗不影響其餘。',
                 en: 'Right-click a PDF or image in the explorer and choose "Recognize text (OCR)" to copy the text or export it as TXT or Word; select several files to process them in a batch with progress and cancel, and one failure will not stop the rest.',
             },
             {
@@ -315,15 +315,15 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Expanded spreadsheet operations for charts, pivot tables, data validation, conditional formatting, and named ranges help AI complete more data preparation and analysis tasks.',
             },
             {
-                zh: 'Word 支持更完整的段落、标题和条款读取；演示文稿可精确修改指定页面与对象，局部替换保留周边格式，并改进表格边框和图片适配。', 'zh-hant': 'Word 支持更完整的段落、標題和條款讀取；演示文稿可精確修改指定頁面與對象，局部替換保留周邊格式，並改進表格邊框和圖片適配。',
+                zh: 'Word 支持更完整的段落、标题和条款读取；演示文稿可精确修改指定页面与对象，局部替换保留周边格式，并改进表格边框和图片适配。', 'zh-hant': 'Word 支援更完整的段落、標題和條款讀取；演示文稿可精確修改指定頁面與對象，局部替換保留周邊格式，並改進表格邊框和圖片適配。',
                 en: 'Word gains more complete paragraph, heading, and clause reading. Presentation edits can target specific slides and objects, preserve surrounding formatting during partial text replacement, and better handle table borders and image fitting.',
             },
             {
-                zh: 'Office 插件补充新建文档、打开项目文件副本和导出 PDF 等文件操作，明确区分副本与原文件，并在操作未完成时说明实际结果。', 'zh-hant': 'Office 外掛補充新建文件、打開項目文件副本和導出 PDF 等文件操作，明確區分副本與原文件，並在操作未完成時說明實際結果。',
+                zh: 'Office 插件补充新建文档、打开项目文件副本和导出 PDF 等文件操作，明确区分副本与原文件，并在操作未完成时说明实际结果。', 'zh-hant': 'Office 外掛補充新建文件、打開專案文件副本和導出 PDF 等文件操作，明確區分副本與原文件，並在操作未完成時說明實際結果。',
                 en: 'Office add-ins gain file operations including document creation, opening copies of project files, and PDF export, with clear distinctions between copies and originals and explicit outcomes when an operation is incomplete.',
             },
             {
-                zh: 'Office 与 WPS 根据宿主实际能力提供操作，不支持的功能会明确提示；本轮已验证 Mac Office 的相关保存重开流程，WPS 新增图片、图表和过渡等能力尚未完成完整实机验证。', 'zh-hant': 'Office 與 WPS 根據宿主實際能力提供操作，不支持的功能會明確提示；本輪已驗證 Mac Office 的相關保存重開流程，WPS 新增圖片、圖表和過渡等能力尚未完成完整實機驗證。',
+                zh: 'Office 与 WPS 根据宿主实际能力提供操作，不支持的功能会明确提示；本轮已验证 Mac Office 的相关保存重开流程，WPS 新增图片、图表和过渡等能力尚未完成完整实机验证。', 'zh-hant': 'Office 與 WPS 根據宿主實際能力提供操作，不支援的功能會明確提示；本輪已驗證 Mac Office 的相關保存重開流程，WPS 新增圖片、圖表和過渡等能力尚未完成完整實機驗證。',
                 en: 'Office and WPS operations reflect each host’s capabilities, with explicit feedback for unsupported features. Relevant save-and-reopen flows were verified in Mac Office; new WPS image, chart, and transition capabilities have not yet completed full testing in the native applications.',
             },
         ],
@@ -337,7 +337,7 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '日历支持独立工作区视图与项目快捷筛选，并补齐桌面日程向手机同步所需的服务能力；手机端可用时间以对应客户端版本为准。', 'zh-hant': '日曆支持獨立工作區視圖與項目快捷篩選，並補齊桌面日程向手機同步所需的服務能力；手機端可用時間以對應客戶端版本為準。',
+                zh: '日历支持独立工作区视图与项目快捷筛选，并补齐桌面日程向手机同步所需的服务能力；手机端可用时间以对应客户端版本为准。', 'zh-hant': '日曆支援獨立工作區視圖與專案快捷篩選，並補齊桌面日程向手機同步所需的服務能力；手機端可用時間以對應客戶端版本為準。',
                 en: 'Calendar gains dedicated workspace views and quick project filters, alongside the service support needed to sync desktop events to mobile. Availability on mobile depends on the corresponding client release.',
             },
             {
@@ -353,7 +353,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Litigation visualization now uses a dedicated generation flow with clearer material selection, confirmation, continuation, and cancellation states, without interrupting the conversation pane.',
             },
             {
-                zh: '插件入口按实际功能分配，皮肤不再占用侧栏；同步改进项目沟通、腾讯会议和多语言界面的操作体验。', 'zh-hant': '外掛入口按實際功能分配，皮膚不再佔用側欄；同步改進項目溝通、騰訊會議和多語言界面的操作體驗。',
+                zh: '插件入口按实际功能分配，皮肤不再占用侧栏；同步改进项目沟通、腾讯会议和多语言界面的操作体验。', 'zh-hant': '外掛入口按實際功能分配，皮膚不再佔用側欄；同步改進專案溝通、騰訊會議和多語言界面的操作體驗。',
                 en: 'Plugin entry points now match each plugin’s function, so themes no longer occupy the sidebar. Project messaging, Tencent Meeting, and multilingual interactions are also improved.',
             },
         ],
@@ -410,12 +410,12 @@ export const RELEASES: ReleaseNote[] = [
         version: '0.71.0',
         date: '2026-10-23',
         headline: {
-            zh: '项目消息与待确认事项集中处理，恢复语音等工具的完整操作体验', 'zh-hant': '項目訊息與待確認事項集中處理，恢復語音等工具的完整操作體驗',
+            zh: '项目消息与待确认事项集中处理，恢复语音等工具的完整操作体验', 'zh-hant': '專案訊息與待確認事項集中處理，恢復語音等工具的完整操作體驗',
             en: 'Project messages and confirmations in one place, with restored voice and business-tool workflows',
         },
         items: [
             {
-                zh: '消息中心集中展示项目沟通、尽调通知和需要本人确认的律所事项，可从消息直接进入相关会话或业务页面；不同来源的权限与已读状态分别保留。', 'zh-hant': '訊息中心集中展示項目溝通、盡調通知和需要本人確認的律所事項，可從訊息直接進入相關會話或業務頁面；不同來源的權限與已讀狀態分別保留。',
+                zh: '消息中心集中展示项目沟通、尽调通知和需要本人确认的律所事项，可从消息直接进入相关会话或业务页面；不同来源的权限与已读状态分别保留。', 'zh-hant': '訊息中心集中展示專案溝通、盡調通知和需要本人確認的律所事項，可從訊息直接進入相關會話或業務頁面；不同來源的權限與已讀狀態分別保留。',
                 en: 'The message center brings together project conversations, due diligence notifications, and firm matters requiring your confirmation, with direct links to the relevant conversation or page and source-specific access and read status.',
             },
             {
@@ -423,11 +423,11 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Microphone selection shows real device names again. Recording lists refresh after stopping, long recording finalization continues correctly, and failed voice component installations are reported accurately.',
             },
             {
-                zh: '修复脱敏导入当前文件和长任务等待、诉讼图保存与取消、窄栏日程编辑及删除确认、依据文档右窗打开和项目审查标准管理等问题，恢复工具迁移前的操作体验。', 'zh-hant': '修復脫敏導入當前文件和長任務等待、訴訟圖保存與取消、窄欄日程編輯及刪除確認、依據文件右窗打開和項目審查標準管理等問題，恢復工具遷移前的操作體驗。',
+                zh: '修复脱敏导入当前文件和长任务等待、诉讼图保存与取消、窄栏日程编辑及删除确认、依据文档右窗打开和项目审查标准管理等问题，恢复工具迁移前的操作体验。', 'zh-hant': '修復脫敏導入當前文件和長任務等待、訴訟圖保存與取消、窄欄日程編輯及刪除確認、依據文件右窗打開和專案審查標準管理等問題，恢復工具遷移前的操作體驗。',
                 en: 'Restores current-file import and long-running redaction, diagram save and cancellation behavior, narrow-panel calendar editing and deletion, right-pane reference opening, and project review-standard management.',
             },
             {
-                zh: '资源管理器可直接新建文书、表格、演示文稿和会议录音；文件标签支持浏览与组合搜索筛选，手机收件、切稿、采纳或取回团队文件后，文件树及时刷新。', 'zh-hant': '檔案總管可直接新建文書、表格、演示文稿和會議錄音；文件標籤支持瀏覽與組合搜索篩選，手機收件、切稿、採納或取回團隊文件後，文件樹及時刷新。',
+                zh: '资源管理器可直接新建文书、表格、演示文稿和会议录音；文件标签支持浏览与组合搜索筛选，手机收件、切稿、采纳或取回团队文件后，文件树及时刷新。', 'zh-hant': '檔案總管可直接新建文書、表格、演示文稿和會議錄音；文件標籤支援瀏覽與組合搜索篩選，手機收件、切稿、採納或取回團隊文件後，文件樹及時刷新。',
                 en: 'Create documents, spreadsheets, presentations, and meeting recordings directly from the file explorer. Browse file tags, combine them in search filters, and see the file tree refresh after receiving mobile files, switching or adopting drafts, and taking team changes.',
             },
             {
@@ -445,19 +445,19 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '懒人模式新增「诉讼可视化制图」「扫描件与图片 OCR 清洗归档」「长录音逐字稿精修与纪要」「监管法规与判例检索汇编」四大高频工作流，支持一键启动与分步进度跟踪；在普通对话中表达相关需求时，也会自动浮现快捷启动卡片。', 'zh-hant': '懶人模式新增「訴訟可視化製圖」「掃描件與圖片 OCR 清洗歸檔」「長錄音逐字稿精修與紀要」「監管法規與判例檢索彙編」四大高頻工作流，支持一鍵啟動與分步進度跟蹤；在普通對話中表達相關需求時，也會自動浮現快捷啟動卡片。',
+                zh: '懒人模式新增「诉讼可视化制图」「扫描件与图片 OCR 清洗归档」「长录音逐字稿精修与纪要」「监管法规与判例检索汇编」四大高频工作流，支持一键启动与分步进度跟踪；在普通对话中表达相关需求时，也会自动浮现快捷启动卡片。', 'zh-hant': '懶人模式新增「訴訟可視化製圖」「掃描件與圖片 OCR 清洗歸檔」「長錄音逐字稿精修與紀要」「監管法規與判例檢索彙編」四大高頻工作流，支援一鍵啟動與分步進度跟蹤；在普通對話中表達相關需求時，也會自動浮現快捷啟動卡片。',
                 en: 'Easy Mode adds four high-frequency legal workflows—Litigation Visual Charting, Scanned PDF & Image OCR Archiving, Long Recording Transcript & Minutes, and Regulatory & Case Law Compilation—with one-click launch, step-by-step progress, and smart intent cards directly in chat.',
             },
             {
-                zh: 'AI 对话默认启用「智能（Auto）」模式，按任务复杂度自动匹配快速答复、标准处理或深度思考，也可随时手动固定档位；新增项目与个人长期记忆面板，办案中提炼的关键事实与写作偏好可审核入库，并在后续对话中自动引用与溯源。', 'zh-hant': 'AI 對話預設啟用「智能（Auto）」模式，按任務複雜度自動匹配快速答覆、標準處理或深度思考，也可隨時手動固定檔位；新增項目與個人長期記憶面板，辦案中提煉的關鍵事實與寫作偏好可審核入庫，並在後續對話中自動引用與溯源。',
+                zh: 'AI 对话默认启用「智能（Auto）」模式，按任务复杂度自动匹配快速答复、标准处理或深度思考，也可随时手动固定档位；新增项目与个人长期记忆面板，办案中提炼的关键事实与写作偏好可审核入库，并在后续对话中自动引用与溯源。', 'zh-hant': 'AI 對話預設啟用「智能（Auto）」模式，按任務複雜度自動匹配快速答覆、標準處理或深度思考，也可隨時手動固定檔位；新增專案與個人長期記憶面板，辦案中提煉的關鍵事實與寫作偏好可審核入庫，並在後續對話中自動引用與溯源。',
                 en: 'AI chat now defaults to Auto mode, matching simple questions, standard tasks, or deep analysis automatically while still allowing manual selection. A new memory panel lets you review and save key case facts and drafting preferences for future sessions with source attribution.',
             },
             {
-                zh: '在文书中选中文字后，浮窗可直接发起「法言法语润色、改写扩写、风险审查、翻译、浓缩精简」或一键带入右侧对话（支持快捷键 Ctrl/Cmd+Shift+L）；电子表格与演示文稿分别换上专属工具栏，常用数字格式、冻结首行、求和及幻灯片版式、增删复制与对齐分布触手可及。', 'zh-hant': '在文書中選中文字後，浮窗可直接發起「法言法語潤色、改寫擴寫、風險審查、翻譯、濃縮精簡」或一鍵帶入右側對話（支持快捷鍵 Ctrl/Cmd+Shift+L）；電子表格與演示文稿分別換上專屬工具欄，常用數字格式、凍結首行、求和及幻燈片版式、增刪複製與對齊分佈觸手可及。',
+                zh: '在文书中选中文字后，浮窗可直接发起「法言法语润色、改写扩写、风险审查、翻译、浓缩精简」或一键带入右侧对话（支持快捷键 Ctrl/Cmd+Shift+L）；电子表格与演示文稿分别换上专属工具栏，常用数字格式、冻结首行、求和及幻灯片版式、增删复制与对齐分布触手可及。', 'zh-hant': '在文書中選中文字後，浮窗可直接發起「法言法語潤色、改寫擴寫、風險審查、翻譯、濃縮精簡」或一鍵帶入右側對話（支援快捷鍵 Ctrl/Cmd+Shift+L）；電子表格與演示文稿分別換上專屬工具欄，常用數字格式、凍結首行、求和及幻燈片版式、增刪複製與對齊分佈觸手可及。',
                 en: 'Selecting text in a document brings up one-click actions—Legal Polish, Rewrite, Risk Review, Translate, Condense—or sends the excerpt straight into AI chat (Ctrl/Cmd+Shift+L). Spreadsheets and presentations now feature dedicated toolbars for number formats, freeze header row, auto-sum, slide layouts, and alignment.',
             },
             {
-                zh: '大幅提升关联大型本地文件夹时的打开与检索速度，包含上万份底稿的目录也能即点即开；macOS 端支持从微信直接拖入文件，并在遇到系统目录权限限制时提供分步授权指引与拖拽授权窗口。', 'zh-hant': '大幅提升關聯大型本地文件夾時的打開與檢索速度，包含上萬份底稿的目錄也能即點即開；macOS 端支持從微信直接拖入文件，並在遇到系統目錄權限限制時提供分步授權指引與拖拽授權窗口。',
+                zh: '大幅提升关联大型本地文件夹时的打开与检索速度，包含上万份底稿的目录也能即点即开；macOS 端支持从微信直接拖入文件，并在遇到系统目录权限限制时提供分步授权指引与拖拽授权窗口。', 'zh-hant': '大幅提升關聯大型本地文件夾時的打開與檢索速度，包含上萬份底稿的目錄也能即點即開；macOS 端支援從微信直接拖入文件，並在遇到系統目錄權限限制時提供分步授權指引與拖拽授權窗口。',
                 en: 'Opening and searching linked local folders with tens of thousands of files is now instantaneous. On macOS, files can be dragged directly from WeChat into the workbench or chat, accompanied by step-by-step folder permission guidance and a drag-to-authorize helper.',
             },
             {
@@ -470,7 +470,7 @@ export const RELEASES: ReleaseNote[] = [
         version: '0.69.0',
         date: '2026-10-22',
         headline: {
-            zh: '尽调清单在线收件与报告勾稽；项目沟通助手与律所、团队、项目层级统一', 'zh-hant': '盡調清單在線收件與報告勾稽；項目溝通助手與律所、團隊、項目層級統一',
+            zh: '尽调清单在线收件与报告勾稽；项目沟通助手与律所、团队、项目层级统一', 'zh-hant': '盡調清單在線收件與報告勾稽；專案溝通助手與律所、團隊、專案層級統一',
             en: 'Online due diligence collection and report linking; project communication assistants and unified firm, team, and project hierarchy',
         },
         items: [
@@ -479,11 +479,11 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Create a due diligence checklist online, or import an existing list and split it into individual items. Generate AI reference images for checklist items to illustrate organization charts, certificates, and other materials before publishing to the client.',
             },
             {
-                zh: '客户在完整桌面客户端中打开“客户协作”标签页，输入邀请码即可进入受邀项目，并切换查看多个项目；协作访问独立保存，保留原有登录账号和其他功能。', 'zh-hant': '客戶在完整桌面客戶端中打開“客戶協作”標籤頁，輸入邀請碼即可進入受邀項目，並切換查看多個項目；協作訪問獨立保存，保留原有登入帳號和其他功能。',
+                zh: '客户在完整桌面客户端中打开“客户协作”标签页，输入邀请码即可进入受邀项目，并切换查看多个项目；协作访问独立保存，保留原有登录账号和其他功能。', 'zh-hant': '客戶在完整桌面客戶端中打開“客戶協作”標籤頁，輸入邀請碼即可進入受邀專案，並切換查看多個專案；協作訪問獨立保存，保留原有登入帳號和其他功能。',
                 en: 'Clients can open the Client Collaboration tab in the full desktop app, enter an invitation code, and switch between invited projects. Collaboration access is stored separately while their existing app account and other features remain available.',
             },
             {
-                zh: '每项支持多文件上传与历次版本留存。客户同意 AI 核验后可查看具体反馈，补传材料或提交申诉；律师在清单中复核并最终确认文件。', 'zh-hant': '每項支持多文件上傳與歷次版本留存。客戶同意 AI 核驗後可查看具體反饋，補傳材料或提交申訴；律師在清單中複核並最終確認文件。',
+                zh: '每项支持多文件上传与历次版本留存。客户同意 AI 核验后可查看具体反馈，补传材料或提交申诉；律师在清单中复核并最终确认文件。', 'zh-hant': '每項支援多文件上傳與歷次版本留存。客戶同意 AI 核驗後可查看具體反饋，補傳材料或提交申訴；律師在清單中複核並最終確認文件。',
                 en: 'Each item supports multiple files and retains submission history. With client consent, AI checks provide specific feedback for replacement submissions or appeals; the lawyer reviews and gives final confirmation in the checklist.',
             },
             {
@@ -491,7 +491,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Collected materials can be organized by checklist in the file explorer for use as due diligence working papers. Report content can be linked to source files and excerpts for cross-checking.',
             },
             {
-                zh: '项目沟通新增律所、团队与项目分层云端助手（支持共享群答复与个人私聊），精简通讯录与会话入口，并统一律所、团队、项目三层称谓；同时优化进入项目默认展开 AI 面板、主界面更新进度、本地组件安装指引与注册地址脱敏。', 'zh-hant': '項目溝通新增律所、團隊與項目分層雲端助手（支持共享群答覆與個人私聊），精簡通訊錄與會話入口，並統一律所、團隊、項目三層稱謂；同時優化進入項目預設展開 AI 面板、主界面更新進度、本地組件安裝指引與註冊地址脫敏。',
+                zh: '项目沟通新增律所、团队与项目分层云端助手（支持共享群答复与个人私聊），精简通讯录与会话入口，并统一律所、团队、项目三层称谓；同时优化进入项目默认展开 AI 面板、主界面更新进度、本地组件安装指引与注册地址脱敏。', 'zh-hant': '專案溝通新增律所、團隊與專案分層雲端助手（支援共享群答覆與個人私聊），精簡通訊錄與會話入口，並統一律所、團隊、專案三層稱謂；同時優化進入專案預設展開 AI 面板、主界面更新進度、本地組件安裝指引與註冊地址脫敏。',
                 en: 'Project Communication adds firm, team, and project cloud assistants (with shared group replies and private chats), streamlines the directory and chat entry, and unifies firm, team, and project terminology—alongside opening the AI panel by default, top-bar update progress, local component setup guidance, and registered address redaction.',
             },
         ],
@@ -513,7 +513,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'The document formatting toolbar brings common settings together. Scroll the mouse wheel while dragging a text selection to select across pages more easily.',
             },
             {
-                zh: '移动文件时保留完整多选范围，文件在访达中变化后可刷新到工作台，标签与文件树的高亮保持同步；支持预览可解码的 QTA 录音。', 'zh-hant': '移動文件時保留完整多選範圍，文件在訪達中變化後可刷新到工作台，標籤與文件樹的高亮保持同步；支持預覽可解碼的 QTA 錄音。',
+                zh: '移动文件时保留完整多选范围，文件在访达中变化后可刷新到工作台，标签与文件树的高亮保持同步；支持预览可解码的 QTA 录音。', 'zh-hant': '移動文件時保留完整多選範圍，文件在訪達中變化後可刷新到工作台，標籤與文件樹的高亮保持同步；支援預覽可解碼的 QTA 錄音。',
                 en: 'File moves retain the full selection, changes made in Finder can be refreshed in the workbench, and tabs stay in sync with file-tree highlights. Compatible QTA recordings can also be previewed.',
             },
             {
@@ -543,11 +543,11 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Fixed positioning on auto-numbered clauses: whether headings like “Article 1”, “(1)”, or “1.1” use Word automatic numbering or plain text, the AI now recognizes the clause structure and locates the right paragraph.',
             },
             {
-                zh: '改进文书格式调整：缩进、中西文字体、字号、下划线、段前段后间距与倍行距支持连续多段一并生效；自动编号段落不再重复叠加首行缩进，1.5 倍行距等常用设置按倍数准确换算。', 'zh-hant': '改進文書格式調整：縮進、中西文字體、字號、下劃線、段前段後間距與倍行距支持連續多段一併生效；自動編號段落不再重複疊加首行縮進，1.5 倍行距等常用設定按倍數準確換算。',
+                zh: '改进文书格式调整：缩进、中西文字体、字号、下划线、段前段后间距与倍行距支持连续多段一并生效；自动编号段落不再重复叠加首行缩进，1.5 倍行距等常用设置按倍数准确换算。', 'zh-hant': '改進文書格式調整：縮進、中西文字體、字號、下劃線、段前段後間距與倍行距支援連續多段一併生效；自動編號段落不再重複疊加首行縮進，1.5 倍行距等常用設定按倍數準確換算。',
                 en: 'Improved legal document formatting: indentation, CJK/Western fonts, font sizes, underlines, paragraph spacing, and line spacing apply cleanly across consecutive paragraphs; auto-numbered items no longer get double first-line indents, and multiples like 1.5× line spacing apply accurately.',
             },
             {
-                zh: '内置编辑器与 Microsoft Word、WPS 加载项同步支持上述条款定位与格式调整能力。', 'zh-hant': '內置編輯器與 Microsoft Word、WPS 載入項同步支持上述條款定位與格式調整能力。',
+                zh: '内置编辑器与 Microsoft Word、WPS 加载项同步支持上述条款定位与格式调整能力。', 'zh-hant': '內置編輯器與 Microsoft Word、WPS 載入項同步支援上述條款定位與格式調整能力。',
                 en: 'The built-in editor and the Microsoft Word and WPS add-ins all share the updated clause positioning and formatting behavior.',
             },
         ],
@@ -565,7 +565,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Downloaded full updates can install when you quit, after saving edits and preserving eligible local AI tasks for continuation. Use the full installer for this release to gain the new update capability.',
             },
             {
-                zh: '压缩包内的文件可以直接浏览、预览和导入项目，也可以拖到访达、资源管理器及其他支持接收文件的应用；图片预览支持连续查看。', 'zh-hant': '壓縮包內的文件可以直接瀏覽、預覽和導入項目，也可以拖到訪達、檔案總管及其他支持接收文件的應用；圖片預覽支持連續查看。',
+                zh: '压缩包内的文件可以直接浏览、预览和导入项目，也可以拖到访达、资源管理器及其他支持接收文件的应用；图片预览支持连续查看。', 'zh-hant': '壓縮包內的文件可以直接瀏覽、預覽和導入專案，也可以拖到訪達、檔案總管及其他支援接收文件的應用；圖片預覽支援連續查看。',
                 en: 'Browse and preview archive contents, import entries into your project, or drag them to Finder, File Explorer, and other apps that accept files. Image previews support browsing through images.',
             },
             {
@@ -573,7 +573,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Fixed unresponsive workbench clicks after dragging files out, and improved full upgrades on Mac and startup handling for the Windows installation helper.',
             },
             {
-                zh: '简化工作台分隔线并对齐面板标题，保留文件树斑马纹；Windows 菜单与项目工具分行显示，避免窄窗口下相互遮挡。', 'zh-hant': '簡化工作台分隔線並對齊面板標題，保留文件樹斑馬紋；Windows 選單與項目工具分行顯示，避免窄窗口下相互遮擋。',
+                zh: '简化工作台分隔线并对齐面板标题，保留文件树斑马纹；Windows 菜单与项目工具分行显示，避免窄窗口下相互遮挡。', 'zh-hant': '簡化工作台分隔線並對齊面板標題，保留文件樹斑馬紋；Windows 選單與專案工具分行顯示，避免窄窗口下相互遮擋。',
                 en: 'Simpler dividers and aligned panel headings retain alternating file-tree rows. Windows menus and project tools use separate rows to avoid overlap in narrow windows.',
             },
             {
@@ -591,7 +591,7 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '新增可选 DPIA 工作台插件，支持材料溯源、事实确认、补答复评与版本留存，评估会话和导出文件归入当前项目。插件采用 GDPR/EU 评估方法，需配置 Node.js 与 Python 文档依赖；PDF 及逐页预览另需 LibreOffice，正式报告仍需人工复核。', 'zh-hant': '新增可選 DPIA 工作台外掛，支持材料溯源、事實確認、補答覆評與版本留存，評估會話和導出文件歸入當前項目。外掛採用 GDPR/EU 評估方法，需配置 Node.js 與 Python 文件依賴；PDF 及逐頁預覽另需 LibreOffice，正式報告仍需人工複核。',
+                zh: '新增可选 DPIA 工作台插件，支持材料溯源、事实确认、补答复评与版本留存，评估会话和导出文件归入当前项目。插件采用 GDPR/EU 评估方法，需配置 Node.js 与 Python 文档依赖；PDF 及逐页预览另需 LibreOffice，正式报告仍需人工复核。', 'zh-hant': '新增可選 DPIA 工作台外掛，支援材料溯源、事實確認、補答覆評與版本留存，評估會話和導出文件歸入當前專案。外掛採用 GDPR/EU 評估方法，需配置 Node.js 與 Python 文件依賴；PDF 及逐頁預覽另需 LibreOffice，正式報告仍需人工複核。',
                 en: 'The optional DPIA Workbench plugin supports source tracking, fact confirmation, reassessment after follow-up answers, and version history, with assessment conversations and exports kept in the current project. It uses a GDPR/EU assessment method and requires Node.js and Python document dependencies; PDF output and page previews also require LibreOffice, and formal reports still require human review.',
             },
             {
@@ -599,11 +599,11 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Search, Voice, Desensitization, Litigation Visualization, Calendar, Favorites, Clipboard, and Insight can be installed, enabled, disabled, and uninstalled independently while retaining their sidebar placement and enabled state.',
             },
             {
-                zh: '插件可连接开发者提供的登录、订阅及工具服务，并分别保存用户与项目设置；开发者可申请入驻、使用受限投稿令牌提交插件。断开连接、停用或撤销权限后，旧页面和迟到请求不再沿用原权限。', 'zh-hant': '外掛可連接開發者提供的登入、訂閱及工具服務，並分別保存使用者與項目設定；開發者可申請入駐、使用受限投稿令牌提交外掛。斷開連接、停用或撤銷權限後，舊頁面和遲到請求不再沿用原權限。',
+                zh: '插件可连接开发者提供的登录、订阅及工具服务，并分别保存用户与项目设置；开发者可申请入驻、使用受限投稿令牌提交插件。断开连接、停用或撤销权限后，旧页面和迟到请求不再沿用原权限。', 'zh-hant': '外掛可連接開發者提供的登入、訂閱及工具服務，並分別保存使用者與專案設定；開發者可申請入駐、使用受限投稿令牌提交外掛。斷開連接、停用或撤銷權限後，舊頁面和遲到請求不再沿用原權限。',
                 en: 'Plugins can connect to developer-provided sign-in, subscription, and tool services, with separate user and project settings. Developers can apply and submit plugins using scoped submission tokens. Disconnecting, disabling, or revoking access also invalidates old pages and late requests.',
             },
             {
-                zh: '长文朗读在首段准备好后即可开始，不必等待全文合成；支持播放中即时调速、分段字幕、暂停继续与原速 WAV 导出，并改进音色搜索和键盘操作。', 'zh-hant': '長文朗讀在首段準備好後即可開始，不必等待全文合成；支持播放中即時調速、分段字幕、暫停繼續與原速 WAV 導出，並改進音色搜索和鍵盤操作。',
+                zh: '长文朗读在首段准备好后即可开始，不必等待全文合成；支持播放中即时调速、分段字幕、暂停继续与原速 WAV 导出，并改进音色搜索和键盘操作。', 'zh-hant': '長文朗讀在首段準備好後即可開始，不必等待全文合成；支援播放中即時調速、分段字幕、暫停繼續與原速 WAV 導出，並改進音色搜索和鍵盤操作。',
                 en: 'Long-form reading starts as soon as the first segment is ready, without waiting for the whole text. Change speed during playback, follow segment captions, pause and resume, or export a WAV at its original speed, with improved voice search and keyboard controls.',
             },
             {
@@ -621,7 +621,7 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '0.64.1 更新：验证码组件无法加载时，可在桌面端或 Office/WPS 插件中选择兼容验证。合同审查支持保存并确认项目审查标准，逐项保留原文摘录、理由与建议；标准或文档变化会提示重新确认或审查。', 'zh-hant': '0.64.1 更新：驗證碼組件無法載入時，可在桌面端或 Office/WPS 外掛中選擇兼容驗證。合同審查支持保存並確認項目審查標準，逐項保留原文摘錄、理由與建議；標準或文件變化會提示重新確認或審查。',
+                zh: '0.64.1 更新：验证码组件无法加载时，可在桌面端或 Office/WPS 插件中选择兼容验证。合同审查支持保存并确认项目审查标准，逐项保留原文摘录、理由与建议；标准或文档变化会提示重新确认或审查。', 'zh-hant': '0.64.1 更新：驗證碼組件無法載入時，可在桌面端或 Office/WPS 外掛中選擇兼容驗證。合同審查支援保存並確認專案審查標準，逐項保留原文摘錄、理由與建議；標準或文件變化會提示重新確認或審查。',
                 en: '0.64.1 update: choose compatible verification in the desktop app or Office/WPS add-ins when the usual verification widget cannot load. Contract review lets you save and confirm project standards, retain source excerpts, reasons and suggestions for each rule, and identify results made outdated by document or standard changes.',
             },
             {
@@ -641,7 +641,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'AI editing commands can include a reason and pass it to the add-in for revision-card integration; displaying that reason requires the corresponding add-in update.',
             },
             {
-                zh: '支持将可解码的 QTA 录音转换后转写；打开已有项目内的子文件夹时，确认范围后即可继续使用。', 'zh-hant': '支持將可解碼的 QTA 錄音轉換後轉寫；打開已有項目內的子文件夾時，確認範圍後即可繼續使用。',
+                zh: '支持将可解码的 QTA 录音转换后转写；打开已有项目内的子文件夹时，确认范围后即可继续使用。', 'zh-hant': '支援將可解碼的 QTA 錄音轉換後轉寫；打開已有專案內的子文件夾時，確認範圍後即可繼續使用。',
                 en: 'Compatible QTA recordings can be converted for transcription, and folders nested inside an existing project can be opened after confirming their scope.',
             },
         ],
@@ -663,11 +663,11 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Clicking Accept or Reject Revision in the toolbar without a selected mark now acts on the first revision at or after the cursor and lets you know when it wraps to the top of the document.',
             },
             {
-                zh: '项目文件树与对话文件暂存区支持把文件直接拖到微信等外部应用发送；文件树右键支持将 Word、Excel、PPT、图片或纯文本直接转为同目录 PDF，或多选多份文件合并为一份 PDF。', 'zh-hant': '項目文件樹與對話文件暫存區支持把文件直接拖到微信等外部應用發送；文件樹右鍵支持將 Word、Excel、PPT、圖片或純文本直接轉為同目錄 PDF，或多選多份文件合併為一份 PDF。',
+                zh: '项目文件树与对话文件暂存区支持把文件直接拖到微信等外部应用发送；文件树右键支持将 Word、Excel、PPT、图片或纯文本直接转为同目录 PDF，或多选多份文件合并为一份 PDF。', 'zh-hant': '專案文件樹與對話文件暫存區支援把文件直接拖到微信等外部應用發送；文件樹右鍵支援將 Word、Excel、PPT、圖片或純文本直接轉為同目錄 PDF，或多選多份文件合併為一份 PDF。',
                 en: 'Drag files directly from the project file tree or chat staging bar into external apps such as WeChat; right-click in the file tree to convert Word, Excel, PowerPoint, image, or text files to PDF in the same folder, or merge multiple selected files into one PDF.',
             },
             {
-                zh: '法条查询在北大法宝直连未命中特定法条号时自动检索全文定位条文；企查查按主体名称核验时支持相近名称候选比对，提示名称字形差异供律师复核。', 'zh-hant': '法條查詢在北大法寶直連未命中特定法條號時自動檢索全文定位條文；企查查按主體名稱核驗時支持相近名稱候選比對，提示名稱字形差異供律師複核。',
+                zh: '法条查询在北大法宝直连未命中特定法条号时自动检索全文定位条文；企查查按主体名称核验时支持相近名称候选比对，提示名称字形差异供律师复核。', 'zh-hant': '法條查詢在北大法寶直連未命中特定法條號時自動檢索全文定位條文；企查查按主體名稱核驗時支援相近名稱候選比對，提示名稱字形差異供律師複核。',
                 en: 'Statute lookup automatically falls back to full-text article search when a direct PKULaw article lookup misses; Qichacha company verification compares close name candidates and highlights character differences for lawyer review.',
             },
         ],
@@ -676,20 +676,20 @@ export const RELEASES: ReleaseNote[] = [
         version: '0.62.0',
         date: '2026-10-15',
         headline: {
-            zh: '律所收案利冲与收费看板，项目沟通通讯录，云端备份与更新提示优化', 'zh-hant': '律所收案利衝與收費看板，項目溝通通訊錄，雲端備份與更新提示優化',
+            zh: '律所收案利冲与收费看板，项目沟通通讯录，云端备份与更新提示优化', 'zh-hant': '律所收案利衝與收費看板，專案溝通通訊錄，雲端備份與更新提示優化',
             en: 'Law firm intake, conflict checks, and billing dashboards; project chat directory; clearer cloud backup and update prompts',
         },
         items: [
             {
-                zh: '新增律所管理工作区与个人中心“我的收案与利冲”：支持提交收案立项申请、自动检索本所在办与历史案件利益冲突、向关联承办律师发起站内信放行征询，以及利冲委员终审建项。', 'zh-hant': '新增律所管理工作區與個人中心“我的收案與利衝”：支持提交收案立項申請、自動檢索本所在辦與歷史案件利益衝突、向關聯承辦律師發起站內信放行徵詢，以及利衝委員終審建項。',
+                zh: '新增律所管理工作区与个人中心“我的收案与利冲”：支持提交收案立项申请、自动检索本所在办与历史案件利益冲突、向关联承办律师发起站内信放行征询，以及利冲委员终审建项。', 'zh-hant': '新增律所管理工作區與個人中心“我的收案與利衝”：支援提交收案立項申請、自動檢索本所在辦與歷史案件利益衝突、向關聯承辦律師發起站內信放行徵詢，以及利衝委員終審建項。',
                 en: 'New Law Firm Management workspace and a personal Intake & Conflict Check view: submit matter intake requests, scan active and historical matters for conflicts, request clearance from related lawyers via in-app messages, and create projects upon final approval.',
             },
             {
-                zh: '支持发票开具申请、手动回款核销与金蝶/用友标准凭证 CSV 导出，并按办案单元、合伙人团队、业务部门与全所汇总工作负荷、创收、回款率与账龄看板。', 'zh-hant': '支持發票開具申請、手動回款核銷與金蝶/用友標準憑證 CSV 導出，並按辦案單元、合夥人團隊、業務部門與全所彙總工作負荷、創收、回款率與帳齡看板。',
+                zh: '支持发票开具申请、手动回款核销与金蝶/用友标准凭证 CSV 导出，并按办案单元、合伙人团队、业务部门与全所汇总工作负荷、创收、回款率与账龄看板。', 'zh-hant': '支援發票開具申請、手動回款核銷與金蝶/用友標準憑證 CSV 導出，並按辦案單元、合夥人團隊、業務部門與全所彙總工作負荷、創收、回款率與帳齡看板。',
                 en: 'Submit invoice requests, record manual payment write-offs, export standard Kingdee or Yonyou CSV vouchers, and review workload, revenue, collection rate, and aging dashboards across units, partner teams, departments, and the firm.',
             },
             {
-                zh: '项目沟通升级按组织与项目分组的通讯录，支持快速检索同事与客户并直接发起会话；团队与律所切换流程更顺畅，各插件在侧栏与工作区使用独立识别图标。', 'zh-hant': '項目溝通升級按組織與項目分組的通訊錄，支持快速檢索同事與客戶並直接發起會話；團隊與律所切換流程更順暢，各外掛在側欄與工作區使用獨立識別圖標。',
+                zh: '项目沟通升级按组织与项目分组的通讯录，支持快速检索同事与客户并直接发起会话；团队与律所切换流程更顺畅，各插件在侧栏与工作区使用独立识别图标。', 'zh-hant': '專案溝通升級按組織與專案分組的通訊錄，支援快速檢索同事與客戶並直接發起會話；團隊與律所切換流程更順暢，各外掛在側欄與工作區使用獨立識別圖標。',
                 en: 'Project Chat adds an organization- and project-grouped directory to search colleagues or clients and start conversations directly, alongside smoother team switching and distinct plugin icons across the sidebar and workspace.',
             },
             {
@@ -702,28 +702,28 @@ export const RELEASES: ReleaseNote[] = [
         version: '0.61.0',
         date: '2026-10-14',
         headline: {
-            zh: '在项目中与同事、客户沟通，按需分享文件', 'zh-hant': '在項目中與同事、客戶溝通，按需分享文件',
+            zh: '在项目中与同事、客户沟通，按需分享文件', 'zh-hant': '在專案中與同事、客戶溝通，按需分享文件',
             en: 'Talk with colleagues and clients and choose which project files to share',
         },
         items: [
             {
-                zh: '中国大陆站账号可从插件广场安装“项目沟通”，与律师、同事和客户建立单聊或群聊，发送消息和文件；国际站暂未开通。', 'zh-hant': '中國大陸站帳號可從外掛廣場安裝“項目溝通”，與律師、同事和客戶建立單聊或群聊，發送訊息和文件；國際站暫未開通。',
+                zh: '中国大陆站账号可从插件广场安装“项目沟通”，与律师、同事和客户建立单聊或群聊，发送消息和文件；国际站暂未开通。', 'zh-hant': '中國大陸站帳號可從外掛廣場安裝“專案溝通”，與律師、同事和客戶建立單聊或群聊，發送訊息和文件；國際站暫未開通。',
                 en: 'Mainland China accounts can install Project Chat from the marketplace for direct or group conversations and file sharing with lawyers, colleagues, and clients. International accounts are not yet supported.',
             },
             {
-                zh: '聊天中可引用项目文件的当前版本，将收到的文件收进项目库、在工作区打开，或加入 AI 对话。', 'zh-hant': '聊天中可引用項目文件的當前版本，將收到的文件收進項目庫、在工作區打開，或加入 AI 對話。',
+                zh: '聊天中可引用项目文件的当前版本，将收到的文件收进项目库、在工作区打开，或加入 AI 对话。', 'zh-hant': '聊天中可引用專案文件的當前版本，將收到的文件收進專案庫、在工作區打開，或加入 AI 對話。',
                 en: 'Quote the current version of a project file in chat, save received files to your project, open them in the workspace, or add them to an AI conversation.',
             },
             {
-                zh: '项目文件默认仅内部成员可见，律师可单独向客户开放；客户自己上传的文件始终可见。', 'zh-hant': '項目文件預設僅內部成員可見，律師可單獨向客戶開放；客戶自己上傳的文件始終可見。',
+                zh: '项目文件默认仅内部成员可见，律师可单独向客户开放；客户自己上传的文件始终可见。', 'zh-hant': '專案文件預設僅內部成員可見，律師可單獨向客戶開放；客戶自己上傳的文件始終可見。',
                 en: 'Project files are visible to internal members by default. Lawyers can grant client access to individual files, while clients can always view their own uploads.',
             },
             {
-                zh: '项目与引用文件保留稳定标识；聊天记录只在你主动归档时收进项目，随项目管理版本。', 'zh-hant': '項目與引用文件保留穩定標識；聊天記錄只在你主動歸檔時收進項目，隨項目管理版本。',
+                zh: '项目与引用文件保留稳定标识；聊天记录只在你主动归档时收进项目，随项目管理版本。', 'zh-hant': '專案與引用文件保留穩定標識；聊天記錄只在你主動歸檔時收進專案，隨專案管理版本。',
                 en: 'Projects and file references keep stable identifiers. Chat history enters project version control only when you explicitly archive it.',
             },
             {
-                zh: '0.61.1 补丁：客户无法读取内部项目记忆；成员被移出项目或改为客户后，之前排队的 AI 输入不再执行。', 'zh-hant': '0.61.1 補丁：客戶無法讀取內部項目記憶；成員被移出項目或改為客戶後，之前排隊的 AI 輸入不再執行。',
+                zh: '0.61.1 补丁：客户无法读取内部项目记忆；成员被移出项目或改为客户后，之前排队的 AI 输入不再执行。', 'zh-hant': '0.61.1 補丁：客戶無法讀取內部專案記憶；成員被移出專案或改為客戶後，之前排隊的 AI 輸入不再執行。',
                 en: '0.61.1 patch: clients cannot read internal project memory. When members are removed from a project or changed to clients, their previously queued AI input will no longer execute.',
             },
             {
@@ -741,7 +741,7 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '文档自动补全根据光标前后文提出续写，经独立审读后显示；可随时关闭或重新开启，采用后可一次撤销。建议仍需你核对，调用会使用 AI 额度。', 'zh-hant': '文件自動補全根據光標前後文提出續寫，經獨立審讀後顯示；可隨時關閉或重新開啟，採用後可一次撤銷。建議仍需你核對，調用會使用 AI 額度。',
+                zh: '文档自动补全根据光标前后文提出续写，经独立审读后显示；可随时关闭或重新开启，采用后可一次撤销。建议仍需你核对，调用会使用 AI 额度。', 'zh-hant': '文件自動補全根據光標前後文提出續寫，經獨立審讀後顯示；可隨時關閉或重新開啟，採用後可一次撤銷。建議仍需你核對，呼叫會使用 AI 額度。',
                 en: 'Document completion uses the text around your cursor and independent review before showing a suggestion. Turn it off or on at any time and undo an accepted suggestion in one step. Suggestions still need your review and use AI credits.',
             },
             {
@@ -753,11 +753,11 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Large-file version processing no longer holds up document saves. Local backend failures show a status and trigger recovery attempts while unsaved editor content is kept.',
             },
             {
-                zh: '新保存的大文件及音视频版本保留完整内容，支持恢复；明确开启云端备份后才同步，未开启时仍可在本机保存。', 'zh-hant': '新保存的大文件及音影片版本保留完整內容，支持恢復；明確開啟雲端備份後才同步，未開啟時仍可在本機保存。',
+                zh: '新保存的大文件及音视频版本保留完整内容，支持恢复；明确开启云端备份后才同步，未开启时仍可在本机保存。', 'zh-hant': '新保存的大文件及音影片版本保留完整內容，支援恢復；明確開啟雲端備份後才同步，未開啟時仍可在本機保存。',
                 en: 'New versions of large files and audio or video retain their full contents for recovery. Cloud backup runs only after you enable it; local saving remains available without it.',
             },
             {
-                zh: 'AI 回复后可建议下一步提问，支持编辑、Tab 发送或关闭；内置浏览器工具栏更紧凑，修复快速输入地址被截断的问题。', 'zh-hant': 'AI 回覆後可建議下一步提問，支持編輯、Tab 發送或關閉；內置瀏覽器工具欄更緊湊，修復快速輸入地址被截斷的問題。',
+                zh: 'AI 回复后可建议下一步提问，支持编辑、Tab 发送或关闭；内置浏览器工具栏更紧凑，修复快速输入地址被截断的问题。', 'zh-hant': 'AI 回覆後可建議下一步提問，支援編輯、Tab 發送或關閉；內置瀏覽器工具欄更緊湊，修復快速輸入地址被截斷的問題。',
                 en: 'After an AI reply, optional next-message suggestions can be edited, sent with Tab, or turned off. The browser toolbar is more compact and no longer truncates quickly typed addresses.',
             },
         ],
@@ -771,11 +771,11 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '安装新版后，可在 macOS 和 Windows 的“打开方式”中选择 AI WorkDeck 打开 Word、PDF 等受支持文件，也可由你设为默认应用。', 'zh-hant': '安裝新版後，可在 macOS 和 Windows 的“打開方式”中選擇 AI WorkDeck 打開 Word、PDF 等受支持文件，也可由你設為預設應用。',
+                zh: '安装新版后，可在 macOS 和 Windows 的“打开方式”中选择 AI WorkDeck 打开 Word、PDF 等受支持文件，也可由你设为默认应用。', 'zh-hant': '安裝新版後，可在 macOS 和 Windows 的“打開方式”中選擇 AI WorkDeck 打開 Word、PDF 等受支援文件，也可由你設為預設應用。',
                 en: 'After installing this version, choose AI WorkDeck from Open With on macOS or Windows for supported files such as Word documents and PDFs. You can also choose it as your default app.',
             },
             {
-                zh: '单独打开文件即可开始阅读或编辑，无需先建项目，也不会把同一文件夹里的其他材料一起导入；支持编辑的文件保存回原位置。', 'zh-hant': '單獨打開文件即可開始閱讀或編輯，無需先建項目，也不會把同一文件夾裡的其他材料一起導入；支持編輯的文件保存回原位置。',
+                zh: '单独打开文件即可开始阅读或编辑，无需先建项目，也不会把同一文件夹里的其他材料一起导入；支持编辑的文件保存回原位置。', 'zh-hant': '單獨打開文件即可開始閱讀或編輯，無需先建專案，也不會把同一文件夾裡的其他材料一起導入；支援編輯的文件保存回原位置。',
                 en: 'Read or edit individual files without creating a project or importing other documents from the same folder. Editable files are saved back to their original location.',
             },
             {
@@ -788,16 +788,16 @@ export const RELEASES: ReleaseNote[] = [
         version: '0.58.0',
         date: '2026-10-11',
         headline: {
-            zh: '项目清单跨设备对齐；订阅额度与云空间清楚可查', 'zh-hant': '項目清單跨設備對齊；訂閱額度與雲空間清楚可查',
+            zh: '项目清单跨设备对齐；订阅额度与云空间清楚可查', 'zh-hant': '專案清單跨設備對齊；訂閱額度與雲空間清楚可查',
             en: 'One project catalog across devices; clearer subscription and cloud storage allowances',
         },
         items: [
             {
-                zh: '同一账户下的桌面、云端和插件项目可在统一清单中查看，保留文件所在位置，减少在不同设备上重复寻找项目。', 'zh-hant': '同一帳戶下的桌面、雲端和外掛項目可在統一清單中查看，保留文件所在位置，減少在不同設備上重複尋找項目。',
+                zh: '同一账户下的桌面、云端和插件项目可在统一清单中查看，保留文件所在位置，减少在不同设备上重复寻找项目。', 'zh-hant': '同一帳戶下的桌面、雲端和外掛專案可在統一清單中查看，保留文件所在位置，減少在不同設備上重複尋找專案。',
                 en: 'View desktop, cloud, and add-in projects in one account catalog, with file locations preserved so projects are easier to find across devices.',
             },
             {
-                zh: '手机录音和上传可选择统一清单中的项目；iOS 文件工作区可选择云端或桌面位置取件，桌面文件需所在设备在线。', 'zh-hant': '手機錄音和上傳可選擇統一清單中的項目；iOS 文件工作區可選擇雲端或桌面位置取件，桌面文件需所在設備在線。',
+                zh: '手机录音和上传可选择统一清单中的项目；iOS 文件工作区可选择云端或桌面位置取件，桌面文件需所在设备在线。', 'zh-hant': '手機錄音和上傳可選擇統一清單中的專案；iOS 文件工作區可選擇雲端或桌面位置取件，桌面文件需所在設備在線。',
                 en: 'Choose projects from the unified catalog for mobile recordings and uploads. The iOS file workspace can retrieve files from cloud or desktop locations; desktop files require that device to be online.',
             },
             {
@@ -819,7 +819,7 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: 'AI 新建文件默认放在当前文档所在目录，也可按你指定的位置保存；对话中生成的文件可以直接拖到左侧项目目录归档。', 'zh-hant': 'AI 新建文件預設放在當前文件所在目錄，也可按你指定的位置保存；對話中生成的文件可以直接拖到左側項目目錄歸檔。',
+                zh: 'AI 新建文件默认放在当前文档所在目录，也可按你指定的位置保存；对话中生成的文件可以直接拖到左侧项目目录归档。', 'zh-hant': 'AI 新建文件預設放在當前文件所在目錄，也可按你指定的位置保存；對話中生成的文件可以直接拖到左側專案目錄歸檔。',
                 en: 'Files created by AI default to the current document’s folder, or a location you specify. Drag generated files from the conversation into a project folder in the sidebar.',
             },
             {
@@ -835,7 +835,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Improved responsiveness when pasting large amounts of text and made save and close status messages more reliable. Confirmation options in conversations display correctly without exposing internal tags.',
             },
             {
-                zh: '桌面端增加手机收件状态入口，方便查看手机上传的照片、视频和录音是否已收到，以及文件归档到哪个项目。', 'zh-hant': '桌面端增加手機收件狀態入口，方便查看手機上傳的照片、影片和錄音是否已收到，以及文件歸檔到哪個項目。',
+                zh: '桌面端增加手机收件状态入口，方便查看手机上传的照片、视频和录音是否已收到，以及文件归档到哪个项目。', 'zh-hant': '桌面端增加手機收件狀態入口，方便查看手機上傳的照片、影片和錄音是否已收到，以及文件歸檔到哪個專案。',
                 en: 'A mobile inbox status entry on desktop lets you check whether uploaded photos, videos, and recordings have arrived and which project they were filed in.',
             },
         ],
@@ -861,7 +861,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'The account menu shows remaining trial days and AI turns returned by the account service; when offline, it displays the last balance synced for the same account with a pending-sync notice.',
             },
             {
-                zh: '新增证据关联报告技能：依据项目材料起草报告或备忘录时，引导 AI 将有依据的结论链接到来源原文，并明确标出缺少或仅有部分证据的事项，方便逐条回看核对；AI 建立的链接仍需人工确认。', 'zh-hant': '新增證據關聯報告技能：依據項目材料起草報告或備忘錄時，引導 AI 將有依據的結論連結到來源原文，並明確標出缺少或僅有部分證據的事項，方便逐條回看核對；AI 建立的連結仍需人工確認。',
+                zh: '新增证据关联报告技能：依据项目材料起草报告或备忘录时，引导 AI 将有依据的结论链接到来源原文，并明确标出缺少或仅有部分证据的事项，方便逐条回看核对；AI 建立的链接仍需人工确认。', 'zh-hant': '新增證據關聯報告技能：依據專案材料起草報告或備忘錄時，引導 AI 將有依據的結論連結到來源原文，並明確標出缺少或僅有部分證據的事項，方便逐條回看核對；AI 建立的連結仍需人工確認。',
                 en: 'A new Evidence-Linked Report skill guides AI to link supported conclusions in reports and memoranda back to project source passages, while flagging missing or partial evidence for review. Links created by AI still require human verification.',
             },
         ],
@@ -875,11 +875,11 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '可从插件广场安装腾讯会议插件，手动同步会议列表，读取已有逐字稿与智能纪要，归档到当前项目后交给 AI 整理纪要、提取待办。需先安装腾讯会议官方 CLI 并登录，材料读取取决于账号权限及录制处理状态。', 'zh-hant': '可從外掛廣場安裝騰訊會議外掛，手動同步會議列表，讀取已有逐字稿與智能紀要，歸檔到當前項目後交給 AI 整理紀要、提取待辦。需先安裝騰訊會議官方 CLI 並登入，材料讀取取決於帳號權限及錄製處理狀態。',
+                zh: '可从插件广场安装腾讯会议插件，手动同步会议列表，读取已有逐字稿与智能纪要，归档到当前项目后交给 AI 整理纪要、提取待办。需先安装腾讯会议官方 CLI 并登录，材料读取取决于账号权限及录制处理状态。', 'zh-hant': '可從外掛廣場安裝騰訊會議外掛，手動同步會議列表，讀取已有逐字稿與智能紀要，歸檔到當前專案後交給 AI 整理紀要、提取待辦。需先安裝騰訊會議官方 CLI 並登入，材料讀取取決於帳號權限及錄製處理狀態。',
                 en: 'Install Tencent Meeting from Marketplace to manually sync meeting lists, read available transcripts and smart minutes, and archive them to the current project for AI-drafted minutes and action items. Install the official Tencent Meeting CLI and sign in first; access depends on account permissions and recording readiness.',
             },
             {
-                zh: '在插件广场安装并启用插件后，当前工作台左侧立即显示入口，无需重新进入项目；禁用或卸载后，入口同步移除。', 'zh-hant': '在外掛廣場安裝並啟用外掛後，當前工作台左側立即顯示入口，無需重新進入項目；禁用或卸載後，入口同步移除。',
+                zh: '在插件广场安装并启用插件后，当前工作台左侧立即显示入口，无需重新进入项目；禁用或卸载后，入口同步移除。', 'zh-hant': '在外掛廣場安裝並啟用外掛後，當前工作台左側立即顯示入口，無需重新進入專案；禁用或卸載後，入口同步移除。',
                 en: 'Installing and enabling a plugin in Marketplace immediately adds its entry to the workbench sidebar, without reopening the project. Disabling or uninstalling it removes the entry.',
             },
             {
@@ -897,7 +897,7 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '0.54.1 补丁：从欢迎页左侧新建事项时，已选项目能正确保存，不再误报“请选择项目”；缩短复杂文档打开及修订面板清单加载的等待。', 'zh-hant': '0.54.1 補丁：從歡迎頁左側新建事項時，已選項目能正確保存，不再誤報“請選擇項目”；縮短複雜文件打開及修訂面板清單載入的等待。',
+                zh: '0.54.1 补丁：从欢迎页左侧新建事项时，已选项目能正确保存，不再误报“请选择项目”；缩短复杂文档打开及修订面板清单加载的等待。', 'zh-hant': '0.54.1 補丁：從歡迎頁左側新建事項時，已選專案能正確保存，不再誤報“請選擇專案”；縮短複雜文件打開及修訂面板清單載入的等待。',
                 en: '0.54.1 patch: creating a scheduled item from the Welcome sidebar now saves the selected project correctly, without an incorrect “Please select a project” prompt. Complex documents and revision lists load with less waiting.',
             },
             {
@@ -927,7 +927,7 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '0.53.1 补丁：文档比对支持最小修订模式，在短语或相近语句修改时按字符精细标出改动（保留公共前后缀，仅标记删改差异字），避免粗暴整段整行替换；正文修订标记支持鼠标悬停浮现气泡卡片，直接查看修订者姓名、时间与修改类型。', 'zh-hant': '0.53.1 補丁：文件比對支持最小修訂模式，在短語或相近語句修改時按字符精細標出改動（保留公共前後綴，僅標記刪改差異字），避免粗暴整段整行替換；正文修訂標記支持鼠標懸停浮現氣泡卡片，直接查看修訂者姓名、時間與修改類型。',
+                zh: '0.53.1 补丁：文档比对支持最小修订模式，在短语或相近语句修改时按字符精细标出改动（保留公共前后缀，仅标记删改差异字），避免粗暴整段整行替换；正文修订标记支持鼠标悬停浮现气泡卡片，直接查看修订者姓名、时间与修改类型。', 'zh-hant': '0.53.1 補丁：文件比對支援最小修訂模式，在短語或相近語句修改時按字符精細標出改動（保留公共前後綴，僅標記刪改差異字），避免粗暴整段整行替換；正文修訂標記支援鼠標懸停浮現氣泡卡片，直接查看修訂者姓名、時間與修改類型。',
                 en: '0.53.1 patch: document comparison now refines revisions to minimal character-level diffs for similar phrases, preserving common text and marking only changes instead of replacing whole paragraphs. Hovering over revision markers in the document body now displays an author card with name, timestamp, and edit type.',
             },
             {
@@ -943,7 +943,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Added crash and fault detection for document comparisons: if the underlying engine aborts or exits unexpectedly, the task finishes immediately with clear feedback and cleans up resources without corrupting source files.',
             },
             {
-                zh: '比对弹窗适配小屏视口：在紧凑窗口下弹窗支持内容滚动，确保取消与继续按钮随时可见、可点。', 'zh-hant': '比對彈窗適配小屏視口：在緊湊窗口下彈窗支持內容滾動，確保取消與繼續按鈕隨時可見、可點。',
+                zh: '比对弹窗适配小屏视口：在紧凑窗口下弹窗支持内容滚动，确保取消与继续按钮随时可见、可点。', 'zh-hant': '比對彈窗適配小屏視口：在緊湊窗口下彈窗支援內容滾動，確保取消與繼續按鈕隨時可見、可點。',
                 en: 'Responsive comparison dialog: supports content scrolling on compact screens, ensuring that Cancel and Continue buttons remain fully visible and clickable.',
             },
         ],
@@ -961,7 +961,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Fixed a case where consecutive AI comments were saved with empty text and lost their attachment to the selected passage.',
             },
             {
-                zh: '改进 AI 整理文件的指引：整理指定文件夹时，在该目录内分类并保留原文件夹，未经明确要求不将文件移到项目根目录。', 'zh-hant': '改進 AI 整理文件的指引：整理指定文件夾時，在該目錄內分類並保留原文件夾，未經明確要求不將文件移到項目根目錄。',
+                zh: '改进 AI 整理文件的指引：整理指定文件夹时，在该目录内分类并保留原文件夹，未经明确要求不将文件移到项目根目录。', 'zh-hant': '改進 AI 整理文件的指引：整理指定文件夾時，在該目錄內分類並保留原文件夾，未經明確要求不將文件移到專案根目錄。',
                 en: 'Improved guidance for AI file organization: sort within the specified folder and retain that folder, without moving files to the project root unless explicitly requested.',
             },
             {
@@ -987,15 +987,15 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '启动后直接进入工作台，不再先过登录页。看文档、编辑、管理本地项目都不需要账户；AI 对话、安装付费插件、连接团队案件库这类必须有账户的功能，点下去时才就地弹出登录，登完接着刚才的操作，不会被带离当前页面。退出登录停在原页；换账户时会说明本机项目属于这台电脑、不随账户走。', 'zh-hant': '啟動後直接進入工作台，不再先過登入頁。看文件、編輯、管理本地項目都不需要帳戶；AI 對話、安裝付費外掛、連接團隊案件庫這類必須有帳戶的功能，點下去時才就地彈出登入，登完接著剛才的操作，不會被帶離當前頁面。退出登入停在原頁；換帳戶時會說明本機項目屬於這臺電腦、不隨帳戶走。',
+                zh: '启动后直接进入工作台，不再先过登录页。看文档、编辑、管理本地项目都不需要账户；AI 对话、安装付费插件、连接团队案件库这类必须有账户的功能，点下去时才就地弹出登录，登完接着刚才的操作，不会被带离当前页面。退出登录停在原页；换账户时会说明本机项目属于这台电脑、不随账户走。', 'zh-hant': '啟動後直接進入工作台，不再先過登入頁。看文件、編輯、管理本地專案都不需要帳戶；AI 對話、安裝付費外掛、連接團隊案件庫這類必須有帳戶的功能，點下去時才就地彈出登入，登完接著剛才的操作，不會被帶離當前頁面。退出登入停在原頁；換帳戶時會說明本機專案屬於這臺電腦、不隨帳戶走。',
                 en: 'The app now opens straight into the workbench with no sign-in page first. Viewing, editing, and managing local projects need no account; features that do, such as AI chat, installing paid plugins, and connecting a team case library, bring up sign-in in place the moment you use them, and you carry on where you were. Signing out keeps you on the same page, and switching accounts explains that local projects belong to this computer, not to the account.',
             },
             {
-                zh: '工作台像 VS Code 一样以标签为中心：新的「欢迎」标签集中了新建项目、打开文件夹、取案卷、连接团队服务器、客户凭访问码进入案卷和最近项目；左栏新增「项目」面板随时切换项目；日历成为一个标签，可以和文档并排打开；已打开的标签在重启后恢复原样。', 'zh-hant': '工作台像 VS Code 一樣以標籤為中心：新的「歡迎」標籤集中了新建項目、打開文件夾、取案卷、連接團隊伺服器、客戶憑訪問碼進入案卷和最近項目；左欄新增「項目」面板隨時切換項目；日曆成為一個標籤，可以和文件並排打開；已打開的標籤在重啟後恢復原樣。',
+                zh: '工作台像 VS Code 一样以标签为中心：新的「欢迎」标签集中了新建项目、打开文件夹、取案卷、连接团队服务器、客户凭访问码进入案卷和最近项目；左栏新增「项目」面板随时切换项目；日历成为一个标签，可以和文档并排打开；已打开的标签在重启后恢复原样。', 'zh-hant': '工作台像 VS Code 一樣以標籤為中心：新的「歡迎」標籤集中了新建專案、打開文件夾、取案卷、連接團隊伺服器、客戶憑訪問碼進入案卷和最近專案；左欄新增「專案」面板隨時切換專案；日曆成為一個標籤，可以和文件並排打開；已打開的標籤在重啟後恢復原樣。',
                 en: 'The workbench is tab-centered like VS Code: a new Welcome tab gathers new project, open folder, pull a case file, connect a team server, client access by code, and recent projects; a Projects panel in the left rail switches projects at any time; the calendar is now a tab that sits beside your documents; and open tabs are restored after a restart.',
             },
             {
-                zh: 'PDF 一批修复：组件安装过程可见并有超时提示；PDF 转 Word 失败时如实告知，不再悄悄换成丢版式的方式；编辑器还在启动时会等它就绪；重复点击不再生成多份；回收站不再显示幽灵计数、也不再误删同路径文件。当前文档是图片时 AI 直接看图，图片预览可用滚轮放大。音频与视频有了统一的播放控制条，支持自动字幕和边下边播。', 'zh-hant': 'PDF 一批修復：組件安裝過程可見並有超時提示；PDF 轉 Word 失敗時如實告知，不再悄悄換成丟版式的方式；編輯器還在啟動時會等它就緒；重複點擊不再生成多份；回收站不再顯示幽靈計數、也不再誤刪同路徑文件。當前文件是圖片時 AI 直接看圖，圖片預覽可用滾輪放大。音頻與影片有了統一的播放控制條，支持自動字幕和邊下邊播。',
+                zh: 'PDF 一批修复：组件安装过程可见并有超时提示；PDF 转 Word 失败时如实告知，不再悄悄换成丢版式的方式；编辑器还在启动时会等它就绪；重复点击不再生成多份；回收站不再显示幽灵计数、也不再误删同路径文件。当前文档是图片时 AI 直接看图，图片预览可用滚轮放大。音频与视频有了统一的播放控制条，支持自动字幕和边下边播。', 'zh-hant': 'PDF 一批修復：組件安裝過程可見並有超時提示；PDF 轉 Word 失敗時如實告知，不再悄悄換成丟版式的方式；編輯器還在啟動時會等它就緒；重複點擊不再生成多份；回收站不再顯示幽靈計數、也不再誤刪同路徑文件。當前文件是圖片時 AI 直接看圖，圖片預覽可用滾輪放大。音頻與影片有了統一的播放控制條，支援自動字幕和邊下邊播。',
                 en: 'A batch of PDF fixes: component installation is visible and times out with a message; when PDF to Word fails you are told instead of a silent fallback that loses layout; the app waits for the editor to finish starting; repeated clicks no longer produce duplicates; and the recycle bin no longer shows phantom counts or deletes a different file at the same path. When the current document is an image the AI looks at it directly, and image preview zooms with the scroll wheel. Audio and video share one set of playback controls with automatic subtitles and streaming playback.',
             },
             {
@@ -1003,7 +1003,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Plans in the AI plan mode can be edited and annotated directly in a Markdown tab, and both are handed to the model to carry out. The AI now uses the recycle bin, so what it deletes can be recovered, and a permanent delete on desktop goes to the system Trash. When the human-verification component fails to load, the app names the network addresses to allow instead of sending a code blindly.',
             },
             {
-                zh: '0.51.1 补丁：欢迎页可以直接「打开文件…」，选一个文档就以它所在的文件夹入项目并打开；账户头像与设置回到右上角。AI 的思考过程随回复保存，切到别的会话再切回来、或断线重连，已经写出的思考、工具过程和正文原样还在，思考秒数接着算，历史消息里也能展开回看。思考型模型（Kimi K3）更稳：按时延挑供应商、排队超过半分钟自动换一家、简单问题不再深想几分钟，思考超过一分钟界面会说明原因并给出停止按钮。AI 每问更省：开着文档时不再把 PDF、诉讼可视化、演示等无关工具塞给模型，并改为先给核心工具、其余按需检索，同一问的上下文体积约减半；工具面逐个盘点后补齐了跨项目全文检索、导出 PDF、复制文件和在某句前后一步插入。', 'zh-hant': '0.51.1 補丁：歡迎頁可以直接「打開文件…」，選一個文件就以它所在的文件夾入項目並打開；帳戶頭像與設定回到右上角。AI 的思考過程隨回覆保存，切到別的會話再切回來、或斷線重連，已經寫出的思考、工具過程和正文原樣還在，思考秒數接著算，歷史訊息裡也能展開回看。思考型模型（Kimi K3）更穩：按時延挑供應商、排隊超過半分鐘自動換一家、簡單問題不再深想幾分鐘，思考超過一分鐘界面會說明原因並給出停止按鈕。AI 每問更省：開著文件時不再把 PDF、訴訟可視化、演示等無關工具塞給模型，並改為先給核心工具、其餘按需檢索，同一問的上下文體積約減半；工具面逐個盤點後補齊了跨項目全文檢索、導出 PDF、複製文件和在某句前後一步插入。',
+                zh: '0.51.1 补丁：欢迎页可以直接「打开文件…」，选一个文档就以它所在的文件夹入项目并打开；账户头像与设置回到右上角。AI 的思考过程随回复保存，切到别的会话再切回来、或断线重连，已经写出的思考、工具过程和正文原样还在，思考秒数接着算，历史消息里也能展开回看。思考型模型（Kimi K3）更稳：按时延挑供应商、排队超过半分钟自动换一家、简单问题不再深想几分钟，思考超过一分钟界面会说明原因并给出停止按钮。AI 每问更省：开着文档时不再把 PDF、诉讼可视化、演示等无关工具塞给模型，并改为先给核心工具、其余按需检索，同一问的上下文体积约减半；工具面逐个盘点后补齐了跨项目全文检索、导出 PDF、复制文件和在某句前后一步插入。', 'zh-hant': '0.51.1 補丁：歡迎頁可以直接「打開文件…」，選一個文件就以它所在的文件夾入專案並打開；帳戶頭像與設定回到右上角。AI 的思考過程隨回覆保存，切到別的會話再切回來、或斷線重連，已經寫出的思考、工具過程和正文原樣還在，思考秒數接著算，歷史訊息裡也能展開回看。思考型模型（Kimi K3）更穩：按時延挑供應商、排隊超過半分鐘自動換一家、簡單問題不再深想幾分鐘，思考超過一分鐘界面會說明原因並給出停止按鈕。AI 每問更省：開著文件時不再把 PDF、訴訟可視化、演示等無關工具塞給模型，並改為先給核心工具、其餘按需檢索，同一問的上下文體積約減半；工具面逐個盤點後補齊了跨專案全文檢索、導出 PDF、複製文件和在某句前後一步插入。',
                 en: '0.51.1 patch: the Welcome tab gains "Open File", which opens the chosen document with its folder as the project; the account avatar and Settings return to the top right. The AI\'s thinking is saved with each reply, so switching to another conversation and back, or reconnecting after a drop, keeps the thinking, tool activity, and text already produced, the thinking timer keeps counting, and past messages can be expanded to review it. Thinking models (Kimi K3) are steadier: providers are picked by latency, a request queued for more than half a minute is moved to another provider, simple questions no longer think for minutes, and after a minute of thinking the interface explains why and offers a Stop button. Every AI question is leaner: with a document open, unrelated tools (PDF, litigation diagrams, slides) are no longer pushed to the model, and the model now receives a core toolset first and looks up the rest on demand, roughly halving the context per question; a tool-by-tool audit added project-wide full-text search, export to PDF, copy files, and one-step insertion before or after a sentence.',
             },
             {
@@ -1011,7 +1011,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: '0.51.2 patch: repeated instructions sent with each AI conversation have been trimmed, leaving more context space for your questions, documents, and conversation history. The requirements and safeguards for tools such as document editing and file handling remain in place, with guidance matched to the current task and document type.',
             },
             {
-                zh: '0.51.3 补丁：修复 AI 输入框在窄栏下将“智能体”逐字换行的问题；新建空白文档可参与比对，比对前先保存两份文档的当前修改。AI 修订文书时补充项目资料读取、完成前核验和检查点恢复处理；复杂文书的事实准确性仍需人工审阅。', 'zh-hant': '0.51.3 補丁：修復 AI 輸入框在窄欄下將“智能體”逐字換行的問題；新建空白文件可參與比對，比對前先保存兩份文件的當前修改。AI 修訂文書時補充項目資料讀取、完成前核驗和檢查點恢復處理；複雜文書的事實準確性仍需人工審閱。',
+                zh: '0.51.3 补丁：修复 AI 输入框在窄栏下将“智能体”逐字换行的问题；新建空白文档可参与比对，比对前先保存两份文档的当前修改。AI 修订文书时补充项目资料读取、完成前核验和检查点恢复处理；复杂文书的事实准确性仍需人工审阅。', 'zh-hant': '0.51.3 補丁：修復 AI 輸入框在窄欄下將“智能體”逐字換行的問題；新建空白文件可參與比對，比對前先保存兩份文件的當前修改。AI 修訂文書時補充專案資料讀取、完成前核驗和檢查點恢復處理；複雜文書的事實準確性仍需人工審閱。',
                 en: '0.51.3 patch: fixes the Agent label wrapping vertically in a narrow AI panel. Newly created blank documents can be compared, and pending changes in both documents are saved before comparison. Document revision gains project-source reading, completion checks, and checkpoint recovery improvements; factual accuracy in complex documents still requires human review.',
             },
             {
@@ -1041,11 +1041,11 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Before a paid transcription is submitted you now see a confirmation with how billing works, the estimated cost, and your balance, plus the option to transcribe on this device instead; it covers the right-click menu, the panel button, and the automatic transcription after a recording ends, so Credits are never held without your confirmation.',
             },
             {
-                zh: '快速打开（⌘P）、AI 对话里的文件引用、事项文件选择器等六处文件列表，之前只看得到项目根目录；现在都能搜到全项目的文件，从对话里按名字打开文件也会优先匹配根目录的同名文件。', 'zh-hant': '快速打開（⌘P）、AI 對話裡的文件引用、事項文件選擇器等六處文件列表，之前只看得到項目根目錄；現在都能搜到全項目的文件，從對話裡按名字打開文件也會優先匹配根目錄的同名文件。',
+                zh: '快速打开（⌘P）、AI 对话里的文件引用、事项文件选择器等六处文件列表，之前只看得到项目根目录；现在都能搜到全项目的文件，从对话里按名字打开文件也会优先匹配根目录的同名文件。', 'zh-hant': '快速打開（⌘P）、AI 對話裡的文件引用、事項文件選擇器等六處文件列表，之前只看得到專案根目錄；現在都能搜到全專案的文件，從對話裡按名字打開文件也會優先匹配根目錄的同名文件。',
                 en: 'Quick Open (Cmd+P), file references in AI chat, the task file picker, and three other file lists used to see only the project root; they now search the whole project, and opening a file by name from a chat prefers the root-level match.',
             },
             {
-                zh: '编辑器一批细节修复：xlsx 表格可以直接打字了；在访达里改名已打开的文档后，编辑器会跟着新文件名保存，不再分出两份；导出 PDF 会提示完成并存到项目目录；审阅面板的「全部接受 / 全部拒绝」只作用于当前筛选出的修订；版本记录的完整历史页去掉了 Git 术语和哈希。', 'zh-hant': '編輯器一批細節修復：xlsx 表格可以直接打字了；在訪達裡改名已打開的文件後，編輯器會跟著新文件名保存，不再分出兩份；導出 PDF 會提示完成並存到項目目錄；審閱面板的「全部接受 / 全部拒絕」只作用於當前篩選出的修訂；版本記錄的完整歷史頁去掉了 Git 術語和哈希。',
+                zh: '编辑器一批细节修复：xlsx 表格可以直接打字了；在访达里改名已打开的文档后，编辑器会跟着新文件名保存，不再分出两份；导出 PDF 会提示完成并存到项目目录；审阅面板的「全部接受 / 全部拒绝」只作用于当前筛选出的修订；版本记录的完整历史页去掉了 Git 术语和哈希。', 'zh-hant': '編輯器一批細節修復：xlsx 表格可以直接打字了；在訪達裡改名已打開的文件後，編輯器會跟著新文件名保存，不再分出兩份；導出 PDF 會提示完成並存到專案目錄；審閱面板的「全部接受 / 全部拒絕」只作用於當前篩選出的修訂；版本記錄的完整歷史頁去掉了 Git 術語和哈希。',
                 en: 'A batch of editor fixes: you can type directly into xlsx cells; renaming an open document in Finder is picked up, so saving no longer creates a second file under the old name; exporting to PDF confirms completion and saves into the project folder; "Accept All" and "Reject All" in the review panel apply only to the changes you filtered; and the full version history no longer shows Git jargon or hashes.',
             },
         ],
@@ -1063,7 +1063,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'With a dialog open (version details, tag manager, and others), pressing Tab or typing no longer lands in the document behind it; in a newly created document your tracked changes are now attributed to you, and the "Me" filter in the review panel shows them.',
             },
             {
-                zh: '本地文件夹项目里新建的空文件夹不会再莫名出现在回收站，恢复后也不会再次消失；选中文件夹再点「新建文档」，文档会落进该文件夹。文件重命名后，标签页、窗口标题、底栏和 AI「当前文档」立即同名。', 'zh-hant': '本地文件夾項目裡新建的空文件夾不會再莫名出現在回收站，恢復後也不會再次消失；選中文件夾再點「新建文件」，文件會落進該文件夾。文件重命名後，標籤頁、窗口標題、底欄和 AI「當前文件」立即同名。',
+                zh: '本地文件夹项目里新建的空文件夹不会再莫名出现在回收站，恢复后也不会再次消失；选中文件夹再点「新建文档」，文档会落进该文件夹。文件重命名后，标签页、窗口标题、底栏和 AI「当前文档」立即同名。', 'zh-hant': '本地文件夾專案裡新建的空文件夾不會再莫名出現在回收站，恢復後也不會再次消失；選中文件夾再點「新建文件」，文件會落進該文件夾。文件重命名後，標籤頁、窗口標題、底欄和 AI「當前文件」立即同名。',
                 en: 'In local-folder projects, empty folders you create no longer turn up in the recycle bin or vanish again after being restored; creating a document with a folder selected now places it inside that folder. After a rename, tabs, the window title, the status bar, and the AI\'s "current document" update at once.',
             },
             {
@@ -1097,7 +1097,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Switching the sign-in page between "Mainland China" and "International" now switches the whole page\'s language with it (English for international, Chinese for mainland) in one step, with no reload; if you have manually chosen a language, that choice is kept.',
             },
             {
-                zh: 'AI 对话遇到不够明确的要求（比如「能帮我清理一下这份文档吗」）会先给出几个选项问清楚再动手，不再自行猜测大范围改动；指令明确时照旧直接执行，Office/WPS 任务窗格同样支持。', 'zh-hant': 'AI 對話遇到不夠明確的要求（比如「能幫我清理一下這份文件嗎」）會先給出幾個選項問清楚再動手，不再自行猜測大範圍改動；指令明確時照舊直接執行，Office/WPS 任務窗格同樣支持。',
+                zh: 'AI 对话遇到不够明确的要求（比如「能帮我清理一下这份文档吗」）会先给出几个选项问清楚再动手，不再自行猜测大范围改动；指令明确时照旧直接执行，Office/WPS 任务窗格同样支持。', 'zh-hant': 'AI 對話遇到不夠明確的要求（比如「能幫我清理一下這份文件嗎」）會先給出幾個選項問清楚再動手，不再自行猜測大範圍改動；指令明確時照舊直接執行，Office/WPS 任務窗格同樣支援。',
                 en: 'When a request to the AI is not specific enough (for example, "can you clean up this document"), it now asks a few clarifying questions with options before acting, instead of guessing at a broad edit; clear instructions are still carried out directly, and the same applies in the Office/WPS task pane.',
             },
             {
@@ -1161,7 +1161,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'The AI can now operate on individual PDF pages (rotate, delete, extract, and more) and do bulk find-and-replace in Excel; Stop now actually stops the AI immediately, and each reply shows which tools it used and how long it took.',
             },
             {
-                zh: '全站配色换新（东方清雅体系）；Office/WPS 插件支持跨文件参照与跨文档修改，登录新增邮箱验证码方式。', 'zh-hant': '全站配色換新（東方清雅體系）；Office/WPS 外掛支持跨文件參照與跨文件修改，登入新增電子郵件驗證碼方式。',
+                zh: '全站配色换新（东方清雅体系）；Office/WPS 插件支持跨文件参照与跨文档修改，登录新增邮箱验证码方式。', 'zh-hant': '全站配色換新（東方清雅體系）；Office/WPS 外掛支援跨文件參照與跨文件修改，登入新增電子郵件驗證碼方式。',
                 en: 'A refreshed color theme across the app; the Office/WPS add-in can now reference other open files and edit across documents, and sign-in adds an email verification-code option.',
             },
         ],
@@ -1179,7 +1179,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Submitting your work now shows the current status and a three-step confirmation first, instead of misreporting a submission when nothing changed.',
             },
             {
-                zh: '团队协作中，首次上传项目会先问是否愿意使用真实项目名，拒绝的话只上传匿名编号，保护客户信息。', 'zh-hant': '團隊協作中，首次上傳項目會先問是否願意使用真實項目名，拒絕的話只上傳匿名編號，保護客戶資訊。',
+                zh: '团队协作中，首次上传项目会先问是否愿意使用真实项目名，拒绝的话只上传匿名编号，保护客户信息。', 'zh-hant': '團隊協作中，首次上傳專案會先問是否願意使用真實專案名，拒絕的話只上傳匿名編號，保護客戶資訊。',
                 en: 'The first time a project is shared with your team, you are asked whether to use its real name; declining uploads only an anonymous ID, protecting client information.',
             },
             {
@@ -1217,7 +1217,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: "AI cards awaiting your answer or approval now have a persistent locator, so they won't get lost as the conversation scrolls down.",
             },
             {
-                zh: '项目名过长时，顶部栏改为省略显示，常用操作按钮仍然可以点。', 'zh-hant': '項目名過長時，頂部欄改為省略顯示，常用操作按鈕仍然可以點。',
+                zh: '项目名过长时，顶部栏改为省略显示，常用操作按钮仍然可以点。', 'zh-hant': '專案名過長時，頂部欄改為省略顯示，常用操作按鈕仍然可以點。',
                 en: 'A long project name is now truncated in the top bar while the usual action buttons remain reachable.',
             },
         ],
@@ -1331,7 +1331,7 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '新增脱敏 2.0 引擎：本地识别公司名，支持预览、补充敏感词和保留词，普通条款保持可读；人名仍由你自己填写完整词语。', 'zh-hant': '新增脫敏 2.0 引擎：本地識別公司名，支持預覽、補充敏感詞和保留詞，普通條款保持可讀；人名仍由你自己填寫完整詞語。',
+                zh: '新增脱敏 2.0 引擎：本地识别公司名，支持预览、补充敏感词和保留词，普通条款保持可读；人名仍由你自己填写完整词语。', 'zh-hant': '新增脫敏 2.0 引擎：本地識別公司名，支援預覽、補充敏感詞和保留詞，普通條款保持可讀；人名仍由你自己填寫完整詞語。',
                 en: 'A new 2.0 redaction engine detects company names locally, with previews and custom sensitive/preserved terms, while keeping ordinary text readable; personal names are still entered by hand.',
             },
             {
@@ -1357,7 +1357,7 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '本地写作补全：输入机构、人名、法规条款、案号或常用表述的开头，从候选中选择，按 Tab 补全；项目和个人词库会越用越准，也可以关闭学习或清空已学内容。', 'zh-hant': '本地寫作補全：輸入機構、人名、法規條款、案號或常用表述的開頭，從候選中選擇，按 Tab 補全；項目和個人詞庫會越用越準，也可以關閉學習或清空已學內容。',
+                zh: '本地写作补全：输入机构、人名、法规条款、案号或常用表述的开头，从候选中选择，按 Tab 补全；项目和个人词库会越用越准，也可以关闭学习或清空已学内容。', 'zh-hant': '本地寫作補全：輸入機構、人名、法規條款、案號或常用表述的開頭，從候選中選擇，按 Tab 補全；專案和個人詞庫會越用越準，也可以關閉學習或清空已學內容。',
                 en: 'Local writing completion: type the start of an organization, person, law/article, case number, or a recurring phrase, pick a suggestion, and press Tab to complete it; project and personal vocabularies improve with use, and learning can be disabled or cleared.',
             },
             {
@@ -1365,7 +1365,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Contextual information: once a known entity is recognized, you can review its saved information and insert it into text or a table; external lookups require an explicit selection and a click, with a preview before insertion — typing alone never triggers a background query.',
             },
             {
-                zh: '即时审校：写作时就能看到编号、待填内容、金额算式、统一社会信用代码等本地检查提示，AI 深入审校只在点击「深入审校」时才会调用。', 'zh-hant': '即時審校：寫作時就能看到編號、待填內容、金額算式、統一社會信用代碼等本地檢查提示，AI 深入審校只在點擊「深入審校」時才會調用。',
+                zh: '即时审校：写作时就能看到编号、待填内容、金额算式、统一社会信用代码等本地检查提示，AI 深入审校只在点击「深入审校」时才会调用。', 'zh-hant': '即時審校：寫作時就能看到編號、待填內容、金額算式、統一社會信用代碼等本地檢查提示，AI 深入審校只在點擊「深入審校」時才會呼叫。',
                 en: 'Live review: local checks for numbering, placeholders, arithmetic, and identifiers like unified social credit codes appear while you write; AI-powered deep review only runs when you click it.',
             },
             {
@@ -1429,7 +1429,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Litigation visualization now confirms before a style change overwrites your manual edits and refreshes the canvas correctly, alongside fixes for missing text in exported images, default export names, and legacy relationship labels.',
             },
             {
-                zh: '新建的 Word 文件会保留兼容格式；清除项目符号、设置正文居中现在都能正确生效。', 'zh-hant': '新建的 Word 文件會保留兼容格式；清除項目符號、設定正文居中現在都能正確生效。',
+                zh: '新建的 Word 文件会保留兼容格式；清除项目符号、设置正文居中现在都能正确生效。', 'zh-hant': '新建的 Word 文件會保留兼容格式；清除專案符號、設定正文居中現在都能正確生效。',
                 en: 'New Word files now keep a compatible format, and removing bullet lists or centering paragraphs works correctly.',
             },
         ],
@@ -1468,7 +1468,7 @@ export const RELEASES: ReleaseNote[] = [
         version: '0.34.0',
         date: '2026-09-05',
         headline: {
-            zh: '整篇校对提速；项目版本记录默认开启；案件库邀请同事', 'zh-hant': '整篇校對提速；項目版本記錄預設開啟；案件庫邀請同事',
+            zh: '整篇校对提速；项目版本记录默认开启；案件库邀请同事', 'zh-hant': '整篇校對提速；專案版本記錄預設開啟；案件庫邀請同事',
             en: 'Faster whole-document proofreading, version history by default, and case-library invites',
         },
         items: [
@@ -1477,15 +1477,15 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Asking the AI to proofread an entire Word document no longer stalls — it now moves through the document section by section, with progress shown in the task pane.',
             },
             {
-                zh: '项目版本记录改为默认开启，不用再手动打开；不需要留痕时可以随时关闭并清除历史。', 'zh-hant': '項目版本記錄改為預設開啟，不用再手動打開；不需要留痕時可以隨時關閉並清除歷史。',
+                zh: '项目版本记录改为默认开启，不用再手动打开；不需要留痕时可以随时关闭并清除历史。', 'zh-hant': '專案版本記錄改為預設開啟，不用再手動打開；不需要留痕時可以隨時關閉並清除歷史。',
                 en: 'Project version history is now on by default, with no manual setup needed, and you can turn it off and clear it at any time.',
             },
             {
-                zh: '案件库支持零配置直接连接官方云端，还能按手机号邀请同事加入案件协作。', 'zh-hant': '案件庫支持零配置直接連接官方雲端，還能按手機號碼邀請同事加入案件協作。',
+                zh: '案件库支持零配置直接连接官方云端，还能按手机号邀请同事加入案件协作。', 'zh-hant': '案件庫支援零配置直接連接官方雲端，還能按手機號碼邀請同事加入案件協作。',
                 en: 'The case library now connects to the official cloud with zero setup, and you can invite colleagues to a case by phone number.',
             },
             {
-                zh: '把电脑里的文件拖进项目目录时会直接复制进去；上传失败也不会再留下一个空白的占位文件。', 'zh-hant': '把電腦裡的文件拖進項目目錄時會直接複製進去；上傳失敗也不會再留下一個空白的佔位文件。',
+                zh: '把电脑里的文件拖进项目目录时会直接复制进去；上传失败也不会再留下一个空白的占位文件。', 'zh-hant': '把電腦裡的文件拖進專案目錄時會直接複製進去；上傳失敗也不會再留下一個空白的佔位文件。',
                 en: 'Dragging a file from your computer into a project folder now copies it in directly, and a failed upload no longer leaves a blank placeholder.',
             },
         ],
@@ -1585,7 +1585,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Redesigned Windows setup into a one-click install and fixed a startup loop on Windows-on-ARM devices.',
             },
             {
-                zh: 'Windows 装机包合并成一份，同时支持 x64 与 ARM64 处理器。', 'zh-hant': 'Windows 裝機包合併成一份，同時支持 x64 與 ARM64 處理器。',
+                zh: 'Windows 装机包合并成一份，同时支持 x64 与 ARM64 处理器。', 'zh-hant': 'Windows 裝機包合併成一份，同時支援 x64 與 ARM64 處理器。',
                 en: 'The Windows installer is now a single package that supports both x64 and ARM64 processors.',
             },
             {
@@ -1598,7 +1598,7 @@ export const RELEASES: ReleaseNote[] = [
         version: '0.29.0',
         date: '2026-08-31',
         headline: {
-            zh: '安装流程重新设计；插件绑定桌面项目', 'zh-hant': '安裝流程重新設計；外掛綁定桌面項目',
+            zh: '安装流程重新设计；插件绑定桌面项目', 'zh-hant': '安裝流程重新設計；外掛綁定桌面專案',
             en: 'Redesigned installers and plugin-to-desktop project binding',
         },
         items: [
@@ -1611,7 +1611,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Website downloads now go through a CDN for steadier speeds.',
             },
             {
-                zh: '插件里选择项目会绑定桌面端的项目归档，对话记录和文档在桌面与插件之间互通。', 'zh-hant': '外掛裡選擇項目會綁定桌面端的項目歸檔，對話記錄和文件在桌面與外掛之間互通。',
+                zh: '插件里选择项目会绑定桌面端的项目归档，对话记录和文档在桌面与插件之间互通。', 'zh-hant': '外掛裡選擇專案會綁定桌面端的專案歸檔，對話記錄和文件在桌面與外掛之間互通。',
                 en: 'Picking a project in the add-in now ties to its desktop case file, mirroring conversations and documents between the two.',
             },
         ],
@@ -1707,7 +1707,7 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: 'Office 插件任务窗格大改版：新增计划卡、定位、批注、附件、会话管理，并支持中英双语切换。', 'zh-hant': 'Office 外掛任務窗格大改版：新增計劃卡、定位、批註、附件、會話管理，並支持中英雙語切換。',
+                zh: 'Office 插件任务窗格大改版：新增计划卡、定位、批注、附件、会话管理，并支持中英双语切换。', 'zh-hant': 'Office 外掛任務窗格大改版：新增計劃卡、定位、批註、附件、會話管理，並支援中英雙語切換。',
                 en: 'The Office add-in task pane has been rebuilt, adding plan cards, source positioning, annotations, attachments, and session management, in both Chinese and English.',
             },
             {
@@ -1771,7 +1771,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Fixed several cases where the AI silently failed but reported success — dozens of common tool failures were misread as succeeding, a file the AI claimed to save was never actually written, and an off-by-one paragraph count could make it edit the wrong passage.',
             },
             {
-                zh: '修复可能丢内容的风险：切换项目、返回列表或退出登录时不再静默丢弃刚编辑的内容；压缩历史消息时也不再误删最后一段正文。', 'zh-hant': '修復可能丟內容的風險：切換項目、返回列表或退出登入時不再靜默丟棄剛編輯的內容；壓縮歷史訊息時也不再誤刪最後一段正文。',
+                zh: '修复可能丢内容的风险：切换项目、返回列表或退出登录时不再静默丢弃刚编辑的内容；压缩历史消息时也不再误删最后一段正文。', 'zh-hant': '修復可能丟內容的風險：切換專案、返回列表或退出登入時不再靜默丟棄剛編輯的內容；壓縮歷史訊息時也不再誤刪最後一段正文。',
                 en: 'Fixed several ways edits could quietly disappear: switching projects, returning to the project list, or signing out no longer discards what was just typed, and compressing chat history no longer drops the last paragraph.',
             },
             {
@@ -1792,7 +1792,7 @@ export const RELEASES: ReleaseNote[] = [
         version: '0.22.0',
         date: '2026-08-20',
         headline: {
-            zh: '日历与任务系统上线；手机端项目镜像', 'zh-hant': '日曆與任務系統上線；手機端項目鏡像',
+            zh: '日历与任务系统上线；手机端项目镜像', 'zh-hant': '日曆與任務系統上線；手機端專案鏡像',
             en: 'Calendar and tasks arrive, plus mobile project mirroring',
         },
         items: [
@@ -1801,7 +1801,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'A new calendar view and task system make it possible to manage a schedule and to-dos right inside the workbench.',
             },
             {
-                zh: '手机端支持镜像项目目录、把现场拍摄的影像即时传回项目，并可绑定手机号认领账号。', 'zh-hant': '手機端支持鏡像項目目錄、把現場拍攝的影像即時傳回項目，並可綁定手機號碼認領帳號。',
+                zh: '手机端支持镜像项目目录、把现场拍摄的影像即时传回项目，并可绑定手机号认领账号。', 'zh-hant': '手機端支援鏡像專案目錄、把現場拍攝的影像即時傳回專案，並可綁定手機號碼認領帳號。',
                 en: 'The mobile companion can now mirror project folders, send photos and video shot on-site straight into the project, and claim an account by phone number.',
             },
             {
@@ -1813,7 +1813,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'A new lightweight editor opens .txt and .md files without loading the full document engine.',
             },
             {
-                zh: '一批稳定性修复：文档加载结果不再被静默丢弃、会议录音的麦克风选择与提示卡片视觉修好、项目列表与版本记录弹窗也按用户反馈改版。', 'zh-hant': '一批穩定性修復：文件載入結果不再被靜默丟棄、會議錄音的麥克風選擇與提示卡片視覺修好、項目列表與版本記錄彈窗也按使用者反饋改版。',
+                zh: '一批稳定性修复：文档加载结果不再被静默丢弃、会议录音的麦克风选择与提示卡片视觉修好、项目列表与版本记录弹窗也按用户反馈改版。', 'zh-hant': '一批穩定性修復：文件載入結果不再被靜默丟棄、會議錄音的麥克風選擇與提示卡片視覺修好、專案列表與版本記錄彈窗也按使用者反饋改版。',
                 en: 'A round of reliability fixes: a late-arriving document load no longer gets silently dropped, the microphone picker and notice card in meeting recording look right again, and the project list and version history popup were reworked based on user feedback.',
             },
         ],
@@ -1857,7 +1857,7 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '左侧导航重排，项目概览常驻在小面板里；设置与个人中心移到右上角头像下拉，打开后是独立的标签页。', 'zh-hant': '左側導航重排，項目概覽常駐在小面板裡；設定與個人中心移到右上角頭像下拉，打開後是獨立的標籤頁。',
+                zh: '左侧导航重排，项目概览常驻在小面板里；设置与个人中心移到右上角头像下拉，打开后是独立的标签页。', 'zh-hant': '左側導航重排，專案概覽常駐在小面板裡；設定與個人中心移到右上角頭像下拉，打開後是獨立的標籤頁。',
                 en: 'The left navigation was reorganized, with the project overview now always visible in a compact panel; Settings and the profile page moved under the avatar menu in the top right and open as their own tab.',
             },
             {
@@ -1869,7 +1869,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Litigation visualization is steadier: fixed guidance occasionally disappearing and charts failing to open, and generated charts are now editable in the app by default.',
             },
             {
-                zh: 'AI 对话里，需要你确认的操作单独做成「待确认」卡片；重复的工具调用记录会自动折叠，不再刷屏。', 'zh-hant': 'AI 對話裡，需要你確認的操作單獨做成「待確認」卡片；重複的工具調用記錄會自動摺疊，不再刷屏。',
+                zh: 'AI 对话里，需要你确认的操作单独做成「待确认」卡片；重复的工具调用记录会自动折叠，不再刷屏。', 'zh-hant': 'AI 對話裡，需要你確認的操作單獨做成「待確認」卡片；重複的工具呼叫記錄會自動摺疊，不再刷屏。',
                 en: 'In AI chat, actions awaiting approval now get their own pending card, and repeated tool calls collapse automatically instead of flooding the log.',
             },
         ],
@@ -1878,7 +1878,7 @@ export const RELEASES: ReleaseNote[] = [
         version: '0.19.0',
         date: '2026-08-18',
         headline: {
-            zh: 'Office 插件账户登录；项目列表信息更丰富', 'zh-hant': 'Office 外掛帳戶登入；項目列表資訊更豐富',
+            zh: 'Office 插件账户登录；项目列表信息更丰富', 'zh-hant': 'Office 外掛帳戶登入；專案列表資訊更豐富',
             en: 'Account login for the Office add-in, and a richer project list',
         },
         items: [
@@ -1891,11 +1891,11 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'The international desktop build adds email verification-code login.',
             },
             {
-                zh: '项目列表新增档案信息：客户名称常显，其余字段收进「详情」里按需展开。', 'zh-hant': '項目列表新增檔案資訊：客戶名稱常顯，其餘字段收進「詳情」裡按需展開。',
+                zh: '项目列表新增档案信息：客户名称常显，其余字段收进「详情」里按需展开。', 'zh-hant': '專案列表新增檔案資訊：客戶名稱常顯，其餘字段收進「詳情」裡按需展開。',
                 en: 'The project list now shows profile fields — the client name stays visible, with the rest tucked into an expandable details section.',
             },
             {
-                zh: '修复顶部栏点击无响应的问题，补上登出入口，项目列表新增两种视图。', 'zh-hant': '修復頂部欄點擊無響應的問題，補上登出入口，項目列表新增兩種視圖。',
+                zh: '修复顶部栏点击无响应的问题，补上登出入口，项目列表新增两种视图。', 'zh-hant': '修復頂部欄點擊無響應的問題，補上登出入口，專案列表新增兩種視圖。',
                 en: 'Fixed the top bar not responding to clicks, added a sign-out option, and gave the project list two view modes.',
             },
             {
@@ -1917,7 +1917,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'The first-run wizard now only asks for one AI provider — other services such as voice, OCR, Qichacha, Tushare, and Faobao are provisioned and billed by the platform, with no need to sign up for and paste in an API key for each one.',
             },
             {
-                zh: '新增手机号验证码登录；官方版从此都要用账号登录，不再支持试用码解锁。', 'zh-hant': '新增手機號碼驗證碼登入；官方版從此都要用帳號登入，不再支持試用碼解鎖。',
+                zh: '新增手机号验证码登录；官方版从此都要用账号登录，不再支持试用码解锁。', 'zh-hant': '新增手機號碼驗證碼登入；官方版從此都要用帳號登入，不再支援試用碼解鎖。',
                 en: 'Added phone verification-code login; the official build now requires signing in with an account, and no longer accepts a trial code to unlock.',
             },
             {
@@ -1951,7 +1951,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'Fixed the app showing up as Electron in the Mac dock instead of its real name.',
             },
             {
-                zh: '修复项目文件夹放在 iCloud 云盘时，文件监听会把整个 iCloud 云盘目录都读一遍的问题。', 'zh-hant': '修復項目文件夾放在 iCloud 雲盤時，文件監聽會把整個 iCloud 雲盤目錄都讀一遍的問題。',
+                zh: '修复项目文件夹放在 iCloud 云盘时，文件监听会把整个 iCloud 云盘目录都读一遍的问题。', 'zh-hant': '修復專案文件夾放在 iCloud 雲盤時，文件監聽會把整個 iCloud 雲盤目錄都讀一遍的問題。',
                 en: 'Fixed file watching scanning an entire iCloud Drive when a project folder happened to live there.',
             },
             {
@@ -1969,7 +1969,7 @@ export const RELEASES: ReleaseNote[] = [
         },
         items: [
             {
-                zh: '全应用支持简体中文与 English：界面、文档编辑器、AI 回复与工具过程都会跟随你在设置里选的语言。装一个包即可，不需要下载英文版。', 'zh-hant': '全應用支持簡體中文與 English：界面、文件編輯器、AI 回覆與工具過程都會跟隨你在設定裡選的語言。裝一個包即可，不需要下載英文版。',
+                zh: '全应用支持简体中文与 English：界面、文档编辑器、AI 回复与工具过程都会跟随你在设置里选的语言。装一个包即可，不需要下载英文版。', 'zh-hant': '全應用支援簡體中文與 English：界面、文件編輯器、AI 回覆與工具過程都會跟隨你在設定裡選的語言。裝一個包即可，不需要下載英文版。',
                 en: 'The whole application now speaks Simplified Chinese and English: interface, document editor, AI replies, and tool activity all follow the language you pick in Settings. One installer — there is no separate English download.',
             },
             {
@@ -1985,7 +1985,7 @@ export const RELEASES: ReleaseNote[] = [
                 en: 'The document editor moves to a purpose-built toolbar: common commands are one click away, plus table operations, footnotes and endnotes, and headers and footers.',
             },
             {
-                zh: '修掉 AI 在需要调用工具时可能整整三分钟没有反应的问题（传输层错误被吞，只能等超时兜底）。', 'zh-hant': '修掉 AI 在需要調用工具時可能整整三分鐘沒有反應的問題（傳輸層錯誤被吞，只能等超時兜底）。',
+                zh: '修掉 AI 在需要调用工具时可能整整三分钟没有反应的问题（传输层错误被吞，只能等超时兜底）。', 'zh-hant': '修掉 AI 在需要呼叫工具時可能整整三分鐘沒有反應的問題（傳輸層錯誤被吞，只能等超時兜底）。',
                 en: 'Fixed a case where the AI could sit unresponsive for three minutes when it needed to call a tool (a transport error was being swallowed, leaving only the timeout to recover).',
             },
         ],
@@ -2012,12 +2012,12 @@ export const RELEASES: ReleaseNote[] = [
         version: '0.14.0',
         date: '2026-08-09',
         headline: {
-            zh: '项目概览页；诉讼可视化', 'zh-hant': '項目概覽頁；訴訟可視化',
+            zh: '项目概览页；诉讼可视化', 'zh-hant': '專案概覽頁；訴訟可視化',
             en: 'Project overview page; litigation visualization',
         },
         items: [
             {
-                zh: '新增项目概览页：一页看完档案、统计、动态、日程与历史对话。', 'zh-hant': '新增項目概覽頁：一頁看完檔案、統計、動態、日程與歷史對話。',
+                zh: '新增项目概览页：一页看完档案、统计、动态、日程与历史对话。', 'zh-hant': '新增專案概覽頁：一頁看完檔案、統計、動態、日程與歷史對話。',
                 en: 'New project overview page: profile, statistics, activity, schedule, and past conversations on one page.',
             },
             {
