@@ -244,7 +244,7 @@ function NavbarContent({ lang, dict, githubStars, pathname }: NavbarProps & { pa
                             aria-expanded={isLangOpen}
                             aria-haspopup="listbox"
                             aria-controls="language-picker-menu"
-                            onClick={() => setIsLangOpen(open => !open)}
+                            onClick={() => { setIsLangOpen(open => !open); setIsMobileMenuOpen(false); }}
                         >
                             <Globe aria-hidden className="h-4 w-4 shrink-0" />
                             <span className="hidden sm:inline">{currentMeta.nativeName}</span>
@@ -334,7 +334,7 @@ function NavbarContent({ lang, dict, githubStars, pathname }: NavbarProps & { pa
 
                 {showSupport && <button type="button" onClick={openSupport} aria-label={nav.donateAria} title={nav.donateAria} className={cn(linkStyle, 'hidden min-w-11 shrink-0 justify-center gap-2 md:max-xl:inline-flex')}><Heart aria-hidden className="h-4 w-4" /><span className="hidden min-[360px]:inline">{nav.donate}</span></button>}
                 <Button asChild size="sm" className="shrink-0 md:hidden"><Link href={`/${lang}/start`}>{nav.download}</Link></Button>
-                <button ref={mobileToggle} type="button" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-king-forest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-king-forest xl:hidden" aria-label={isMobileMenuOpen ? nav.closeNavAria : nav.openNavAria} aria-expanded={isMobileMenuOpen} aria-controls="mobile-navigation" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+                <button ref={mobileToggle} type="button" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-king-forest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-king-forest xl:hidden" aria-label={isMobileMenuOpen ? nav.closeNavAria : nav.openNavAria} aria-expanded={isMobileMenuOpen} aria-controls="mobile-navigation" onClick={() => { setIsMobileMenuOpen(!isMobileMenuOpen); setIsLangOpen(false); }}>
                     {isMobileMenuOpen ? <X aria-hidden /> : <Menu aria-hidden />}
                 </button>
             </div>
