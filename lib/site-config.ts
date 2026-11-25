@@ -40,7 +40,7 @@ export interface SiteLegalEntity {
   /** 统一社会信用代码。 */
   registrationNo: string;
   /** 注册号在法律文本里的称呼。 */
-  registrationLabel: { zh: string; en: string };
+  registrationLabel: { zh: string; en: string; 'zh-hant'?: string };
   /**
    * 注册办事处地址。
    *
@@ -112,7 +112,7 @@ const GONGFU_ENTITY = {
   nameZh: '北京公富信息技术有限公司',
   nameEn: 'BEIJING GONG FU INFORMATION TECHNOLOGY LIMITED',
   registrationNo: '911101053483482356',
-  registrationLabel: { zh: '统一社会信用代码', en: 'Unified Social Credit Code' },
+  registrationLabel: { zh: '统一社会信用代码', 'zh-hant': '統一社會信用代碼', en: 'Unified Social Credit Code' },
   registeredAddress: {
     zh: '北京市朝阳区东三环中路1号1幢1单元15层1501内15单元',
     en: 'Unit 15 within Room 1501, Floor 15, Unit 1, Building 1, No. 1 East Third Ring Middle Road, Chaoyang District, Beijing, China',

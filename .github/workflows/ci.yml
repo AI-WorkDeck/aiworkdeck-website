@@ -85,6 +85,8 @@ jobs:
         run: npx tsx --tsconfig tsconfig.json scripts/verify-charts-and-titles.mts
       - name: /get-app page for desktop and phone visitors
         run: npx tsx --tsconfig tsconfig.json scripts/verify-get-app.mts
+      - name: zh-hant pages have no Simplified text
+        run: node scripts/verify-zh-hant-text.mjs
       - name: Plugin store lists each plugin once
         run: npm run test:store-plugins
       - name: Pricing page offers only what each site sells
