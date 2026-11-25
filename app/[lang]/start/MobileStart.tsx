@@ -109,7 +109,7 @@ export function MobileStart({ lang, dict, loggedIn, email, desktopUrl, captcha, 
                         </p>
                     </div>
                 )}
-                <div className="rounded-xl border border-[#dce2de] bg-white p-6">
+                <div className="rounded-xl border border-neutral-gray-light bg-white p-6">
                     <AuthForms bqtEnabled={bqtEnabled} lang={lang} dict={dict} bare defaultTab="register" next={`/${lang}/start`}
                         captcha={captcha} codeChannelReady={codeChannelReady} startRef={startRef} />
                 </div>
@@ -119,7 +119,7 @@ export function MobileStart({ lang, dict, loggedIn, email, desktopUrl, captcha, 
 
     return (
         <div className="mx-auto max-w-md">
-            <div className="rounded-xl border border-[#dce2de] bg-white p-6">
+            <div className="rounded-xl border border-neutral-gray-light bg-white p-6">
                 <p className="flex items-center gap-2 text-lg font-bold text-neutral-dark-bg">
                     <Check className="h-5 w-5 text-king-forest" strokeWidth={2} />
                     {t.readyTitle}

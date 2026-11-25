@@ -123,7 +123,7 @@ export default async function StartPage({
                 {!isMobile && (
                     <p className="mt-8 mb-16 text-[13.5px] leading-relaxed text-neutral-gray-medium">
                         {t.webFallback.text}{' '}
-                        <WebVersionLink href={`/web/?lang=${lang}`} className="font-semibold text-king-forest underline decoration-[#d7c5a1] underline-offset-4 hover:decoration-king-forest">{t.webFallback.link}</WebVersionLink>
+                        <WebVersionLink href={`/web/?lang=${lang}`} className="font-semibold text-king-forest underline decoration-king-gold underline-offset-4 hover:decoration-king-forest">{t.webFallback.link}</WebVersionLink>
                     </p>
                 )}
             </div>
@@ -135,7 +135,7 @@ export default async function StartPage({
 function SiteChoice({ t, currentHost, setupPath }: { t: Awaited<ReturnType<typeof getDictionary>>['startPage']['siteChoice']; currentHost: string; setupPath: string }) {
     const intl = SITE_ID === 'intl';
     return (
-        <section className="mb-5 rounded-xl border border-[#dce2de] bg-white/95 px-4 py-2.5 shadow-[0_2px_12px_-4px_rgba(22,42,33,0.06)]" aria-label={t.ariaLabel}>
+        <section className="mb-5 rounded-xl border border-neutral-gray-light bg-white/95 px-4 py-2.5 shadow-[0_2px_12px_-4px_rgba(22,42,33,0.06)]" aria-label={t.ariaLabel}>
             <details className="group">
                 <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-sm [&::-webkit-details-marker]:hidden">
                     <div className="flex flex-wrap items-center gap-2.5 min-w-0">

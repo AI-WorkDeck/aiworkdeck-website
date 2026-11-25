@@ -82,17 +82,17 @@ export default async function CommunityPage({
             <PageHero eyebrow={t.eyebrow} title={t.heroTitle} subtitle={t.heroSubtitle} width="5xl">
                 <div className="flex flex-wrap items-center gap-3">
                     <Link href={`/${lang}/community/new`}
-                        className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[#1f3b34] px-5 text-[13.5px] font-bold text-[#f6f4ee] shadow-sm transition-colors hover:bg-[#17302a]">
+                        className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-pine px-5 text-[13.5px] font-bold text-paper shadow-sm transition-colors hover:bg-pine-deep">
                         <Plus className="h-4 w-4" strokeWidth={2} />
                         {t.newPostCta}
                     </Link>
                     <Link href={`/${lang}/community/chat`}
-                        className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-[#e3dccb] bg-[#fffdf8] px-4 text-[13.5px] font-medium text-[#1f3b34] transition-colors hover:border-[#c9bd9f] hover:bg-white">
+                        className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-neutral-gray-light bg-neutral-white px-4 text-[13.5px] font-medium text-pine transition-colors hover:border-king-gold-line hover:bg-white">
                         <MessagesSquare className="h-4 w-4" strokeWidth={1.75} />
                         {t.chatroomCta}
                     </Link>
                     <a href={`${REPO_URL}/discussions`} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-[#e3dccb] bg-[#fffdf8] px-4 text-[13.5px] font-medium text-[#1f3b34] transition-colors hover:border-[#c9bd9f] hover:bg-white">
+                        className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-neutral-gray-light bg-neutral-white px-4 text-[13.5px] font-medium text-pine transition-colors hover:border-king-gold-line hover:bg-white">
                         {t.githubCta}
                     </a>
                 </div>

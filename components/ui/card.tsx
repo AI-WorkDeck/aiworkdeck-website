@@ -6,9 +6,9 @@ const Card = React.forwardRef<
     React.HTMLAttributes<HTMLDivElement> & { variant?: 'default' | 'glass' | 'outline' }
 >(({ className, variant = 'default', ...props }, ref) => {
     const variants = {
-        default: 'bg-[#fffdf8] text-neutral-gray-dark shadow-[0_1px_0_#fff_inset,0_10px_30px_-24px_rgba(31,59,52,0.35)] border border-[#e3dccb]',
-        glass: 'bg-[#fffdf8]/85 backdrop-blur-md border border-[#e3dccb] shadow-md',
-        outline: 'bg-transparent border border-[#e3dccb]',
+        default: 'bg-neutral-white text-neutral-gray-dark shadow-[0_1px_0_#fff_inset,0_10px_30px_-24px_rgba(31,59,52,0.35)] border border-neutral-gray-light',
+        glass: 'bg-neutral-white/85 backdrop-blur-md border border-neutral-gray-light shadow-md',
+        outline: 'bg-transparent border border-neutral-gray-light',
     };
 
     return (

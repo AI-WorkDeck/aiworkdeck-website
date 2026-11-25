@@ -12,16 +12,16 @@ import { cn } from '@/lib/utils';
 
 const VARIANT_STYLE: Record<'success' | 'info' | 'error', { box: string; icon: string }> = {
     success: {
-        box: 'border-[#b8d8ce] bg-[#f0f6f4] text-[#1c352d]',
-        icon: 'text-[#2E5A50]',
+        box: 'border-neutral-gray-light bg-king-forest-lightest text-king-forest',
+        icon: 'text-king-forest',
     },
     info: {
-        box: 'border-[#b8d8ce] bg-[#f0f6f4] text-[#1c352d]',
-        icon: 'text-[#2E5A50]',
+        box: 'border-neutral-gray-light bg-king-forest-lightest text-king-forest',
+        icon: 'text-king-forest',
     },
     error: {
-        box: 'border-[#f0c4be] bg-[#fdf2f0] text-[#8a2a22]',
-        icon: 'text-[#c23b2e]',
+        box: 'border-danger/40 bg-[var(--danger-soft)] text-[var(--danger-text)]',
+        icon: 'text-[var(--danger)]',
     },
 };
 

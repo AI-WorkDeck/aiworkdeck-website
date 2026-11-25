@@ -7,8 +7,8 @@
     --accent: var(--king-forest);
     --accent-dark: var(--king-forest-darker);
     --tint: var(--king-forest-lightest);
-    --warning-bg: #fff8e8;
-    --warning-ink: #74501a;
+    --warning-bg: var(--warning-soft);
+    --warning-ink: var(--warning-text);
     --radius: .75rem;
     color: var(--ink);
     background: var(--paper);

@@ -163,21 +163,21 @@ export default async function FaqPage({ params }: { params: Promise<{ lang: Loca
                         <a
                             key={section.id}
                             href={`#${section.id}`}
-                            className="inline-flex h-9 items-center gap-2 rounded-full border border-[#e3dccb] bg-[#fffdf8] px-4 text-xs font-medium text-[#2a3a33] transition-colors hover:border-[#c9bd9f] hover:bg-white"
+                            className="inline-flex h-9 items-center gap-2 rounded-full border border-neutral-gray-light bg-neutral-white px-4 text-xs font-medium text-ink-body transition-colors hover:border-king-gold-line hover:bg-white"
                         >
-                            <span className="font-mono text-[10.5px] text-[#7a6234]">{String(idx + 1).padStart(2, '0')}</span>
+                            <span className="font-mono text-[10.5px] text-king-gold-text">{String(idx + 1).padStart(2, '0')}</span>
                             {section.title}
                         </a>
                     ))}
                     <a
                         href="#pricing"
-                        className="inline-flex h-9 items-center gap-2 rounded-full border border-[#e3dccb] bg-[#fffdf8] px-4 text-xs font-medium text-[#2a3a33] transition-colors hover:border-[#c9bd9f] hover:bg-white"
+                        className="inline-flex h-9 items-center gap-2 rounded-full border border-neutral-gray-light bg-neutral-white px-4 text-xs font-medium text-ink-body transition-colors hover:border-king-gold-line hover:bg-white"
                     >
-                        <span className="font-mono text-[10.5px] text-[#7a6234]">{String(t.sections.length + 1).padStart(2, '0')}</span>
+                        <span className="font-mono text-[10.5px] text-king-gold-text">{String(t.sections.length + 1).padStart(2, '0')}</span>
                         {t.pricingTitle}
                     </a>
                 </nav>
-                <p className="mt-4 max-w-3xl text-[13px] leading-relaxed text-[#5c655f]">{dict.communityFaq.scope}</p>
+                <p className="mt-4 max-w-3xl text-[13px] leading-relaxed text-ink-muted">{dict.communityFaq.scope}</p>
                 <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
                     <Link href={`/${lang}/legal/privacy`} className="inline-flex min-h-11 items-center text-king-forest underline underline-offset-4">{t.privacy}</Link>
                     <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 text-king-forest underline underline-offset-4">{pricing.why.repoCta}<ArrowUpRight aria-hidden="true" className="h-4 w-4" /></a>

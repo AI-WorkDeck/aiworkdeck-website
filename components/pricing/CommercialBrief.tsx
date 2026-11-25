@@ -11,7 +11,7 @@ export function CommercialBrief({ p }: { /** dict.pricingPage.commercialBrief */
     const href = `mailto:${email}?subject=${encodeURIComponent(p.mailSubject)}`;
 
     return (
-        <section className="rounded-2xl border border-[#dce2de] bg-white px-6 py-7 shadow-[0_8px_28px_-16px_rgba(22,42,33,0.1)] md:px-9 md:py-8">
+        <section className="rounded-2xl border border-neutral-gray-light bg-white px-6 py-7 shadow-[0_8px_28px_-16px_rgba(22,42,33,0.1)] md:px-9 md:py-8">
             <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
                 <div className="min-w-0 flex-1">
                     <p className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-king-forest/75">

@@ -165,7 +165,7 @@ export default async function ContributorPage({
         <div className="min-h-screen bg-neutral-gray-pale">
             {/* 编辑排版 hero（dev-board#303/#308）：整页是一张名片，右列档案栏盛放教育经历 */}
             {/* 2026-11 全站纸与墨：名片页头改纸面，原深色类名在 .profile-hero-paper 内统一映射为墨色（website-design.css） */}
-            <section className="page-hero profile-hero-paper relative overflow-hidden text-[#14261f]">
+            <section className="page-hero profile-hero-paper relative overflow-hidden text-ink">
 
                 <div className="container relative mx-auto max-w-6xl px-4 pt-28 md:px-8 md:pt-32">
                     {fromCert && (
@@ -212,7 +212,7 @@ export default async function ContributorPage({
                             )}
                             <div className="mt-10 flex flex-wrap items-center gap-3">
                                 <Link href={startHref}
-                                    className="inline-flex h-11 items-center gap-2 rounded-lg bg-[#2E5A50] text-[#FAF8F3] border border-white/20 px-6 text-[14.5px] font-bold shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#244840]">
+                                    className="inline-flex h-11 items-center gap-2 rounded-lg bg-king-forest text-neutral-white border border-white/20 px-6 text-[14.5px] font-bold shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-pine">
                                     {t.heroCta}
                                     <ArrowUpRight className="h-4 w-4" strokeWidth={2} />
                                 </Link>
@@ -330,7 +330,7 @@ export default async function ContributorPage({
                         {/* 作品 */}
                         <SectionRule title={t.contributorSkills} />
                         {skills.length === 0 ? (
-                            <div className="rounded-xl border border-[#dce2de] bg-white px-6 py-14 text-center">
+                            <div className="rounded-xl border border-neutral-gray-light bg-white px-6 py-14 text-center">
                                 <p className="text-lg font-bold text-neutral-dark-bg">
                                     {isOwner ? t.profileEmptyOwnTitle : t.profileEmptyTitle}
                                 </p>

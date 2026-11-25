@@ -115,13 +115,13 @@ export function AreaChart({ data }: { data: Array<{ date: string; count: number 
       {h !== null && (
         <g>
           <line x1={x(h)} y1={PT} x2={x(h)} y2={H - PB} stroke={FOREST} strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
-          <circle cx={x(h)} cy={y(data[h].count)} r="3.5" fill={FOREST} stroke="#fff" strokeWidth="1.5" />
+          <circle cx={x(h)} cy={y(data[h].count)} r="3.5" fill={FOREST} stroke="var(--neutral-white)" strokeWidth="1.5" />
           <g transform={`translate(${tipX}, ${PT})`}>
             <rect width={tipW} height="34" rx="6" fill="var(--king-forest-darker)" opacity="0.92" />
             <text x={tipW / 2} y="14" textAnchor="middle" fontSize="10" fill="var(--king-mint-lighter)">
               {data[h].date}
             </text>
-            <text x={tipW / 2} y="28" textAnchor="middle" fontSize="12" fontWeight="700" fill="#fff">
+            <text x={tipW / 2} y="28" textAnchor="middle" fontSize="12" fontWeight="700" fill="var(--neutral-white)">
               {data[h].count} 台活跃
             </text>
           </g>
@@ -230,7 +230,7 @@ export function RetentionTable({
                       className="inline-block w-full rounded px-1 py-1 font-mono text-xs"
                       style={{
                         backgroundColor: `rgba(${FOREST_RGB}, ${alpha.toFixed(2)})`,
-                        color: alpha > 0.45 ? '#fff' : 'var(--king-forest-darker)',
+                        color: alpha > 0.45 ? 'var(--neutral-white)' : 'var(--king-forest-darker)',
                       }}
                     >
                       {w.toFixed(0)}%
