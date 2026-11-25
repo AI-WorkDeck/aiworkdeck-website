@@ -235,6 +235,12 @@ const nextConfig: NextConfig = {
         destination: "/:lang?feature-request=1",
         permanent: true,
       },
+      // Short legal URLs (old links and bookmarks) go to the legal pages in every locale.
+      ...(["privacy", "terms"] as const).map(page => ({
+        source: `/:lang([a-z]{2}|zh-hant)/${page}`, // any locale segment; i18n-config imports @/ aliases next.config cannot load
+        destination: `/:lang/legal/${page}`,
+        permanent: true,
+      })),
     ];
   },
 };
