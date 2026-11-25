@@ -151,7 +151,7 @@ export default async function MarketplaceSkillsPage({
                 {skills.length === 0 ? (
                     <div className="max-w-md mx-auto my-16 flex flex-col items-center text-center">
                         <LayoutGrid className="w-10 h-10 mx-auto mb-6 text-neutral-gray-medium/50" strokeWidth={1.25} />
-                        <p className="font-display text-lg font-bold text-neutral-dark-bg mb-3 leading-relaxed">{t.empty}</p>
+                        <p className="text-lg font-semibold text-ink mb-3 leading-relaxed">{t.empty}</p>
                         <p className="text-sm text-neutral-gray-medium mb-8 leading-7">{t.subtitle}</p>
                         <Button asChild className="font-semibold px-8">
                             <Link href={`/${lang}/skills/submit`}>{t.submit}</Link>

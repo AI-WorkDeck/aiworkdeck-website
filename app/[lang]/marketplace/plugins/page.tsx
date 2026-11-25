@@ -142,14 +142,14 @@ export default async function MarketplacePluginsPage({ params }: { params: Promi
                 <div className="flex flex-wrap items-center gap-3">
                     <Link
                         href={`/${lang}/plugins/develop`}
-                        className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[#1f3b34] px-5 text-[13.5px] font-bold text-[#f6f4ee] shadow-sm transition-colors hover:bg-[#17302a]"
+                        className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-pine px-5 text-[13.5px] font-bold text-paper shadow-sm transition-colors hover:bg-pine-deep"
                     >
                         <Code2 className="h-4 w-4" strokeWidth={2} />
                         {t.develop}
                     </Link>
                     <Link
                         href={`/${lang}/plugins/submit`}
-                        className="inline-flex h-10 items-center rounded-lg border border-[#e3dccb] bg-[#fffdf8] px-5 text-[13.5px] font-medium text-[#1f3b34] transition-colors hover:border-[#c9bd9f] hover:bg-white"
+                        className="inline-flex h-10 items-center rounded-lg border border-neutral-gray-light bg-neutral-white px-5 text-[13.5px] font-medium text-pine transition-colors hover:border-king-gold-line hover:bg-white"
                     >
                         {t.submit}
                     </Link>
@@ -191,7 +191,7 @@ export default async function MarketplacePluginsPage({ params }: { params: Promi
                     <Reveal delay={180}>
                         <div className="mt-6 rounded-xl border border-dashed border-neutral-gray-light bg-white/60 px-6 py-16 text-center">
                             <Blocks className="mx-auto mb-5 h-10 w-10 text-king-forest/40" strokeWidth={1.5} />
-                            <p className="font-display text-lg font-bold text-neutral-dark-bg">{t.emptyTitle}</p>
+                            <p className="text-lg font-semibold text-ink">{t.emptyTitle}</p>
                             <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-neutral-gray-dark">
                                 {t.emptyBody}
                             </p>

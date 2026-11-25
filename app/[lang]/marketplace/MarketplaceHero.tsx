@@ -45,8 +45,8 @@ export function MarketplaceHero({
                     className={cn(
                         'pb-3.5 text-sm border-b-2 transition-colors',
                         active === tab.key
-                            ? 'text-[#14261f] font-semibold border-[#1f3b34]'
-                            : 'text-[#5c655f] border-transparent hover:text-[#14261f]',
+                            ? 'text-ink font-semibold border-pine'
+                            : 'text-ink-muted border-transparent hover:text-ink',
                     )}
                 >
                     {tab.label}
@@ -56,7 +56,7 @@ export function MarketplaceHero({
         {active === 'skills' && (
             <Link
                 href={`/${lang}/skills/charts`}
-                className="flex shrink-0 items-center gap-1.5 pb-3.5 text-sm font-semibold text-[#1f3b34] hover:underline underline-offset-4"
+                className="flex shrink-0 items-center gap-1.5 pb-3.5 text-sm font-semibold text-pine hover:underline underline-offset-4"
             >
                 <TrendingUp className="w-4 h-4" strokeWidth={1.75} />
                 {st.chartsLink}
@@ -77,19 +77,19 @@ export function MarketplaceHero({
         >
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-8">
                 <div className="min-w-0 md:flex-1">{children}</div>
-                {active !== 'mcp' && <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[#5c655f]">
+                {active !== 'mcp' && <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-muted">
                     <span className="flex items-baseline gap-1.5">
-                        <CountUp value={allSkills.length} className="font-display text-[22px] text-[#14261f]" />
+                        <CountUp value={allSkills.length} className="font-display text-[22px] text-ink" />
                         {st.statSkills}
                     </span>
-                    <span className="w-px h-4 bg-[#e3dccb] hidden sm:block" />
+                    <span className="w-px h-4 bg-neutral-gray-light hidden sm:block" />
                     <span className="flex items-baseline gap-1.5">
-                        <CountUp value={pluginCount} className="font-display text-[22px] text-[#14261f]" />
+                        <CountUp value={pluginCount} className="font-display text-[22px] text-ink" />
                         {t.statPlugins}
                     </span>
-                    <span className="w-px h-4 bg-[#e3dccb] hidden sm:block" />
+                    <span className="w-px h-4 bg-neutral-gray-light hidden sm:block" />
                     <span className="flex items-baseline gap-1.5">
-                        <CountUp value={contributorCount} className="font-display text-[22px] text-[#14261f]" />
+                        <CountUp value={contributorCount} className="font-display text-[22px] text-ink" />
                         {st.statContributors}
                     </span>
                 </div>}
