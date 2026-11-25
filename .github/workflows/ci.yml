@@ -55,6 +55,8 @@ jobs:
         # 色源指纹 + 令牌区段与色源逐字节一致 + 对比度复算，见 scripts/check-palette.mjs。
         # 纯 node，不依赖构建产物，所以放在 typecheck 前面先亮红。
         run: node scripts/check-palette.mjs
+      - name: Raw colour ratchet (X30)
+        run: node scripts/check-raw-colors.mjs
       - name: Plugin platform template and submission contracts
         run: npm run test:plugin-platform
       - name: Plugin permission list parity (pinned with aiworkdeck PluginPermissionParityTest)
