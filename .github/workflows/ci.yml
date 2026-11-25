@@ -63,6 +63,8 @@ jobs:
         run: npx tsx --tsconfig tsconfig.json scripts/verify-plugin-mirror-l10n.mts
       - name: Developer eligibility and scoped submission tokens
         run: npm run test:developers
+      - name: Plugin store lists each plugin once
+        run: npm run test:store-plugins
       - name: Typecheck
         # 生产构建关掉了类型检查（见 next.config.ts），这一步是唯一的类型闸
         run: npm run typecheck

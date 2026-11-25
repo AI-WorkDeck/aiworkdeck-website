@@ -1415,8 +1415,8 @@
     "installsSuffix": "次安裝",
     "intro": "插件為 AI WorkDeck 帶來新的工具與界面。與 Skill 不同，插件包含可執行代碼，因此每個版本都經過人工審核並由平台簽名，客戶端安裝時驗簽。",
     "metaDescription": "AI WorkDeck 插件市場：Word/WPS 加載項、OCR、轉寫、盡職調查等擴展，逐版本人工審核並簽名，律師裝進桌面端即可用於法律實務。",
-    "officialIntro": "這些能力由我們開發並隨桌面端一起發佈，安裝後常駐左欄。第三方插件能達到的深度與它們相同。",
-    "officialTag": "隨應用內置，無需安裝",
+    "officialIntro": "我們自己開發和維護的外掛。大多數隨桌面版一起發佈、常駐左欄，全部經外掛中心自動更新。第三方外掛能達到的深度與它們相同。",
+    "officialTag": "由 AI WorkDeck 開發並簽署",
     "officialTitle": "官方插件",
     "permissions": {
       "editor": "編輯器",

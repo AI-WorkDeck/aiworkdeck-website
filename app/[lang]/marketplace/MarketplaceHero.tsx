@@ -4,8 +4,7 @@ import { Locale } from '@/i18n-config';
 import { PageHero } from '@/components/layout/PageHero';
 import { CountUp } from '@/components/motion/CountUp';
 import { listSkills } from '@/lib/skills-store';
-import { listPlugins } from '@/lib/plugins-store';
-import { OFFICIAL_PLUGINS } from '@/lib/official-plugins';
+import { listStorePlugins } from '@/lib/store-plugins';
 import { cn } from '@/lib/utils';
 
 /**
@@ -28,9 +27,8 @@ export function MarketplaceHero({
     const st = dict.skillsPage;
     const allSkills = listSkills();
     const contributorCount = new Set(allSkills.map(s => s.authorId)).size;
-    // 插件数 = 官方内置 + 审核通过的社区插件（同 id 多版本只算一个）
-    const communityPluginCount = new Set(listPlugins({ status: 'approved' }).map(p => p.id)).size;
-    const pluginCount = OFFICIAL_PLUGINS.length + communityPluginCount;
+    // 插件数 = 商店里实际列出的插件（同 id 多版本只算一个）
+    const pluginCount = listStorePlugins().length;
 
     const tabs = (
         <div className="flex items-start justify-between gap-6">
