@@ -26,13 +26,15 @@ interface AuthFormsProps {
     captcha?: CaptchaConfig | null;
     /** Mobile registration ends here, without navigating into web purchases. */
     mobileHandoff?: boolean;
+    /** Store/add-in reviewer sign-in (fixed code). Only offered on /account?review=1, not to every visitor. */
+    reviewEntry?: boolean;
 }
 const validSignupRef = (value: string) => value.length <= 64 && /^u-[a-z0-9][a-z0-9-]{2,29}$/.test(value) ? value : '';
 
 type Mode = 'password' | 'register' | 'setup' | 'reset' | 'review' | 'bqt-scan';
 
 /** One shared flow for account, onboarding, desktop and mobile browser handoffs. */
-export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false, defaultTab = 'login', bare, codeChannelReady = true, captcha = null, mobileHandoff = false, bqtEnabled = false }: AuthFormsProps) {
+export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false, defaultTab = 'login', bare, codeChannelReady = true, captcha = null, mobileHandoff = false, bqtEnabled = false, reviewEntry = false }: AuthFormsProps) {
     const t = dict.authPage;
     const mobileCopy = mobileAccountCopy(lang);
     const phoneSite = phoneIsAccount();
@@ -337,7 +339,7 @@ export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false
                 </div>
             </form>
             )}
-            {mode === 'password' && !legacyEmail && !mobileHandoff && <button type="button" className="mt-5 text-xs text-neutral-gray-medium underline" onClick={() => changeMode('review')} disabled={busy || sending || challengeLoading}>{t.reviewLogin}</button>}
+            {mode === 'password' && reviewEntry && !legacyEmail && !mobileHandoff && <button type="button" className="mt-5 text-xs text-neutral-gray-medium underline" onClick={() => changeMode('review')} disabled={busy || sending || challengeLoading}>{t.reviewLogin}</button>}
         </div>
     );
 }

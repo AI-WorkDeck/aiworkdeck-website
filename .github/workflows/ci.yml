@@ -73,6 +73,8 @@ jobs:
         run: node scripts/verify-marketplace-terms.mjs
       - name: Pricing card buttons stack
         run: node scripts/verify-pricing-card-buttons.mjs
+      - name: Sign-in page banner and reviewer entry
+        run: npx tsx --tsconfig tsconfig.json scripts/verify-signin-page.mts
       - name: Plugin store lists each plugin once
         run: npm run test:store-plugins
       - name: Pricing page offers only what each site sells
