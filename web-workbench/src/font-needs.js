@@ -41,7 +41,8 @@ export function fontCategoriesFor(familyLists){
 export async function docxHasCjkText(bytes){
  const zip=await JSZip.loadAsync(bytes);
  for(const p of Object.keys(zip.files).filter(p=>/^word\/(document|header\d*|footer\d*|footnotes|endnotes|comments)\.xml$/.test(p)))
-  if(/[\u3400-\u9fff\uf900-\ufaff\u3000-\u303f\uff00-\uffef]/.test((await zip.file(p).async('string')).replace(/<[^>]+>/g,'')))return true;
+  // Test only the text between tags (never markup, never rendered: nothing is sanitized here).
+  for(const m of (await zip.file(p).async('string')).matchAll(/>([^<]+)</g))if(/[\u3400-\u9fff\uf900-\ufaff\u3000-\u303f\uff00-\uffef]/.test(m[1]))return true;
  return false;
 }
 
