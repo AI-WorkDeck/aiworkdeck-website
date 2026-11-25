@@ -8,6 +8,7 @@ import {openWorkspace,TEMPORARY_PROJECT_ID,GUEST_SCOPE,adoptLegacyDatabase,listS
 import {resolveScope,exportScopeZip,countScopeFiles,mayLeaveScope} from './account-scope.js';
 import {projectLocales,initialLocale} from './project-locales.js';
 import {EditorSession} from './editor.js';
+import {fontCategoriesForFile,ALL_FONT_CATEGORIES} from './font-needs.js';
 import {createDocument,validateDocx,downloadFile} from './docx.js';
 import {streamChat} from './chat.js';
 import {runDocumentAgent} from './agent-runner.js';
@@ -24,7 +25,7 @@ const icons={folder:'<path d="M3 7h6l2 2h10v11H3z"/><path d="M3 7V4h6l2 3"/>',fi
 const icon=(name)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]||icons.file}</svg>`;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const button=(action,name,label,cls='icon-button')=>`<button type="button" class="${cls}" data-action="${action}" aria-label="${esc(label)}" title="${esc(label)}">${icon(name)}${cls==='icon-button'?'':`<span>${esc(label)}</span>`}</button>`;
-const state={scope:null,store:null,session:null,projects:[],projectId:null,files:[],tabs:[],activeId:null,busy:false,booting:true,messages:[],aiRunning:false,selection:null,controller:null,capabilities:null};
+const state={scope:null,store:null,session:null,fonts:[],projects:[],projectId:null,files:[],tabs:[],activeId:null,busy:false,booting:true,messages:[],aiRunning:false,selection:null,controller:null,capabilities:null};
 document.querySelector('#app').innerHTML=`
  <header class="topbar"><a class="brand" href="/${language}" aria-label="AI WorkDeck"><span class="brand-mark">W<span>·</span></span><strong>AI WorkDeck</strong><span class="web-badge">WEB</span></a><div class="top-divider"></div><span class="workspace-name">${t('工作台','Workspace')}</span><div class="top-spacer"></div><span class="local-label"><i></i>${t('本浏览器保存','Saved in this browser')}</span><a class="language-link" href="?lang=${en?'zh':'en'}">${en?'中文':'EN'}</a><a class="desktop-link" href="/${language}/start" target="_blank" rel="noopener noreferrer" aria-label="${t('下载桌面端（在新标签页打开）','Download desktop (opens in a new tab)')}">${icon('download')}${t('下载桌面端','Download desktop')}</a><a class="account-link" id="account-link" href="/${language}/account?next=${encodeURIComponent('/web/?lang='+language)}" target="_blank" rel="noopener noreferrer">${t('账户与额度','Account & credits')}</a></header>
  <div class="layout"><nav class="activity-bar" aria-label="${t('面板','Panels')}">${button('toggle-files','folder',t('项目文件','Project files'),'activity-button active')}${button('toggle-ai','spark',t('AI 助手','AI assistant'),'activity-button')}<div class="activity-spacer"></div><a class="activity-button" href="/web/UPSTREAM.md" target="_blank" title="${t('开源与许可','Source & licenses')}" aria-label="${t('开源与许可','Source & licenses')}">ⓘ</a></nav>
@@ -100,7 +101,17 @@ function render(){
  $('.document-toolbar').classList.toggle('disabled',!f);renderSelection();
 }
 async function rememberTabs(){await state.store.setSetting('tabs:'+state.projectId,{tabs:state.tabs,activeId:state.activeId});await state.store.setSetting('activeProject',state.projectId)}
-async function openFile(id){if(activeAgentRun)return;if(state.busy||id===state.activeId)return;const f=await state.store.getFile(id);if(!f)return;await state.session.show(f);state.activeId=id;if(!state.tabs.includes(id))state.tabs.push(id);clearSelection();render();await rememberTabs()}
+function newSession(){return new EditorSession({container:$('#editor-container'),store:state.store,onState:sessionState,onBusy:setBusy,onBoot:bootState,language,fonts:state.fonts})}
+/** A document naming a font category this boot didn't load: save, restart the editor with the union (engine is cached). */
+async function ensureFonts(file){
+ const need=await fontCategoriesForFile(file);
+ if(need.every(c=>state.fonts.includes(c)))return;
+ await state.session.show(null);state.activeId=null;
+ state.fonts=ALL_FONT_CATEGORIES.filter(c=>need.includes(c)||state.fonts.includes(c));
+ state.session.dispose();state.booting=true;state.session=newSession();render();
+ try{await state.session.ready}finally{state.booting=false}
+}
+async function openFile(id){if(activeAgentRun)return;if(state.busy||id===state.activeId)return;const f=await state.store.getFile(id);if(!f)return;await ensureFonts(f);await state.session.show(f);state.activeId=id;if(!state.tabs.includes(id))state.tabs.push(id);clearSelection();render();await rememberTabs()}
 async function closeFile(id){if(activeAgentRun)return;if(state.busy)return;if(id===state.activeId){const others=state.tabs.filter(x=>x!==id);const next=others.at(-1);await state.session.show(next?await state.store.getFile(next):null);state.activeId=next||null;clearSelection()}state.tabs=state.tabs.filter(x=>x!==id);render();await rememberTabs()}
 async function selectProject(id){if(state.busy||importing||historyBusy)return;if(state.aiRunning)throw Error(t('请先停止当前 AI 请求，再切换项目。','Stop the current AI request before switching projects.'));await state.session.show(null);importRetry=null;$('#import-status').hidden=true;state.projectId=id;state.files=await state.store.listFiles(id);await loadMessages();const remembered=await state.store.getSetting('tabs:'+id);state.tabs=(remembered?.tabs||[]).filter(id=>state.files.some(f=>f.id===id));state.activeId=null;render();const target=state.tabs.includes(remembered?.activeId)?remembered.activeId:state.tabs.at(-1);if(target)await openFile(target);await rememberTabs()}
 function modal({title,description='',value=null,confirm=t('确定','Confirm'),danger=false}){
@@ -441,7 +452,10 @@ async function start(){
   await state.store.setSetting('tabs:'+project.id,{tabs:[sample.id],activeId:sample.id});
  }
  const last=await state.store.getSetting('activeProject');state.projectId=state.projects.some(p=>p.id===last)?last:state.projects[0].id;state.files=await state.store.listFiles(state.projectId);state.messages=await historyStore.load(state.projectId);renderHistory();
- state.session=new EditorSession({container:$('#editor-container'),store:state.store,onState:sessionState,onBusy:setBusy,onBoot:bootState,language});
+ // Fonts register only at boot: start with what the first document needs (POLISH W6), not all ~33 MB.
+ const firstTabs=await state.store.getSetting('tabs:'+state.projectId);const firstId=firstTabs?.activeId??firstTabs?.tabs?.at(-1);
+ state.fonts=await fontCategoriesForFile(firstId?await state.store.getFile(firstId):null);
+ state.session=newSession();
  render();await state.session.ready;state.booting=false;
  const tabs=await state.store.getSetting('tabs:'+state.projectId);state.tabs=(tabs?.tabs||[]).filter(id=>state.files.some(f=>f.id===id));const active=state.tabs.includes(tabs?.activeId)?tabs.activeId:state.tabs.at(-1);
  if(active)await openFile(active);else{await state.session.show(null);setBusy(false);render()}
