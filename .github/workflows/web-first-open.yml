@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 北京公富信息技术有限公司 and AI WorkDeck contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Manual measurement of the web version's first open from a GitHub runner (outside China), POLISH W6.
+# Read-only against production: opens /web/ cold and warm, no sign-in, no AI calls. Never deploys.
+name: Web version first-open timing
+
+on:
+  workflow_dispatch:
+    inputs:
+      sites:
+        description: Space-separated site origins to measure
+        required: true
+        default: https://www.aiworkdeck.us https://www.aiworkdeck.com
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-first-open
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+      - name: Install Playwright (headless Chromium only)
+        run: |
+          npm i --no-save --no-audit --no-fund playwright@1.65.1
+          npx playwright install --with-deps chromium-headless-shell
+      - name: Measure
+        env:
+          SITES: ${{ inputs.sites }}
+        run: node scripts/measure-web-first-open.mjs $SITES
