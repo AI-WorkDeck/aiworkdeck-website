@@ -75,6 +75,8 @@ jobs:
         run: node scripts/verify-pricing-card-buttons.mjs
       - name: Sign-in page banner and reviewer entry
         run: npx tsx --tsconfig tsconfig.json scripts/verify-signin-page.mts
+      - name: Link-preview card size
+        run: node scripts/verify-og-card.mjs
       - name: Plugin store lists each plugin once
         run: npm run test:store-plugins
       - name: Pricing page offers only what each site sells
