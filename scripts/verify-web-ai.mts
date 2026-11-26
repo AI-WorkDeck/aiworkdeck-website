@@ -393,7 +393,7 @@ try {
     try {
       assert.equal((db.prepare('SELECT MAX(version) v FROM schema_version').get() as {v:number}).v, 37);
       closeDb(); db = getDb();
-      assert.equal((db.prepare('SELECT MAX(version) v FROM schema_version').get() as {v:number}).v, 53);
+      assert.equal((db.prepare('SELECT MAX(version) v FROM schema_version').get() as {v:number}).v, 54);
       assert.deepEqual(db.prepare('SELECT * FROM web_ai_request ORDER BY userId,requestId').all(), requests);
       assert.deepEqual(db.prepare('SELECT COUNT(*) n FROM wallet_ledger').get(), ledgers);
       for (const table of laterTables) {
