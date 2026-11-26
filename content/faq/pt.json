@@ -1,0 +1,133 @@
+{
+  "eyebrow": "EDIÇÃO COMMUNITY · PERGUNTAS FREQUENTES",
+  "title": "Seus arquivos permanecem no seu próprio computador.",
+  "subtitle": "O conteúdo só sai dele quando você opta por usar um recurso online, e somente o que a tarefa exige. As conexões são criptografadas, nunca treinamos modelos com o seu conteúdo e nunca vendemos dados pessoais.",
+  "navigation": "Tópicos das perguntas frequentes",
+  "pricingTitle": "Como funcionam os preços?",
+  "pricingTableTitle": "Preços em resumo",
+  "privacy": "Política de Privacidade",
+  "start": "Comece com a Edição Community",
+  "deploymentEyebrow": "EDIÇÃO COMMUNITY · HOSPEDAGEM PRÓPRIA",
+  "deploymentTitle": "Deseja que seus arquivos nunca saiam do escritório?",
+  "deploymentBody": "A Edição Community pode ser executada no servidor do próprio escritório, com um modelo local. Analisaremos com você os recursos necessários, o hardware a ser previsto e as conexões externas a serem desativadas, para que o armazenamento e o processamento permaneçam na sua própria rede.",
+  "deploymentPlanCta": "Planejar implantação e orçamento",
+  "deploymentCta": "Fale conosco sobre hospedagem própria",
+  "deploymentSubject": "Consulta sobre hospedagem própria da Edição Community",
+  "sections": [
+    {
+      "id": "storage",
+      "title": "Onde seus arquivos ficam",
+      "items": [
+        {
+          "id": "local-storage",
+          "q": "Onde ficam armazenados meus processos e conversas?",
+          "a": "No seu próprio computador. O aplicativo desktop mantém localmente os arquivos de projeto, as conversas e os registros, e você pode usar pastas já existentes no seu computador como projetos. Nada disso é armazenado em nossos servidores.\n\nImportar um arquivo não o envia para lugar algum. O conteúdo só é enviado a um modelo quando você pede à IA que trabalhe em algo, e somente o que essa tarefa exige. A marcação automática por IA na importação vem desativada por padrão."
+        },
+        {
+          "id": "mobile-relay",
+          "q": "Como as fotos do meu celular chegam ao meu computador, e por quanto tempo a nuvem as mantém?",
+          "a": "No iPhone, os originais permanecem dentro do aplicativo e ficam fora do iCloud e de outros backups do sistema. Quando você os envia ao computador pela nuvem, o servidor de retransmissão os mantém apenas brevemente: assim que o computador confirma o recebimento, a cópia na nuvem é excluída. Resta apenas um registro de entrega, sem conteúdo do arquivo.\n\nSe um arquivo nunca for recebido, ou se uma exclusão falhar, uma limpeza diária remove tudo o que estiver lá há 30 dias. O original no seu celular e a cópia no seu computador ficam sob sua gestão; excluir um não afeta o outro."
+        },
+        {
+          "id": "file-transfer",
+          "q": "As transferências comuns de arquivos entre celular e computador funcionam da mesma forma?",
+          "a": "O princípio é o mesmo, com prazos diferentes: arquivos enviados do computador para o celular aguardam na nuvem por 7 dias, e arquivos enviados do celular para o computador, por 30 dias; depois disso, são removidos automaticamente. A retransmissão serve para entrega, não para backup; portanto, salve tudo o que for importante no dispositivo de destino."
+        },
+        {
+          "id": "cloud-features",
+          "q": "O suplemento do Office, o site e os recursos de sincronização também mantêm tudo localmente?",
+          "a": "Depende de a que eles se conectam. Quando o suplemento do Office se conecta ao aplicativo desktop no seu computador, os dados permanecem locais; quando se conecta a um serviço em nuvem, as conversas e os dados de sincronização ficam armazenados nesse servidor. As conversas com o assistente de redação de Skills no site também ficam armazenadas em nosso servidor.\n\nA memória da equipe e a do escritório são compartilhadas entre os membros e, por isso, ficam em nosso servidor. Se você configurar uma sincronização remota, como Git, a memória também é sincronizada com o repositório que você escolher. Os registros de conta, pedidos e uso são mantidos em nosso servidor para fins de cobrança."
+        },
+        {
+          "id": "backup",
+          "q": "O que devo copiar antes de trocar de computador, desinstalar o aplicativo ou encerrar minha conta?",
+          "a": "Como o seu trabalho fica no seu computador, o backup está sob o seu controle. Antes de migrar ou desinstalar, copie seus arquivos de projeto, os dados das conversas e a memória pessoal e de projeto. Entrar em um computador novo não recupera o que estava no antigo.\n\nExcluir arquivos locais, conteúdo compartilhado na nuvem, sua conta no site e cópias de sincronização externas são etapas separadas. A retransmissão do celular não é um backup. Verifique se os registros de diagnóstico contêm conteúdo de processos antes de enviá-los a nós."
+        }
+      ]
+    },
+    {
+      "id": "memory",
+      "title": "Treinamento de modelos e memória da IA",
+      "items": [
+        {
+          "id": "training",
+          "q": "O material dos meus processos será usado para treinar um modelo?",
+          "a": "Não. O AI WorkDeck usa modelos de IA existentes, e nunca treinamos modelos com o seu material. A “memória” é simplesmente uma nota legível e editável das suas preferências, dos fatos dos casos e da sua experiência de trabalho, fornecida ao modelo como referência na próxima vez. O modelo em si não muda.\n\nNo site da China continental, as solicitações de IA da plataforma passam pelos servidores do AI WorkDeck até o Alibaba Cloud Model Studio (Bailian); nos sites internacionais, a IA da plataforma usa o OpenRouter. Cada serviço trata as solicitações de acordo com a sua própria política de privacidade e com os termos de região de processamento específicos de cada modelo. Para material altamente sensível, você pode passar a usar um modelo local ou considerar a hospedagem própria.",
+          "href": "/en/legal/privacy",
+          "linkLabel": "Informações sobre privacidade e serviços de modelos"
+        },
+        {
+          "id": "memory-location",
+          "q": "Onde a memória é armazenada, e qual a diferença entre memória pessoal, de projeto e de equipe?",
+          "a": "A memória pessoal e a de projeto ficam em um banco de dados local no seu computador, onde você pode visualizá-las, editá-las ou excluí-las a qualquer momento. Se você ativar a sincronização com Git, elas também são sincronizadas com o repositório que você configurou.\n\nA memória da equipe e a do escritório são compartilhadas; por isso, ficam em nosso servidor, e somente os membros da respectiva organização podem lê-las. Os administradores da equipe gerenciam a memória da equipe, e somente os gerentes da equipe principal podem gravar na memória do escritório. Antes de adicionar algo à memória compartilhada, certifique-se de que seja adequado para todos que podem vê-lo."
+        },
+        {
+          "id": "memory-review",
+          "q": "E se o modelo memorizar algo errado ou tratar um caso isolado como regra geral?",
+          "a": "Localize essa memória e edite-a ou exclua-a. Mantenha o que for específico de um único caso na memória do projeto, e não na memória da equipe ou do escritório. A memória é apenas uma referência para o modelo, que ainda pode interpretá-la mal; por isso, confira fatos e regras essenciais antes de se basear neles."
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "Solicitações de IA e segurança de dados",
+      "items": [
+        {
+          "id": "self-hosting",
+          "q": "Nosso escritório pode usar servidores e modelos próprios para que nada saia do escritório?",
+          "a": "Sim. A Edição Community pode ser implantada no servidor do próprio escritório com um modelo local, de modo que o armazenamento e o processamento ocorram internamente.\n\nPara manter tudo de fato internamente, mudar para um modelo local não basta por si só: outros recursos online também precisam ser desativados ou substituídos por serviços internos, como OCR em nuvem, transcrição, pesquisa na web, a retransmissão em nuvem do celular, a memória compartilhada em nosso site e a sincronização remota. Além disso, os modelos locais variam quanto ao uso de ferramentas, à compreensão de imagens e a outras capacidades; por isso, cada um precisa ser testado e pode não corresponder exatamente à configuração padrão em nuvem.\n\nSe é disso que você precisa, entre em contato informando o tamanho da sua equipe, o modelo que pretende usar, os recursos que deseja manter e seus requisitos de rede, e definiremos a configuração em conjunto."
+        },
+        {
+          "id": "model-context",
+          "q": "O que sai do meu computador quando uso a IA?",
+          "a": "Somente o que a tarefa exige: sua pergunta, a conversa relevante, o conteúdo de arquivos que você fornece ou que a IA lê para essa tarefa e qualquer memória utilizada. O projeto inteiro não é enviado por padrão.\n\nNo site da China continental, as solicitações de IA da plataforma passam pelos nossos servidores até o Alibaba Cloud Model Studio. Nossos servidores processam o conteúdo da solicitação e registram o modelo, o uso e o valor cobrado, sem gravar o conteúdo das conversas nos registros de cobrança. Nos sites internacionais, a IA da plataforma usa o OpenRouter. Provedores personalizados e modelos locais seguem as suas configurações. Outros suplementos e ferramentas online funcionam de acordo com as próprias configurações."
+        },
+        {
+          "id": "retention",
+          "q": "Minhas conversas ficam salvas em algum lugar além do meu computador?",
+          "a": "As conversas e os registros do aplicativo desktop ficam salvos somente no seu próprio computador, não em nossos servidores. O conteúdo só é armazenado em nossos servidores para os recursos em nuvem que você opta por usar: o suplemento do Office em nuvem, o assistente de redação de Skills, a memória compartilhada da equipe e a retransmissão do celular, cada um descrito acima.\n\nA retenção das solicitações depende do Alibaba Cloud Model Studio, do OpenRouter e do serviço de modelo selecionado. Usar o Model Studio não significa que todos os modelos tenham a mesma região de processamento ou garantia de retenção zero.",
+          "href": "/en/legal/privacy",
+          "linkLabel": "Informações sobre privacidade e serviços de modelos"
+        },
+        {
+          "id": "confidentiality",
+          "q": "Como decido se a IA é adequada para um caso confidencial?",
+          "a": "Distinga duas situações: organizar arquivos localmente não envia o conteúdo deles para lugar algum, ao passo que pedir à IA ou a uma ferramenta online que trabalhe em algo envia o conteúdo relevante a esse serviço. Antes de começar, tenha clareza sobre o que será enviado e para onde.\n\nUma prática comum é compartilhar apenas os trechos que a tarefa exige e remover nomes, números de documentos de identificação e outros dados desnecessários. Se um cliente ou o seu escritório exigir que determinado material nunca saia, não o forneça a um modelo em nuvem; use um modelo local ou uma configuração de hospedagem própria."
+        },
+        {
+          "id": "team-access",
+          "q": "Depois que eu entrar em uma equipe, os colegas poderão ver todos os meus casos?",
+          "a": "Não. Entrar em uma equipe não compartilha os projetos nem os arquivos do seu computador. Os colegas só podem ver o que você adicionar à memória compartilhada da equipe ou do escritório, além das informações de uso que o painel da equipe exibe conforme as funções e as configurações. A exibição dos nomes de projetos é uma configuração à parte.\n\nConvide membros e conceda direitos de administrador somente quando necessário, e mantenha os dados confidenciais de um cliente fora da memória que toda a equipe pode ler."
+        }
+      ]
+    },
+    {
+      "id": "practice",
+      "title": "Uso no trabalho jurídico",
+      "items": [
+        {
+          "id": "citations",
+          "q": "Posso usar como estão as leis, decisões e citações fornecidas pela IA?",
+          "a": "Não sem conferir. Volte à fonte original e confirme a jurisdição, as datas de publicação e de vigência, a versão, o número do processo, o tribunal e se a citação de fato sustenta a conclusão. Os modelos podem inventar fontes ou aplicar incorretamente fontes reais.\n\nTrate o resultado da IA como material de pesquisa e primeiras minutas. A apuração dos fatos, a análise jurídica e o trabalho final ainda precisam da aprovação do advogado responsável pelo caso."
+        },
+        {
+          "id": "documents",
+          "q": "O que devo conferir com atenção em OCR, resumos longos e alterações de contratos?",
+          "a": "Confira nomes, valores, datas, negações, números de cláusulas, anexos e tabelas que se estendem por várias páginas. O reconhecimento e os resumos podem deixar de captar detalhes, e o modelo pode não ter visto o documento inteiro.\n\nGuarde o original e compare as versões. Revise manualmente qualquer alteração que afete direitos ou obrigações, bem como citações e conclusões; um resumo não substitui as provas subjacentes."
+        },
+        {
+          "id": "tools",
+          "q": "O que devo verificar antes de usar uma Skill, um plugin ou uma ferramenta online?",
+          "a": "Descubra quais arquivos ela lê, com quais serviços se comunica e o que pode fazer. Ferramentas de terceiros tratam os dados segundo as próprias regras, e documentos ou páginas da web podem conter instruções ocultas que induzem um modelo a erro.\n\nConceda às ferramentas confiáveis apenas o acesso de que precisam, e revise gravações, exclusões ou envios externos importantes antes e depois de serem executados. Nunca publique material de clientes, chaves ou senhas na comunidade pública ao pedir ajuda."
+        },
+        {
+          "id": "regions",
+          "q": "Os sites da China continental, internacional e dos EUA compartilham contas e dados?",
+          "a": "O site da China continental, aiworkdeck.com, funciona separadamente dos sites internacionais; contas e dados online não são compartilhados. workdeck.ai e aiworkdeck.us são o mesmo sistema internacional e compartilham os dados dos usuários.\n\nConecte o aplicativo desktop ao site em que você se cadastrou e fez a recarga. Trocar o idioma do site não transfere sua conta, seu saldo nem seus projetos locais.",
+          "href": "/en/start",
+          "linkLabel": "Instalação e seleção de região"
+        }
+      ]
+    }
+  ]
+}

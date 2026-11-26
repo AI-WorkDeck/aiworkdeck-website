@@ -1,0 +1,133 @@
+{
+  "eyebrow": "EDISI KOMUNITAS · FAQ",
+  "title": "File Anda tetap berada di komputer Anda sendiri.",
+  "subtitle": "Konten hanya keluar dari komputer Anda apabila Anda memilih menggunakan fitur daring, dan hanya sebatas yang diperlukan untuk tugas tersebut. Koneksi dienkripsi, kami tidak pernah melatih model dengan konten Anda, dan kami tidak pernah menjual data pribadi.",
+  "navigation": "Topik FAQ",
+  "pricingTitle": "Bagaimana skema harganya?",
+  "pricingTableTitle": "Ringkasan harga",
+  "privacy": "Kebijakan privasi",
+  "start": "Mulai menggunakan Edisi Komunitas",
+  "deploymentEyebrow": "EDISI KOMUNITAS · SELF-HOSTING",
+  "deploymentTitle": "Ingin file Anda tidak pernah keluar dari firma?",
+  "deploymentBody": "Edisi Komunitas dapat dijalankan di server milik firma Anda sendiri dengan model lokal. Kami akan menelaah bersama Anda fitur yang diperlukan, perangkat keras yang perlu direncanakan, dan koneksi eksternal yang perlu dinonaktifkan, sehingga penyimpanan dan pemrosesan tetap berada di jaringan Anda sendiri.",
+  "deploymentPlanCta": "Rencanakan penerapan & anggaran",
+  "deploymentCta": "Diskusikan self-hosting dengan kami",
+  "deploymentSubject": "Pertanyaan tentang self-hosting Edisi Komunitas",
+  "sections": [
+    {
+      "id": "storage",
+      "title": "Di mana file Anda disimpan",
+      "items": [
+        {
+          "id": "local-storage",
+          "q": "Di mana berkas perkara dan percakapan saya disimpan?",
+          "a": "Di komputer Anda sendiri. Aplikasi desktop menyimpan file proyek, percakapan, dan log secara lokal, dan Anda dapat menggunakan folder yang sudah ada di komputer sebagai proyek. Tidak satu pun dari data ini disimpan di server kami.\n\nMengimpor file tidak mengunggahnya ke mana pun. Konten hanya dikirim ke model apabila Anda meminta AI mengerjakan sesuatu, dan hanya sebatas yang diperlukan untuk tugas tersebut. Penandaan AI otomatis saat impor dinonaktifkan secara bawaan."
+        },
+        {
+          "id": "mobile-relay",
+          "q": "Bagaimana foto dari ponsel saya sampai ke komputer, dan berapa lama cloud menyimpannya?",
+          "a": "Di iPhone, file asli tetap berada di dalam aplikasi dan dikecualikan dari iCloud serta cadangan sistem lainnya. Saat Anda mengirimnya ke komputer melalui cloud, server relai hanya menyimpannya sementara: begitu komputer Anda mengonfirmasi penerimaan, salinan di cloud dihapus. Yang tersisa hanyalah catatan pengiriman tanpa konten file.\n\nApabila suatu file tidak pernah diambil, atau penghapusan mengalami kendala, pembersihan harian akan menghapus apa pun yang telah berada di sana selama 30 hari. File asli di ponsel dan salinan di komputer sepenuhnya Anda kelola; menghapus salah satunya tidak memengaruhi yang lain."
+        },
+        {
+          "id": "file-transfer",
+          "q": "Apakah transfer file biasa antara ponsel dan komputer bekerja dengan cara yang sama?",
+          "a": "Prinsipnya sama, batas waktunya berbeda: file yang dikirim dari komputer ke ponsel menunggu di cloud selama 7 hari, dan file yang dikirim dari ponsel ke komputer selama 30 hari, setelah itu dibersihkan secara otomatis. Relai berfungsi untuk pengiriman, bukan pencadangan, jadi simpan file penting di perangkat penerima."
+        },
+        {
+          "id": "cloud-features",
+          "q": "Apakah add-in Office, situs web, dan fitur sinkronisasi juga menyimpan semuanya secara lokal?",
+          "a": "Tergantung pada apa yang terhubung dengannya. Jika add-in Office terhubung ke aplikasi desktop di komputer Anda, data tetap lokal; jika terhubung ke layanan cloud, percakapan dan data sinkronisasi disimpan di server tersebut. Percakapan dengan asisten penyusunan Skill di situs web juga disimpan di server kami.\n\nMemori tim dan firma dibagikan antaranggota, sehingga disimpan di server kami. Jika Anda mengatur sinkronisasi jarak jauh seperti Git, memori juga disinkronkan ke repositori yang Anda pilih. Catatan akun, pesanan, dan penggunaan disimpan di server kami untuk keperluan penagihan."
+        },
+        {
+          "id": "backup",
+          "q": "Apa yang perlu saya cadangkan sebelum berganti komputer, mencopot pemasangan, atau menutup akun?",
+          "a": "Karena pekerjaan Anda berada di komputer Anda, pencadangan sepenuhnya dalam kendali Anda. Sebelum berpindah atau mencopot pemasangan, salin file proyek, data percakapan, serta memori pribadi dan memori proyek Anda. Masuk di komputer baru tidak akan mengembalikan apa yang ada di komputer lama.\n\nMenghapus file lokal, konten cloud bersama, akun situs web Anda, dan salinan sinkronisasi eksternal merupakan langkah yang terpisah. Relai ponsel bukan cadangan. Harap periksa log diagnostik dari konten perkara sebelum mengirimkannya kepada kami."
+        }
+      ]
+    },
+    {
+      "id": "memory",
+      "title": "Pelatihan model dan memori AI",
+      "items": [
+        {
+          "id": "training",
+          "q": "Apakah materi perkara saya akan digunakan untuk melatih model?",
+          "a": "Tidak. AI WorkDeck menggunakan model AI yang sudah ada, dan kami tidak pernah melatih model dengan materi Anda. “Memori” hanyalah catatan yang dapat dibaca dan diedit mengenai preferensi, fakta perkara, dan pengalaman kerja Anda, yang diberikan kepada model sebagai referensi pada kesempatan berikutnya. Model itu sendiri tidak berubah.\n\nDi situs Tiongkok daratan, permintaan AI platform melewati server AI WorkDeck menuju Alibaba Cloud Model Studio (Bailian); di situs internasional, AI platform menggunakan OpenRouter. Setiap layanan menangani permintaan berdasarkan kebijakan privasinya sendiri dan ketentuan wilayah pemrosesan yang spesifik untuk tiap model. Untuk materi yang sangat sensitif, Anda dapat beralih ke model lokal atau mempertimbangkan self-hosting.",
+          "href": "/en/legal/privacy",
+          "linkLabel": "Informasi privasi dan layanan model"
+        },
+        {
+          "id": "memory-location",
+          "q": "Di mana memori disimpan, dan apa perbedaan memori pribadi, proyek, dan tim?",
+          "a": "Memori pribadi dan memori proyek disimpan dalam basis data lokal di komputer Anda, tempat Anda dapat melihat, mengedit, atau menghapusnya kapan saja. Jika Anda mengaktifkan sinkronisasi Git, memori juga disinkronkan ke repositori yang Anda atur.\n\nMemori tim dan firma bersifat bersama, sehingga disimpan di server kami dan hanya dapat dibaca oleh anggota organisasi tersebut. Admin tim mengelola memori tim, dan hanya manajer dalam tim kantor pusat yang dapat menulis ke memori firma. Sebelum menambahkan sesuatu ke memori bersama, pastikan hal itu layak untuk semua orang yang dapat melihatnya."
+        },
+        {
+          "id": "memory-review",
+          "q": "Bagaimana jika model mengingat sesuatu secara keliru, atau memperlakukan satu perkara sebagai aturan umum?",
+          "a": "Temukan memori tersebut lalu edit atau hapus. Simpan hal yang khusus untuk satu perkara di memori proyek, bukan di memori tim atau firma. Memori hanyalah referensi bagi model dan model tetap dapat salah membacanya, jadi periksa ulang fakta dan aturan penting sebelum mengandalkannya."
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "Permintaan AI dan keamanan data",
+      "items": [
+        {
+          "id": "self-hosting",
+          "q": "Dapatkah firma kami menggunakan server dan model sendiri sehingga tidak ada yang keluar dari kantor?",
+          "a": "Ya. Edisi Komunitas dapat diterapkan di server milik firma Anda sendiri dengan model lokal, sehingga penyimpanan dan pemrosesan berlangsung secara internal.\n\nAgar semuanya benar-benar tetap internal, beralih ke model lokal saja tidak cukup: fitur daring lainnya juga perlu dinonaktifkan atau diganti dengan layanan internal, seperti OCR cloud, transkripsi, pencarian web, relai cloud ponsel, memori bersama di situs web kami, dan sinkronisasi jarak jauh. Model lokal juga berbeda-beda dalam penggunaan alat, pemahaman gambar, dan kemampuan lainnya, sehingga masing-masing perlu diuji dan mungkin tidak sepenuhnya setara dengan pengaturan cloud bawaan.\n\nJika ini yang Anda perlukan, hubungi kami dengan menyebutkan ukuran tim, model yang akan digunakan, fitur yang ingin dipertahankan, dan persyaratan jaringan Anda, dan kami akan menyusun pengaturannya bersama."
+        },
+        {
+          "id": "model-context",
+          "q": "Apa yang keluar dari komputer saya saat saya menggunakan AI?",
+          "a": "Hanya yang diperlukan untuk tugas tersebut: pertanyaan Anda, percakapan yang relevan, konten file yang Anda berikan atau yang dibaca AI untuk tugas itu, dan memori apa pun yang digunakannya. Seluruh proyek Anda tidak dikirim secara bawaan.\n\nDi situs Tiongkok daratan, permintaan AI platform melewati server kami menuju Alibaba Cloud Model Studio. Server kami memproses konten permintaan dan mencatat model, penggunaan, dan biaya, tanpa menuliskan konten percakapan ke dalam catatan penagihan. Di situs internasional, AI platform menggunakan OpenRouter. Penyedia kustom dan model lokal mengikuti pengaturan Anda. Add-in dan alat daring lainnya bekerja sesuai pengaturannya masing-masing."
+        },
+        {
+          "id": "retention",
+          "q": "Apakah percakapan saya disimpan di tempat lain selain komputer saya?",
+          "a": "Percakapan dan log desktop hanya disimpan di komputer Anda sendiri, tidak di server kami. Konten disimpan di server kami hanya untuk fitur cloud yang Anda pilih untuk digunakan: add-in Office cloud, asisten penyusunan Skill, memori tim bersama, dan relai ponsel, yang masing-masing telah dijelaskan di atas.\n\nRetensi permintaan bergantung pada Alibaba Cloud Model Studio, OpenRouter, dan layanan model yang dipilih. Menggunakan Model Studio tidak berarti setiap model memiliki wilayah pemrosesan yang sama atau jaminan tanpa retensi.",
+          "href": "/en/legal/privacy",
+          "linkLabel": "Informasi privasi dan layanan model"
+        },
+        {
+          "id": "confidentiality",
+          "q": "Bagaimana saya menentukan apakah AI layak digunakan untuk perkara yang bersifat rahasia?",
+          "a": "Bedakan dua hal: mengatur file secara lokal tidak mengirim isinya ke mana pun, sedangkan meminta AI atau alat daring mengerjakan sesuatu akan mengirim konten yang relevan ke layanan tersebut. Sebelum memulai, pastikan dengan jelas apa yang akan dikirim dan ke mana.\n\nPendekatan yang umum adalah hanya membagikan kutipan yang diperlukan untuk tugas tersebut dan menghapus nama, nomor identitas, serta rincian lain yang tidak diperlukan. Jika klien atau firma Anda mensyaratkan bahwa materi tidak boleh keluar, jangan berikan materi tersebut kepada model cloud; gunakan model lokal atau pengaturan self-hosting sebagai gantinya."
+        },
+        {
+          "id": "team-access",
+          "q": "Setelah saya bergabung dengan tim, dapatkah rekan kerja melihat semua perkara saya?",
+          "a": "Tidak. Bergabung dengan tim tidak membagikan proyek atau file di komputer Anda. Rekan kerja hanya dapat melihat apa yang Anda tambahkan ke memori tim atau firma bersama, ditambah informasi penggunaan yang ditampilkan dasbor tim berdasarkan peran dan pengaturan. Apakah nama proyek ditampilkan merupakan pengaturan tersendiri.\n\nUndang anggota dan berikan hak admin hanya sesuai kebutuhan, dan jangan memasukkan rincian rahasia satu klien ke dalam memori yang dapat dibaca seluruh tim."
+        }
+      ]
+    },
+    {
+      "id": "practice",
+      "title": "Penggunaan dalam pekerjaan hukum",
+      "items": [
+        {
+          "id": "citations",
+          "q": "Dapatkah saya menggunakan peraturan, putusan, dan kutipan dari AI apa adanya?",
+          "a": "Tidak tanpa pemeriksaan. Kembalilah ke sumber aslinya dan pastikan yurisdiksi, tanggal pengundangan dan tanggal berlaku, versi, nomor perkara, pengadilan, serta apakah kutipan tersebut benar-benar mendukung kesimpulan. Model dapat mengarang sumber atau keliru menerapkan sumber yang nyata.\n\nPerlakukan keluaran AI sebagai bahan riset dan draf awal. Temuan fakta, analisis hukum, dan hasil kerja akhir tetap memerlukan persetujuan advokat yang menangani perkara tersebut."
+        },
+        {
+          "id": "documents",
+          "q": "Apa yang perlu saya periksa dengan cermat pada OCR, ringkasan panjang, dan suntingan kontrak?",
+          "a": "Periksa nama, jumlah, tanggal, kalimat negasi, nomor pasal, lampiran, dan tabel yang melintasi beberapa halaman. Pengenalan teks dan ringkasan dapat melewatkan detail, dan model mungkin tidak melihat keseluruhan dokumen.\n\nSimpan dokumen asli dan bandingkan versinya. Tinjau secara manual setiap perubahan yang memengaruhi hak atau kewajiban, beserta kutipan dan kesimpulan; ringkasan tidak dapat menggantikan bukti yang mendasarinya."
+        },
+        {
+          "id": "tools",
+          "q": "Apa yang perlu saya periksa sebelum menggunakan Skill, plugin, atau alat daring?",
+          "a": "Ketahui file apa yang dibacanya, layanan apa yang dihubunginya, dan apa yang dapat dilakukannya. Alat pihak ketiga menangani data berdasarkan aturannya sendiri, dan dokumen atau halaman web dapat memuat instruksi tersembunyi yang menyesatkan model.\n\nBerikan alat tepercaya hanya akses yang diperlukan, dan tinjau penulisan, penghapusan, atau pengiriman ke pihak luar yang penting sebelum dan sesudah dijalankan. Jangan pernah mengunggah materi klien, kunci, atau kata sandi di komunitas publik saat meminta bantuan."
+        },
+        {
+          "id": "regions",
+          "q": "Apakah situs Tiongkok daratan, internasional, dan AS berbagi akun dan data?",
+          "a": "Situs Tiongkok daratan, aiworkdeck.com, beroperasi terpisah dari situs luar negeri; akun dan data daring tidak dibagikan. workdeck.ai dan aiworkdeck.us merupakan sistem luar negeri yang sama dan berbagi data pengguna.\n\nHubungkan aplikasi desktop ke situs tempat Anda mendaftar dan melakukan isi ulang saldo. Mengganti bahasa situs web tidak memindahkan akun, saldo, atau proyek lokal Anda.",
+          "href": "/en/start",
+          "linkLabel": "Instalasi dan pemilihan wilayah"
+        }
+      ]
+    }
+  ]
+}

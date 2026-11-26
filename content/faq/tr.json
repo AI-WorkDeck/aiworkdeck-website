@@ -1,0 +1,133 @@
+{
+  "eyebrow": "TOPLULUK SÜRÜMÜ · SSS",
+  "title": "Dosyalarınız kendi bilgisayarınızda kalır.",
+  "subtitle": "İçerik bilgisayarınızdan yalnızca bir çevrimiçi özelliği kullanmayı seçtiğinizde ve yalnızca ilgili görevin gerektirdiği ölçüde çıkar. Bağlantılar şifrelidir; içeriğinizle hiçbir zaman model eğitmeyiz ve kişisel verileri hiçbir zaman satmayız.",
+  "navigation": "SSS konuları",
+  "pricingTitle": "Fiyatlandırma nasıl işler?",
+  "pricingTableTitle": "Fiyatlara genel bakış",
+  "privacy": "Gizlilik Politikası",
+  "start": "Topluluk Sürümü ile başlayın",
+  "deploymentEyebrow": "TOPLULUK SÜRÜMÜ · KENDİ SUNUCUNUZDA BARINDIRMA",
+  "deploymentTitle": "Dosyalarınızın büronuzdan hiç çıkmamasını mı istiyorsunuz?",
+  "deploymentBody": "Topluluk Sürümü, büronuzun kendi sunucusunda yerel bir modelle çalışabilir. İhtiyaç duyduğunuz özellikleri, planlamanız gereken donanımı ve kapatılması gereken dış bağlantıları sizinle birlikte belirleyerek depolama ve işlemenin kendi ağınızda kalmasını sağlarız.",
+  "deploymentPlanCta": "Kurulum ve bütçe planlayın",
+  "deploymentCta": "Kendi sunucunuzda barındırma hakkında bizimle görüşün",
+  "deploymentSubject": "Topluluk Sürümü kendi sunucusunda barındırma talebi",
+  "sections": [
+    {
+      "id": "storage",
+      "title": "Dosyalarınızın bulunduğu yer",
+      "items": [
+        {
+          "id": "local-storage",
+          "q": "Dava dosyalarım ve konuşmalarım nerede saklanır?",
+          "a": "Kendi bilgisayarınızda. Masaüstü uygulaması proje dosyalarını, konuşmaları ve günlükleri yerel olarak saklar; bilgisayarınızdaki mevcut klasörleri de proje olarak kullanabilirsiniz. Bunların hiçbiri sunucularımızda saklanmaz.\n\nBir dosyayı içe aktarmak onu herhangi bir yere yüklemez. İçerik bir modele yalnızca yapay zekadan bir iş yapmasını istediğinizde ve yalnızca ilgili görevin gerektirdiği ölçüde gönderilir. İçe aktarma sırasında yapay zeka ile otomatik etiketleme varsayılan olarak kapalıdır."
+        },
+        {
+          "id": "mobile-relay",
+          "q": "Telefonumdaki fotoğraflar bilgisayarıma nasıl ulaşır ve bulut bunları ne kadar süre saklar?",
+          "a": "iPhone'da orijinaller uygulamanın içinde kalır ve iCloud ile diğer sistem yedeklemelerinin dışında tutulur. Bunları bulut üzerinden bilgisayarınıza gönderdiğinizde aktarma sunucusu onları yalnızca kısa bir süre tutar: bilgisayarınız alındığını onaylar onaylamaz buluttaki kopya silinir. Geriye yalnızca dosya içeriği bulunmayan bir teslim kaydı kalır.\n\nBir dosya hiç teslim alınmazsa veya silme işleminde bir aksaklık olursa, günlük temizlik 30 gündür orada bulunan her şeyi kaldırır. Telefonunuzdaki orijinali ve bilgisayarınızdaki kopyayı siz yönetirsiniz; birini silmek diğerini etkilemez."
+        },
+        {
+          "id": "file-transfer",
+          "q": "Telefon ile bilgisayar arasındaki olağan dosya aktarımları da aynı şekilde mi çalışır?",
+          "a": "Mantık aynıdır, süre sınırları farklıdır: bilgisayarınızdan telefonunuza gönderilen dosyalar bulutta 7 gün, telefonunuzdan bilgisayarınıza gönderilen dosyalar ise 30 gün bekler ve ardından otomatik olarak temizlenir. Aktarma, yedekleme için değil teslim için tasarlanmıştır; bu nedenle önemli dosyaları alıcı cihaza kaydedin."
+        },
+        {
+          "id": "cloud-features",
+          "q": "Office eklentisi, web sitesi ve eşitleme özellikleri de her şeyi yerel olarak mı saklar?",
+          "a": "Neye bağlandıklarına bağlıdır. Office eklentisi bilgisayarınızdaki masaüstü uygulamasına bağlandığında veriler yerel kalır; bir bulut hizmetine bağlandığında ise konuşmalar ve eşitleme verileri o sunucuda saklanır. Web sitesindeki Skill hazırlama asistanı ile yapılan konuşmalar da sunucumuzda saklanır.\n\nEkip ve büro belleği üyeler arasında paylaşıldığından sunucumuzda bulunur. Git gibi bir uzaktan eşitleme kurarsanız bellek, seçtiğiniz depoya da eşitlenir. Hesap, sipariş ve kullanım kayıtları faturalandırma amacıyla sunucumuzda tutulur."
+        },
+        {
+          "id": "backup",
+          "q": "Bilgisayar değiştirmeden, uygulamayı kaldırmadan veya hesabımı kapatmadan önce neyi yedeklemeliyim?",
+          "a": "Çalışmalarınız bilgisayarınızda bulunduğundan yedekleme sizin kontrolünüzdedir. Taşıma veya kaldırma işleminden önce proje dosyalarınızı, konuşma verilerinizi ve kişisel bellek ile proje belleğinizi kopyalayın. Yeni bir bilgisayarda oturum açmak, eski bilgisayardaki verileri geri getirmez.\n\nYerel dosyaların, buluttaki paylaşılan içeriğin, web sitesi hesabınızın ve harici eşitleme kopyalarının silinmesi ayrı adımlardır. Telefon aktarması bir yedek değildir. Tanılama günlüklerini bize göndermeden önce lütfen dava içeriği barındırıp barındırmadığını kontrol edin."
+        }
+      ]
+    },
+    {
+      "id": "memory",
+      "title": "Model eğitimi ve yapay zeka belleği",
+      "items": [
+        {
+          "id": "training",
+          "q": "Dava materyallerim bir modeli eğitmek için kullanılacak mı?",
+          "a": "Hayır. AI WorkDeck mevcut yapay zeka modellerini kullanır ve materyallerinizle hiçbir zaman model eğitmeyiz. “Bellek”, tercihlerinizin, dava olgularının ve çalışma deneyiminizin okunabilir ve düzenlenebilir bir notundan ibarettir ve bir sonraki seferde modele referans olarak verilir. Modelin kendisi değişmez.\n\nÇin anakarası sitesinde platform yapay zeka istekleri AI WorkDeck sunucuları üzerinden Alibaba Cloud Model Studio (Bailian) hizmetine iletilir; uluslararası sitelerde platform yapay zekası OpenRouter kullanır. Her hizmet, istekleri kendi gizlilik politikasına ve modele özgü işleme bölgesi koşullarına göre işler. Son derece hassas materyaller için yerel bir modele geçebilir veya kendi sunucunuzda barındırmayı değerlendirebilirsiniz.",
+          "href": "/en/legal/privacy",
+          "linkLabel": "Gizlilik ve model hizmeti bilgileri"
+        },
+        {
+          "id": "memory-location",
+          "q": "Bellek nerede saklanır; kişisel bellek, proje belleği ve ekip belleği arasındaki fark nedir?",
+          "a": "Kişisel bellek ve proje belleği bilgisayarınızdaki yerel bir veritabanında tutulur; bunları istediğiniz zaman görüntüleyebilir, düzenleyebilir veya silebilirsiniz. Git eşitlemesini açarsanız, yapılandırdığınız depoya da eşitlenir.\n\nEkip ve büro belleği paylaşımlı olduğundan sunucumuzda bulunur ve yalnızca ilgili kuruluşun üyeleri tarafından okunabilir. Ekip belleğini ekip yöneticileri yönetir; büro belleğine ise yalnızca merkez ekibindeki yöneticiler yazabilir. Paylaşılan belleğe bir şey eklemeden önce, bunu görebilecek herkes için uygun olduğundan emin olun."
+        },
+        {
+          "id": "memory-review",
+          "q": "Model bir şeyi yanlış hatırlarsa veya tek bir davayı genel bir kural gibi ele alırsa ne yapmalıyım?",
+          "a": "İlgili bellek kaydını bulun ve düzenleyin ya da silin. Tek bir davaya özgü bilgileri ekip veya büro belleğinde değil, proje belleğinde tutun. Bellek model için yalnızca bir referanstır ve model onu yine de yanlış yorumlayabilir; bu nedenle temel olgulara ve kurallara dayanmadan önce bunları yeniden kontrol edin."
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "Yapay zeka istekleri ve veri güvenliği",
+      "items": [
+        {
+          "id": "self-hosting",
+          "q": "Büromuz, hiçbir verinin ofis dışına çıkmaması için kendi sunucusunu ve modellerini kullanabilir mi?",
+          "a": "Evet. Topluluk Sürümü, büronuzun kendi sunucusunda yerel bir modelle kurulabilir; böylece depolama ve işleme büro içinde gerçekleşir.\n\nHer şeyi gerçekten büro içinde tutmak için yalnızca yerel bir modele geçmek yeterli değildir: bulut OCR, deşifre, web araması, telefon bulut aktarması, web sitemizdeki paylaşılan bellek ve uzaktan eşitleme gibi diğer çevrimiçi özelliklerin de kapatılması veya şirket içi hizmetlerle değiştirilmesi gerekir. Yerel modeller ayrıca araç kullanımı, görüntü anlama ve diğer yetenekler bakımından farklılık gösterir; bu nedenle her biri test edilmelidir ve varsayılan bulut yapılandırmasıyla tam olarak örtüşmeyebilir.\n\nİhtiyacınız buysa, ekip büyüklüğünüzü, kullanmayı planladığınız modeli, korumak istediğiniz özellikleri ve ağ gereksinimlerinizi bildirerek bizimle iletişime geçin; yapılandırmayı birlikte belirleyelim."
+        },
+        {
+          "id": "model-context",
+          "q": "Yapay zeka kullandığımda bilgisayarımdan ne çıkar?",
+          "a": "Yalnızca görevin gerektirdikleri: sorunuz, ilgili konuşma, sağladığınız veya yapay zekanın o görev için okuduğu dosya içeriği ve kullanılan bellek. Projenizin tamamı varsayılan olarak gönderilmez.\n\nÇin anakarası sitesinde platform yapay zeka istekleri sunucularımız üzerinden Alibaba Cloud Model Studio hizmetine iletilir. Sunucularımız istek içeriğini işler ve modeli, kullanımı ve ücreti kaydeder; konuşma içeriğini faturalandırma kayıtlarına yazmaz. Uluslararası sitelerde platform yapay zekası OpenRouter kullanır. Özel sağlayıcılar ve yerel modeller sizin ayarlarınıza göre çalışır. Diğer eklentiler ve çevrimiçi araçlar kendi ayarlarına göre çalışır."
+        },
+        {
+          "id": "retention",
+          "q": "Konuşmalarım bilgisayarım dışında herhangi bir yerde kaydediliyor mu?",
+          "a": "Masaüstü konuşmaları ve günlükleri yalnızca kendi bilgisayarınızda kaydedilir, sunucularımızda kaydedilmez. İçerik sunucularımızda yalnızca kullanmayı seçtiğiniz bulut özellikleri için saklanır: bulut Office eklentisi, Skill hazırlama asistanı, paylaşılan ekip belleği ve telefon aktarması; bunların her biri yukarıda açıklanmıştır.\n\nİsteklerin saklanması Alibaba Cloud Model Studio, OpenRouter ve seçilen model hizmetine bağlıdır. Model Studio kullanılması, tüm modellerin aynı işleme bölgesine veya sıfır saklama güvencesine sahip olduğu anlamına gelmez.",
+          "href": "/en/legal/privacy",
+          "linkLabel": "Gizlilik ve model hizmeti bilgileri"
+        },
+        {
+          "id": "confidentiality",
+          "q": "Gizli bir dosyada yapay zeka kullanmanın uygun olup olmadığına nasıl karar veririm?",
+          "a": "İki şeyi birbirinden ayırın: dosyaları yerel olarak düzenlemek içeriklerini hiçbir yere göndermez; yapay zekadan veya bir çevrimiçi araçtan bir iş yapmasını istemek ise ilgili içeriği o hizmete gönderir. Başlamadan önce neyin nereye gönderileceğini netleştirin.\n\nYaygın bir yaklaşım, yalnızca görevin gerektirdiği alıntıları paylaşmak ve adları, kimlik numaralarını ve ihtiyaç duymadığınız diğer bilgileri çıkarmaktır. Bir müvekkil veya büronuz materyalin hiçbir zaman dışarı çıkmamasını şart koşuyorsa, onu bir bulut modeline vermeyin; bunun yerine yerel bir model veya kendi sunucunuzda barındırma yapılandırması kullanın."
+        },
+        {
+          "id": "team-access",
+          "q": "Bir ekibe katıldığımda meslektaşlarım tüm dosyalarımı görebilir mi?",
+          "a": "Hayır. Bir ekibe katılmak, bilgisayarınızdaki projeleri veya dosyaları paylaşmaz. Meslektaşlarınız yalnızca paylaşılan ekip veya büro belleğine eklediklerinizi ve ekip panosunun roller ve ayarlara göre gösterdiği kullanım bilgilerini görebilir. Proje adlarının gösterilip gösterilmeyeceği ayrı bir ayardır.\n\nÜyeleri davet etme ve yönetici yetkisi verme işlemlerini yalnızca gerektiğinde yapın ve bir müvekkilin gizli bilgilerini tüm ekibin okuyabileceği belleğe eklemeyin."
+        }
+      ]
+    },
+    {
+      "id": "practice",
+      "title": "Hukuki çalışmalarda kullanım",
+      "items": [
+        {
+          "id": "citations",
+          "q": "Yapay zekanın sunduğu mevzuatı, içtihatları ve alıntıları olduğu gibi kullanabilir miyim?",
+          "a": "Kontrol etmeden kullanamazsınız. Asıl kaynağa dönün ve yargı yetkisini, yayım ve yürürlük tarihlerini, metnin sürümünü, dosya numarasını, mahkemeyi ve alıntının sonucu gerçekten destekleyip desteklemediğini teyit edin. Modeller kaynak uydurabilir veya gerçek kaynakları yanlış uygulayabilir.\n\nYapay zeka çıktısını araştırma materyali ve ilk taslak olarak değerlendirin. Olguların tespiti, hukuki analiz ve nihai çalışma ürünü yine de dosyayı yürüten avukatın onayını gerektirir."
+        },
+        {
+          "id": "documents",
+          "q": "OCR, uzun özetler ve sözleşme düzenlemelerinde neleri dikkatle kontrol etmeliyim?",
+          "a": "Adları, tutarları, tarihleri, olumsuzlukları, madde numaralarını, ekleri ve birden fazla sayfaya yayılan tabloları kontrol edin. Tanıma ve özetleme işlemleri ayrıntıları atlayabilir ve model belgenin tamamını görmemiş olabilir.\n\nOrijinali saklayın ve sürümleri karşılaştırın. Hak veya yükümlülükleri etkileyen her değişikliği, alıntılar ve sonuçlarla birlikte elle inceleyin; bir özet, dayanak teşkil eden delillerin yerini tutmaz."
+        },
+        {
+          "id": "tools",
+          "q": "Bir Skill, eklenti veya çevrimiçi araç kullanmadan önce neyi kontrol etmeliyim?",
+          "a": "Hangi dosyaları okuduğunu, hangi hizmetlerle iletişim kurduğunu ve neler yapabildiğini öğrenin. Üçüncü taraf araçlar verileri kendi kurallarına göre işler; belgeler veya web sayfaları da bir modeli yanıltan gizli talimatlar içerebilir.\n\nGüvenilir araçlara yalnızca ihtiyaç duydukları erişimi verin ve önemli yazma, silme veya dışarıya gönderme işlemlerini çalıştırılmadan önce ve sonra gözden geçirin. Yardım isterken herkese açık toplulukta müvekkil materyallerini, anahtarları veya parolaları asla paylaşmayın."
+        },
+        {
+          "id": "regions",
+          "q": "Çin anakarası, uluslararası ve ABD siteleri hesapları ve verileri paylaşır mı?",
+          "a": "Çin anakarası sitesi aiworkdeck.com, yurt dışı sitelerinden ayrı olarak işletilir; hesaplar ve çevrimiçi veriler paylaşılmaz. workdeck.ai ve aiworkdeck.us aynı yurt dışı sistemidir ve kullanıcı verilerini paylaşır.\n\nMasaüstü uygulamasını kaydolduğunuz ve bakiye yüklediğiniz siteye bağlayın. Web sitesinin dilini değiştirmek hesabınızı, bakiyenizi veya yerel projelerinizi taşımaz.",
+          "href": "/en/start",
+          "linkLabel": "Kurulum ve bölge seçimi"
+        }
+      ]
+    }
+  ]
+}

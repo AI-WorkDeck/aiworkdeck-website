@@ -1,0 +1,133 @@
+{
+  "eyebrow": "COMMUNITY-EDITIE · FAQ",
+  "title": "Uw bestanden blijven op uw eigen computer.",
+  "subtitle": "Inhoud verlaat uw computer alleen wanneer u ervoor kiest een onlinefunctie te gebruiken, en dan uitsluitend wat de betreffende taak vereist. Verbindingen zijn versleuteld, wij trainen nooit modellen op uw inhoud en wij verkopen nooit persoonsgegevens.",
+  "navigation": "FAQ-onderwerpen",
+  "pricingTitle": "Hoe werkt de prijsstelling?",
+  "pricingTableTitle": "Prijzen in één oogopslag",
+  "privacy": "Privacybeleid",
+  "start": "Aan de slag met de Community-editie",
+  "deploymentEyebrow": "COMMUNITY-EDITIE · ZELF HOSTEN",
+  "deploymentTitle": "Wilt u dat uw bestanden het kantoor nooit verlaten?",
+  "deploymentBody": "De Community-editie kan op de eigen server van uw kantoor draaien met een lokaal model. Samen met u brengen wij in kaart welke functies u nodig heeft, met welke hardware u rekening moet houden en welke externe verbindingen moeten worden uitgeschakeld, zodat opslag en verwerking binnen uw eigen netwerk blijven.",
+  "deploymentPlanCta": "Implementatie en budget plannen",
+  "deploymentCta": "Neem contact met ons op over zelf hosten",
+  "deploymentSubject": "Aanvraag zelf hosten Community-editie",
+  "sections": [
+    {
+      "id": "storage",
+      "title": "Waar uw bestanden zich bevinden",
+      "items": [
+        {
+          "id": "local-storage",
+          "q": "Waar worden mijn dossiers en gesprekken opgeslagen?",
+          "a": "Op uw eigen computer. De desktopapp bewaart projectbestanden, gesprekken en logbestanden lokaal, en u kunt bestaande mappen op uw computer als projecten gebruiken. Niets hiervan wordt op onze servers opgeslagen.\n\nHet importeren van een bestand uploadt het nergens naartoe. Inhoud wordt alleen naar een model verzonden wanneer u de AI vraagt iets uit te voeren, en dan uitsluitend wat die taak vereist. Automatische AI-tagging bij het importeren staat standaard uit."
+        },
+        {
+          "id": "mobile-relay",
+          "q": "Hoe komen foto’s van mijn telefoon op mijn computer terecht, en hoe lang bewaart de cloud ze?",
+          "a": "Op de iPhone blijven de originelen binnen de app en worden ze uitgesloten van iCloud en andere systeemback-ups. Wanneer u ze via de cloud naar uw computer verzendt, bewaart de relayserver ze slechts kort: zodra uw computer de ontvangst bevestigt, wordt de kopie in de cloud verwijderd. Er blijft alleen een afleveringsregistratie zonder bestandsinhoud over.\n\nAls een bestand nooit wordt opgehaald of een verwijdering mislukt, verwijdert een dagelijkse opschoning alles wat er 30 dagen staat. Het origineel op uw telefoon en de kopie op uw computer beheert u zelf; het verwijderen van het een heeft geen invloed op het ander."
+        },
+        {
+          "id": "file-transfer",
+          "q": "Werken gewone bestandsoverdrachten tussen telefoon en computer op dezelfde manier?",
+          "a": "Hetzelfde principe, andere termijnen: bestanden die van uw computer naar uw telefoon worden verzonden, staan 7 dagen klaar in de cloud, en bestanden van uw telefoon naar uw computer 30 dagen; daarna worden ze automatisch opgeschoond. De relay dient voor aflevering, niet als back-up; sla alles wat belangrijk is dus op het ontvangende apparaat op."
+        },
+        {
+          "id": "cloud-features",
+          "q": "Houden de Office-invoegtoepassing, de website en de synchronisatiefuncties ook alles lokaal?",
+          "a": "Dat hangt af van waarmee ze verbinding maken. Wanneer de Office-invoegtoepassing verbinding maakt met de desktopapp op uw computer, blijven de gegevens lokaal; wanneer deze verbinding maakt met een clouddienst, worden gesprekken en synchronisatiegegevens op die server opgeslagen. Gesprekken met de Skill-opstelassistent op de website worden eveneens op onze server opgeslagen.\n\nTeam- en kantoorgeheugen wordt gedeeld tussen leden en staat daarom op onze server. Als u externe synchronisatie instelt, zoals Git, wordt het geheugen ook gesynchroniseerd met de repository die u kiest. Account-, bestel- en gebruiksgegevens worden voor facturering op onze server bewaard."
+        },
+        {
+          "id": "backup",
+          "q": "Wat moet ik back-uppen voordat ik van computer wissel, de app verwijder of mijn account opzeg?",
+          "a": "Omdat uw werk op uw computer staat, heeft u de back-up zelf in de hand. Kopieer vóór een overstap of verwijdering uw projectbestanden, gespreksgegevens en uw persoonlijk geheugen en projectgeheugen. Inloggen op een nieuwe computer haalt niet terug wat op de oude stond.\n\nHet verwijderen van lokale bestanden, gedeelde cloudinhoud, uw websiteaccount en externe synchronisatiekopieën zijn afzonderlijke stappen. De telefoonrelay is geen back-up. Controleer diagnostische logbestanden op dossierinhoud voordat u ze naar ons verzendt."
+        }
+      ]
+    },
+    {
+      "id": "memory",
+      "title": "Modeltraining en AI-geheugen",
+      "items": [
+        {
+          "id": "training",
+          "q": "Wordt mijn dossiermateriaal gebruikt om een model te trainen?",
+          "a": "Nee. AI WorkDeck maakt gebruik van bestaande AI-modellen, en wij trainen nooit modellen op uw materiaal. ‘Geheugen’ is niets meer dan een leesbare, bewerkbare notitie van uw voorkeuren, dossierfeiten en werkervaring die de volgende keer als referentie aan het model wordt meegegeven. Het model zelf verandert niet.\n\nOp de site voor het Chinese vasteland lopen AI-verzoeken van het platform via de servers van AI WorkDeck naar Alibaba Cloud Model Studio (Bailian); op de internationale sites gebruikt de platform-AI OpenRouter. Elke dienst verwerkt verzoeken volgens zijn eigen privacybeleid en de modelspecifieke voorwaarden voor de verwerkingsregio. Voor zeer gevoelig materiaal kunt u overstappen op een lokaal model of zelf hosten overwegen.",
+          "href": "/en/legal/privacy",
+          "linkLabel": "Informatie over privacy en modeldiensten"
+        },
+        {
+          "id": "memory-location",
+          "q": "Waar wordt het geheugen opgeslagen, en wat is het verschil tussen persoonlijk geheugen, projectgeheugen en teamgeheugen?",
+          "a": "Persoonlijk geheugen en projectgeheugen worden bewaard in een lokale database op uw computer, waar u ze op elk moment kunt bekijken, bewerken of verwijderen. Als u Git-synchronisatie inschakelt, worden ze ook gesynchroniseerd met de repository die u heeft ingesteld.\n\nTeam- en kantoorgeheugen wordt gedeeld; het staat daarom op onze server en kan alleen worden gelezen door leden van de betreffende organisatie. Teambeheerders beheren het teamgeheugen, en alleen managers van het hoofdteam kunnen naar het kantoorgeheugen schrijven. Controleer voordat u iets aan gedeeld geheugen toevoegt of het geschikt is voor iedereen die het kan zien."
+        },
+        {
+          "id": "memory-review",
+          "q": "Wat als het model iets onjuist onthoudt, of één zaak als algemene regel behandelt?",
+          "a": "Zoek het betreffende geheugenitem op en bewerk of verwijder het. Bewaar alles wat specifiek is voor één zaak in het projectgeheugen en niet in het team- of kantoorgeheugen. Geheugen is slechts een referentie voor het model, dat het nog steeds verkeerd kan interpreteren; controleer daarom essentiële feiten en regels voordat u erop vertrouwt."
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "AI-verzoeken en gegevensbeveiliging",
+      "items": [
+        {
+          "id": "self-hosting",
+          "q": "Kan ons kantoor eigen servers en modellen gebruiken, zodat niets het kantoor verlaat?",
+          "a": "Ja. De Community-editie kan op de eigen server van uw kantoor worden geïmplementeerd met een lokaal model, zodat opslag en verwerking intern plaatsvinden.\n\nOm werkelijk alles intern te houden, is overstappen op een lokaal model alleen niet voldoende: ook andere onlinefuncties moeten worden uitgeschakeld of vervangen door interne diensten, zoals cloud-OCR, transcriptie, zoeken op het web, de cloudrelay voor de telefoon, gedeeld geheugen op onze website en externe synchronisatie. Lokale modellen verschillen bovendien in toolgebruik, beeldbegrip en andere mogelijkheden; elk model moet dus worden getest en komt mogelijk niet precies overeen met de standaardconfiguratie in de cloud.\n\nAls u dit nodig heeft, neem dan contact met ons op en vermeld uw teamgrootte, het model dat u wilt gebruiken, de functies die u wilt behouden en uw netwerkvereisten; wij werken de configuratie dan samen met u uit."
+        },
+        {
+          "id": "model-context",
+          "q": "Wat verlaat mijn computer wanneer ik AI gebruik?",
+          "a": "Alleen wat de taak vereist: uw vraag, het relevante gesprek, bestandsinhoud die u aanlevert of die de AI voor die taak leest, en eventueel gebruikt geheugen. Uw volledige project wordt standaard niet verzonden.\n\nOp de site voor het Chinese vasteland lopen AI-verzoeken van het platform via onze servers naar Alibaba Cloud Model Studio. Onze servers verwerken de inhoud van het verzoek en registreren het model, het gebruik en de kosten, zonder gespreksinhoud in factureringsgegevens op te nemen. Op de internationale sites gebruikt de platform-AI OpenRouter. Aangepaste providers en lokale modellen volgen uw instellingen. Andere invoegtoepassingen en onlinetools werken volgens hun eigen instellingen."
+        },
+        {
+          "id": "retention",
+          "q": "Worden mijn gesprekken nog ergens anders opgeslagen dan op mijn computer?",
+          "a": "Gesprekken en logbestanden van de desktopapp worden uitsluitend op uw eigen computer opgeslagen, niet op onze servers. Inhoud wordt alleen op onze servers opgeslagen voor de cloudfuncties die u kiest te gebruiken: de cloudversie van de Office-invoegtoepassing, de Skill-opstelassistent, gedeeld teamgeheugen en de telefoonrelay, elk hierboven beschreven.\n\nDe bewaring van verzoeken hangt af van Alibaba Cloud Model Studio, OpenRouter en de geselecteerde modeldienst. Het gebruik van Model Studio betekent niet dat elk model dezelfde verwerkingsregio of een garantie op nulbewaring heeft.",
+          "href": "/en/legal/privacy",
+          "linkLabel": "Informatie over privacy en modeldiensten"
+        },
+        {
+          "id": "confidentiality",
+          "q": "Hoe bepaal ik of AI geschikt is voor een vertrouwelijke zaak?",
+          "a": "Houd twee zaken uit elkaar: bestanden lokaal ordenen verzendt hun inhoud nergens naartoe, terwijl de AI of een onlinetool vragen iets uit te voeren de relevante inhoud naar die dienst verzendt. Wees u er vóór aanvang van bewust wat er wordt verzonden en waarheen.\n\nGebruikelijk is om alleen de fragmenten te delen die de taak vereist en namen, identificatienummers en andere overbodige gegevens te verwijderen. Als een cliënt of uw kantoor eist dat materiaal nooit naar buiten gaat, geef het dan niet aan een cloudmodel; gebruik in plaats daarvan een lokaal model of een zelf gehoste configuratie."
+        },
+        {
+          "id": "team-access",
+          "q": "Kunnen collega’s al mijn zaken zien zodra ik lid word van een team?",
+          "a": "Nee. Lid worden van een team deelt de projecten of bestanden op uw computer niet. Collega’s zien alleen wat u toevoegt aan gedeeld team- of kantoorgeheugen, plus de gebruiksinformatie die het teamdashboard toont op basis van rollen en instellingen. Of projectnamen worden weergegeven, is een afzonderlijke instelling.\n\nNodig leden uit en ken beheerdersrechten alleen toe wanneer dat nodig is, en houd vertrouwelijke gegevens van een cliënt buiten geheugen dat het hele team kan lezen."
+        }
+      ]
+    },
+    {
+      "id": "practice",
+      "title": "Gebruik in de juridische praktijk",
+      "items": [
+        {
+          "id": "citations",
+          "q": "Kan ik wetsbepalingen, uitspraken en citaten van de AI ongewijzigd overnemen?",
+          "a": "Niet zonder controle. Ga terug naar de oorspronkelijke bron en controleer het rechtsgebied, de publicatie- en inwerkingtredingsdatum, de versie, het zaaknummer, de rechterlijke instantie en of het citaat de conclusie werkelijk ondersteunt. Modellen kunnen bronnen verzinnen of bestaande bronnen onjuist toepassen.\n\nBeschouw AI-uitvoer als onderzoeksmateriaal en eerste concepten. Feitelijke vaststellingen, juridische analyse en het definitieve werkproduct moeten nog steeds worden goedgekeurd door de advocaat die de zaak behandelt."
+        },
+        {
+          "id": "documents",
+          "q": "Wat moet ik nauwkeurig controleren bij OCR, lange samenvattingen en contractwijzigingen?",
+          "a": "Controleer namen, bedragen, datums, ontkenningen, artikelnummers, bijlagen en tabellen die over meerdere pagina’s lopen. Tekstherkenning en samenvattingen kunnen details missen, en het model heeft mogelijk niet het volledige document gezien.\n\nBewaar het origineel en vergelijk de versies. Beoordeel elke wijziging die rechten of verplichtingen raakt, evenals citaten en conclusies, handmatig; een samenvatting is geen vervanging voor het onderliggende bewijs."
+        },
+        {
+          "id": "tools",
+          "q": "Wat moet ik controleren voordat ik een Skill, plugin of onlinetool gebruik?",
+          "a": "Ga na welke bestanden het leest, met welke diensten het contact maakt en wat het kan doen. Tools van derden verwerken gegevens volgens hun eigen regels, en documenten of webpagina’s kunnen verborgen instructies bevatten die een model misleiden.\n\nGeef vertrouwde tools alleen de toegang die zij nodig hebben, en controleer belangrijke schrijfacties, verwijderingen of externe verzendingen vóór en na de uitvoering. Plaats nooit cliëntmateriaal, sleutels of wachtwoorden in de openbare community wanneer u om hulp vraagt."
+        },
+        {
+          "id": "regions",
+          "q": "Delen de sites voor het Chinese vasteland, internationaal en de VS accounts en gegevens?",
+          "a": "De site voor het Chinese vasteland, aiworkdeck.com, staat los van de internationale sites; accounts en onlinegegevens worden niet gedeeld. workdeck.ai en aiworkdeck.us vormen hetzelfde internationale systeem en delen gebruikersgegevens.\n\nVerbind de desktopapp met de site waarop u zich heeft geregistreerd en tegoed heeft opgewaardeerd. Het wijzigen van de taal van de website verplaatst uw account, saldo of lokale projecten niet.",
+          "href": "/en/start",
+          "linkLabel": "Installatie en regiokeuze"
+        }
+      ]
+    }
+  ]
+}

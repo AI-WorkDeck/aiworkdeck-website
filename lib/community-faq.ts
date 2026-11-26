@@ -1,4 +1,22 @@
 import { toBaseLocale, type Locale } from '@/i18n-config';
+import faq_ar from '@/content/faq/ar.json';
+import faq_de from '@/content/faq/de.json';
+import faq_el from '@/content/faq/el.json';
+import faq_es from '@/content/faq/es.json';
+import faq_fr from '@/content/faq/fr.json';
+import faq_hi from '@/content/faq/hi.json';
+import faq_id from '@/content/faq/id.json';
+import faq_it from '@/content/faq/it.json';
+import faq_ja from '@/content/faq/ja.json';
+import faq_ko from '@/content/faq/ko.json';
+import faq_ms from '@/content/faq/ms.json';
+import faq_nl from '@/content/faq/nl.json';
+import faq_pt from '@/content/faq/pt.json';
+import faq_ru from '@/content/faq/ru.json';
+import faq_th from '@/content/faq/th.json';
+import faq_tr from '@/content/faq/tr.json';
+import faq_vi from '@/content/faq/vi.json';
+
 
 interface Question {
     id: string;
@@ -160,9 +178,30 @@ const en: FaqContent = {
     ],
 };
 
+/** W22: full translations for the other locales (structure pinned to `en` by scripts/verify-faq-locales.mts). */
+const TRANSLATED: Partial<Record<Locale, FaqContent>> = {
+    ar: faq_ar,
+    de: faq_de,
+    el: faq_el,
+    es: faq_es,
+    fr: faq_fr,
+    hi: faq_hi,
+    id: faq_id,
+    it: faq_it,
+    ja: faq_ja,
+    ko: faq_ko,
+    ms: faq_ms,
+    nl: faq_nl,
+    pt: faq_pt,
+    ru: faq_ru,
+    th: faq_th,
+    tr: faq_tr,
+    vi: faq_vi,
+};
+
 export function communityFaq(lang: Locale): FaqContent {
-    const content = lang === 'zh-hant' ? zhHant : toBaseLocale(lang) === 'zh' ? zh : en;
-    // zh-hant has its own text; other locales share the en text. Links stay in the visitor's language.
+    const content = lang === 'zh-hant' ? zhHant : toBaseLocale(lang) === 'zh' ? zh : TRANSLATED[lang] ?? en;
+    // zh, zh-hant, en and 17 translations; a locale without one falls back to en. Links stay in the visitor's language.
     return {
         ...content,
         sections: content.sections.map(section => ({

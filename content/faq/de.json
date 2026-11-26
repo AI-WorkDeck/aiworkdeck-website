@@ -1,0 +1,133 @@
+{
+  "eyebrow": "COMMUNITY EDITION · FAQ",
+  "title": "Ihre Dateien bleiben auf Ihrem eigenen Computer.",
+  "subtitle": "Inhalte verlassen ihn nur, wenn Sie sich für die Nutzung einer Online-Funktion entscheiden, und nur in dem Umfang, den die jeweilige Aufgabe erfordert. Verbindungen sind verschlüsselt, wir trainieren keine Modelle mit Ihren Inhalten und verkaufen keine personenbezogenen Daten.",
+  "navigation": "FAQ-Themen",
+  "pricingTitle": "Wie funktioniert die Preisgestaltung?",
+  "pricingTableTitle": "Preise im Überblick",
+  "privacy": "Datenschutzerklärung",
+  "start": "Mit der Community Edition beginnen",
+  "deploymentEyebrow": "COMMUNITY EDITION · SELBST HOSTEN",
+  "deploymentTitle": "Sollen Ihre Dateien die Kanzlei niemals verlassen?",
+  "deploymentBody": "Die Community Edition kann auf dem eigenen Server Ihrer Kanzlei mit einem lokalen Modell betrieben werden. Gemeinsam klären wir, welche Funktionen Sie benötigen, welche Hardware einzuplanen ist und welche externen Verbindungen abzuschalten sind, damit Speicherung und Verarbeitung in Ihrem eigenen Netzwerk verbleiben.",
+  "deploymentPlanCta": "Bereitstellung und Budget planen",
+  "deploymentCta": "Sprechen Sie mit uns über das Selbst-Hosting",
+  "deploymentSubject": "Anfrage zum Selbst-Hosting der Community Edition",
+  "sections": [
+    {
+      "id": "storage",
+      "title": "Wo Ihre Dateien gespeichert sind",
+      "items": [
+        {
+          "id": "local-storage",
+          "q": "Wo werden meine Akten und Unterhaltungen gespeichert?",
+          "a": "Auf Ihrem eigenen Computer. Die Desktop-App speichert Projektdateien, Unterhaltungen und Protokolle lokal, und Sie können vorhandene Ordner auf Ihrem Computer als Projekte verwenden. Nichts davon wird auf unseren Servern gespeichert.\n\nDas Importieren einer Datei lädt diese nirgendwohin hoch. Inhalte werden nur dann an ein Modell gesendet, wenn Sie die KI mit einer Aufgabe beauftragen, und nur in dem Umfang, den diese Aufgabe erfordert. Die automatische KI-Verschlagwortung beim Import ist standardmäßig deaktiviert."
+        },
+        {
+          "id": "mobile-relay",
+          "q": "Wie gelangen Fotos von meinem Telefon auf meinen Computer, und wie lange bewahrt die Cloud sie auf?",
+          "a": "Auf dem iPhone verbleiben die Originale innerhalb der App und sind von iCloud und anderen Systemsicherungen ausgenommen. Wenn Sie sie über die Cloud an Ihren Computer senden, hält der Relais-Server sie nur kurzzeitig vor: Sobald Ihr Computer den Empfang bestätigt, wird die Cloud-Kopie gelöscht. Zurück bleibt lediglich ein Zustellungsprotokoll ohne Dateiinhalt.\n\nWird eine Datei nie abgeholt oder schlägt eine Löschung fehl, entfernt eine tägliche Bereinigung alles, was seit 30 Tagen vorliegt. Für das Original auf Ihrem Telefon und die Kopie auf Ihrem Computer sind Sie selbst verantwortlich; das Löschen des einen wirkt sich nicht auf das andere aus."
+        },
+        {
+          "id": "file-transfer",
+          "q": "Funktionieren gewöhnliche Dateiübertragungen zwischen Telefon und Computer auf die gleiche Weise?",
+          "a": "Das Prinzip ist dasselbe, die Fristen sind andere: Dateien, die Sie vom Computer an Ihr Telefon senden, liegen 7 Tage in der Cloud bereit, Dateien vom Telefon an Ihren Computer 30 Tage; danach werden sie automatisch bereinigt. Das Relais dient der Zustellung, nicht der Sicherung. Speichern Sie daher alles Wichtige auf dem empfangenden Gerät."
+        },
+        {
+          "id": "cloud-features",
+          "q": "Bleiben beim Office-Add-in, der Website und den Synchronisierungsfunktionen ebenfalls alle Daten lokal?",
+          "a": "Das hängt davon ab, womit sie verbunden sind. Ist das Office-Add-in mit der Desktop-App auf Ihrem Computer verbunden, bleiben die Daten lokal; ist es mit einem Cloud-Dienst verbunden, werden Unterhaltungen und Synchronisierungsdaten auf diesem Server gespeichert. Unterhaltungen mit dem Skill-Entwurfsassistenten auf der Website werden ebenfalls auf unserem Server gespeichert.\n\nTeam- und Kanzleigedächtnis wird unter den Mitgliedern geteilt und liegt daher auf unserem Server. Wenn Sie eine Remote-Synchronisierung wie Git einrichten, wird das Gedächtnis zusätzlich mit dem von Ihnen gewählten Repository synchronisiert. Konto-, Bestell- und Nutzungsdaten werden zu Abrechnungszwecken auf unserem Server gespeichert."
+        },
+        {
+          "id": "backup",
+          "q": "Was sollte ich sichern, bevor ich den Computer wechsle, die App deinstalliere oder mein Konto schließe?",
+          "a": "Da Ihre Arbeit auf Ihrem Computer liegt, liegt auch die Sicherung in Ihrer Verantwortung. Kopieren Sie vor einem Umzug oder einer Deinstallation Ihre Projektdateien, Unterhaltungsdaten sowie Ihr persönliches Gedächtnis und Ihr Projektgedächtnis. Die Anmeldung auf einem neuen Computer stellt nicht wieder her, was sich auf dem alten befand.\n\nDas Löschen lokaler Dateien, geteilter Cloud-Inhalte, Ihres Website-Kontos und externer Synchronisierungskopien sind jeweils gesonderte Schritte. Das Telefon-Relais ist keine Sicherung. Bitte prüfen Sie Diagnoseprotokolle auf Mandatsinhalte, bevor Sie sie an uns senden."
+        }
+      ]
+    },
+    {
+      "id": "memory",
+      "title": "Modelltraining und KI-Gedächtnis",
+      "items": [
+        {
+          "id": "training",
+          "q": "Wird mein Mandatsmaterial zum Training eines Modells verwendet?",
+          "a": "Nein. AI WorkDeck verwendet bestehende KI-Modelle, und wir trainieren keine Modelle mit Ihrem Material. Das „Gedächtnis“ ist lediglich eine lesbare, bearbeitbare Notiz zu Ihren Präferenzen, Sachverhalten und Arbeitserfahrungen, die dem Modell beim nächsten Mal als Referenz übergeben wird. Das Modell selbst verändert sich nicht.\n\nAuf der Website für das chinesische Festland werden KI-Anfragen der Plattform über AI WorkDeck-Server an Alibaba Cloud Model Studio (Bailian) weitergeleitet; auf den internationalen Websites nutzt die Plattform-KI OpenRouter. Jeder Dienst verarbeitet Anfragen nach seiner eigenen Datenschutzerklärung und den modellspezifischen Bedingungen zur Verarbeitungsregion. Für hochsensibles Material können Sie zu einem lokalen Modell wechseln oder ein Selbst-Hosting in Betracht ziehen.",
+          "href": "/en/legal/privacy",
+          "linkLabel": "Informationen zu Datenschutz und Modelldiensten"
+        },
+        {
+          "id": "memory-location",
+          "q": "Wo wird das Gedächtnis gespeichert, und worin unterscheiden sich persönliches Gedächtnis, Projekt- und Teamgedächtnis?",
+          "a": "Persönliches Gedächtnis und Projektgedächtnis werden in einer lokalen Datenbank auf Ihrem Computer gespeichert, wo Sie sie jederzeit einsehen, bearbeiten oder löschen können. Wenn Sie die Git-Synchronisierung aktivieren, werden sie zusätzlich mit dem von Ihnen eingerichteten Repository synchronisiert.\n\nTeam- und Kanzleigedächtnis wird geteilt; es liegt daher auf unserem Server und kann nur von Mitgliedern der jeweiligen Organisation gelesen werden. Team-Administratoren verwalten das Teamgedächtnis, und nur Manager des Haupt-Teams können in das Kanzleigedächtnis schreiben. Vergewissern Sie sich vor dem Hinzufügen von Inhalten zum geteilten Gedächtnis, dass diese für alle geeignet sind, die sie einsehen können."
+        },
+        {
+          "id": "memory-review",
+          "q": "Was ist, wenn sich das Modell etwas falsch merkt oder einen Einzelfall als allgemeine Regel behandelt?",
+          "a": "Suchen Sie den betreffenden Gedächtniseintrag und bearbeiten oder löschen Sie ihn. Bewahren Sie fallbezogene Inhalte im Projektgedächtnis auf, nicht im Team- oder Kanzleigedächtnis. Das Gedächtnis ist für das Modell nur eine Referenz, die es dennoch falsch verstehen kann; überprüfen Sie daher wesentliche Tatsachen und Regeln, bevor Sie sich darauf stützen."
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "KI-Anfragen und Datensicherheit",
+      "items": [
+        {
+          "id": "self-hosting",
+          "q": "Kann unsere Kanzlei eigene Server und Modelle nutzen, sodass nichts das Büro verlässt?",
+          "a": "Ja. Die Community Edition kann auf dem eigenen Server Ihrer Kanzlei mit einem lokalen Modell bereitgestellt werden, sodass Speicherung und Verarbeitung intern erfolgen.\n\nUm tatsächlich alles intern zu halten, genügt der Wechsel zu einem lokalen Modell allein nicht: Auch andere Online-Funktionen müssen deaktiviert oder durch interne Dienste ersetzt werden, etwa Cloud-OCR, Transkription, Websuche, das Cloud-Relais für das Telefon, das geteilte Gedächtnis auf unserer Website und die Remote-Synchronisierung. Lokale Modelle unterscheiden sich zudem bei Werkzeugnutzung, Bildverständnis und weiteren Fähigkeiten; jedes muss daher getestet werden und entspricht möglicherweise nicht genau der standardmäßigen Cloud-Konfiguration.\n\nWenn Sie dies benötigen, nehmen Sie bitte Kontakt mit uns auf und nennen Sie Ihre Teamgröße, das vorgesehene Modell, die beizubehaltenden Funktionen und Ihre Netzwerkanforderungen; wir erarbeiten die Konfiguration dann gemeinsam."
+        },
+        {
+          "id": "model-context",
+          "q": "Was verlässt meinen Computer, wenn ich KI nutze?",
+          "a": "Nur das, was die Aufgabe erfordert: Ihre Frage, die relevante Unterhaltung, Dateiinhalte, die Sie bereitstellen oder die die KI für diese Aufgabe liest, sowie etwaiges verwendetes Gedächtnis. Ihr gesamtes Projekt wird standardmäßig nicht gesendet.\n\nAuf der Website für das chinesische Festland werden KI-Anfragen der Plattform über unsere Server an Alibaba Cloud Model Studio weitergeleitet. Unsere Server verarbeiten den Inhalt der Anfrage und erfassen Modell, Nutzung und Gebühr, ohne Unterhaltungsinhalte in Abrechnungsdatensätze zu schreiben. Auf den internationalen Websites nutzt die Plattform-KI OpenRouter. Benutzerdefinierte Anbieter und lokale Modelle richten sich nach Ihren Einstellungen. Andere Add-ins und Online-Werkzeuge arbeiten gemäß ihren eigenen Einstellungen."
+        },
+        {
+          "id": "retention",
+          "q": "Werden meine Unterhaltungen außer auf meinem Computer noch anderswo gespeichert?",
+          "a": "Unterhaltungen und Protokolle der Desktop-App werden ausschließlich auf Ihrem eigenen Computer gespeichert, nicht auf unseren Servern. Inhalte werden nur für die Cloud-Funktionen auf unseren Servern gespeichert, die Sie nutzen möchten: das Cloud-Office-Add-in, den Skill-Entwurfsassistenten, das geteilte Teamgedächtnis und das Telefon-Relais, wie jeweils oben beschrieben.\n\nDie Aufbewahrung von Anfragen hängt von Alibaba Cloud Model Studio, OpenRouter und dem gewählten Modelldienst ab. Die Nutzung von Model Studio bedeutet nicht, dass jedes Modell dieselbe Verarbeitungsregion oder eine Garantie der Nicht-Speicherung (Zero Retention) aufweist.",
+          "href": "/en/legal/privacy",
+          "linkLabel": "Informationen zu Datenschutz und Modelldiensten"
+        },
+        {
+          "id": "confidentiality",
+          "q": "Wie entscheide ich, ob der Einsatz von KI für ein vertrauliches Mandat angemessen ist?",
+          "a": "Unterscheiden Sie zwei Dinge: Das lokale Organisieren von Dateien sendet deren Inhalt nirgendwohin, während eine Aufgabe für die KI oder ein Online-Werkzeug die relevanten Inhalte an den jeweiligen Dienst sendet. Machen Sie sich vor Beginn klar, was wohin gesendet wird.\n\nÜblich ist es, nur die für die Aufgabe erforderlichen Auszüge weiterzugeben und Namen, Ausweisnummern und andere nicht benötigte Angaben zu entfernen. Wenn ein Mandant oder Ihre Kanzlei verlangt, dass bestimmtes Material das Haus niemals verlässt, geben Sie es keinem Cloud-Modell; verwenden Sie stattdessen ein lokales Modell oder eine selbst gehostete Konfiguration."
+        },
+        {
+          "id": "team-access",
+          "q": "Können Kolleginnen und Kollegen nach meinem Beitritt zu einem Team alle meine Mandate sehen?",
+          "a": "Nein. Der Beitritt zu einem Team teilt weder die Projekte noch die Dateien auf Ihrem Computer. Kolleginnen und Kollegen sehen nur, was Sie dem geteilten Team- oder Kanzleigedächtnis hinzufügen, sowie die Nutzungsinformationen, die das Team-Dashboard je nach Rollen und Einstellungen anzeigt. Ob Projektnamen angezeigt werden, ist eine gesonderte Einstellung.\n\nLaden Sie Mitglieder ein und vergeben Sie Administratorrechte nur nach Bedarf, und halten Sie vertrauliche Angaben eines Mandanten aus dem Gedächtnis heraus, das das gesamte Team lesen kann."
+        }
+      ]
+    },
+    {
+      "id": "practice",
+      "title": "Einsatz in der juristischen Arbeit",
+      "items": [
+        {
+          "id": "citations",
+          "q": "Kann ich Normen, Entscheidungen und Zitate der KI unverändert übernehmen?",
+          "a": "Nicht ohne Prüfung. Gehen Sie auf die Originalquelle zurück und überprüfen Sie die Rechtsordnung, das Veröffentlichungs- und Inkrafttretensdatum, die Fassung, das Aktenzeichen, das Gericht und ob das Zitat die Schlussfolgerung tatsächlich stützt. Modelle können Quellen erfinden oder tatsächliche Quellen falsch anwenden.\n\nBehandeln Sie KI-Ergebnisse als Recherchematerial und erste Entwürfe. Tatsachenfeststellungen, rechtliche Analysen und das endgültige Arbeitsergebnis bedürfen weiterhin der Freigabe durch die sachbearbeitende Anwältin oder den sachbearbeitenden Anwalt."
+        },
+        {
+          "id": "documents",
+          "q": "Was sollte ich bei OCR, langen Zusammenfassungen und Vertragsänderungen besonders sorgfältig prüfen?",
+          "a": "Prüfen Sie Namen, Beträge, Daten, Verneinungen, Klauselnummern, Anlagen und seitenübergreifende Tabellen. Texterkennung und Zusammenfassungen können Details übersehen, und das Modell hat möglicherweise nicht das gesamte Dokument erfasst.\n\nBewahren Sie das Original auf und vergleichen Sie die Fassungen. Prüfen Sie jede Änderung, die Rechte oder Pflichten berührt, ebenso wie Zitate und Schlussfolgerungen manuell; eine Zusammenfassung ersetzt nicht die zugrunde liegenden Beweismittel."
+        },
+        {
+          "id": "tools",
+          "q": "Was sollte ich prüfen, bevor ich einen Skill, ein Plugin oder ein Online-Werkzeug verwende?",
+          "a": "Klären Sie, welche Dateien es liest, mit welchen Diensten es kommuniziert und was es ausführen kann. Werkzeuge von Drittanbietern verarbeiten Daten nach ihren eigenen Regeln, und Dokumente oder Webseiten können versteckte Anweisungen enthalten, die ein Modell in die Irre führen.\n\nGewähren Sie vertrauenswürdigen Werkzeugen nur den Zugriff, den sie benötigen, und prüfen Sie wichtige Schreib- und Löschvorgänge oder externe Übermittlungen vor und nach ihrer Ausführung. Veröffentlichen Sie niemals Mandantenmaterial, Schlüssel oder Passwörter in der öffentlichen Community, wenn Sie um Hilfe bitten."
+        },
+        {
+          "id": "regions",
+          "q": "Teilen sich die Websites für das Festland, die internationale Website und die US-Website Konten und Daten?",
+          "a": "Die Website für das Festland, aiworkdeck.com, wird getrennt von den Websites außerhalb Chinas betrieben; Konten und Online-Daten werden nicht geteilt. workdeck.ai und aiworkdeck.us sind dasselbe System außerhalb Chinas und teilen sich die Nutzerdaten.\n\nVerbinden Sie die Desktop-App mit der Website, auf der Sie sich registriert und Guthaben aufgeladen haben. Ein Wechsel der Website-Sprache verschiebt weder Ihr Konto noch Ihr Guthaben noch Ihre lokalen Projekte.",
+          "href": "/en/start",
+          "linkLabel": "Installation und Auswahl der Region"
+        }
+      ]
+    }
+  ]
+}

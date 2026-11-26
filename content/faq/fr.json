@@ -1,0 +1,133 @@
+{
+  "eyebrow": "ÉDITION COMMUNAUTÉ · FAQ",
+  "title": "Vos fichiers restent sur votre propre ordinateur.",
+  "subtitle": "Leur contenu n’en sort que lorsque vous choisissez d’utiliser une fonctionnalité en ligne, et uniquement dans la mesure nécessaire à la tâche concernée. Les connexions sont chiffrées, nous n’entraînons jamais de modèles sur vos contenus et nous ne vendons jamais de données personnelles.",
+  "navigation": "Thèmes de la FAQ",
+  "pricingTitle": "Comment fonctionne la tarification ?",
+  "pricingTableTitle": "Aperçu des tarifs",
+  "privacy": "Politique de confidentialité",
+  "start": "Commencer avec l’Édition Communauté",
+  "deploymentEyebrow": "ÉDITION COMMUNAUTÉ · AUTO-HÉBERGEMENT",
+  "deploymentTitle": "Vous souhaitez que vos fichiers ne quittent jamais le cabinet ?",
+  "deploymentBody": "L’Édition Communauté peut fonctionner sur le serveur propre de votre cabinet avec un modèle local. Nous examinerons avec vous les fonctionnalités dont vous avez besoin, le matériel à prévoir et les connexions externes à désactiver, afin que le stockage et le traitement restent sur votre propre réseau.",
+  "deploymentPlanCta": "Planifier le déploiement et le budget",
+  "deploymentCta": "Nous contacter au sujet de l’auto-hébergement",
+  "deploymentSubject": "Demande d’auto-hébergement de l’Édition Communauté",
+  "sections": [
+    {
+      "id": "storage",
+      "title": "Où sont conservés vos fichiers",
+      "items": [
+        {
+          "id": "local-storage",
+          "q": "Où mes dossiers et mes conversations sont-ils stockés ?",
+          "a": "Sur votre propre ordinateur. L’application de bureau conserve localement les fichiers de projet, les conversations et les journaux, et vous pouvez utiliser des dossiers existants de votre ordinateur comme projets. Aucun de ces éléments n’est stocké sur nos serveurs.\n\nL’importation d’un fichier ne le téléverse nulle part. Un contenu n’est envoyé à un modèle que lorsque vous demandez à l’IA d’effectuer une tâche, et uniquement dans la mesure nécessaire à cette tâche. L’étiquetage automatique par IA lors de l’importation est désactivé par défaut."
+        },
+        {
+          "id": "mobile-relay",
+          "q": "Comment les photos de mon téléphone parviennent-elles à mon ordinateur, et combien de temps le cloud les conserve-t-il ?",
+          "a": "Sur iPhone, les originaux restent dans l’application et sont exclus d’iCloud et des autres sauvegardes du système. Lorsque vous les envoyez à votre ordinateur via le cloud, le serveur relais ne les conserve que brièvement : dès que votre ordinateur en confirme la réception, la copie dans le cloud est supprimée. Il ne subsiste qu’un enregistrement de livraison, sans aucun contenu de fichier.\n\nSi un fichier n’est jamais récupéré, ou si une suppression échoue, un nettoyage quotidien supprime tout élément présent depuis 30 jours. L’original sur votre téléphone et la copie sur votre ordinateur relèvent de votre gestion ; la suppression de l’un n’affecte pas l’autre."
+        },
+        {
+          "id": "file-transfer",
+          "q": "Les transferts de fichiers ordinaires entre le téléphone et l’ordinateur fonctionnent-ils de la même manière ?",
+          "a": "Le principe est le même, mais les délais diffèrent : les fichiers envoyés de votre ordinateur vers votre téléphone restent dans le cloud pendant 7 jours, et ceux envoyés de votre téléphone vers votre ordinateur pendant 30 jours, après quoi ils sont supprimés automatiquement. Le relais sert à la livraison, non à la sauvegarde ; enregistrez donc tout élément important sur l’appareil destinataire."
+        },
+        {
+          "id": "cloud-features",
+          "q": "Le complément Office, le site web et les fonctions de synchronisation conservent-ils également tout en local ?",
+          "a": "Cela dépend de ce à quoi ils se connectent. Lorsque le complément Office se connecte à l’application de bureau de votre ordinateur, les données restent locales ; lorsqu’il se connecte à un service cloud, les conversations et les données de synchronisation sont stockées sur ce serveur. Les conversations avec l’assistant de rédaction de Skills sur le site web sont également stockées sur notre serveur.\n\nLa mémoire d’équipe et la mémoire du cabinet sont partagées entre les membres ; elles sont donc conservées sur notre serveur. Si vous configurez une synchronisation distante, par exemple Git, la mémoire est également synchronisée avec le dépôt que vous choisissez. Les données de compte, de commande et d’utilisation sont conservées sur notre serveur à des fins de facturation."
+        },
+        {
+          "id": "backup",
+          "q": "Que dois-je sauvegarder avant de changer d’ordinateur, de désinstaller l’application ou de fermer mon compte ?",
+          "a": "Votre travail étant conservé sur votre ordinateur, la sauvegarde relève de votre responsabilité. Avant un transfert ou une désinstallation, copiez vos fichiers de projet, vos données de conversation ainsi que votre mémoire personnelle et votre mémoire de projet. La connexion sur un nouvel ordinateur ne restaure pas ce qui se trouvait sur l’ancien.\n\nLa suppression des fichiers locaux, des contenus partagés dans le cloud, de votre compte sur le site web et des copies de synchronisation externes constituent des opérations distinctes. Le relais téléphonique n’est pas une sauvegarde. Veuillez vérifier que les journaux de diagnostic ne contiennent pas d’éléments de dossiers avant de nous les envoyer."
+        }
+      ]
+    },
+    {
+      "id": "memory",
+      "title": "Entraînement des modèles et mémoire de l’IA",
+      "items": [
+        {
+          "id": "training",
+          "q": "Mes documents de dossier serviront-ils à entraîner un modèle ?",
+          "a": "Non. AI WorkDeck utilise des modèles d’IA existants, et nous n’entraînons jamais de modèles sur vos documents. La « mémoire » n’est qu’une note lisible et modifiable de vos préférences, des faits de vos dossiers et de votre expérience de travail, transmise au modèle comme référence lors des utilisations suivantes. Le modèle lui-même ne change pas.\n\nSur le site de Chine continentale, les requêtes d’IA de la plateforme transitent par les serveurs d’AI WorkDeck vers Alibaba Cloud Model Studio (Bailian) ; sur les sites internationaux, l’IA de la plateforme utilise OpenRouter. Chaque service traite les requêtes conformément à sa propre politique de confidentialité et aux conditions relatives à la région de traitement propres à chaque modèle. Pour des documents hautement sensibles, vous pouvez passer à un modèle local ou envisager l’auto-hébergement.",
+          "href": "/en/legal/privacy",
+          "linkLabel": "Informations sur la confidentialité et les services de modèles"
+        },
+        {
+          "id": "memory-location",
+          "q": "Où la mémoire est-elle stockée, et quelles sont les différences entre mémoire personnelle, mémoire de projet et mémoire d’équipe ?",
+          "a": "La mémoire personnelle et la mémoire de projet sont conservées dans une base de données locale sur votre ordinateur, où vous pouvez les consulter, les modifier ou les supprimer à tout moment. Si vous activez la synchronisation Git, elles sont également synchronisées avec le dépôt que vous avez configuré.\n\nLa mémoire d’équipe et la mémoire du cabinet sont partagées ; elles sont donc conservées sur notre serveur et seuls les membres de l’organisation concernée peuvent les lire. Les administrateurs d’équipe gèrent la mémoire d’équipe, et seuls les gestionnaires de l’équipe principale peuvent écrire dans la mémoire du cabinet. Avant d’ajouter un élément à une mémoire partagée, assurez-vous qu’il convient à toutes les personnes qui peuvent le voir."
+        },
+        {
+          "id": "memory-review",
+          "q": "Que faire si le modèle retient une information erronée, ou traite un cas particulier comme une règle générale ?",
+          "a": "Retrouvez l’élément de mémoire concerné, puis modifiez-le ou supprimez-le. Conservez tout ce qui est propre à un seul dossier dans la mémoire de projet plutôt que dans la mémoire d’équipe ou du cabinet. La mémoire n’est qu’une référence pour le modèle, qui peut encore l’interpréter de travers ; vérifiez donc les faits et règles essentiels avant de vous y fier."
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "Requêtes d’IA et sécurité des données",
+      "items": [
+        {
+          "id": "self-hosting",
+          "q": "Notre cabinet peut-il utiliser ses propres serveurs et modèles afin que rien ne quitte ses locaux ?",
+          "a": "Oui. L’Édition Communauté peut être déployée sur le serveur propre de votre cabinet avec un modèle local, de sorte que le stockage et le traitement s’effectuent en interne.\n\nPour que tout reste réellement en interne, le passage à un modèle local ne suffit pas à lui seul : d’autres fonctionnalités en ligne doivent également être désactivées ou remplacées par des services internes, notamment l’OCR dans le cloud, la transcription, la recherche web, le relais cloud du téléphone, la mémoire partagée sur notre site web et la synchronisation distante. Les modèles locaux diffèrent en outre quant à l’utilisation d’outils, à la compréhension d’images et à d’autres capacités ; chacun doit donc être testé et peut ne pas correspondre exactement à la configuration cloud par défaut.\n\nSi tel est votre besoin, contactez-nous en indiquant la taille de votre équipe, le modèle que vous envisagez d’utiliser, les fonctionnalités que vous souhaitez conserver et vos exigences réseau ; nous définirons la configuration ensemble."
+        },
+        {
+          "id": "model-context",
+          "q": "Qu’est-ce qui quitte mon ordinateur lorsque j’utilise l’IA ?",
+          "a": "Uniquement ce que la tâche requiert : votre question, la conversation pertinente, le contenu des fichiers que vous fournissez ou que l’IA lit pour cette tâche, ainsi que toute mémoire utilisée. Votre projet entier n’est pas envoyé par défaut.\n\nSur le site de Chine continentale, les requêtes d’IA de la plateforme transitent par nos serveurs vers Alibaba Cloud Model Studio. Nos serveurs traitent le contenu de la requête et enregistrent le modèle, l’utilisation et le montant facturé, sans inscrire le contenu des conversations dans les enregistrements de facturation. Sur les sites internationaux, l’IA de la plateforme utilise OpenRouter. Les fournisseurs personnalisés et les modèles locaux suivent vos paramètres. Les autres compléments et outils en ligne fonctionnent selon leurs propres paramètres."
+        },
+        {
+          "id": "retention",
+          "q": "Mes conversations sont-elles enregistrées ailleurs que sur mon ordinateur ?",
+          "a": "Les conversations et journaux de l’application de bureau sont enregistrés uniquement sur votre propre ordinateur, et non sur nos serveurs. Des contenus ne sont stockés sur nos serveurs que pour les fonctionnalités cloud que vous choisissez d’utiliser : le complément Office en mode cloud, l’assistant de rédaction de Skills, la mémoire d’équipe partagée et le relais téléphonique, chacun décrit ci-dessus.\n\nLa conservation des requêtes dépend d’Alibaba Cloud Model Studio, d’OpenRouter et du service de modèle sélectionné. L’utilisation de Model Studio ne signifie pas que tous les modèles ont la même région de traitement ni une garantie de non-conservation.",
+          "href": "/en/legal/privacy",
+          "linkLabel": "Informations sur la confidentialité et les services de modèles"
+        },
+        {
+          "id": "confidentiality",
+          "q": "Comment déterminer si l’IA est appropriée pour un dossier confidentiel ?",
+          "a": "Distinguez deux situations : l’organisation locale des fichiers n’envoie leur contenu nulle part, tandis que demander à l’IA ou à un outil en ligne d’effectuer une tâche envoie le contenu pertinent à ce service. Avant de commencer, déterminez clairement ce qui sera envoyé et à qui.\n\nUne pratique courante consiste à ne communiquer que les extraits nécessaires à la tâche et à supprimer les noms, numéros d’identification et autres informations inutiles. Si un client ou votre cabinet exige que certains documents ne sortent jamais, ne les confiez pas à un modèle dans le cloud ; utilisez plutôt un modèle local ou une configuration auto-hébergée."
+        },
+        {
+          "id": "team-access",
+          "q": "Une fois que j’ai rejoint une équipe, mes collègues peuvent-ils voir tous mes dossiers ?",
+          "a": "Non. Rejoindre une équipe ne partage pas les projets ni les fichiers présents sur votre ordinateur. Vos collègues ne voient que ce que vous ajoutez à la mémoire partagée de l’équipe ou du cabinet, ainsi que les informations d’utilisation affichées par le tableau de bord de l’équipe en fonction des rôles et des paramètres. L’affichage des noms de projet relève d’un paramètre distinct.\n\nN’invitez des membres et n’accordez des droits d’administrateur qu’en cas de besoin, et ne placez pas les informations confidentielles d’un client dans une mémoire lisible par toute l’équipe."
+        }
+      ]
+    },
+    {
+      "id": "practice",
+      "title": "Utilisation dans le travail juridique",
+      "items": [
+        {
+          "id": "citations",
+          "q": "Puis-je reprendre tels quels les textes de loi, décisions et citations fournis par l’IA ?",
+          "a": "Pas sans vérification. Remontez à la source d’origine et vérifiez la juridiction, les dates de publication et d’entrée en vigueur, la version, le numéro d’affaire, la juridiction saisie, et si la citation étaye réellement la conclusion. Les modèles peuvent inventer des sources ou appliquer à tort des sources réelles.\n\nConsidérez les résultats de l’IA comme des éléments de recherche et des premiers projets. Les constatations de fait, l’analyse juridique et le livrable final doivent toujours être validés par l’avocat en charge du dossier."
+        },
+        {
+          "id": "documents",
+          "q": "Que dois-je vérifier attentivement dans l’OCR, les résumés longs et les modifications de contrats ?",
+          "a": "Vérifiez les noms, montants, dates, négations, numéros de clauses, annexes et tableaux s’étendant sur plusieurs pages. La reconnaissance et les résumés peuvent omettre des détails, et le modèle n’a peut-être pas vu l’intégralité du document.\n\nConservez l’original et comparez les versions. Relisez manuellement toute modification affectant des droits ou des obligations, ainsi que les citations et les conclusions ; un résumé ne remplace pas les pièces sous-jacentes."
+        },
+        {
+          "id": "tools",
+          "q": "Que dois-je vérifier avant d’utiliser une Skill, un plugin ou un outil en ligne ?",
+          "a": "Déterminez quels fichiers il lit, avec quels services il communique et ce qu’il peut faire. Les outils tiers traitent les données selon leurs propres règles, et des documents ou pages web peuvent contenir des instructions cachées qui induisent un modèle en erreur.\n\nN’accordez aux outils de confiance que les accès dont ils ont besoin, et examinez les écritures, suppressions ou envois externes importants avant et après leur exécution. Ne publiez jamais de documents de clients, de clés ou de mots de passe dans la communauté publique lorsque vous demandez de l’aide."
+        },
+        {
+          "id": "regions",
+          "q": "Les sites de Chine continentale, international et américain partagent-ils les comptes et les données ?",
+          "a": "Le site de Chine continentale, aiworkdeck.com, fonctionne séparément des sites internationaux ; les comptes et les données en ligne ne sont pas partagés. workdeck.ai et aiworkdeck.us constituent un même système international et partagent les données des utilisateurs.\n\nConnectez l’application de bureau au site sur lequel vous vous êtes inscrit et avez rechargé votre solde. Changer la langue du site web ne déplace ni votre compte, ni votre solde, ni vos projets locaux.",
+          "href": "/en/start",
+          "linkLabel": "Installation et choix de la région"
+        }
+      ]
+    }
+  ]
+}
