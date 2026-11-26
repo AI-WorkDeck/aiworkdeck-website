@@ -321,7 +321,7 @@ export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false
                     {mode !== 'review' && !codeChannelReady && <FormNotice variant="error">{t.codeUnavailable}</FormNotice>}
                 </>}
                 {showPassword && <div className="flex flex-col gap-2">
-                    <Label htmlFor="auth-password">{newPassword ? t.newPassword : t.passwordTab}</Label>
+                    <Label htmlFor="auth-password">{newPassword ? t.newPassword : t.passwordLabel}</Label>
                     <Input id="auth-password" type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={newPassword ? 8 : undefined} maxLength={72} autoComplete={newPassword ? 'new-password' : 'current-password'} disabled={busy || sending || challengeLoading} />
                     {newPassword && <p className="text-xs text-neutral-gray-medium">{t.passwordRule}</p>}
                 </div>}
@@ -335,7 +335,7 @@ export function AuthForms({ lang, dict, next, startRef = '', legacyEmail = false
                 {mode === 'password' && <label className="flex items-center gap-2 text-sm text-neutral-gray-medium"><input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} className="accent-king-forest" />{t.rememberMe}</label>}
                 <Button type="submit" disabled={busy || sending || challengeLoading || (showCode && mode !== 'review' && !codeChannelReady)}>{busy ? t.submitting : mode === 'password' || mode === 'review' ? t.loginBtn : mode === 'register' ? t.verifyContinue : t.savePassword}</Button>
                 <div className="flex flex-wrap justify-between gap-3 text-sm text-king-forest">
-                    {mode === 'password' ? <><button type="button" className="font-medium underline underline-offset-4" onClick={() => changeMode('register')} disabled={busy || sending || challengeLoading}>{t.firstTime}</button>{phoneSite && bqtEnabled && <button type="button" onClick={() => changeMode('bqt-scan')} disabled={busy || sending || challengeLoading}>{t.bqtScanTab}</button>}<button type="button" onClick={() => changeMode('reset')} disabled={busy || sending || challengeLoading}>{t.forgotPassword}</button></> : <button type="button" onClick={() => changeMode('password')} disabled={busy || sending || challengeLoading}>{t.backToPassword}</button>}
+                    {mode === 'password' ? <><button type="button" className="font-medium underline underline-offset-4" onClick={() => changeMode('register')} disabled={busy || sending || challengeLoading}>{t.firstTime}</button><button type="button" onClick={() => changeMode('reset')} disabled={busy || sending || challengeLoading}>{t.forgotPassword}</button></> : <button type="button" onClick={() => changeMode('password')} disabled={busy || sending || challengeLoading}>{t.backToPassword}</button>}
                 </div>
             </form>
             )}

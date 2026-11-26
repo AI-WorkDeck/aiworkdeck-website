@@ -574,7 +574,7 @@ function LoginStep({ lang, t, auth }: { lang: Locale; t: any; auth: any }) {
                         </span>
                     </div>
                     <div className="mt-2.5 rounded-lg border border-neutral-gray-light bg-neutral-gray-pale px-3 py-2 text-left">
-                        <span className="font-mono text-[11.5px] text-neutral-gray-medium">{auth.passwordTab}</span>
+                        <span className="font-mono text-[11.5px] text-neutral-gray-medium">{auth.passwordLabel}</span>
                     </div>
                     <div className="mt-2.5 rounded-lg bg-king-forest px-3 py-2 text-[12.5px] font-bold text-white">
                         {t.button}
