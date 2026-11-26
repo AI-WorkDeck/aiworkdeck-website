@@ -2,7 +2,7 @@
   "chartsPage": {
     "eyebrow": "社区榜单",
     "title": "Skill 榜单",
-    "lead": "免费与收费作品按真实安装与购买排序，创作者与收益榜见证每一位贡献者。榜上的空位，正等你的作品来补。",
+    "lead": "按真实安装量、购买量和发布作品数排列的 Skill 与创作者。榜单条目足够后才会出现。",
     "windowAll": "总榜",
     "windowWeekly": "本周",
     "freeTitle": "免费 Skill 榜",

@@ -85,7 +85,7 @@ export default async function ChartsPage({
                     </nav>
                 </header>}
 
-                {anyBoard && <div className="grid gap-6 lg:grid-cols-2">
+                {anyBoard && <div className={cn('grid gap-6', Object.values(show).filter(Boolean).length > 1 ? 'lg:grid-cols-2' : 'mx-auto max-w-3xl')}>
                     {show.free && <Reveal>
                         <SkillBoard lang={lang} t={t} icon={TrendingUp} title={t.freeTitle}
                             note={weekly ? t.weeklyNote : t.freeNote} rows={freeRows} valueLabel={t.installs} />

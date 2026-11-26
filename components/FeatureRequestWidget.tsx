@@ -104,7 +104,7 @@ export function FeatureRequestWidget({ lang, t }: FeatureRequestWidgetProps) {
                 onClick={openDialog}
                 aria-label={t.floatLabel}
                 title={t.floatLabel}
-                className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-king-forest text-white shadow-lg transition-transform hover:scale-105 hover:bg-king-forest/90 focus:outline-none focus:ring-2 focus:ring-king-mint focus:ring-offset-2"
+                className="fixed bottom-4 end-4 z-40 flex h-11 w-11 items-center md:bottom-6 md:end-6 md:h-12 md:w-12 justify-center rounded-full bg-king-forest text-white shadow-lg transition-transform hover:scale-105 hover:bg-king-forest/90 focus:outline-none focus:ring-2 focus:ring-king-mint focus:ring-offset-2"
             >
                 <MessageSquarePlus className="h-5 w-5" strokeWidth={1.75} />
             </button>

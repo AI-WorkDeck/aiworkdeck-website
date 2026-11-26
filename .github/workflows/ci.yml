@@ -105,7 +105,7 @@ jobs:
         run: npx tsx --tsconfig tsconfig.json scripts/verify-start-copy.mts
       - name: Sign-in card copy (W19)
         run: npx tsx --tsconfig tsconfig.json scripts/verify-w19.mts
-      - name: Round-2 audit fixes (W23 currency unit, W27, W30, W31)
+      - name: Round-2 audit fixes (W23, W26, W27, W30, W31, W32, W35)
         run: npx tsx --tsconfig tsconfig.json scripts/verify-w-round2.mts
       - name: Typecheck
         # 生产构建关掉了类型检查（见 next.config.ts），这一步是唯一的类型闸

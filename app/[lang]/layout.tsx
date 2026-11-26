@@ -126,7 +126,7 @@ export default async function RootLayout({
             页面级的 SoftwareApplication / Skill 节点由各页自己补。 */}
         <JsonLd data={organizationJsonLd()} />
         <JsonLd data={webSiteJsonLd(lang)} />
-        <div className="flex min-h-screen flex-col">
+        <div className="flex min-h-screen flex-col pb-16 md:pb-0">
           <Navbar lang={lang} dict={dict} githubStars={githubStars} />
           <a href="#main-content" className="skip-link">{dict.common.skipToContent}</a>
           <main id="main-content" className="flex-1">

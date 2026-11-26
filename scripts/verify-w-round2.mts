@@ -28,4 +28,15 @@ assert.match(fs.readFileSync('components/pricing/PricingPageView.tsx', 'utf8'), 
 // W31: German terms heading is nominative
 for (const f of ['content/legal/terms-de.ts', 'content/legal/terms-intl-de.ts']) assert.match(fs.readFileSync(f, 'utf8'), /"title": "Allgemeine Geschäftsbedingungen"/);
 assert.ok(!fs.readFileSync('dictionaries/de.json', 'utf8').includes('"terms": "Allgemeinen'), 'de standalone terms label is nominative');
-console.log('PASS round-2 fixes: W23 currency unit, W27 intl footnote, W30 password label, W31 German heading');
+// W26: a single chart board is centred, not stranded in a two-column grid; the lead promises no hidden boards
+const charts = fs.readFileSync('app/[lang]/skills/charts/page.tsx', 'utf8');
+assert.match(charts, /filter\(Boolean\)\.length > 1 \? 'lg:grid-cols-2' : 'mx-auto max-w-3xl'/);
+for (const l of i18n.locales) assert.ok(!/open seats|Open seat/i.test(dict(l).chartsPage.lead), `${l}: charts lead`);
+// W32: the floating request button sits on the logical end side and the page leaves room for it on phones
+assert.match(fs.readFileSync('components/FeatureRequestWidget.tsx', 'utf8'), /fixed bottom-4 end-4/);
+assert.match(fs.readFileSync('app/[lang]/layout.tsx', 'utf8'), /min-h-screen flex-col pb-16 md:pb-0/);
+// W35: the home hero links the no-install web version (plain link, no engine prefetch)
+const home = fs.readFileSync('components/home/IdeHome.tsx', 'utf8');
+assert.match(home, /href=\{`\/web\/\?lang=\$\{lang\}`\}/);
+assert.ok(!/WebVersionLink/.test(home), 'home does not prefetch the engine');
+console.log('PASS round-2 fixes: W23, W26, W27, W30, W31, W32, W35');
