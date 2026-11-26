@@ -519,6 +519,7 @@
     "toolsSuffix": "công cụ",
     "installsSuffix": "lượt cài đặt",
     "footNote": "Plugin chạy trong cùng tiến trình với ứng dụng chủ, với cùng quyền hạn. Hãy đảm bảo bạn tin tưởng nguồn gốc trước khi cài đặt — các thẻ quyền ở trên là tuyên bố của chính tác giả; khâu duyệt sẽ kiểm tra chéo, nhưng chúng không phải là hạn chế khi chạy.",
+    "detail": {"installTitle": "Cách cài đặt", "installBody": "Trong ứng dụng AI WorkDeck trên máy tính, mở Chợ ứng dụng và tìm “{name}”.", "permissionsTitle": "Quyền", "chinaOnly": "Chỉ dành cho tài khoản Trung Quốc đại lục", "chineseOnly": "Chỉ có tiếng Trung"},
     "permissions": {
       "file_read": "Đọc tệp",
       "file_write": "Ghi tệp",

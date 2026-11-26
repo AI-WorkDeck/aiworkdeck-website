@@ -519,6 +519,7 @@
     "toolsSuffix": "ツール",
     "installsSuffix": "インストール",
     "footNote": "プラグインはホストアプリと同じプロセスで、同じ権限で動作します。インストール前に提供元を信頼できるか確認してください。上記の権限タグは作者自身による申告であり、レビューでクロスチェックされますが、実行時の制限ではありません。",
+    "detail": {"installTitle": "インストール方法", "installBody": "AI WorkDeck デスクトップアプリでマーケットプレイスを開き、「{name}」を検索してください。", "permissionsTitle": "権限", "chinaOnly": "中国本土のアカウントのみ", "chineseOnly": "中国語のみ"},
     "permissions": {
       "file_read": "ファイルの読み取り",
       "file_write": "ファイルの書き込み",

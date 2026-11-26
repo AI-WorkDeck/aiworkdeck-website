@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { BuyButton } from '@/components/purchase/BuyButton';
 import { formatPrice } from '@/lib/price';
 import { MarketplaceHero } from '../MarketplaceHero';
+import { PluginMarketTags } from '@/components/plugins/PluginMarketTags';
 import { pageAlternates } from '@/lib/page-metadata';
 
 export const dynamic = 'force-dynamic';
@@ -71,11 +72,15 @@ export default async function MarketplacePluginsPage({ params }: { params: Promi
                             {t.signed}
                         </p>
                         <h3 className="truncate text-xl font-semibold text-neutral-dark-bg">
-                            {p.name}
+                            {/* The whole card opens the plugin page (W24); the stretched link sits under the buy button. */}
+                            <Link href={`/${lang}/plugins/${p.id}`} className="after:absolute after:inset-0 hover:text-king-forest">
+                                {p.name}
+                            </Link>
                         </h3>
                         <p className="mt-1 text-[11px] font-mono text-neutral-gray-medium/80 truncate">
                             v{p.version} · {p.author}
                         </p>
+                        <PluginMarketTags plugin={p} labels={t.detail} />
                     </div>
                     {(p.priceCents ?? 0) > 0 && (
                         <span className="shrink-0 text-lg font-bold text-king-forest">
@@ -118,7 +123,7 @@ export default async function MarketplacePluginsPage({ params }: { params: Promi
                     )}
                 </footer>
                 {(p.priceCents ?? 0) > 0 && (
-                    <div className="mt-4">
+                    <div className="relative z-10 mt-4">
                         <BuyButton
                             lang={lang}
                             labels={dict.purchase}

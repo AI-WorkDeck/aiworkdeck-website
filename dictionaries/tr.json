@@ -519,6 +519,7 @@
     "toolsSuffix": "araç",
     "installsSuffix": "kurulum",
     "footNote": "Eklentiler, ana uygulama ile aynı süreçte ve aynı izinlerle çalışır. Kurulumdan önce kaynağa güvendiğinizden emin olun — yukarıdaki izin etiketleri yazarın kendi beyanıdır; inceleme süreci bunları çapraz kontrol eder, ancak bunlar çalışma zamanı bir kısıtlama değildir.",
+    "detail": {"installTitle": "Nasıl kurulur", "installBody": "AI WorkDeck masaüstü uygulamasında Marketplace’i açın ve “{name}” için arama yapın.", "permissionsTitle": "İzinler", "chinaOnly": "Yalnızca Çin anakarası hesapları", "chineseOnly": "Yalnızca Çince"},
     "permissions": {
       "file_read": "Dosyaları oku",
       "file_write": "Dosyalara yaz",

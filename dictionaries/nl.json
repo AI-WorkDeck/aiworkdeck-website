@@ -519,6 +519,7 @@
     "toolsSuffix": "tools",
     "installsSuffix": "installaties",
     "footNote": "Plugins draaien in hetzelfde proces als de host-app, met dezelfde rechten. Verzeker je ervan dat je de bron vertrouwt voordat je installeert — de permissielabels hierboven zijn een eigen verklaring van de auteur; de beoordeling controleert ze, maar ze zijn geen beperking tijdens runtime.",
+    "detail": {"installTitle": "Installeren", "installBody": "Open in de desktopapp van AI WorkDeck de Marktplaats en zoek naar ‘{name}’.", "permissionsTitle": "Machtigingen", "chinaOnly": "Alleen accounts op het Chinese vasteland", "chineseOnly": "Alleen in het Chinees"},
     "permissions": {
       "file_read": "Bestanden lezen",
       "file_write": "Bestanden schrijven",
