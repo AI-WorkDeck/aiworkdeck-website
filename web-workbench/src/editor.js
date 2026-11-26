@@ -8,6 +8,8 @@ export function documentText(result){
  if(Array.isArray(result.paragraphs))return result.paragraphs.map(p=>p.text||'').join('\n');
  return typeof result.text==='string'?result.text:'';
 }
+/** W29: 90 % on desktop; on narrow screens zoom so an A4 page (about 820 px wide at 100 %, with margins) fits the frame. */
+export function fitZoom(width){if(!(width>0)||width>=760)return 90;return Math.max(30,Math.min(90,Math.floor((width-24)/8.2)))}
 export class EditorSession{
  constructor({container,store,onState,onBusy,onBoot=()=>{},language='zh',fonts=null}){
   this.fonts=fonts;
@@ -126,7 +128,7 @@ export class EditorSession{
    await this.exec('load_document',{name:file.name,bytes:Array.from(file.bytes),authorName:'Web user'});
    this.file=file;this.dirty=false;this.generation=0;this.recoveryBytes=null;
    await this.exec('set_chrome',{all:false});
-   await this.exec('set_zoom',{value:90});
+   await this.exec('set_zoom',{value:fitZoom(this.frame.clientWidth)});
    await this.exec('set_revision_view',{mode:'all'});
    this.savedRevision=await this.readRevision();
    this.emit('saved');
