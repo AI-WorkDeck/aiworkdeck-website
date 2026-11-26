@@ -3,7 +3,7 @@
 import { randomUUID } from 'crypto';
 import { platformModels, type PlatformModel } from './catalog';
 import { bailianModelConstraints, bailianConfig, deepseekConfig, deepseekConfigured, isDeepSeekModelId, mapToDeepSeekUpstreamModel, platformProvider } from './config';
-import { retireOpenRouter, reserve, authorizeReserve, submitted, pending, settle, release } from './billing';
+import { retireOpenRouter, reserve, turnTagFrom, authorizeReserve, submitted, pending, settle, release } from './billing';
 import { trialBlockReason } from '../trial';
 import { InsufficientCreditsError } from '../credits';
 import { pickLangText, resolveRequestLocale } from '../api-locale';
@@ -147,7 +147,7 @@ export async function chatCompletion(userId:string,request:Request,fetcher:typeo
   if(!/^[A-Za-z0-9_-]{8,128}$/.test(id))throw new AiGatewayError('invalid_request');
   if(isBailian)await retireOpenRouter(userId);
   await authorizeReserve(userId,id,model,input.inputTokens,input.outputTokens,input.thinking);
-  reserve(userId,id,input.body,model,input.inputTokens,input.outputTokens,input.thinking);
+  reserve(userId,id,input.body,model,input.inputTokens,input.outputTokens,input.thinking,turnTagFrom(request));
   submitted(userId,id);
   const upstreamPayload:Obj={...input.body};
   if(!isBailian) {

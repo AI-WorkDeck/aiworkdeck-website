@@ -18,9 +18,14 @@ export interface PlatformRequest {
   userId:string; requestId:string; payloadHash:string; state:string; model:string;
   reserveCents:number; reserveLedgerId:number; fundingJson:string; priceJson:string; thinking:number;
   exchangeRate:number; margin:number; createdAt:string; updatedAt:string; costCny:number|null; costUsd:number|null;
-  chargedCents:number|null; usageJson:string|null; errorCode:string|null;
+  chargedCents:number|null; usageJson:string|null; errorCode:string|null; turnTag?:string|null; settleLedgerId?:number|null;
 }
 export const requestRow=(userId:string,id:string)=>getDb().prepare('SELECT * FROM platform_ai_request WHERE userId=? AND requestId=?').get(userId,id) as PlatformRequest|undefined;
+/** Q24: `X-AWD-Turn` is a 32-hex opaque hash from the desktop. Anything else is ignored, never rejected. */
+export function turnTagFrom(request:Request):string|null {
+  const tag=request.headers.get('x-awd-turn');
+  return tag&&/^[0-9a-f]{32}$/.test(tag)?tag:null;
+}
 const retirement = new Map<string,Promise<void>>();
 const PENDING_RECOVERY_MS=15*60_000;
 /** Stop the old credential first; keep rereading retired receipts so late OR usage is not lost. */
@@ -66,8 +71,8 @@ function maxCostCnyFor(model:PlatformModel,inputTokens:number,outputTokens:numbe
   const output=Math.max(...relevant.map(t=>thinking?(t.thinkingOutput??t.output):t.output));
   return (inputTokens*input+outputTokens*output)/1e6;
 }
-export function reserve(userId:string,id:string,payload:unknown,model:PlatformModel,inputTokens:number,outputTokens:number,thinking:boolean) {
-  return reserveCostCny(userId,id,payload,model.id,maxCostCnyFor(model,inputTokens,outputTokens,thinking),model,thinking);
+export function reserve(userId:string,id:string,payload:unknown,model:PlatformModel,inputTokens:number,outputTokens:number,thinking:boolean,turnTag:string|null=null) {
+  return reserveCostCny(userId,id,payload,model.id,maxCostCnyFor(model,inputTokens,outputTokens,thinking),model,thinking,turnTag);
 }
 /** Points-funded requests use the BQT margin; wallet-funded ones keep the user's (Circle/global) margin. */
 function reserveTerms(userId:string,maxCostCny:number,bqtLine:boolean) {
@@ -88,7 +93,7 @@ export async function authorizeCostCny(userId:string,id:string,maxCostCny:number
 export function authorizeReserve(userId:string,id:string,model:PlatformModel,inputTokens:number,outputTokens:number,thinking:boolean) {
   return authorizeCostCny(userId,id,maxCostCnyFor(model,inputTokens,outputTokens,thinking),model.id);
 }
-export function reserveCostCny(userId:string,id:string,payload:unknown,modelId:string,maxCostCny:number,priceSnapshot:unknown,thinking=false) {
+export function reserveCostCny(userId:string,id:string,payload:unknown,modelId:string,maxCostCny:number,priceSnapshot:unknown,thinking=false,turnTag:string|null=null) {
   const hash=createHash('sha256').update(JSON.stringify(payload)).digest('hex');
   const linked=isBqtEligibleModel(modelId)?bqtLinkedLawyer(userId):null;
   const bqtTerms=linked?reserveTerms(userId,maxCostCny,true):null;
@@ -104,8 +109,8 @@ export function reserveCostCny(userId:string,id:string,payload:unknown,modelId:s
     // Points first. A second concurrent points request (check-then-deduct race) goes to the wallet instead.
     if(bqt&&!bqtHasActiveRequest(db,userId)) {
       const {cents,margin,exchangeRate}=bqtTerms!, now=new Date().toISOString();
-      db.prepare(`INSERT INTO platform_ai_request(userId,requestId,payloadHash,state,model,reserveCents,reserveLedgerId,fundingJson,priceJson,thinking,exchangeRate,margin,createdAt,updatedAt)
-        VALUES (?,?,?,'reserved',?,?,?,?,?,?,?,?,?,?)`).run(userId,id,hash,modelId,cents,bqtReserveLedgerId(db),bqtFundingJson(bqt.lawyerId),JSON.stringify(priceSnapshot),thinking?1:0,exchangeRate,margin,now,now);
+      db.prepare(`INSERT INTO platform_ai_request(userId,requestId,payloadHash,state,model,reserveCents,reserveLedgerId,fundingJson,priceJson,thinking,exchangeRate,margin,createdAt,updatedAt,turnTag)
+        VALUES (?,?,?,'reserved',?,?,?,?,?,?,?,?,?,?,?)`).run(userId,id,hash,modelId,cents,bqtReserveLedgerId(db),bqtFundingJson(bqt.lawyerId),JSON.stringify(priceSnapshot),thinking?1:0,exchangeRate,margin,now,now,turnTag);
       return requestRow(userId,id)!;
     }
     const {cents,margin,exchangeRate}=walletTerms;
@@ -113,8 +118,8 @@ export function reserveCostCny(userId:string,id:string,payload:unknown,modelId:s
     const excludeSourceKinds=isDeepSeekModelId(modelId)?undefined:[CIRCLE_DEEPSEEK_SOURCE_KIND];
     const ledger=spendCredits(db,{userId,amountCents:cents,funding,ledgerKind:'ai_alloc',nowIso:now,excludeSourceKinds,
       meta:{service:'platform_ai',provider:'bailian',phase:'reserve',requestId:id,model:modelId}});
-    db.prepare(`INSERT INTO platform_ai_request(userId,requestId,payloadHash,state,model,reserveCents,reserveLedgerId,fundingJson,priceJson,thinking,exchangeRate,margin,createdAt,updatedAt)
-      VALUES (?,?,?,'reserved',?,?,?,?,?,?,?,?,?,?)`).run(userId,id,hash,modelId,cents,ledger.id,JSON.stringify(funding),JSON.stringify(priceSnapshot),thinking?1:0,exchangeRate,margin,now,now);
+    db.prepare(`INSERT INTO platform_ai_request(userId,requestId,payloadHash,state,model,reserveCents,reserveLedgerId,fundingJson,priceJson,thinking,exchangeRate,margin,createdAt,updatedAt,turnTag)
+      VALUES (?,?,?,'reserved',?,?,?,?,?,?,?,?,?,?,?)`).run(userId,id,hash,modelId,cents,ledger.id,JSON.stringify(funding),JSON.stringify(priceSnapshot),thinking?1:0,exchangeRate,margin,now,now,turnTag);
     return requestRow(userId,id)!;
   });
 }
@@ -159,9 +164,9 @@ export function settleCostCny(userId:string,id:string,cost:number,usage:Record<s
     if(cents>row.reserveCents&&!acceptsPostpaid(userId,JSON.parse(row.fundingJson) as ServiceFunding)){pending(userId,id,'cost_cap_exceeded');return requestRow(userId,id)!;}
     refundSpend(db,row.reserveLedgerId,{meta:{service:'platform_ai',phase:'unreserve',requestId:id}});
     const excludeSourceKinds=isDeepSeekModelId(row.model)?undefined:[CIRCLE_DEEPSEEK_SOURCE_KIND];
-    if(cents>0)spendCredits(db,{userId,amountCents:cents,funding:JSON.parse(row.fundingJson) as ServiceFunding,delivered:true,ledgerKind:'ai_alloc',nowIso:row.createdAt,excludeSourceKinds,
-      meta:{service:'platform_ai',provider:'bailian',phase:'settle',requestId:id,model:row.model,costCny:cost,exchangeRate:row.exchangeRate,margin:row.margin}});
-    db.prepare("UPDATE platform_ai_request SET state='settled',chargedCents=?,errorCode=NULL,updatedAt=? WHERE userId=? AND requestId=?").run(cents,new Date().toISOString(),userId,id);
+    const spend=cents>0?spendCredits(db,{userId,amountCents:cents,funding:JSON.parse(row.fundingJson) as ServiceFunding,delivered:true,ledgerKind:'ai_alloc',nowIso:row.createdAt,excludeSourceKinds,
+      meta:{service:'platform_ai',provider:'bailian',phase:'settle',requestId:id,model:row.model,costCny:cost,exchangeRate:row.exchangeRate,margin:row.margin}}):null;
+    db.prepare("UPDATE platform_ai_request SET state='settled',chargedCents=?,settleLedgerId=?,errorCode=NULL,updatedAt=? WHERE userId=? AND requestId=?").run(cents,spend?.id??null,new Date().toISOString(),userId,id);
     return requestRow(userId,id)!;
   });
   dispatchBqtConsume(requestNo);

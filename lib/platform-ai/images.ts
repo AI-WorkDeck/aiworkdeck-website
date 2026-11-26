@@ -3,7 +3,7 @@
 import { randomUUID } from 'crypto';
 import { classifyUpstreamError } from './proxy';
 import { bailianConfig, platformProvider } from './config';
-import { retireOpenRouter, authorizeCostCny, reserveCostCny, submitted, pending, settleCostCny, release } from './billing';
+import { retireOpenRouter, authorizeCostCny, reserveCostCny, submitted, pending, settleCostCny, release, turnTagFrom } from './billing';
 import { trialBlockReason } from '../trial';
 import { bqtLinkedLawyer } from '../bqt-member';
 import { IMAGE_MODEL, imagePrices, maximumImageCost, imageUsageCost } from './images-billing';
@@ -65,7 +65,7 @@ export async function imageCompletion(userId:string,request:Request,raw:Obj,fetc
   if(!/^[A-Za-z0-9_-]{8,128}$/.test(id))throw new Error('invalid_request');
   await retireOpenRouter(userId);
   await authorizeCostCny(userId,id,maximumImageCost(prices,input.inputCount),IMAGE_MODEL);
-  reserveCostCny(userId,id,input.body,IMAGE_MODEL,maximumImageCost(prices,input.inputCount),{...prices,inputCount:input.inputCount});
+  reserveCostCny(userId,id,input.body,IMAGE_MODEL,maximumImageCost(prices,input.inputCount),{...prices,inputCount:input.inputCount},false,turnTagFrom(request));
   submitted(userId,id);
   let upstream:Response;
   try{upstream=await fetcher(`${new URL(config.baseUrl).origin}/api/v1/services/aigc/multimodal-generation/generation`,{method:'POST',headers:{Authorization:`Bearer ${config.apiKey}`,'Content-Type':'application/json'},body:JSON.stringify(input.body),signal:AbortSignal.timeout(600_000),redirect:'error'});}
