@@ -111,6 +111,12 @@ export function IdeHome({ lang, dict }: { lang: Locale; dict: Dict }) {
                             {stars !== null && <span className="ide-btn-count">{stars.toLocaleString(bcp47)}</span>}
                         </a>
                     </div>
+                    {/* W35: the no-install web version, for locked-down work computers. Plain link: no engine prefetch on the home page. */}
+                    <p className="mt-3 text-sm">
+                        <a href={`/web/?lang=${lang}`} className="font-medium text-king-forest underline decoration-king-gold underline-offset-4 hover:decoration-king-forest">
+                            {dict.startPage.webFallback.link}
+                        </a>
+                    </p>
                     {(siteConfig.paymentChannel === 'wxpay' || signupGrantDisplay(lang)) && (() => {
                         const grant = signupGrantDisplay(lang);
                         const grantLine = grant && dict.common?.grant ? signupGrantLine(grant, dict.common.grant) : null;
