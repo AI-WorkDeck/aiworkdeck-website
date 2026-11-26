@@ -17,6 +17,6 @@ for (const f of fs.readdirSync('dictionaries')) {
 const en = JSON.parse(fs.readFileSync('dictionaries/en.json', 'utf8'));
 for (const k of ['heroTitleIntl', 'heroSubtitleIntl', 'metaDescriptionIntl']) assert.ok(!/own AI (key|provider)/i.test(en.pricingPage[k]), `en pricing ${k}: no own-AI-key pitch`);
 const flow = fs.readFileSync('app/[lang]/start/StartFlow.tsx', 'utf8');
-assert.match(flow, /auth\.passwordTab/, 'login mock shows a password field');
+assert.match(flow, /auth\.passwordLabel/, 'login mock shows a password field');
 assert.match(flow, /auth\.firstTime/, 'login mock shows the set-one-up link');
 console.log('PASS /start and intl pricing copy: 20 languages, password sign-in, no own-key pitch (20 locales)');

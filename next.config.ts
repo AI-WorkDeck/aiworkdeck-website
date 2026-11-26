@@ -241,6 +241,12 @@ const nextConfig: NextConfig = {
         destination: `/:lang/legal/${page}`,
         permanent: true,
       })),
+      // W34: people type /login or /register; sign-in and first-time setup both live on /account.
+      ...(["login", "register", "signin", "signup"] as const).map(page => ({
+        source: `/:lang([a-z]{2}|zh-hant)/${page}`,
+        destination: `/:lang/account`,
+        permanent: true,
+      })),
     ];
   },
 };

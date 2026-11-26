@@ -41,7 +41,7 @@ function hydrate<T>(val: T): T {
 
 export const legalDoc: LegalDocument = hydrate({
   "eyebrow": "Legal",
-  "title": "Allgemeinen Geschäftsbedingungen",
+  "title": "Allgemeine Geschäftsbedingungen",
   "effectiveLabel": "Effective {__T_LEGAL_EFFECTIVE_DATE__} · {__T_C_revision__}",
   "intro": "These Terms form an agreement between you and {__T_E_nameEn__} ({__T_E_nameZh__}) (\"we\", \"us\") covering the AI WorkDeck website ({__T_E_site__}), the desktop application, plugins, the Skill plaza and related services (together, the \"Service\"). By registering an account, generating an account key or otherwise using the Service, you confirm that you have read, understood and accepted these Terms.",
   "highlightsTitle": "Read these first",

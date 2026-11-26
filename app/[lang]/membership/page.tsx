@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { PageHero } from '@/components/layout/PageHero';
 import { pageAlternates } from '@/lib/page-metadata';
 import { MEMBERSHIP_TIERS } from '@/lib/membership';
+import { SITE_ID } from '@/lib/site-config';
 import { MembershipYourStatus } from './MembershipYourStatus';
 
 export async function generateMetadata({
@@ -47,6 +48,9 @@ export default async function MembershipPage({
     const { lang } = await params;
     const dict = await getDictionary(lang);
     const t = dict.membership;
+    // Growth points count wallet cents in the site's own currency (CNY on cn, USD on intl).
+    const unit = SITE_ID === 'intl' ? t.unitUsd : t.unitCny;
+    const withUnit = (text: string) => text.replaceAll('{unit}', unit);
 
     /**
      * 权益从档位派生，不进 lib/membership 的数据契约（那边只管等级/门槛/赠送比例这些
@@ -68,7 +72,7 @@ export default async function MembershipPage({
         <div className="min-h-screen bg-neutral-gray-pale pb-20">
             {/* 整页一条 max-w-4xl 内容轴：共享 PageHero 与正文同写 container + max-w-4xl + 同样内边距，
                 状态卡、算法卡、等级表、脚注与 hero 标题共用同一左缘（dev-board#323 / #876）。 */}
-            <PageHero eyebrow={t.eyebrow} title={t.title} subtitle={t.subtitle} size="compact" width="4xl">
+            <PageHero eyebrow={t.eyebrow} title={t.title} subtitle={withUnit(t.subtitle)} size="compact" width="4xl">
                 <Button asChild size="sm" className="font-bold">
                     <Link href={`/${lang}/account#wallet`}>{t.ctaTopup}</Link>
                 </Button>
@@ -82,10 +86,10 @@ export default async function MembershipPage({
                     <SectionEyebrow>{t.algoTitle}</SectionEyebrow>
                     <div className="mt-2 grid gap-4 sm:grid-cols-2">
                         <div className="rounded-xl border border-neutral-gray-light/80 bg-neutral-gray-pale/55 p-4.5">
-                            <p className="text-xl font-bold text-king-forest">{t.algoTopup}</p>
+                            <p className="text-xl font-bold text-king-forest">{withUnit(t.algoTopup)}</p>
                         </div>
                         <div className="rounded-xl border border-neutral-gray-light/80 bg-neutral-gray-pale/55 p-4.5">
-                            <p className="text-xl font-bold text-king-forest">{t.algoSpend}</p>
+                            <p className="text-xl font-bold text-king-forest">{withUnit(t.algoSpend)}</p>
                         </div>
                     </div>
                     <p className="mt-3.5 text-xs leading-relaxed text-neutral-gray-medium">{t.algoNote}</p>

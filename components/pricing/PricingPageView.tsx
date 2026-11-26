@@ -78,7 +78,7 @@ export function PricingPageView({
                     </div>
                 </div>
 
-                {t.heroAside && (
+                {t.heroAside && !isIntl && (
                     <p
                         className="mt-10 max-w-3xl text-sm leading-relaxed text-neutral-gray-medium"
                         data-legal-pending="zewei-counsel"
