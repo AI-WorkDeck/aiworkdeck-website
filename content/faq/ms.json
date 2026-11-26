@@ -1,0 +1,133 @@
+{
+  "eyebrow": "EDISI KOMUNITI · SOALAN LAZIM",
+  "title": "Fail anda kekal di komputer anda sendiri.",
+  "subtitle": "Kandungan hanya keluar daripada komputer anda apabila anda memilih untuk menggunakan ciri dalam talian, dan hanya setakat yang diperlukan oleh tugasan tersebut. Sambungan disulitkan, kami tidak sekali-kali melatih model menggunakan kandungan anda, dan kami tidak sekali-kali menjual data peribadi.",
+  "navigation": "Topik soalan lazim",
+  "pricingTitle": "Bagaimanakah harga dikenakan?",
+  "pricingTableTitle": "Ringkasan harga",
+  "privacy": "Dasar privasi",
+  "start": "Mula menggunakan Edisi Komuniti",
+  "deploymentEyebrow": "EDISI KOMUNITI · HOS SENDIRI",
+  "deploymentTitle": "Mahu fail anda tidak sekali-kali keluar dari firma?",
+  "deploymentBody": "Edisi Komuniti boleh dijalankan pada pelayan firma anda sendiri dengan model tempatan. Kami akan meneliti bersama anda ciri yang diperlukan, perkakasan yang perlu dirancang dan sambungan luar yang perlu dimatikan, supaya penyimpanan dan pemprosesan kekal dalam rangkaian anda sendiri.",
+  "deploymentPlanCta": "Rancang penggunaan & bajet",
+  "deploymentCta": "Berbincang dengan kami tentang hos sendiri",
+  "deploymentSubject": "Pertanyaan tentang hos sendiri Edisi Komuniti",
+  "sections": [
+    {
+      "id": "storage",
+      "title": "Di mana fail anda disimpan",
+      "items": [
+        {
+          "id": "local-storage",
+          "q": "Di manakah fail kes dan perbualan saya disimpan?",
+          "a": "Di komputer anda sendiri. Aplikasi desktop menyimpan fail projek, perbualan dan log secara setempat, dan anda boleh menggunakan folder sedia ada di komputer anda sebagai projek. Tiada satu pun daripadanya disimpan di pelayan kami.\n\nMengimport fail tidak memuat naiknya ke mana-mana. Kandungan hanya dihantar kepada model apabila anda meminta AI mengerjakan sesuatu, dan hanya setakat yang diperlukan oleh tugasan tersebut. Penandaan AI automatik semasa import dimatikan secara lalai."
+        },
+        {
+          "id": "mobile-relay",
+          "q": "Bagaimanakah foto dari telefon saya sampai ke komputer, dan berapa lama awan menyimpannya?",
+          "a": "Pada iPhone, fail asal kekal di dalam aplikasi dan dikecualikan daripada iCloud serta sandaran sistem lain. Apabila anda menghantarnya ke komputer melalui awan, pelayan geganti hanya menyimpannya untuk tempoh singkat: sebaik sahaja komputer anda mengesahkan penerimaan, salinan di awan dipadam. Yang tinggal hanyalah rekod penghantaran tanpa sebarang kandungan fail.\n\nJika sesuatu fail tidak pernah diambil, atau pemadaman menghadapi masalah, pembersihan harian akan membuang apa-apa yang telah berada di situ selama 30 hari. Fail asal di telefon dan salinan di komputer anda adalah di bawah pengurusan anda; memadam salah satu tidak menjejaskan yang lain."
+        },
+        {
+          "id": "file-transfer",
+          "q": "Adakah pemindahan fail biasa antara telefon dan komputer berfungsi dengan cara yang sama?",
+          "a": "Prinsipnya sama, had masanya berbeza: fail yang dihantar dari komputer ke telefon menunggu di awan selama 7 hari, dan fail yang dihantar dari telefon ke komputer selama 30 hari, kemudian dibersihkan secara automatik. Geganti adalah untuk penghantaran, bukan sandaran, jadi simpan apa-apa yang penting pada peranti penerima."
+        },
+        {
+          "id": "cloud-features",
+          "q": "Adakah add-in Office, laman web dan ciri penyegerakan juga menyimpan segala-galanya secara setempat?",
+          "a": "Ia bergantung pada apa yang disambungkan. Apabila add-in Office bersambung ke aplikasi desktop di komputer anda, data kekal setempat; apabila ia bersambung ke perkhidmatan awan, perbualan dan data penyegerakan disimpan di pelayan tersebut. Perbualan dengan pembantu penggubalan Skill di laman web juga disimpan di pelayan kami.\n\nMemori pasukan dan firma dikongsi antara ahli, jadi ia disimpan di pelayan kami. Jika anda menyediakan penyegerakan jauh seperti Git, memori juga disegerakkan ke repositori yang anda pilih. Rekod akaun, pesanan dan penggunaan disimpan di pelayan kami untuk tujuan pengebilan."
+        },
+        {
+          "id": "backup",
+          "q": "Apakah yang perlu saya sandarkan sebelum menukar komputer, menyahpasang atau menutup akaun?",
+          "a": "Oleh sebab kerja anda berada di komputer anda, sandaran adalah di bawah kawalan anda. Sebelum berpindah atau menyahpasang, salin fail projek, data perbualan serta memori peribadi dan memori projek anda. Log masuk pada komputer baharu tidak akan memulihkan apa yang ada pada komputer lama.\n\nMemadam fail setempat, kandungan awan yang dikongsi, akaun laman web anda dan salinan penyegerakan luaran ialah langkah yang berasingan. Geganti telefon bukan sandaran. Sila semak log diagnostik bagi kandungan kes sebelum menghantarnya kepada kami."
+        }
+      ]
+    },
+    {
+      "id": "memory",
+      "title": "Latihan model dan memori AI",
+      "items": [
+        {
+          "id": "training",
+          "q": "Adakah bahan kes saya akan digunakan untuk melatih model?",
+          "a": "Tidak. AI WorkDeck menggunakan model AI sedia ada, dan kami tidak sekali-kali melatih model menggunakan bahan anda. “Memori” hanyalah nota yang boleh dibaca dan disunting mengenai keutamaan, fakta kes dan pengalaman kerja anda, yang diberikan kepada model sebagai rujukan pada kali seterusnya. Model itu sendiri tidak berubah.\n\nDi laman tanah besar China, permintaan AI platform melalui pelayan AI WorkDeck ke Alibaba Cloud Model Studio (Bailian); di laman antarabangsa, AI platform menggunakan OpenRouter. Setiap perkhidmatan mengendalikan permintaan di bawah dasar privasinya sendiri dan terma wilayah pemprosesan khusus bagi setiap model. Bagi bahan yang amat sensitif, anda boleh beralih kepada model tempatan atau mempertimbangkan hos sendiri.",
+          "href": "/en/legal/privacy",
+          "linkLabel": "Maklumat privasi dan perkhidmatan model"
+        },
+        {
+          "id": "memory-location",
+          "q": "Di manakah memori disimpan, dan apakah perbezaan antara memori peribadi, projek dan pasukan?",
+          "a": "Memori peribadi dan memori projek disimpan dalam pangkalan data setempat di komputer anda, dan anda boleh melihat, menyunting atau memadamnya pada bila-bila masa. Jika anda menghidupkan penyegerakan Git, ia juga disegerakkan ke repositori yang anda sediakan.\n\nMemori pasukan dan firma dikongsi, jadi ia disimpan di pelayan kami dan hanya ahli organisasi tersebut boleh membacanya. Pentadbir pasukan mengurus memori pasukan, dan hanya pengurus dalam pasukan ibu pejabat boleh menulis ke memori firma. Sebelum menambah sesuatu ke memori yang dikongsi, pastikan ia sesuai untuk semua orang yang boleh melihatnya."
+        },
+        {
+          "id": "memory-review",
+          "q": "Bagaimana jika model mengingati sesuatu dengan salah, atau menganggap satu kes sebagai peraturan umum?",
+          "a": "Cari memori tersebut dan sunting atau padamkannya. Simpan apa-apa yang khusus untuk satu kes dalam memori projek, bukan memori pasukan atau firma. Memori hanyalah rujukan bagi model dan model masih boleh tersalah tafsir, jadi semak semula fakta dan peraturan utama sebelum bergantung padanya."
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "Permintaan AI dan keselamatan data",
+      "items": [
+        {
+          "id": "self-hosting",
+          "q": "Bolehkah firma kami menggunakan pelayan dan model sendiri supaya tiada apa-apa yang keluar dari pejabat?",
+          "a": "Ya. Edisi Komuniti boleh digunakan pada pelayan firma anda sendiri dengan model tempatan, supaya penyimpanan dan pemprosesan berlaku secara dalaman.\n\nUntuk memastikan segala-galanya benar-benar dalaman, beralih kepada model tempatan sahaja tidak mencukupi: ciri dalam talian lain juga perlu dimatikan atau digantikan dengan perkhidmatan dalaman, seperti OCR awan, transkripsi, carian web, geganti awan telefon, memori dikongsi di laman web kami dan penyegerakan jauh. Model tempatan juga berbeza dari segi penggunaan alat, pemahaman imej dan keupayaan lain, jadi setiap satu perlu diuji dan mungkin tidak sepadan sepenuhnya dengan tetapan awan lalai.\n\nJika ini yang anda perlukan, hubungi kami dengan menyatakan saiz pasukan anda, model yang dirancang untuk digunakan, ciri yang ingin dikekalkan dan keperluan rangkaian anda, dan kami akan menyusun tetapannya bersama-sama."
+        },
+        {
+          "id": "model-context",
+          "q": "Apakah yang keluar dari komputer saya apabila saya menggunakan AI?",
+          "a": "Hanya yang diperlukan oleh tugasan: soalan anda, perbualan yang berkaitan, kandungan fail yang anda berikan atau yang dibaca oleh AI untuk tugasan tersebut, dan apa-apa memori yang digunakannya. Keseluruhan projek anda tidak dihantar secara lalai.\n\nDi laman tanah besar China, permintaan AI platform melalui pelayan kami ke Alibaba Cloud Model Studio. Pelayan kami memproses kandungan permintaan dan merekodkan model, penggunaan dan caj, tanpa menulis kandungan perbualan ke dalam rekod pengebilan. Di laman antarabangsa, AI platform menggunakan OpenRouter. Penyedia tersuai dan model tempatan mengikut tetapan anda. Add-in dan alat dalam talian lain berfungsi mengikut tetapan masing-masing."
+        },
+        {
+          "id": "retention",
+          "q": "Adakah perbualan saya disimpan di mana-mana tempat selain komputer saya?",
+          "a": "Perbualan dan log desktop hanya disimpan di komputer anda sendiri, bukan di pelayan kami. Kandungan disimpan di pelayan kami hanya bagi ciri awan yang anda pilih untuk digunakan: add-in Office awan, pembantu penggubalan Skill, memori pasukan yang dikongsi dan geganti telefon, setiap satunya seperti yang diterangkan di atas.\n\nPenyimpanan permintaan bergantung pada Alibaba Cloud Model Studio, OpenRouter dan perkhidmatan model yang dipilih. Penggunaan Model Studio tidak bermakna setiap model mempunyai wilayah pemprosesan yang sama atau jaminan tanpa penyimpanan.",
+          "href": "/en/legal/privacy",
+          "linkLabel": "Maklumat privasi dan perkhidmatan model"
+        },
+        {
+          "id": "confidentiality",
+          "q": "Bagaimanakah saya menentukan sama ada AI sesuai untuk perkara sulit?",
+          "a": "Bezakan dua perkara: menyusun fail secara setempat tidak menghantar kandungannya ke mana-mana, manakala meminta AI atau alat dalam talian mengerjakan sesuatu akan menghantar kandungan berkaitan kepada perkhidmatan tersebut. Sebelum bermula, pastikan dengan jelas apa yang akan dihantar dan ke mana.\n\nPendekatan yang lazim ialah berkongsi hanya petikan yang diperlukan oleh tugasan dan membuang nama, nombor pengenalan dan butiran lain yang tidak diperlukan. Jika anak guam atau firma anda mensyaratkan bahan tidak sekali-kali keluar, jangan berikannya kepada model awan; gunakan model tempatan atau tetapan hos sendiri sebaliknya."
+        },
+        {
+          "id": "team-access",
+          "q": "Selepas saya menyertai pasukan, bolehkah rakan sekerja melihat semua kes saya?",
+          "a": "Tidak. Menyertai pasukan tidak berkongsi projek atau fail di komputer anda. Rakan sekerja hanya boleh melihat apa yang anda tambah ke memori pasukan atau firma yang dikongsi, serta maklumat penggunaan yang dipaparkan oleh papan pemuka pasukan berdasarkan peranan dan tetapan. Sama ada nama projek dipaparkan merupakan tetapan yang berasingan.\n\nJemput ahli dan berikan hak pentadbir hanya mengikut keperluan, dan jangan letakkan butiran sulit seseorang anak guam dalam memori yang boleh dibaca oleh seluruh pasukan."
+        }
+      ]
+    },
+    {
+      "id": "practice",
+      "title": "Penggunaan dalam kerja guaman",
+      "items": [
+        {
+          "id": "citations",
+          "q": "Bolehkah saya menggunakan statut, kes dan petikan daripada AI sebagaimana adanya?",
+          "a": "Tidak tanpa semakan. Rujuk semula sumber asal dan sahkan bidang kuasa, tarikh penerbitan dan tarikh berkuat kuasa, versi, nombor kes, mahkamah, dan sama ada petikan itu benar-benar menyokong kesimpulan. Model boleh mereka sumber atau tersalah menggunakan sumber yang sebenar.\n\nAnggap output AI sebagai bahan penyelidikan dan draf awal. Dapatan fakta, analisis undang-undang dan hasil kerja muktamad masih memerlukan kelulusan peguam yang mengendalikan perkara tersebut."
+        },
+        {
+          "id": "documents",
+          "q": "Apakah yang perlu saya semak dengan teliti dalam OCR, ringkasan panjang dan suntingan kontrak?",
+          "a": "Semak nama, amaun, tarikh, penafian, nombor klausa, lampiran dan jadual yang merentasi beberapa halaman. Pengecaman dan ringkasan boleh tertinggal butiran, dan model mungkin tidak melihat keseluruhan dokumen.\n\nSimpan dokumen asal dan bandingkan versi. Semak secara manual sebarang perubahan yang menjejaskan hak atau obligasi, bersama petikan dan kesimpulan; ringkasan tidak boleh menggantikan bukti asas."
+        },
+        {
+          "id": "tools",
+          "q": "Apakah yang perlu saya semak sebelum menggunakan Skill, plugin atau alat dalam talian?",
+          "a": "Ketahui fail yang dibacanya, perkhidmatan yang dihubunginya dan apa yang boleh dilakukannya. Alat pihak ketiga mengendalikan data di bawah peraturannya sendiri, dan dokumen atau halaman web boleh mengandungi arahan tersembunyi yang mengelirukan model.\n\nBerikan alat yang dipercayai hanya akses yang diperlukan, dan semak penulisan, pemadaman atau penyerahan luar yang penting sebelum dan selepas ia dijalankan. Jangan sekali-kali menyiarkan bahan anak guam, kunci atau kata laluan dalam komuniti awam semasa meminta bantuan."
+        },
+        {
+          "id": "regions",
+          "q": "Adakah laman tanah besar China, antarabangsa dan AS berkongsi akaun dan data?",
+          "a": "Laman tanah besar China, aiworkdeck.com, beroperasi secara berasingan daripada laman luar negara; akaun dan data dalam talian tidak dikongsi. workdeck.ai dan aiworkdeck.us ialah sistem luar negara yang sama dan berkongsi data pengguna.\n\nSambungkan aplikasi desktop ke laman tempat anda mendaftar dan menambah nilai. Menukar bahasa laman web tidak memindahkan akaun, baki atau projek setempat anda.",
+          "href": "/en/start",
+          "linkLabel": "Pemasangan dan pemilihan wilayah"
+        }
+      ]
+    }
+  ]
+}

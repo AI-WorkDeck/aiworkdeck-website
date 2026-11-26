@@ -1,0 +1,133 @@
+{
+  "eyebrow": "BẢN CỘNG ĐỒNG · CÂU HỎI THƯỜNG GẶP",
+  "title": "Tệp của bạn luôn nằm trên máy tính của chính bạn.",
+  "subtitle": "Nội dung chỉ rời khỏi máy tính khi bạn chọn sử dụng một tính năng trực tuyến, và chỉ phần mà tác vụ đó cần. Các kết nối đều được mã hóa, chúng tôi không bao giờ dùng nội dung của bạn để huấn luyện mô hình và không bao giờ bán dữ liệu cá nhân.",
+  "navigation": "Chủ đề câu hỏi thường gặp",
+  "pricingTitle": "Cách tính giá như thế nào?",
+  "pricingTableTitle": "Tóm tắt bảng giá",
+  "privacy": "Chính sách quyền riêng tư",
+  "start": "Bắt đầu với Bản Cộng đồng",
+  "deploymentEyebrow": "BẢN CỘNG ĐỒNG · TỰ LƯU TRỮ",
+  "deploymentTitle": "Bạn muốn tệp của mình không bao giờ rời khỏi hãng luật?",
+  "deploymentBody": "Bản Cộng đồng có thể chạy trên máy chủ riêng của hãng luật với mô hình cục bộ. Chúng tôi sẽ cùng bạn xác định các tính năng cần thiết, phần cứng cần dự trù và những kết nối bên ngoài cần tắt, để việc lưu trữ và xử lý diễn ra hoàn toàn trong mạng nội bộ của bạn.",
+  "deploymentPlanCta": "Lập kế hoạch triển khai & ngân sách",
+  "deploymentCta": "Trao đổi với chúng tôi về tự lưu trữ",
+  "deploymentSubject": "Yêu cầu tư vấn tự lưu trữ Bản Cộng đồng",
+  "sections": [
+    {
+      "id": "storage",
+      "title": "Tệp của bạn được lưu ở đâu",
+      "items": [
+        {
+          "id": "local-storage",
+          "q": "Hồ sơ vụ việc và các cuộc hội thoại của tôi được lưu ở đâu?",
+          "a": "Trên máy tính của chính bạn. Ứng dụng desktop lưu tệp dự án, hội thoại và nhật ký trên máy, và bạn có thể dùng các thư mục sẵn có trên máy tính làm dự án. Không phần nào trong số này được lưu trên máy chủ của chúng tôi.\n\nViệc nhập tệp không tải tệp lên bất kỳ đâu. Nội dung chỉ được gửi đến mô hình khi bạn yêu cầu AI xử lý một việc gì đó, và chỉ phần mà tác vụ đó cần. Tính năng tự động gắn thẻ bằng AI khi nhập tệp được tắt theo mặc định."
+        },
+        {
+          "id": "mobile-relay",
+          "q": "Ảnh từ điện thoại đến máy tính của tôi bằng cách nào, và đám mây lưu giữ chúng trong bao lâu?",
+          "a": "Trên iPhone, tệp gốc được giữ trong ứng dụng và không nằm trong iCloud cũng như các bản sao lưu hệ thống khác. Khi bạn gửi tệp đến máy tính qua đám mây, máy chủ chuyển tiếp chỉ lưu giữ tạm thời: ngay khi máy tính của bạn xác nhận đã nhận, bản sao trên đám mây sẽ bị xóa. Chỉ còn lại một bản ghi giao nhận không chứa nội dung tệp.\n\nNếu một tệp không bao giờ được nhận, hoặc việc xóa gặp trục trặc, quy trình dọn dẹp hằng ngày sẽ xóa mọi thứ đã nằm ở đó 30 ngày. Tệp gốc trên điện thoại và bản sao trên máy tính do bạn tự quản lý; xóa bản này không ảnh hưởng đến bản kia."
+        },
+        {
+          "id": "file-transfer",
+          "q": "Việc truyền tệp thông thường giữa điện thoại và máy tính có hoạt động tương tự không?",
+          "a": "Nguyên tắc tương tự, thời hạn khác nhau: tệp gửi từ máy tính sang điện thoại chờ trên đám mây trong 7 ngày, còn tệp gửi từ điện thoại sang máy tính chờ trong 30 ngày, sau đó được tự động dọn dẹp. Dịch vụ chuyển tiếp dùng để giao nhận, không phải để sao lưu, vì vậy hãy lưu mọi tệp quan trọng trên thiết bị nhận."
+        },
+        {
+          "id": "cloud-features",
+          "q": "Tiện ích bổ sung Office, trang web và các tính năng đồng bộ có cũng lưu mọi thứ trên máy không?",
+          "a": "Điều đó phụ thuộc vào nơi chúng kết nối. Khi tiện ích bổ sung Office kết nối với ứng dụng desktop trên máy tính của bạn, dữ liệu được giữ trên máy; khi kết nối với một dịch vụ đám mây, hội thoại và dữ liệu đồng bộ được lưu trên máy chủ đó. Các cuộc hội thoại với trợ lý soạn Skill trên trang web cũng được lưu trên máy chủ của chúng tôi.\n\nBộ nhớ nhóm và bộ nhớ hãng luật được chia sẻ giữa các thành viên, nên được lưu trên máy chủ của chúng tôi. Nếu bạn thiết lập đồng bộ từ xa như Git, bộ nhớ cũng được đồng bộ đến kho lưu trữ mà bạn chọn. Hồ sơ tài khoản, đơn hàng và mức sử dụng được lưu trên máy chủ của chúng tôi để phục vụ thanh toán."
+        },
+        {
+          "id": "backup",
+          "q": "Tôi nên sao lưu những gì trước khi đổi máy tính, gỡ cài đặt hoặc đóng tài khoản?",
+          "a": "Vì công việc của bạn nằm trên máy tính của bạn, việc sao lưu do bạn kiểm soát. Trước khi chuyển máy hoặc gỡ cài đặt, hãy sao chép tệp dự án, dữ liệu hội thoại cũng như bộ nhớ cá nhân và bộ nhớ dự án. Đăng nhập trên máy tính mới sẽ không khôi phục những gì có trên máy cũ.\n\nXóa tệp trên máy, nội dung đám mây được chia sẻ, tài khoản trang web và các bản sao đồng bộ bên ngoài là những bước riêng biệt. Dịch vụ chuyển tiếp từ điện thoại không phải là bản sao lưu. Vui lòng kiểm tra nhật ký chẩn đoán xem có nội dung vụ việc hay không trước khi gửi cho chúng tôi."
+        }
+      ]
+    },
+    {
+      "id": "memory",
+      "title": "Huấn luyện mô hình và bộ nhớ AI",
+      "items": [
+        {
+          "id": "training",
+          "q": "Tài liệu vụ việc của tôi có bị dùng để huấn luyện mô hình không?",
+          "a": "Không. AI WorkDeck sử dụng các mô hình AI có sẵn, và chúng tôi không bao giờ dùng tài liệu của bạn để huấn luyện mô hình. “Bộ nhớ” chỉ là một ghi chú có thể đọc và chỉnh sửa về các ưu tiên, dữ kiện vụ việc và kinh nghiệm làm việc của bạn, được cung cấp cho mô hình làm tài liệu tham khảo ở lần sau. Bản thân mô hình không thay đổi.\n\nTrên trang dành cho Trung Quốc đại lục, các yêu cầu AI của nền tảng đi qua máy chủ AI WorkDeck đến Alibaba Cloud Model Studio (Bailian); trên các trang quốc tế, AI của nền tảng sử dụng OpenRouter. Mỗi dịch vụ xử lý yêu cầu theo chính sách quyền riêng tư của mình và các điều khoản về khu vực xử lý riêng cho từng mô hình. Đối với tài liệu có tính nhạy cảm cao, bạn có thể chuyển sang mô hình cục bộ hoặc cân nhắc tự lưu trữ.",
+          "href": "/en/legal/privacy",
+          "linkLabel": "Thông tin về quyền riêng tư và dịch vụ mô hình"
+        },
+        {
+          "id": "memory-location",
+          "q": "Bộ nhớ được lưu ở đâu, và bộ nhớ cá nhân, bộ nhớ dự án và bộ nhớ nhóm khác nhau như thế nào?",
+          "a": "Bộ nhớ cá nhân và bộ nhớ dự án được lưu trong một cơ sở dữ liệu cục bộ trên máy tính của bạn, nơi bạn có thể xem, chỉnh sửa hoặc xóa bất cứ lúc nào. Nếu bạn bật đồng bộ Git, bộ nhớ cũng được đồng bộ đến kho lưu trữ mà bạn thiết lập.\n\nBộ nhớ nhóm và bộ nhớ hãng luật được chia sẻ, nên được lưu trên máy chủ của chúng tôi và chỉ thành viên của tổ chức đó mới đọc được. Quản trị viên nhóm quản lý bộ nhớ nhóm, và chỉ người quản lý trong nhóm trụ sở chính mới có thể ghi vào bộ nhớ hãng luật. Trước khi thêm nội dung vào bộ nhớ chia sẻ, hãy bảo đảm nội dung đó phù hợp với tất cả những người có thể xem."
+        },
+        {
+          "id": "memory-review",
+          "q": "Nếu mô hình ghi nhớ sai, hoặc coi một vụ việc như một quy tắc chung thì sao?",
+          "a": "Hãy tìm mục bộ nhớ đó và chỉnh sửa hoặc xóa. Lưu những nội dung riêng của một vụ việc trong bộ nhớ dự án thay vì bộ nhớ nhóm hoặc bộ nhớ hãng luật. Bộ nhớ chỉ là tài liệu tham khảo cho mô hình và mô hình vẫn có thể hiểu sai, vì vậy hãy kiểm tra lại các dữ kiện và quy tắc then chốt trước khi dựa vào chúng."
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "Yêu cầu AI và bảo mật dữ liệu",
+      "items": [
+        {
+          "id": "self-hosting",
+          "q": "Hãng luật của chúng tôi có thể dùng máy chủ và mô hình riêng để không có gì rời khỏi văn phòng không?",
+          "a": "Có. Bản Cộng đồng có thể được triển khai trên máy chủ riêng của hãng luật với mô hình cục bộ, để việc lưu trữ và xử lý diễn ra nội bộ.\n\nĐể mọi thứ thực sự nằm trong nội bộ, chỉ chuyển sang mô hình cục bộ là chưa đủ: các tính năng trực tuyến khác cũng cần được tắt hoặc thay bằng dịch vụ nội bộ, chẳng hạn OCR trên đám mây, chuyển giọng nói thành văn bản, tìm kiếm web, chuyển tiếp đám mây từ điện thoại, bộ nhớ chia sẻ trên trang web của chúng tôi và đồng bộ từ xa. Các mô hình cục bộ cũng khác nhau về khả năng sử dụng công cụ, hiểu hình ảnh và các năng lực khác, nên mỗi mô hình cần được kiểm thử và có thể không hoàn toàn tương đương với cấu hình đám mây mặc định.\n\nNếu đây là điều quý vị cần, hãy liên hệ với chúng tôi kèm quy mô nhóm, mô hình dự định sử dụng, các tính năng muốn giữ lại và yêu cầu về mạng, và chúng tôi sẽ cùng xây dựng cấu hình phù hợp."
+        },
+        {
+          "id": "model-context",
+          "q": "Những gì rời khỏi máy tính của tôi khi tôi sử dụng AI?",
+          "a": "Chỉ những gì tác vụ cần: câu hỏi của bạn, phần hội thoại liên quan, nội dung tệp mà bạn cung cấp hoặc AI đọc cho tác vụ đó, và bộ nhớ mà AI sử dụng. Theo mặc định, toàn bộ dự án của bạn không được gửi đi.\n\nTrên trang dành cho Trung Quốc đại lục, các yêu cầu AI của nền tảng đi qua máy chủ của chúng tôi đến Alibaba Cloud Model Studio. Máy chủ của chúng tôi xử lý nội dung yêu cầu và ghi lại mô hình, mức sử dụng và phí, mà không ghi nội dung hội thoại vào hồ sơ thanh toán. Trên các trang quốc tế, AI của nền tảng sử dụng OpenRouter. Nhà cung cấp tùy chỉnh và mô hình cục bộ hoạt động theo cài đặt của bạn. Các tiện ích bổ sung và công cụ trực tuyến khác hoạt động theo cài đặt riêng của chúng."
+        },
+        {
+          "id": "retention",
+          "q": "Các cuộc hội thoại của tôi có được lưu ở nơi nào khác ngoài máy tính của tôi không?",
+          "a": "Hội thoại và nhật ký trên ứng dụng desktop chỉ được lưu trên máy tính của chính bạn, không lưu trên máy chủ của chúng tôi. Nội dung chỉ được lưu trên máy chủ của chúng tôi đối với các tính năng đám mây mà bạn chọn sử dụng: tiện ích bổ sung Office trên đám mây, trợ lý soạn Skill, bộ nhớ nhóm được chia sẻ và dịch vụ chuyển tiếp từ điện thoại, mỗi tính năng đã được mô tả ở trên.\n\nViệc lưu giữ yêu cầu phụ thuộc vào Alibaba Cloud Model Studio, OpenRouter và dịch vụ mô hình được chọn. Việc sử dụng Model Studio không có nghĩa là mọi mô hình đều có cùng khu vực xử lý hoặc được bảo đảm không lưu giữ dữ liệu.",
+          "href": "/en/legal/privacy",
+          "linkLabel": "Thông tin về quyền riêng tư và dịch vụ mô hình"
+        },
+        {
+          "id": "confidentiality",
+          "q": "Làm thế nào để tôi quyết định AI có phù hợp với một vụ việc bảo mật hay không?",
+          "a": "Hãy phân biệt hai việc: sắp xếp tệp trên máy không gửi nội dung của chúng đi đâu cả, còn yêu cầu AI hoặc một công cụ trực tuyến xử lý một việc sẽ gửi nội dung liên quan đến dịch vụ đó. Trước khi bắt đầu, hãy xác định rõ những gì sẽ được gửi đi và gửi đến đâu.\n\nCách làm phổ biến là chỉ chia sẻ những đoạn trích mà tác vụ cần và loại bỏ tên, số giấy tờ tùy thân cùng các chi tiết khác không cần thiết. Nếu khách hàng hoặc hãng luật của bạn yêu cầu tài liệu không bao giờ được đưa ra ngoài, đừng cung cấp tài liệu đó cho mô hình đám mây; thay vào đó hãy dùng mô hình cục bộ hoặc cấu hình tự lưu trữ."
+        },
+        {
+          "id": "team-access",
+          "q": "Khi tôi tham gia một nhóm, đồng nghiệp có thể xem tất cả vụ việc của tôi không?",
+          "a": "Không. Việc tham gia nhóm không chia sẻ các dự án hoặc tệp trên máy tính của bạn. Đồng nghiệp chỉ có thể thấy những gì bạn thêm vào bộ nhớ nhóm hoặc bộ nhớ hãng luật được chia sẻ, cùng với thông tin sử dụng mà bảng điều khiển nhóm hiển thị dựa trên vai trò và cài đặt. Việc có hiển thị tên dự án hay không là một cài đặt riêng.\n\nChỉ mời thành viên và cấp quyền quản trị khi cần thiết, và không đưa thông tin bảo mật của một khách hàng vào bộ nhớ mà cả nhóm đều đọc được."
+        }
+      ]
+    },
+    {
+      "id": "practice",
+      "title": "Sử dụng trong công việc pháp lý",
+      "items": [
+        {
+          "id": "citations",
+          "q": "Tôi có thể sử dụng nguyên văn các điều luật, án lệ và trích dẫn do AI đưa ra không?",
+          "a": "Không, nếu chưa kiểm tra. Hãy đối chiếu lại với nguồn gốc và xác nhận phạm vi tài phán, ngày ban hành và ngày có hiệu lực, phiên bản, số vụ việc, tòa án, và liệu trích dẫn có thực sự hỗ trợ cho kết luận hay không. Mô hình có thể bịa ra nguồn hoặc áp dụng sai nguồn có thật.\n\nHãy coi kết quả của AI là tài liệu nghiên cứu và bản thảo ban đầu. Việc xác định tình tiết, phân tích pháp lý và sản phẩm công việc cuối cùng vẫn cần luật sư phụ trách vụ việc phê duyệt."
+        },
+        {
+          "id": "documents",
+          "q": "Tôi cần kiểm tra kỹ những gì trong kết quả OCR, bản tóm tắt dài và chỉnh sửa hợp đồng?",
+          "a": "Kiểm tra tên, số tiền, ngày tháng, các câu phủ định, số điều khoản, phụ lục và các bảng trải dài qua nhiều trang. Kết quả nhận dạng và tóm tắt có thể bỏ sót chi tiết, và mô hình có thể chưa xem toàn bộ tài liệu.\n\nGiữ bản gốc và so sánh các phiên bản. Tự rà soát mọi thay đổi ảnh hưởng đến quyền hoặc nghĩa vụ, cùng với các trích dẫn và kết luận; bản tóm tắt không thể thay thế chứng cứ gốc."
+        },
+        {
+          "id": "tools",
+          "q": "Tôi cần kiểm tra những gì trước khi sử dụng một Skill, plugin hoặc công cụ trực tuyến?",
+          "a": "Hãy tìm hiểu công cụ đó đọc những tệp nào, liên hệ với những dịch vụ nào và có thể làm gì. Công cụ của bên thứ ba xử lý dữ liệu theo quy định riêng của họ, và tài liệu hoặc trang web có thể chứa các chỉ dẫn ẩn gây hiểu sai cho mô hình.\n\nChỉ cấp cho các công cụ đáng tin cậy quyền truy cập cần thiết, và xem xét các thao tác ghi, xóa hoặc gửi ra bên ngoài quan trọng trước và sau khi chúng chạy. Không bao giờ đăng tài liệu của khách hàng, khóa hoặc mật khẩu lên cộng đồng công khai khi nhờ hỗ trợ."
+        },
+        {
+          "id": "regions",
+          "q": "Trang Trung Quốc đại lục, trang quốc tế và trang Hoa Kỳ có dùng chung tài khoản và dữ liệu không?",
+          "a": "Trang Trung Quốc đại lục, aiworkdeck.com, vận hành tách biệt với các trang ở nước ngoài; tài khoản và dữ liệu trực tuyến không được dùng chung. workdeck.ai và aiworkdeck.us là cùng một hệ thống ở nước ngoài và dùng chung dữ liệu người dùng.\n\nHãy kết nối ứng dụng desktop với trang mà bạn đã đăng ký và nạp tiền. Việc đổi ngôn ngữ trang web không chuyển tài khoản, số dư hoặc các dự án cục bộ của bạn.",
+          "href": "/en/start",
+          "linkLabel": "Cài đặt và chọn khu vực"
+        }
+      ]
+    }
+  ]
+}
