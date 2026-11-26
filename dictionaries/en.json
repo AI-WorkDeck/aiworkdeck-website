@@ -519,6 +519,7 @@
     "toolsSuffix": "tools",
     "installsSuffix": "installs",
     "footNote": "Plugins run in the same process as the host app, with the same permissions. Make sure you trust the source before installing — the permission tags above are the author’s own declaration; review cross-checks them, but they are not a runtime restriction.",
+    "detail": {"installTitle": "How to install", "installBody": "In the AI WorkDeck desktop app, open Marketplace and search for “{name}”.", "permissionsTitle": "Permissions", "chinaOnly": "Mainland China accounts only", "chineseOnly": "Chinese only"},
     "permissions": {
       "file_read": "Read files",
       "file_write": "Write files",

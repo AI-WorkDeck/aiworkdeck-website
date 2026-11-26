@@ -519,6 +519,7 @@
     "toolsSuffix": "alatan",
     "installsSuffix": "pemasangan",
     "footNote": "Plugin berjalan dalam proses yang sama dengan aplikasi utama, dengan kebenaran yang sama. Pastikan anda mempercayai sumbernya sebelum memasang — tag kebenaran di atas ialah pengisytiharan penulis sendiri; semakan akan menyemaknya, tetapi ia bukan sekatan masa jalan.",
+    "detail": {"installTitle": "Cara memasang", "installBody": "Dalam aplikasi desktop AI WorkDeck, buka Pasaran dan cari “{name}”.", "permissionsTitle": "Kebenaran", "chinaOnly": "Akaun Tanah Besar China sahaja", "chineseOnly": "Bahasa Cina sahaja"},
     "permissions": {
       "file_read": "Baca fail",
       "file_write": "Tulis fail",

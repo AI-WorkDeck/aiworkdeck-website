@@ -521,6 +521,7 @@
     "toolsSuffix": "个工具",
     "installsSuffix": "次安装",
     "footNote": "插件与宿主同进程运行，拥有与应用相同的权限。安装前请确认来源可信——上方的权限标签是作者的自述，审核会交叉核对，但不构成运行时限制。",
+    "detail": {"installTitle": "如何安装", "installBody": "在 AI WorkDeck 桌面端打开「插件市场」，搜索「{name}」即可安装。", "permissionsTitle": "权限", "chinaOnly": "仅限中国大陆账号", "chineseOnly": "仅中文"},
     "permissions": {
       "file_read": "读取文件",
       "file_write": "写入文件",

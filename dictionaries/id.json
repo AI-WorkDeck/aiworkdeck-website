@@ -519,6 +519,7 @@
     "toolsSuffix": "alat",
     "installsSuffix": "instalasi",
     "footNote": "Plugin berjalan dalam proses yang sama dengan aplikasi utama, dengan izin yang sama. Pastikan Anda memercayai sumbernya sebelum menginstal — tag izin di atas adalah deklarasi penulis sendiri; peninjauan akan memeriksanya ulang, tetapi itu bukan pembatasan saat runtime.",
+    "detail": {"installTitle": "Cara memasang", "installBody": "Di aplikasi desktop AI WorkDeck, buka Marketplace lalu cari “{name}”.", "permissionsTitle": "Izin", "chinaOnly": "Hanya akun Tiongkok daratan", "chineseOnly": "Hanya bahasa Tionghoa"},
     "permissions": {
       "file_read": "Baca file",
       "file_write": "Tulis file",

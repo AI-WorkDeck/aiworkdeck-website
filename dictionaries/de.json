@@ -519,6 +519,7 @@
     "toolsSuffix": "Tools",
     "installsSuffix": "Installationen",
     "footNote": "Plugins laufen im selben Prozess wie die Host-App und mit denselben Berechtigungen. Stellen Sie sicher, dass Sie der Quelle vertrauen, bevor Sie installieren – die obigen Berechtigungs-Tags sind eine eigene Angabe des Autors; die Überprüfung gleicht sie ab, aber sie sind keine Laufzeitbeschränkung.",
+    "detail": {"installTitle": "Installation", "installBody": "Öffnen Sie in der AI WorkDeck Desktop-App den Marketplace und suchen Sie nach „{name}“.", "permissionsTitle": "Berechtigungen", "chinaOnly": "Nur für Konten in Festlandchina", "chineseOnly": "Nur auf Chinesisch"},
     "permissions": {
       "file_read": "Dateien lesen",
       "file_write": "Dateien schreiben",

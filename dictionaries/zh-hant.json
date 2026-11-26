@@ -1411,6 +1411,7 @@
     "featureTag": "一次購買，帳戶內永久有效",
     "featureTitle": "功能解鎖",
     "footNote": "外掛與宿主同進程運行，擁有與應用相同的權限。安裝前請確認來源可信——上方的權限標籤是作者的自述，審核會交叉核對，但不構成運行時限制。",
+    "detail": {"installTitle": "如何安裝", "installBody": "在 AI WorkDeck 桌面版開啟「外掛市集」，搜尋「{name}」即可安裝。", "permissionsTitle": "權限", "chinaOnly": "僅限中國大陸帳號", "chineseOnly": "僅中文"},
     "guide": "看開發指南",
     "howToDevelop": "如何開發",
     "installsSuffix": "次安裝",

@@ -519,6 +519,7 @@
     "toolsSuffix": "도구",
     "installsSuffix": "설치",
     "footNote": "플러그인은 호스트 앱과 동일한 프로세스에서 동일한 권한으로 실행됩니다. 설치 전에 출처를 신뢰할 수 있는지 확인하세요. 위의 권한 태그는 작성자가 직접 선언한 것으로, 검토 시 교차 확인되지만 런타임 제한은 아닙니다.",
+    "detail": {"installTitle": "설치 방법", "installBody": "AI WorkDeck 데스크톱 앱에서 마켓플레이스를 열고 ‘{name}’을(를) 검색하세요.", "permissionsTitle": "권한", "chinaOnly": "중국 본토 계정 전용", "chineseOnly": "중국어 전용"},
     "permissions": {
       "file_read": "파일 읽기",
       "file_write": "파일 쓰기",

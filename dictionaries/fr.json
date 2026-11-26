@@ -519,6 +519,7 @@
     "toolsSuffix": "outils",
     "installsSuffix": "installations",
     "footNote": "Les plugins s'exécutent dans le même processus que l'application hôte, avec les mêmes autorisations. Assurez-vous de faire confiance à la source avant d'installer — les étiquettes d'autorisation ci-dessus sont la déclaration de l'auteur ; la vérification les contrôle, mais elles ne constituent pas une restriction à l'exécution.",
+    "detail": {"installTitle": "Installation", "installBody": "Dans l’application de bureau AI WorkDeck, ouvrez le Marketplace et recherchez « {name} ».", "permissionsTitle": "Autorisations", "chinaOnly": "Comptes de Chine continentale uniquement", "chineseOnly": "En chinois uniquement"},
     "permissions": {
       "file_read": "Lire les fichiers",
       "file_write": "Écrire des fichiers",

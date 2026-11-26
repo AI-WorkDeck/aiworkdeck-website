@@ -519,6 +519,7 @@
     "toolsSuffix": "ferramentas",
     "installsSuffix": "instalações",
     "footNote": "Os plugins são executados no mesmo processo do aplicativo host, com as mesmas permissões. Certifique-se de confiar na fonte antes de instalar — as tags de permissão acima são uma declaração do próprio autor; a revisão as verifica de forma cruzada, mas não constituem uma restrição em tempo de execução.",
+    "detail": {"installTitle": "Como instalar", "installBody": "No aplicativo para desktop do AI WorkDeck, abra o Marketplace e pesquise “{name}”.", "permissionsTitle": "Permissões", "chinaOnly": "Somente contas da China continental", "chineseOnly": "Somente em chinês"},
     "permissions": {
       "file_read": "Ler arquivos",
       "file_write": "Escrever arquivos",
