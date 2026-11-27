@@ -21,6 +21,25 @@
 
 const ENDPOINT = 'https://api.resend.com/emails';
 
+/**
+ * Resend 按 key 限速 10 次/秒，验证码与通知共用这把 key（W36）。通知信在本进程内排队，
+ * 两次发送间隔至少 GAP_MS（≈5 次/秒），给验证码留出一半额度；被 429 时按 Retry-After 重试。
+ */
+const GAP_MS = 200;
+const MAX_ATTEMPTS = 3;
+let queue: Promise<void> = Promise.resolve();
+let lastSentAt = 0;
+
+function nextSlot(): Promise<void> {
+    const slot = queue.then(async () => {
+        const wait = lastSentAt + GAP_MS - Date.now();
+        if (wait > 0) await new Promise(r => setTimeout(r, wait));
+        lastSentAt = Date.now();
+    });
+    queue = slot;
+    return slot;
+}
+
 interface NotifyMailConfig {
     apiKey: string;
     from: string;
@@ -57,15 +76,22 @@ export async function sendNotifyMail({ to, subject, text }: NotifyMail): Promise
     if (!cfg) return false;
 
     try {
-        const res = await fetch(ENDPOINT, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${cfg.apiKey}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ from: cfg.from, to: [address], subject, text }),
-            signal: AbortSignal.timeout(10_000),
-        });
+        let res: Response;
+        for (let attempt = 1; ; attempt++) {
+            await nextSlot();
+            res = await fetch(ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${cfg.apiKey}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ from: cfg.from, to: [address], subject, text }),
+                signal: AbortSignal.timeout(10_000),
+            });
+            if (res.status !== 429 || attempt >= MAX_ATTEMPTS) break;
+            const retryAfter = Number(res.headers.get('retry-after'));
+            await new Promise(r => setTimeout(r, Math.min(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 1000, 5000)));
+        }
         if (res.status >= 200 && res.status < 300) return true;
         // 原始 message 含发信域名与内部错误码，只进日志
         const body = await res.text().catch(() => '');
