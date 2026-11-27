@@ -1096,7 +1096,7 @@
     "compatAnswerFirst": "Сначала загрузите проверочное изображение и введите его 6 символов",
     "compatContactFirst": "Сначала введите свой номер телефона или адрес электронной почты",
     "circleInviteLabel": "Код приглашения Circle Alliance (необязательно)",
-    "circleInvitePlaceholder": "например, KW-ABNR-2026",
+    "circleInvitePlaceholder": "например, KW-XXXX-2026",
     "circleInviteHint": "Введите код приглашения вашей юридической фирмы, чтобы автоматически добавить её суффикс и открыть выделенную квоту DeepSeek",
     "bqtScanTab": "Вход по QR-коду для юристов Baoqingtian",
     "bqtScanTitle": "Отсканируйте QR-код в приложении Baoqingtian Lawyer, чтобы войти",

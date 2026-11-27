@@ -1096,7 +1096,7 @@
     "compatAnswerFirst": "Chargez d'abord une image de vérification et saisissez ses 6 caractères",
     "compatContactFirst": "Saisissez d'abord votre numéro de téléphone ou votre e-mail",
     "circleInviteLabel": "Code d’invitation Circle Alliance (facultatif)",
-    "circleInvitePlaceholder": "ex. KW-ABNR-2026",
+    "circleInvitePlaceholder": "ex. KW-XXXX-2026",
     "circleInviteHint": "Saisissez le code d’invitation de votre cabinet pour ajouter automatiquement son suffixe et débloquer un quota DeepSeek dédié",
     "bqtScanTab": "Connexion par QR code pour les avocats Baoqingtian",
     "bqtScanTitle": "Scannez le QR code avec l’application Baoqingtian Lawyer pour vous connecter",

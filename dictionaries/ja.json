@@ -1096,7 +1096,7 @@
     "compatAnswerFirst": "先に認証画像を読み込み、その6文字を入力してください",
     "compatContactFirst": "先に電話番号またはメールアドレスを入力してください",
     "circleInviteLabel": "Circle Alliance 招待コード（任意）",
-    "circleInvitePlaceholder": "例：KW-ABNR-2026",
+    "circleInvitePlaceholder": "例：KW-XXXX-2026",
     "circleInviteHint": "法律事務所の招待コードを入力すると、事務所のサフィックスが自動的に付与され、DeepSeek 専用クォータが解放されます",
     "bqtScanTab": "Baoqingtian 弁護士 QR ログイン",
     "bqtScanTitle": "Baoqingtian Lawyer アプリで QR コードをスキャンしてサインインしてください",
