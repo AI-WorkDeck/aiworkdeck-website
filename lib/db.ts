@@ -1833,6 +1833,17 @@ export const MIGRATIONS: Array<{ version: number; up: (d: Database.Database) => 
       `);
     },
   },
+  {
+    // Q24: exact per-turn cost. turnTag is an opaque desktop hash (no content); settleLedgerId
+    // points at the settle spend row so the subscription/wallet split can be summed per turn.
+    version: 54,
+    up(d) {
+      const cols = (d.prepare('PRAGMA table_info(platform_ai_request)').all() as { name: string }[]).map(c => c.name);
+      if (!cols.includes('turnTag')) d.exec('ALTER TABLE platform_ai_request ADD COLUMN turnTag TEXT;');
+      if (!cols.includes('settleLedgerId')) d.exec('ALTER TABLE platform_ai_request ADD COLUMN settleLedgerId INTEGER;');
+      d.exec('CREATE INDEX IF NOT EXISTS idx_platform_ai_turn ON platform_ai_request(userId, turnTag) WHERE turnTag IS NOT NULL;');
+    },
+  },
 ];
 
 function migrate(d: Database.Database) {

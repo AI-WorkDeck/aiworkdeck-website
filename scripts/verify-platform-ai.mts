@@ -194,4 +194,41 @@ await check('Skill unknown receipt is explicitly pending, never displayed as fre
 });
 await check('revoked parent key invalidates derived runtime immediately',()=>{assert.equal(revokeApiKey(a.id,a.keyId),true);assert.equal(resolveRuntimeUser(callRequest(token,{})),null);});
 await check('unknown receipts receive incident refunds without blocking new calls',async()=>{const b=user(),id=randomUUID();reserve(b.id,id,{x:1},model,100,10,false);submitted(b.id,id);pending(b.id,id);const before=getBalance(b.id);getDb().prepare('UPDATE platform_ai_request SET createdAt=? WHERE userId=? AND requestId=?').run(new Date(Date.now()-16*60_000).toISOString(),b.id,id);recoverPending();assert.equal(requestRow(b.id,id)?.state,'refunded_pending');assert.ok(getBalance(b.id)>before);const refundedBalance=getBalance(b.id),immediate=user(),immediateId=randomUUID();assert.equal(reserve(immediate.id,immediateId,{x:2},model,100,10,false).state,'reserved');assert.equal(requestRow(b.id,id)?.state,'refunded_pending');const resumed=user(),nextId=randomUUID();assert.equal(reserve(resumed.id,nextId,{x:3},model,100,10,false).state,'reserved');const streamId=randomUUID(),streamToken=issueRuntimeToken(resumed.id,accountRequest(resumed));providerReply=async()=>new Response('data: {"choices":[{"delta":{"content":"Recovered"}}]}\n\ndata: {"choices":[],"usage":{"prompt_tokens":100,"completion_tokens":10}}\n\ndata: [DONE]\n\n');const response=await chat(callRequest(streamToken,{model:model.id,messages:[{role:'user',content:'Hi'}],stream:true,max_tokens:100},streamId));assert.equal(response.status,200);assert.match(await response.text(),/Recovered/);assert.equal(requestRow(resumed.id,streamId)?.state,'settled');assert.equal(getBalance(b.id),refundedBalance);});
+await check('Q24: turn tag is stored per call and turn-cost sums only the caller\'s settled calls',async()=>{
+  const {GET:turnCostRoute}=await import('@/app/api/account/ai/turn-cost/route');
+  const {bqtFundingJson}=await import('@/lib/bqt-ai');
+  providerReply=async()=>Response.json({id:'synthetic',choices:[{message:{role:'assistant',content:'OK'}}],usage:{prompt_tokens:100,completion_tokens:10}});
+  const tagged=(token:string,tag:string|null,id=randomUUID())=>new Request('https://www.aiworkdeck.com/api/account/ai/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json','X-Request-Id':id,...(tag?{'X-AWD-Turn':tag}:{})},body:JSON.stringify({model:model.id,messages:[{role:'user',content:'Hi'}],max_tokens:100})});
+  const cost=async(token:string|null,tag:string)=>turnCostRoute(new Request(`https://www.aiworkdeck.com/api/account/ai/turn-cost?tag=${encodeURIComponent(tag)}`,{headers:token?{Authorization:`Bearer ${token}`}:{}}));
+  const b=user(),tok=issueRuntimeToken(b.id,accountRequest(b)),tag='0123456789abcdef0123456789abcdef';
+  const ids=[randomUUID(),randomUUID()];
+  for(const id of ids){const r=await chat(tagged(tok,tag,id));assert.equal(r.status,200);assert.equal(requestRow(b.id,id)?.state,'settled');assert.equal(requestRow(b.id,id)?.turnTag,tag);}
+  const charged=ids.reduce((n,id)=>n+(requestRow(b.id,id)!.chargedCents??0),0);assert.ok(charged>0);
+  const ok=await (await cost(tok,tag)).json();
+  assert.deepEqual(ok,{code:0,data:{cents:charged,currency:'CNY',calls:2,pending:0,subscriptionCents:0,walletCents:charged,bqtCents:0}});
+  // malformed tags are ignored (the call still works), never rejected
+  const badId=randomUUID();assert.equal((await chat(tagged(tok,'NOT-A-TAG',badId))).status,200);assert.equal(requestRow(b.id,badId)?.turnTag,null);
+  // another account and an unknown tag both read as zeros; no existence leak
+  const other=user(),otherTok=issueRuntimeToken(other.id,accountRequest(other));
+  for(const [t,g] of [[otherTok,tag],[tok,'ffffffffffffffffffffffffffffffff']] as const)assert.deepEqual((await (await cost(t,g)).json()).data,{cents:0,currency:'CNY',calls:0,pending:0,subscriptionCents:0,walletCents:0,bqtCents:0});
+  assert.equal((await cost(tok,'abc')).status,400);assert.equal((await cost(null,tag)).status,401);
+  // a call that has started but is not settled is pending, and its reserve is not counted
+  const pTag='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',pId=randomUUID();reserve(b.id,pId,{x:'q24'},model,100,10,false,pTag);submitted(b.id,pId);
+  assert.deepEqual((await (await cost(tok,pTag)).json()).data,{cents:0,currency:'CNY',calls:1,pending:1,subscriptionCents:0,walletCents:0,bqtCents:0});
+  settle(b.id,pId,{prompt_tokens:100,completion_tokens:10});const pc=requestRow(b.id,pId)!.chargedCents!;
+  assert.deepEqual((await (await cost(tok,pTag)).json()).data,{cents:pc,currency:'CNY',calls:1,pending:0,subscriptionCents:0,walletCents:pc,bqtCents:0});
+  // BQT-points rows are reported as bqtCents
+  const db=getDb(),now=new Date().toISOString(),bTag='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+  db.prepare(`INSERT INTO platform_ai_request(userId,requestId,payloadHash,state,model,reserveCents,reserveLedgerId,fundingJson,priceJson,thinking,exchangeRate,margin,createdAt,updatedAt,chargedCents,turnTag)
+    VALUES (?,?,?,'settled',?,7,?,?,'{}',0,10,1,?,?,7,?)`).run(b.id,randomUUID(),'h',model.id,requestRow(b.id,pId)!.reserveLedgerId,bqtFundingJson('synthetic-lawyer'),now,now,bTag);
+  assert.deepEqual((await (await cost(tok,bTag)).json()).data,{cents:7,currency:'CNY',calls:1,pending:0,subscriptionCents:0,walletCents:0,bqtCents:7});
+});
+await check('Q24: subscription-funded settle is reported as subscriptionCents',async()=>{
+  const {turnCost}=await import('@/lib/platform-ai/turn-cost');
+  const b=user(),db=getDb(),id=randomUUID(),now=Date.now(),tag='cccccccccccccccccccccccccccccccc';const start=new Date(now-1000).toISOString(),end=new Date(now+86400000).toISOString();
+  db.prepare("INSERT INTO entitlements(userId,feature,orderId,createdAt,expiresAt) VALUES (?,'pro','test-sub-q24',?,?)").run(b.id,start,end);
+  db.prepare('INSERT INTO subscription_period(userId,outTradeNo,cycle,startsAt,endsAt,monthlyCents,weeklyCents) VALUES (?,?,0,?,?,1000,100)').run(b.id,randomUUID(),start,end);
+  reserve(b.id,id,{x:'q24-sub'},model,100,10,false,tag);submitted(b.id,id);const row=settle(b.id,id,{prompt_tokens:100,completion_tokens:10});
+  assert.ok(row.settleLedgerId);const t=turnCost(b.id,tag);assert.equal(t.cents,row.chargedCents);assert.equal(t.subscriptionCents,row.chargedCents);assert.equal(t.walletCents,0);
+});
 globalThis.fetch=originalFetch;closeDb();console.log(`PASS ${counted} platform AI checks; isolated synthetic data only`);
