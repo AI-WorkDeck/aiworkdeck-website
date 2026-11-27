@@ -29,6 +29,13 @@ function webhookSecret(): string {
   return process.env.STRIPE_WEBHOOK_SECRET || '';
 }
 
+/**
+ * The Stripe account is shared with another product, and every account-level webhook receives every
+ * Checkout event on it. Our sessions carry metadata.app = APP_TAG; events without it are ignored (2xx, no
+ * settlement), so another product's payments can never be matched to our orders.
+ */
+export const APP_TAG = 'aiworkdeck';
+
 let cached: { key: string; client: Stripe } | null = null;
 
 /** 按当前 env 里的密钥取客户端；密钥变了就重建（连接池复用只在同一把密钥内）。 */
@@ -66,7 +73,7 @@ export const stripeAdapter: PaymentChannelAdapter = {
       // 两处都写 outTradeNo：client_reference_id 是 Checkout 的一等公民（后台可搜），
       // metadata 是兜底——两者任一能取到就够，webhook 里按此顺序回读。
       client_reference_id: input.outTradeNo,
-      metadata: { outTradeNo: input.outTradeNo },
+      metadata: { outTradeNo: input.outTradeNo, app: APP_TAG },
       line_items: [
         {
           quantity: 1,
@@ -118,6 +125,7 @@ export const stripeAdapter: PaymentChannelAdapter = {
     if (event.type !== 'checkout.session.completed' && event.type !== 'checkout.session.async_payment_succeeded') return null;
 
     const session = event.data.object as Stripe.Checkout.Session;
+    if (session.metadata?.app !== APP_TAG) return null;
     // 异步付款方式（部分银行转账类）会先 completed 但 payment_status 仍是 unpaid，
     // 真正到账走的是 checkout.session.async_payment_succeeded。此处只认已付。
     if (session.payment_status !== 'paid') return null;
@@ -125,6 +133,13 @@ export const stripeAdapter: PaymentChannelAdapter = {
     const outTradeNo = session.client_reference_id || session.metadata?.outTradeNo;
     if (!outTradeNo) {
       console.error(`[stripe] ${event.type} 缺少 outTradeNo:`, session.id);
+      return null;
+    }
+    // The session must be the one we created for this order (providerRef is stored right after create, before
+    // the payer can reach Checkout). A different session naming our order number is never ours to settle.
+    const order = getOrder(outTradeNo);
+    if (order && order.providerRef !== session.id) {
+      console.warn(`[stripe] ${event.type} session ${session.id} does not match order ${outTradeNo}; ignored`);
       return null;
     }
 

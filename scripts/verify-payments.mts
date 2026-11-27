@@ -195,11 +195,11 @@ console.log('\n[6] 支持订单不会充值，Stripe 回跳和异步到账');
   process.env.STRIPE_WEBHOOK_SECRET = 'whsec_verify_only';
   const ledgerBefore = listLedger(userId).total;
   for (const [id, owner] of [['VP-SUPPORT-ANON', null], ['VP-SUPPORT-USER', userId]] as const) {
-    createOrder({ id, outTradeNo: id, description: 'Donation', amount: 500, status: 'pending', userId: owner, kind: 'support', channel: 'stripe', currency: 'USD' });
+    createOrder({ id, outTradeNo: id, description: 'Donation', amount: 500, status: 'pending', userId: owner, kind: 'support', channel: 'stripe', currency: 'USD', providerRef: 'cs_test_fixture' });
     const event = (type: string, paymentStatus: string) => JSON.stringify({
       id: `evt_${type}`, type, data: { object: {
         id: 'cs_test_fixture', client_reference_id: id, payment_status: paymentStatus,
-        amount_total: 500, currency: 'usd', payment_intent: 'pi_test_fixture',
+        amount_total: 500, currency: 'usd', payment_intent: 'pi_test_fixture', metadata: { app: 'aiworkdeck' },
       } },
     });
     const parse = async (type: string, status: string) => {
@@ -217,6 +217,52 @@ console.log('\n[6] 支持订单不会充值，Stripe 回跳和异步到账');
   }
   assert.strictEqual(listLedger(userId).total, ledgerBefore);
   ok('匿名 / 登录支持仅标记 paid；异步到账、重复事件不发 Credits');
+
+  // Shared Stripe account: another product's correctly signed event is acknowledged (2xx) and never settles,
+  // even when its client_reference_id happens to equal one of our pending order numbers.
+  createOrder({ id: 'VP-FOREIGN', outTradeNo: 'VP-FOREIGN', description: 'Top-up', amount: 700, status: 'pending', userId, kind: 'recharge', channel: 'stripe', currency: 'USD', providerRef: 'cs_ours_foreign_test' });
+  const { POST: stripeWebhook } = await import('@/app/api/payment/stripe/webhook/route');
+  const { NextRequest: WebhookRequest } = require('next/server');
+  for (const metadata of [undefined, { outTradeNo: 'VP-FOREIGN' }, { app: 'draftai', outTradeNo: 'VP-FOREIGN' }]) {
+    for (const ref of ['VP-FOREIGN', 'cs_unknown_order']) {
+      const payload = JSON.stringify({ id: 'evt_foreign', type: 'checkout.session.completed', data: { object: {
+        id: 'cs_foreign', client_reference_id: ref, payment_status: 'paid', amount_total: 700, currency: 'usd', ...(metadata ? { metadata } : {}),
+      } } });
+      const signature = Stripe.webhooks.generateTestHeaderString({ payload, secret: 'whsec_verify_only' });
+      assert.strictEqual(await stripeAdapter.parseWebhook(new Headers({ 'stripe-signature': signature }), payload), null);
+      const res = await stripeWebhook(new WebhookRequest('https://www.workdeck.ai/api/payment/stripe/webhook', {
+        method: 'POST', headers: { 'stripe-signature': signature }, body: payload,
+      }));
+      assert.strictEqual(res.status, 200, 'foreign event must be 2xx or Stripe retries and disables the endpoint');
+    }
+  }
+  // Tagged as ours and naming our pending order, but not the session we created for it: ignored, 2xx.
+  {
+    const payload = JSON.stringify({ id: 'evt_wrong_session', type: 'checkout.session.completed', data: { object: {
+      id: 'cs_someone_else', client_reference_id: 'VP-FOREIGN', payment_status: 'paid', amount_total: 700, currency: 'usd', metadata: { app: 'aiworkdeck', outTradeNo: 'VP-FOREIGN' },
+    } } });
+    const signature = Stripe.webhooks.generateTestHeaderString({ payload, secret: 'whsec_verify_only' });
+    assert.strictEqual(await stripeAdapter.parseWebhook(new Headers({ 'stripe-signature': signature }), payload), null);
+    const res = await stripeWebhook(new WebhookRequest('https://www.workdeck.ai/api/payment/stripe/webhook', {
+      method: 'POST', headers: { 'stripe-signature': signature }, body: payload,
+    }));
+    assert.strictEqual(res.status, 200);
+  }
+  // Ours, but an order we don't know: still 2xx, nothing settled.
+  {
+    const payload = JSON.stringify({ id: 'evt_unknown', type: 'checkout.session.completed', data: { object: {
+      id: 'cs_unknown', client_reference_id: 'VP-NO-SUCH-ORDER', payment_status: 'paid', amount_total: 700, currency: 'usd', metadata: { app: 'aiworkdeck' },
+    } } });
+    const signature = Stripe.webhooks.generateTestHeaderString({ payload, secret: 'whsec_verify_only' });
+    const res = await stripeWebhook(new WebhookRequest('https://www.workdeck.ai/api/payment/stripe/webhook', {
+      method: 'POST', headers: { 'stripe-signature': signature }, body: payload,
+    }));
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual((await res.json()).settled, false);
+  }
+  assert.strictEqual(getOrder('VP-FOREIGN')?.status, 'pending');
+  assert.strictEqual(listLedger(userId).total, ledgerBefore);
+  ok('共享 Stripe 账号：他方或未知订单的已签名事件回 200，不结算不发 Credits');
 
   // 截住 SDK 的出站边界，不访问 Stripe，不创建真实 Checkout Session。
   const proto = Stripe.StripeResource.prototype as any;
@@ -240,6 +286,7 @@ console.log('\n[6] 支持订单不会充值，Stripe 回跳和异步到账');
         assert.strictEqual(url.searchParams.get('site'), id === 'VP-1' ? null : 'intl');
       }
     }
+    assert.deepStrictEqual(checkout.metadata, { outTradeNo: 'VP-1', app: 'aiworkdeck' });
     ok('支持 success/cancel 回首页 donation；充值仍回 account checkout');
 
     const { POST: createPayment } = await import('@/app/api/payment/create/route');
