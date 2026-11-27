@@ -1667,27 +1667,7 @@ export const MIGRATIONS: Array<{ version: number; up: (d: Database.Database) => 
         );
       `);
 
-      const now = new Date().toISOString();
-      const seedFirms: Array<[string, string, string, string]> = [
-        ['KW-ABNR-2026', 'Indonesia', 'Indonesia: ABNR', 'ABNR'],
-        ['KW-SNT-2026', 'Indonesia', 'Indonesia: S&T', 'S&T'],
-        ['KW-SKR-2026', 'Malaysia', 'Malaysia: Skrine', 'Skrine'],
-        ['KW-ZRP-2026', 'Malaysia', 'Malaysia: ZRP', 'ZRP'],
-        ['KW-WEC-2026', 'Thailand', 'Thailand: Weerawong', 'Weerawong'],
-        ['KW-CMHM-2026', 'Thailand', 'Thailand: Chandler MHM', 'Chandler MHM'],
-        ['KW-FRA-2026', 'Vietnam', 'Vietnam: Frasers', 'Frasers'],
-        ['KW-VIL-2026', 'Vietnam', 'Vietnam: VILAF', 'VILAF'],
-        ['KW-ICO-2026', 'Singapore', 'Singapore: ICONLAW', 'ICONLAW'],
-        ['KW-KWMSG-2026', 'Singapore', 'Singapore: 金杜新加坡团队（内部试点）', 'KWM SG'],
-      ];
-      const ins = d.prepare(`
-        INSERT OR IGNORE INTO circle_firms
-          (code, country, name, suffix, marginMultiplier, freeDeepseekCents, enabled, expiresAt, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, 1.0, 2000, 1, NULL, ?, ?)
-      `);
-      for (const [code, country, name, suffix] of seedFirms) {
-        ins.run(code, country, name, suffix, now, now);
-      }
+      // No seed rows: the real invitation codes were entered on production and stay only there (owner, 11-27).
     },
   },
   {

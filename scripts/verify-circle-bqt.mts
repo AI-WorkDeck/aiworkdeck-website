@@ -54,7 +54,8 @@ fs.writeFileSync(
 );
 
 const { findUserById, updateProfile, markUserDeleted } = await import('@/lib/users');
-const { withTransaction } = await import('@/lib/db');
+const { withTransaction, getDb } = await import('@/lib/db');
+const { seedTestCircleFirms } = await import('./circle-test-firms.mjs');
 const {
   getCircleFirm,
   bindCircleFirm,
@@ -85,18 +86,21 @@ function ok(name: string) {
   console.log('  PASS', name);
 }
 
-// 1. 验证 10 家 Circle 联盟所邀请码种子数据完整
+// 1. 仓库不播种真实邀请码；测试自己插入合成邀请码
+assert.strictEqual((getDb().prepare('SELECT COUNT(*) AS n FROM circle_firms').get() as { n: number }).n, 0, '新库不应含任何邀请码');
+seedTestCircleFirms(getDb());
+ok('新库无邀请码种子');
 const expectedCodes: Array<[string, string]> = [
-  ['KW-ABNR-2026', 'ABNR'],
-  ['KW-SNT-2026', 'S&T'],
-  ['KW-SKR-2026', 'Skrine'],
-  ['KW-ZRP-2026', 'ZRP'],
-  ['KW-WEC-2026', 'Weerawong'],
-  ['KW-CMHM-2026', 'Chandler MHM'],
-  ['KW-FRA-2026', 'Frasers'],
-  ['KW-VIL-2026', 'VILAF'],
-  ['KW-ICO-2026', 'ICONLAW'],
-  ['KW-KWMSG-2026', 'KWM SG'],
+  ['KW-QA01-2026', 'ABNR'],
+  ['KW-QA02-2026', 'S&T'],
+  ['KW-QA03-2026', 'Skrine'],
+  ['KW-QA04-2026', 'ZRP'],
+  ['KW-QA05-2026', 'Weerawong'],
+  ['KW-QA06-2026', 'Chandler MHM'],
+  ['KW-QA07-2026', 'Frasers'],
+  ['KW-QA08-2026', 'VILAF'],
+  ['KW-QA09-2026', 'ICONLAW'],
+  ['KW-QA10-2026', 'KWM SG'],
 ];
 for (const [code, suffix] of expectedCodes) {
   const firm = getCircleFirm(code);
@@ -104,21 +108,21 @@ for (const [code, suffix] of expectedCodes) {
   assert.strictEqual(firm.suffix, suffix, `${code} 后缀应为 ${suffix}`);
   assert.strictEqual(firm.marginMultiplier, 1.0, `${code} 加成倍率应为 1.0`);
 }
-ok('10 家 Circle 联盟所邀请码与后缀种子数据完整');
+ok('10 家合成 Circle 邀请码与后缀完整');
 
-// 2. 绑定 KW-ABNR-2026 后自动追加用户名后缀并保持改名不丢失
-const bind1 = bindCircleFirm(circleUser1Id, 'kw-abnr-2026');
-assert.strictEqual(bind1.ok, true, '绑定 KW-ABNR-2026 应成功');
+// 2. 绑定 KW-QA01-2026 后自动追加用户名后缀并保持改名不丢失
+const bind1 = bindCircleFirm(circleUser1Id, 'kw-qa01-2026');
+assert.strictEqual(bind1.ok, true, '绑定 KW-QA01-2026 应成功');
 assert.strictEqual(bind1.displayName, 'Alice Tan (ABNR)');
 assert.strictEqual(findUserById(circleUser1Id)?.displayName, 'Alice Tan (ABNR)');
 assert.strictEqual(bind1.amountCents, 2000, '默认赠送 2000 cents DeepSeek 专项额度');
-ok('绑定 KW-ABNR-2026 自动追加 (ABNR) 后缀并发放 DeepSeek 专项赠金');
+ok('绑定 KW-QA01-2026 自动追加 (ABNR) 后缀并发放 DeepSeek 专项赠金');
 
 // 重复绑定同一码返回 already_bound_same，换绑其他所返回 already_bound_other
-const bindSame = bindCircleFirm(circleUser1Id, 'KW-ABNR-2026');
+const bindSame = bindCircleFirm(circleUser1Id, 'KW-QA01-2026');
 assert.strictEqual(bindSame.ok, false);
 assert.strictEqual(bindSame.error, 'already_bound_same');
-const bindOther = bindCircleFirm(circleUser1Id, 'KW-SKR-2026');
+const bindOther = bindCircleFirm(circleUser1Id, 'KW-QA03-2026');
 assert.strictEqual(bindOther.ok, false);
 assert.strictEqual(bindOther.error, 'already_bound_other');
 ok('同一码重复绑定与跨所换绑拦截正确');
@@ -133,11 +137,11 @@ assert.strictEqual(updatedLong.error, undefined);
 assert.strictEqual(updatedLong.user?.displayName, `${longBase} (ABNR)`);
 ok('修改昵称自动保留律所后缀且 24 字符上限按基础姓名校验');
 
-// 绑定 KW-KWMSG-2026（默认邮箱前缀用户名也在绑定时带上后缀）
-const bind2 = bindCircleFirm(circleUser2Id, 'KW-KWMSG-2026');
+// 绑定 KW-QA10-2026（默认邮箱前缀用户名也在绑定时带上后缀）
+const bind2 = bindCircleFirm(circleUser2Id, 'KW-QA10-2026');
 assert.strictEqual(bind2.ok, true);
 assert.strictEqual(bind2.displayName, 'pilot (KWM SG)');
-ok('KW-KWMSG-2026 绑定自动追加 (KWM SG) 后缀');
+ok('KW-QA10-2026 绑定自动追加 (KWM SG) 后缀');
 
 // 3. Circle 所独立计费规则：0% 加成 + DeepSeek 专项额度与海外模型付费门槛
 assert.strictEqual(getUserMarginMultiplier(circleUser1Id), 1.0, 'Circle 所用户 marginMultiplier 应为 1.0');
@@ -181,7 +185,7 @@ assert.strictEqual(mapToDeepSeekUpstreamModel('deepseek/deepseek-r1'), 'deepseek
 ok('DeepSeek 专用模型 ID 识别与上游模型名映射正确');
 
 // Exercise real reserve, refund and settlement against the isolated ledger; no upstream calls.
-assert.equal(bindCircleFirm(billingUserId, 'KW-SNT-2026').ok, true);
+assert.equal(bindCircleFirm(billingUserId, 'KW-QA02-2026').ok, true);
 for (const modelId of ['deepseek-v4-pro-0813', 'deepseek-v4.1-flash-1017']) {
   assert.equal(isDeepSeekModelId(modelId), true);
   const before = getCircleDeepseekBalanceCents(billingUserId);
@@ -351,7 +355,7 @@ ok('HTTP rollout, region, signed callback and single-device redemption boundarie
 // 5. 管理端汇总与用户注销清理
 const adminFirms = listCircleFirmsAdmin();
 assert.strictEqual(adminFirms.length, 10);
-assert.strictEqual(adminFirms.find((f) => f.code === 'KW-ABNR-2026')?.boundUsersCount, 1);
+assert.strictEqual(adminFirms.find((f) => f.code === 'KW-QA01-2026')?.boundUsersCount, 1);
 markUserDeleted(circleUser1Id, 'Deleted User');
 assert.strictEqual(getUserCircleFirm(circleUser1Id), null, '注销用户后 Circle 绑定应清理');
 ok('管理端统计与用户注销绑定清理正确');

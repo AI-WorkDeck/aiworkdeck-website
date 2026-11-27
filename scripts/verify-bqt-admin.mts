@@ -43,6 +43,7 @@ const actionRoute = await import('@/app/api/admin/bqt/consumes/action/route');
 const circleRoute = await import('@/app/api/admin/circle-firms/route');
 const circleUsersRoute = await import('@/app/api/admin/circle-firms/[code]/users/route');
 const db = getDb();
+(await import('./circle-test-firms.mjs')).seedTestCircleFirms(db);
 
 // ── 假包晴天：所有外呼都在这里，绝不出网 ──
 let points = 1000_00;
@@ -96,13 +97,13 @@ const usersCtx = (code: string) => ({ params: Promise.resolve({ code }) });
     [actionRoute.POST, '/api/admin/bqt/consumes/action', 'POST', { requestNo: 'x', action: 'waive' }],
     [circleRoute.GET, '/api/admin/circle-firms', 'GET'],
     [circleRoute.POST, '/api/admin/circle-firms', 'POST', { code: 'KW-X' }],
-    [circleRoute.PATCH, '/api/admin/circle-firms', 'PATCH', { code: 'KW-ABNR-2026', enabled: false }],
+    [circleRoute.PATCH, '/api/admin/circle-firms', 'PATCH', { code: 'KW-QA01-2026', enabled: false }],
   ];
   for (const [h, url, method, body] of cases) {
     const r = await call(h, url, { method, body, auth: false });
     assert.equal(r.status, 401, `${method} ${url} 未登录应 401`);
   }
-  assert.equal((await call(circleUsersRoute.GET, '/api/admin/circle-firms/KW-ABNR-2026/users', { auth: false }, usersCtx('KW-ABNR-2026'))).status, 401);
+  assert.equal((await call(circleUsersRoute.GET, '/api/admin/circle-firms/KW-QA01-2026/users', { auth: false }, usersCtx('KW-QA01-2026'))).status, 401);
   assert.ok(Math.abs(m.getBqtSettings().centsPerPoint! - 100 / 3) < 1e-9, '未登录的 PATCH 不能生效（仍是迁移默认 1 元 = 3 积分）');
   assert.equal(outbound.length, 0, '未登录的查询不能外呼');
 }
@@ -327,7 +328,7 @@ const usersCtx = (code: string) => ({ params: Promise.resolve({ code }) });
   assert.ok(!allowedRelayPath(['admin', 'bqt', 'lookup'], 'GET'));
   assert.ok(allowedRelayPath(['admin', 'bqt', 'consumes', 'action'], 'POST'));
   assert.ok(allowedRelayPath(['admin', 'circle-firms'], 'POST'));
-  assert.ok(allowedRelayPath(['admin', 'circle-firms', 'KW-ABNR-2026', 'users'], 'GET'));
+  assert.ok(allowedRelayPath(['admin', 'circle-firms', 'KW-QA01-2026', 'users'], 'GET'));
 }
 
 // ── 8. 密钥从未出现在任何响应里 ──
