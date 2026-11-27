@@ -397,7 +397,7 @@ try {
       assert.deepEqual(db.prepare('SELECT * FROM web_ai_request ORDER BY userId,requestId').all(), requests);
       assert.deepEqual(db.prepare('SELECT COUNT(*) n FROM wallet_ledger').get(), ledgers);
       for (const table of laterTables) {
-        assert.equal((db.prepare(`SELECT COUNT(*) n FROM ${table}`).get() as {n:number}).n, table === 'circle_firms' ? 10 : table === 'bqt_settings' ? 1 : 0);
+        assert.equal((db.prepare(`SELECT COUNT(*) n FROM ${table}`).get() as {n:number}).n, table === 'bqt_settings' ? 1 : 0);
       }
       closeDb(); db = getDb();
       assert.ok((db.prepare('PRAGMA table_info(team_member)').all() as {name:string}[]).some(c => c.name === 'title'), 'migration46 restores team_member.title');
