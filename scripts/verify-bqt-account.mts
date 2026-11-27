@@ -49,6 +49,7 @@ const { POST: redeemPOST } = await import('@/app/api/account/redeem/route');
 const { POST: internalPOST } = await import('@/app/api/internal/account/route');
 
 const db = getDb();
+(await import('./circle-test-firms.mjs')).seedTestCircleFirms(db);
 let checked = 0;
 const ok = (name: string) => { checked++; console.log('  OK  ', name); };
 const key = generateApiKey(U).key!.plaintextKey;
@@ -233,8 +234,8 @@ console.log('\n[8] 晴天币停发、Circle 互斥');
   assert.equal(getBqtQingtianStatus(U), null);
   ok('通道开：晴天币不再按月发放，晴天币一节下线');
 
-  assert.deepEqual(bindCircleFirm(U, 'KW-ABNR-2026'), { ok: false, error: 'bqt_member' });
-  const rr = await redeemPOST(bearer('/api/account/redeem', { code: 'KW-ABNR-2026' }));
+  assert.deepEqual(bindCircleFirm(U, 'KW-QA01-2026'), { ok: false, error: 'bqt_member' });
+  const rr = await redeemPOST(bearer('/api/account/redeem', { code: 'KW-QA01-2026' }));
   assert.equal(rr.status, 409); assert.equal((await rr.json()).error, 'bqt_member');
   ok('包晴天律师不能绑 Circle 邀请码（明确错误码 bqt_member）');
 }
