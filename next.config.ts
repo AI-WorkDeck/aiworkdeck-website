@@ -247,6 +247,12 @@ const nextConfig: NextConfig = {
         destination: `/:lang/account`,
         permanent: true,
       })),
+      // Typed and old links: the download page is /start.
+      ...(["download", "downloads"] as const).map(page => ({
+        source: `/:lang([a-z]{2}|zh-hant)/${page}`,
+        destination: `/:lang/start`,
+        permanent: true,
+      })),
     ];
   },
 };

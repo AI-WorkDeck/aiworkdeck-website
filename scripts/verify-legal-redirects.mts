@@ -28,4 +28,13 @@ for (const page of ['login', 'register', 'signin', 'signup']) {
   for (const lang of i18n.locales) assert.ok(re.test(lang), `${page}: locale ${lang} is covered`);
   assert.ok(!fs.existsSync(`app/[lang]/${page}`), `${page}: no real page is shadowed`);
 }
-console.log(`PASS /<lang>/privacy, /terms -> /legal/…; /login, /register, /signin, /signup -> /account; all ${i18n.locales.length} locales`);
+assert.ok(fs.existsSync('app/[lang]/start'), 'start page exists');
+for (const page of ['download', 'downloads']) {
+  const r = redirects.find(x => x.source.endsWith(`/${page}`) && x.destination === '/:lang/start');
+  assert.ok(r, `redirect for /:lang/${page}`);
+  assert.equal(r.permanent, true);
+  const re = new RegExp(`^(?:${/^\/:lang\((.+)\)\//.exec(r.source)![1]})$`);
+  for (const lang of i18n.locales) assert.ok(re.test(lang), `${page}: locale ${lang} is covered`);
+  assert.ok(!fs.existsSync(`app/[lang]/${page}`), `${page}: no real page is shadowed`);
+}
+console.log(`PASS /<lang>/privacy, /terms -> /legal/…; /login, /register, /signin, /signup -> /account; /download(s) -> /start; all ${i18n.locales.length} locales`);
