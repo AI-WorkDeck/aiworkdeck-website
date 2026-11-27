@@ -1098,7 +1098,7 @@
     "compatAnswerFirst": "请先加载验证图片并填写其中的 6 位字符",
     "compatContactFirst": "请先填写手机号或邮箱",
     "circleInviteLabel": "Circle 联盟所邀请码（选填）",
-    "circleInvitePlaceholder": "例如 KW-ABNR-2026",
+    "circleInvitePlaceholder": "例如 KW-XXXX-2026",
     "circleInviteHint": "输入律所专属邀请码，自动带出律所后缀并开通 DeepSeek 专用额度",
     "bqtScanTab": "包晴天律师扫码登录",
     "bqtScanTitle": "请使用包晴天律师端 App 扫码登录",
