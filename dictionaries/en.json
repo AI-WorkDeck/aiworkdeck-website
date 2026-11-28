@@ -1644,7 +1644,8 @@
         "International edition: the app remembers the site you chose and keeps you signed in after a restart, and you can register and sign in from the app even when Cloudflare's check doesn't load.",
         "Mainland edition: with the platform AI, each chat turn shows what it cost.",
         "Privacy: the app no longer contacts any third-party website at launch, and a new browser tab opens the app's own blank page.",
-        "0.91.1: if the local service stops mid-answer, the answer so far is kept and Resume carries on; pulling a large case to this device, submitting and pulling no longer fail with a false \"taking too long\" on slow connections; and if the local service stops during a transfer, you're told within seconds and the button is usable again."
+        "0.91.1: if the local service stops mid-answer, the answer so far is kept and Resume carries on; pulling a large case to this device, submitting and pulling no longer fail with a false \"taking too long\" on slow connections; and if the local service stops during a transfer, you're told within seconds and the button is usable again.",
+        "0.91.2: \"Ask the assistant\" in a project group answers the question you just typed; a colleague's submitted draft shows in the project status within about 30 seconds; on your own shared case, \"Client collaboration\" shows that case's clients; the Marketplace no longer shows a stray line of code and labels Chinese-only skills and plugins \"In Chinese\"; on a colleague's case from the case library, \"Lead\" shows the case's real lead once our servers are updated; and the international edition downloads in-app updates from our official GitHub releases and no longer mentions WeChat in the permissions guide."
       ]
     },
     "release0900": {
