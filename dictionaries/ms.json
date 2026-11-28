@@ -1643,7 +1643,8 @@
         "Kerjasama kes dalam pasukan lebih stabil: penghantaran yang dibuat semasa luar talian dimasukkan ke dalam baris gilir dan dihantar apabila kembali dalam talian, fail besar menunjukkan kemajuan, dan fail besar atau audio/video dalam kuota perkongsian percuma tidak lagi menyekat penghantaran.",
         "Edisi antarabangsa: aplikasi mengingati laman yang anda pilih dan kekal log masuk selepas dimulakan semula; anda boleh mendaftar dan log masuk dalam aplikasi walaupun semakan Cloudflare tidak dimuatkan.",
         "Edisi tanah besar China: dengan AI platform, setiap pusingan sembang menunjukkan kos sebenar.",
-        "Privasi: aplikasi tidak lagi menghubungi mana-mana laman web pihak ketiga semasa dibuka, dan tab pelayar baharu membuka halaman kosong aplikasi sendiri."
+        "Privasi: aplikasi tidak lagi menghubungi mana-mana laman web pihak ketiga semasa dibuka, dan tab pelayar baharu membuka halaman kosong aplikasi sendiri.",
+        "0.91.1: jika perkhidmatan setempat berhenti di tengah jawapan, jawapan setakat itu disimpan dan \"Sambung semula\" meneruskannya; menarik fail besar ke peranti ini, menyerahkan dan menarik semula tidak lagi gagal dengan mesej palsu \"terlalu lama\" pada sambungan perlahan; dan jika perkhidmatan setempat berhenti semasa pemindahan, anda dimaklumkan dalam beberapa saat dan butang boleh digunakan semula."
       ]
     },
     "release0900": {

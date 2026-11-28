@@ -1643,7 +1643,8 @@
         "Ekip içinde dosya üzerinde çalışma daha kararlı: çevrimdışıyken yapılan bir gönderim kuyruğa alınır ve bağlantı gelince gönderilir; büyük dosyalar ilerlemeyi gösterir; ücretsiz paylaşım kotası içindeki büyük dosyalar veya ses/video artık gönderimi engellemez.",
         "Uluslararası sürüm: uygulama seçtiğiniz siteyi hatırlar ve yeniden başlattıktan sonra oturumunuzu açık tutar; Cloudflare doğrulaması yüklenmese bile uygulamadan kaydolup oturum açabilirsiniz.",
         "Çin anakarası sürümü: platform yapay zekâsı kullanıldığında her sohbet turu gerçek maliyetini gösterir.",
-        "Gizlilik: uygulama başlarken artık hiçbir üçüncü taraf web sitesine bağlanmaz ve yeni bir tarayıcı sekmesi uygulamanın kendi boş sayfasını açar."
+        "Gizlilik: uygulama başlarken artık hiçbir üçüncü taraf web sitesine bağlanmaz ve yeni bir tarayıcı sekmesi uygulamanın kendi boş sayfasını açar.",
+        "0.91.1: yerel hizmet bir yanıtın ortasında durursa, o ana kadar yazılanlar korunur ve \"Devam Et\" kaldığı yerden sürdürür; büyük dosyaları bu cihaza alma, teslim etme ve geri alma, yavaş bağlantılarda artık yanlış bir \"çok uzun sürüyor\" hatasıyla başarısız olmuyor; aktarım sırasında yerel hizmet durursa birkaç saniye içinde bilgilendirilirsiniz ve düğme yeniden kullanılabilir olur."
       ]
     },
     "release0900": {

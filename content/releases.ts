@@ -29,7 +29,7 @@ export type ReleaseNote = LegacyReleaseNote | {
 };
 
 export const RELEASES: ReleaseNote[] = [
-    { version: '0.91.0', date: '2026-11-28', contentKey: 'release0910' },
+    { version: '0.91.1', date: '2026-11-28', contentKey: 'release0910' },
     { version: '0.90.0', date: '2026-11-24', contentKey: 'release0900' },
     { version: '0.89.0', date: '2026-11-23', contentKey: 'release0890' },
     { version: '0.88.2', date: '2026-11-21', contentKey: 'release0880' },

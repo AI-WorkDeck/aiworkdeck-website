@@ -1643,7 +1643,8 @@
         "La colaboración en casos de equipo es más estable: un envío hecho sin conexión queda en cola y se envía al recuperar la conexión, los archivos grandes muestran el progreso, y los archivos grandes o el audio/vídeo dentro del cupo gratuito de uso compartido ya no bloquean un envío.",
         "Edición internacional: la aplicación recuerda el sitio elegido y mantiene la sesión iniciada tras reiniciar; puede registrarse e iniciar sesión desde la aplicación aunque no cargue la verificación de Cloudflare.",
         "Edición de China continental: con la IA de la plataforma, cada turno del chat muestra lo que costó.",
-        "Privacidad: al iniciarse, la aplicación ya no contacta ningún sitio web de terceros, y una nueva pestaña del navegador abre la página en blanco propia de la aplicación."
+        "Privacidad: al iniciarse, la aplicación ya no contacta ningún sitio web de terceros, y una nueva pestaña del navegador abre la página en blanco propia de la aplicación.",
+        "0.91.1: si el servicio local se detiene a mitad de una respuesta, se conserva lo escrito y «Reanudar» continúa desde ahí; traer archivos grandes a este dispositivo, entregarlos y recuperarlos ya no falla con un falso «está tardando demasiado» en conexiones lentas; y si el servicio local se detiene durante una transferencia, se le avisa en segundos y el botón vuelve a estar disponible."
       ]
     },
     "release0900": {

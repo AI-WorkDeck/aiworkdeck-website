@@ -1643,7 +1643,8 @@
         "A colaboração em casos da equipe está mais estável: um envio feito offline entra em fila e é enviado quando a conexão volta, arquivos grandes mostram o progresso, e arquivos grandes ou áudio/vídeo dentro da cota gratuita de compartilhamento não bloqueiam mais um envio.",
         "Edição internacional: o app lembra o site escolhido e mantém você conectado após reiniciar; é possível se cadastrar e entrar pelo app mesmo quando a verificação do Cloudflare não carrega.",
         "Edição da China continental: com a IA da plataforma, cada rodada do chat mostra quanto custou.",
-        "Privacidade: o app não acessa mais nenhum site de terceiros ao iniciar, e uma nova aba do navegador abre a página em branco do próprio app."
+        "Privacidade: o app não acessa mais nenhum site de terceiros ao iniciar, e uma nova aba do navegador abre a página em branco do próprio app.",
+        "0.91.1: se o serviço local parar no meio de uma resposta, o que já foi escrito é mantido e \"Retomar\" continua de onde parou; trazer arquivos grandes para este dispositivo, entregar e buscar não falham mais com um falso \"está demorando demais\" em conexões lentas; e se o serviço local parar durante uma transferência, você é avisado em segundos e o botão volta a funcionar."
       ]
     },
     "release0900": {
