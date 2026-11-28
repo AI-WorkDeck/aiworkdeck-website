@@ -1643,7 +1643,8 @@
         "Team case collaboration is steadier: a submit made offline is queued and sent when you are back online, large files show progress, and large files or audio/video within the free sharing allowance no longer block a submit.",
         "International edition: the app remembers the site you chose and keeps you signed in after a restart, and you can register and sign in from the app even when Cloudflare's check doesn't load.",
         "Mainland edition: with the platform AI, each chat turn shows what it cost.",
-        "Privacy: the app no longer contacts any third-party website at launch, and a new browser tab opens the app's own blank page."
+        "Privacy: the app no longer contacts any third-party website at launch, and a new browser tab opens the app's own blank page.",
+        "0.91.1: if the local service stops mid-answer, the answer so far is kept and Resume carries on; large Pull to This Device, submit and pull no longer fail with a false \"taking too long\" on slow connections; and if the local service stops during a transfer, you're told within seconds and the button is usable again."
       ]
     },
     "release0900": {

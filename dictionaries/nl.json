@@ -1643,7 +1643,8 @@
         "Samenwerken aan dossiers in een team is stabieler: een inzending die offline wordt gedaan, komt in een wachtrij en wordt verstuurd zodra je weer online bent; grote bestanden tonen de voortgang, en grote bestanden of audio/video binnen het gratis deelbudget blokkeren een inzending niet meer.",
         "Internationale editie: de app onthoudt de gekozen site en houdt je na een herstart ingelogd; registreren en inloggen in de app werkt ook als de Cloudflare-controle niet laadt.",
         "Editie voor het Chinese vasteland: met de platform-AI toont elke chatbeurt wat die kostte.",
-        "Privacy: de app maakt bij het starten geen contact meer met websites van derden, en een nieuw browsertabblad opent de eigen lege pagina van de app."
+        "Privacy: de app maakt bij het starten geen contact meer met websites van derden, en een nieuw browsertabblad opent de eigen lege pagina van de app.",
+        "0.91.1: stopt de lokale dienst halverwege een antwoord, dan blijft wat er al stond bewaard en gaat 'Hervatten' verder; grote bestanden naar dit apparaat halen, inleveren en ophalen mislukt op trage verbindingen niet meer met een onterecht \"duurt te lang\"; en stopt de lokale dienst tijdens een overdracht, dan hoor je dat binnen enkele seconden en is de knop weer bruikbaar."
       ]
     },
     "release0900": {

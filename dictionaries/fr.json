@@ -1643,7 +1643,8 @@
         "La collaboration sur les dossiers en équipe est plus stable : un envoi fait hors ligne est mis en file d'attente puis envoyé au retour de la connexion, les gros fichiers affichent leur progression, et les gros fichiers ou l'audio/vidéo dans le quota de partage gratuit ne bloquent plus un envoi.",
         "Édition internationale : l'application mémorise le site choisi et vous garde connecté après un redémarrage ; l'inscription et la connexion dans l'application fonctionnent même si la vérification Cloudflare ne se charge pas.",
         "Édition Chine continentale : avec l'IA de la plateforme, chaque tour de conversation affiche son coût réel.",
-        "Confidentialité : l'application ne contacte plus aucun site tiers au démarrage, et un nouvel onglet de navigateur ouvre la page vierge de l'application."
+        "Confidentialité : l'application ne contacte plus aucun site tiers au démarrage, et un nouvel onglet de navigateur ouvre la page vierge de l'application.",
+        "0.91.1 : si le service local s'arrête au milieu d'une réponse, le texte déjà rédigé est conservé et « Reprendre » poursuit ; la récupération de fichiers volumineux sur cet appareil, la remise et la récupération n'échouent plus avec un faux « cela prend trop de temps » sur une connexion lente ; et si le service local s'arrête pendant un transfert, vous en êtes informé en quelques secondes et le bouton redevient utilisable."
       ]
     },
     "release0900": {

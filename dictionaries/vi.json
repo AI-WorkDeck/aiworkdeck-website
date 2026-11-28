@@ -1643,7 +1643,8 @@
         "Cộng tác hồ sơ trong nhóm ổn định hơn: lượt gửi khi ngoại tuyến được xếp hàng và gửi đi khi có mạng trở lại, tệp lớn hiển thị tiến độ, và tệp lớn hoặc âm thanh/video trong hạn mức chia sẻ miễn phí không còn chặn việc gửi.",
         "Phiên bản quốc tế: ứng dụng ghi nhớ trang bạn đã chọn và giữ bạn đăng nhập sau khi khởi động lại; bạn có thể đăng ký và đăng nhập trong ứng dụng ngay cả khi bước xác minh của Cloudflare không tải được.",
         "Phiên bản Trung Quốc đại lục: khi dùng AI của nền tảng, mỗi lượt trò chuyện hiển thị chi phí thực tế.",
-        "Quyền riêng tư: ứng dụng không còn kết nối tới bất kỳ trang web bên thứ ba nào khi khởi động, và tab trình duyệt mới mở trang trống của chính ứng dụng."
+        "Quyền riêng tư: ứng dụng không còn kết nối tới bất kỳ trang web bên thứ ba nào khi khởi động, và tab trình duyệt mới mở trang trống của chính ứng dụng.",
+        "0.91.1: nếu dịch vụ cục bộ dừng giữa chừng khi đang trả lời, phần đã viết được giữ lại và \"Tiếp tục\" sẽ viết tiếp; việc lấy tệp lớn về thiết bị này, nộp bản và lấy về không còn thất bại với thông báo sai \"mất quá nhiều thời gian\" trên kết nối chậm; và nếu dịch vụ cục bộ dừng trong khi truyền, bạn được báo trong vài giây và nút dùng lại được ngay."
       ]
     },
     "release0900": {

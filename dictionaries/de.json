@@ -1643,7 +1643,8 @@
         "Die Zusammenarbeit an Fällen im Team ist stabiler: Offline eingereichte Stände werden in eine Warteschlange gestellt und gesendet, sobald Sie wieder online sind; große Dateien zeigen einen Fortschritt, und große Dateien oder Audio/Video innerhalb des kostenlosen Freigabekontingents blockieren keine Einreichung mehr.",
         "Internationale Edition: Die App merkt sich die gewählte Website und hält Sie nach einem Neustart angemeldet; Registrierung und Anmeldung in der App funktionieren auch, wenn die Cloudflare-Prüfung nicht lädt.",
         "Festland-China-Edition: Mit der Plattform-KI zeigt jede Chatrunde ihre tatsächlichen Kosten.",
-        "Datenschutz: Beim Start kontaktiert die App keine Websites Dritter mehr, und ein neuer Browser-Tab öffnet die eigene leere Seite der App."
+        "Datenschutz: Beim Start kontaktiert die App keine Websites Dritter mehr, und ein neuer Browser-Tab öffnet die eigene leere Seite der App.",
+        "0.91.1: Stoppt der lokale Dienst mitten in einer Antwort, bleibt das bisher Geschriebene erhalten und „Fortsetzen“ schreibt weiter; das Holen großer Dateien auf dieses Gerät, Einreichen und Abrufen scheitern bei langsamer Verbindung nicht mehr mit einem falschen „dauert zu lange“; und stoppt der lokale Dienst während einer Übertragung, erfahren Sie es innerhalb von Sekunden und die Schaltfläche ist wieder nutzbar."
       ]
     },
     "release0900": {
