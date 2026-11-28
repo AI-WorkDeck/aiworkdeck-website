@@ -1644,7 +1644,7 @@
         "Edizione internazionale: l'app ricorda il sito scelto e mantiene l'accesso dopo il riavvio; registrazione e accesso dall'app funzionano anche quando la verifica di Cloudflare non si carica.",
         "Edizione Cina continentale: con l'IA della piattaforma, ogni turno della chat mostra quanto è costato.",
         "Privacy: all'avvio l'app non contatta più alcun sito di terzi, e una nuova scheda del browser apre la pagina vuota dell'app.",
-        "0.91.1: se il servizio locale si interrompe a metà di una risposta, quanto già scritto viene conservato e «Riprendi» la porta avanti; il recupero di file di grandi dimensioni su questo dispositivo, la consegna e il recupero non falliscono più con un falso «sta impiegando troppo tempo» sulle connessioni lente; e se il servizio locale si interrompe durante un trasferimento, lo sai in pochi secondi e il pulsante torna utilizzabile."
+        "0.91.1: se il servizio locale si interrompe a metà di una risposta, quanto già scritto viene conservato e «Riprendi» la porta avanti; il recupero di file di grandi dimensioni su questo dispositivo, la consegna e il recupero non falliscono più con un falso «sta impiegando troppo tempo» sulle connessioni lente; e se il servizio locale si interrompe durante un trasferimento, viene segnalato in pochi secondi e il pulsante torna utilizzabile."
       ]
     },
     "release0900": {
