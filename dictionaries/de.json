@@ -1636,6 +1636,16 @@
         "Nur Apple Silicon; macOS 13 oder neuer erforderlich"
       ]
     },
+    "release0910": {
+      "headline": "Verständliche Fehlermeldungen, stabilere Teamarbeit und eine verlässliche internationale Edition",
+      "items": [
+        "Schlägt ein Chat fehl, sagt die Antwort, was passiert ist und was zu tun ist – mit „Erneut versuchen“ und „Details“ statt Rohtext wie „HTTP 502“. Eine abgebrochene lange Antwort lässt sich an der Abbruchstelle fortsetzen.",
+        "Die Zusammenarbeit an Fällen im Team ist stabiler: Offline eingereichte Stände werden in eine Warteschlange gestellt und gesendet, sobald Sie wieder online sind; große Dateien zeigen einen Fortschritt, und große Dateien oder Audio/Video innerhalb des kostenlosen Freigabekontingents blockieren keine Einreichung mehr.",
+        "Internationale Edition: Die App merkt sich die gewählte Website und hält Sie nach einem Neustart angemeldet; Registrierung und Anmeldung in der App funktionieren auch, wenn die Cloudflare-Prüfung nicht lädt.",
+        "Festland-China-Edition: Mit der Plattform-KI zeigt jede Chatrunde ihre tatsächlichen Kosten.",
+        "Datenschutz: Beim Start kontaktiert die App keine Websites Dritter mehr, und ein neuer Browser-Tab öffnet die eigene leere Seite der App."
+      ]
+    },
     "release0900": {
       "headline": "Fortschritt ab der ersten Sekunde, lange Verträge etwa 10-mal schneller vergleichen und taiwanische Begriffe in Traditionellem Chinesisch",
       "items": [

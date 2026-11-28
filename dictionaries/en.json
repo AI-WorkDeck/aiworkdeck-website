@@ -1636,6 +1636,16 @@
         "Apple silicon only; requires macOS 13 or later"
       ]
     },
+    "release0910": {
+      "headline": "Plain-language errors, steadier team collaboration, and a dependable international edition",
+      "items": [
+        "When a chat fails, the reply says what happened and what to do, with Retry and Details, instead of raw text like \"HTTP 502\". A long answer that gets cut off can continue from where it stopped.",
+        "Team case collaboration is steadier: a submit made offline is queued and sent when you are back online, large files show progress, and large files or audio/video within the free sharing allowance no longer block a submit.",
+        "International edition: the app remembers the site you chose and keeps you signed in after a restart, and you can register and sign in from the app even when Cloudflare's check doesn't load.",
+        "Mainland edition: with the platform AI, each chat turn shows what it cost.",
+        "Privacy: the app no longer contacts any third-party website at launch, and a new browser tab opens the app's own blank page."
+      ]
+    },
     "release0900": {
       "headline": "Progress from the first second, compare long contracts about 10× faster, and Taiwan vocabulary in Traditional Chinese",
       "items": [

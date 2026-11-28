@@ -1636,6 +1636,16 @@
         "Solo chip Apple; requiere macOS 13 o posterior"
       ]
     },
+    "release0910": {
+      "headline": "Errores en lenguaje claro, colaboración en equipo más estable y una edición internacional fiable",
+      "items": [
+        "Cuando un chat falla, la respuesta explica qué pasó y qué hacer, con «Reintentar» y «Detalles», en lugar de texto técnico como «HTTP 502». Una respuesta larga que se corta puede continuar desde donde se detuvo.",
+        "La colaboración en casos de equipo es más estable: un envío hecho sin conexión queda en cola y se envía al recuperar la conexión, los archivos grandes muestran el progreso, y los archivos grandes o el audio/vídeo dentro del cupo gratuito de uso compartido ya no bloquean un envío.",
+        "Edición internacional: la aplicación recuerda el sitio elegido y mantiene la sesión iniciada tras reiniciar; puede registrarse e iniciar sesión desde la aplicación aunque no cargue la verificación de Cloudflare.",
+        "Edición de China continental: con la IA de la plataforma, cada turno del chat muestra lo que costó.",
+        "Privacidad: al iniciarse, la aplicación ya no contacta ningún sitio web de terceros, y una nueva pestaña del navegador abre la página en blanco propia de la aplicación."
+      ]
+    },
     "release0900": {
       "headline": "Progreso desde el primer segundo, comparación de contratos largos unas 10 veces más rápida y vocabulario de Taiwán en chino tradicional",
       "items": [

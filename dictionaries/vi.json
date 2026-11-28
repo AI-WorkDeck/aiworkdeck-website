@@ -1636,6 +1636,16 @@
         "Chỉ Apple Silicon; yêu cầu macOS 13 trở lên"
       ]
     },
+    "release0910": {
+      "headline": "Thông báo lỗi dễ hiểu, cộng tác nhóm ổn định hơn và phiên bản quốc tế đáng tin cậy",
+      "items": [
+        "Khi cuộc trò chuyện thất bại, câu trả lời cho biết chuyện gì đã xảy ra và cần làm gì, kèm \"Thử lại\" và \"Chi tiết\", thay vì văn bản kỹ thuật như \"HTTP 502\". Một câu trả lời dài bị ngắt giữa chừng có thể viết tiếp từ chỗ dừng.",
+        "Cộng tác hồ sơ trong nhóm ổn định hơn: lượt gửi khi ngoại tuyến được xếp hàng và gửi đi khi có mạng trở lại, tệp lớn hiển thị tiến độ, và tệp lớn hoặc âm thanh/video trong hạn mức chia sẻ miễn phí không còn chặn việc gửi.",
+        "Phiên bản quốc tế: ứng dụng ghi nhớ trang bạn đã chọn và giữ bạn đăng nhập sau khi khởi động lại; bạn có thể đăng ký và đăng nhập trong ứng dụng ngay cả khi bước xác minh của Cloudflare không tải được.",
+        "Phiên bản Trung Quốc đại lục: khi dùng AI của nền tảng, mỗi lượt trò chuyện hiển thị chi phí thực tế.",
+        "Quyền riêng tư: ứng dụng không còn kết nối tới bất kỳ trang web bên thứ ba nào khi khởi động, và tab trình duyệt mới mở trang trống của chính ứng dụng."
+      ]
+    },
     "release0900": {
       "headline": "Hiển thị tiến trình từ giây đầu tiên, so sánh hợp đồng dài nhanh hơn khoảng 10 lần và dùng từ vựng Đài Loan trong tiếng Trung phồn thể",
       "items": [

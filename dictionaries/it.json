@@ -1636,6 +1636,16 @@
         "Solo chip Apple; richiede macOS 13 o successivo"
       ]
     },
+    "release0910": {
+      "headline": "Errori in linguaggio chiaro, collaborazione di team più stabile e un'edizione internazionale affidabile",
+      "items": [
+        "Quando una chat non va a buon fine, la risposta spiega cosa è successo e cosa fare, con «Riprova» e «Dettagli», invece di testo tecnico come «HTTP 502». Una risposta lunga interrotta può riprendere da dove si era fermata.",
+        "La collaborazione sui casi in team è più stabile: un invio fatto offline viene messo in coda e inviato quando si torna online, i file grandi mostrano l'avanzamento, e i file grandi o l'audio/video entro la quota di condivisione gratuita non bloccano più un invio.",
+        "Edizione internazionale: l'app ricorda il sito scelto e mantiene l'accesso dopo il riavvio; registrazione e accesso dall'app funzionano anche quando la verifica di Cloudflare non si carica.",
+        "Edizione Cina continentale: con l'IA della piattaforma, ogni turno della chat mostra quanto è costato.",
+        "Privacy: all'avvio l'app non contatta più alcun sito di terzi, e una nuova scheda del browser apre la pagina vuota dell'app."
+      ]
+    },
     "release0900": {
       "headline": "Avanzamento dal primo secondo, confronto di contratti lunghi circa 10 volte più veloce e terminologia di Taiwan nel cinese tradizionale",
       "items": [

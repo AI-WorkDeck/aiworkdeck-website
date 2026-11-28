@@ -1636,6 +1636,16 @@
         "Apple Silicon sahaja; memerlukan macOS 13 atau lebih baharu"
       ]
     },
+    "release0910": {
+      "headline": "Mesej ralat yang mudah difahami, kerjasama pasukan lebih stabil dan edisi antarabangsa yang boleh diharap",
+      "items": [
+        "Apabila sembang gagal, balasan menerangkan apa yang berlaku dan apa yang perlu dilakukan, dengan \"Cuba semula\" dan \"Butiran\", bukan teks teknikal seperti \"HTTP 502\". Jawapan panjang yang terputus boleh disambung dari tempat ia berhenti.",
+        "Kerjasama kes dalam pasukan lebih stabil: penghantaran yang dibuat semasa luar talian dimasukkan ke dalam baris gilir dan dihantar apabila kembali dalam talian, fail besar menunjukkan kemajuan, dan fail besar atau audio/video dalam kuota perkongsian percuma tidak lagi menyekat penghantaran.",
+        "Edisi antarabangsa: aplikasi mengingati laman yang anda pilih dan kekal log masuk selepas dimulakan semula; anda boleh mendaftar dan log masuk dalam aplikasi walaupun semakan Cloudflare tidak dimuatkan.",
+        "Edisi tanah besar China: dengan AI platform, setiap pusingan sembang menunjukkan kos sebenar.",
+        "Privasi: aplikasi tidak lagi menghubungi mana-mana laman web pihak ketiga semasa dibuka, dan tab pelayar baharu membuka halaman kosong aplikasi sendiri."
+      ]
+    },
     "release0900": {
       "headline": "Kemajuan dari saat pertama, perbandingan kontrak panjang kira-kira 10 kali lebih pantas, dan istilah Taiwan dalam bahasa Cina Tradisional",
       "items": [

@@ -1636,6 +1636,16 @@
         "Yalnızca Apple Silicon; macOS 13 veya üstü gerekir"
       ]
     },
+    "release0910": {
+      "headline": "Anlaşılır hata mesajları, daha kararlı ekip çalışması ve güvenilir uluslararası sürüm",
+      "items": [
+        "Bir sohbet başarısız olduğunda yanıt, ne olduğunu ve ne yapmanız gerektiğini \"Yeniden dene\" ve \"Ayrıntılar\" ile birlikte anlatır; \"HTTP 502\" gibi ham metinler artık görünmez. Yarıda kesilen uzun bir yanıt kaldığı yerden devam edebilir.",
+        "Ekip içinde dosya üzerinde çalışma daha kararlı: çevrimdışıyken yapılan bir gönderim kuyruğa alınır ve bağlantı gelince gönderilir; büyük dosyalar ilerlemeyi gösterir; ücretsiz paylaşım kotası içindeki büyük dosyalar veya ses/video artık gönderimi engellemez.",
+        "Uluslararası sürüm: uygulama seçtiğiniz siteyi hatırlar ve yeniden başlattıktan sonra oturumunuzu açık tutar; Cloudflare doğrulaması yüklenmese bile uygulamadan kaydolup oturum açabilirsiniz.",
+        "Çin anakarası sürümü: platform yapay zekâsı kullanıldığında her sohbet turu gerçek maliyetini gösterir.",
+        "Gizlilik: uygulama başlarken artık hiçbir üçüncü taraf web sitesine bağlanmaz ve yeni bir tarayıcı sekmesi uygulamanın kendi boş sayfasını açar."
+      ]
+    },
     "release0900": {
       "headline": "İlk saniyeden itibaren ilerleme, uzun sözleşmelerin karşılaştırılması yaklaşık 10 kat daha hızlı ve Geleneksel Çince’de Tayvan terimleri",
       "items": [

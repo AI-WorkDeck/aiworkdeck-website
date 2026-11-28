@@ -1636,6 +1636,16 @@
         "Hanya Apple Silicon; memerlukan macOS 13 atau lebih baru"
       ]
     },
+    "release0910": {
+      "headline": "Pesan kesalahan yang mudah dipahami, kolaborasi tim lebih stabil, dan edisi internasional yang andal",
+      "items": [
+        "Saat obrolan gagal, balasan menjelaskan apa yang terjadi dan apa yang harus dilakukan, dengan \"Coba lagi\" dan \"Detail\", bukan teks teknis seperti \"HTTP 502\". Jawaban panjang yang terputus bisa dilanjutkan dari titik terakhir.",
+        "Kolaborasi perkara dalam tim lebih stabil: kiriman yang dibuat saat offline masuk antrean dan dikirim saat kembali online, file besar menampilkan progres, dan file besar atau audio/video dalam kuota berbagi gratis tidak lagi menghambat pengiriman.",
+        "Edisi internasional: aplikasi mengingat situs yang Anda pilih dan Anda tetap masuk setelah memulai ulang; Anda bisa mendaftar dan masuk dari aplikasi meskipun verifikasi Cloudflare tidak termuat.",
+        "Edisi Tiongkok daratan: dengan AI platform, setiap putaran obrolan menampilkan biaya sebenarnya.",
+        "Privasi: aplikasi tidak lagi menghubungi situs web pihak ketiga saat dibuka, dan tab browser baru membuka halaman kosong milik aplikasi."
+      ]
+    },
     "release0900": {
       "headline": "Progres sejak detik pertama, perbandingan kontrak panjang sekitar 10 kali lebih cepat, dan kosakata Taiwan dalam bahasa Tionghoa Tradisional",
       "items": [
