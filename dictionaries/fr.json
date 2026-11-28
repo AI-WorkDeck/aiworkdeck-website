@@ -1636,6 +1636,16 @@
         "Puce Apple uniquement ; macOS 13 ou ultérieur requis"
       ]
     },
+    "release0910": {
+      "headline": "Des erreurs en langage clair, une collaboration d'équipe plus stable et une édition internationale fiable",
+      "items": [
+        "Quand une conversation échoue, la réponse explique ce qui s'est passé et quoi faire, avec « Réessayer » et « Détails », au lieu d'un texte brut comme « HTTP 502 ». Une longue réponse interrompue peut reprendre là où elle s'est arrêtée.",
+        "La collaboration sur les dossiers en équipe est plus stable : un envoi fait hors ligne est mis en file d'attente puis envoyé au retour de la connexion, les gros fichiers affichent leur progression, et les gros fichiers ou l'audio/vidéo dans le quota de partage gratuit ne bloquent plus un envoi.",
+        "Édition internationale : l'application mémorise le site choisi et vous garde connecté après un redémarrage ; l'inscription et la connexion dans l'application fonctionnent même si la vérification Cloudflare ne se charge pas.",
+        "Édition Chine continentale : avec l'IA de la plateforme, chaque tour de conversation affiche son coût réel.",
+        "Confidentialité : l'application ne contacte plus aucun site tiers au démarrage, et un nouvel onglet de navigateur ouvre la page vierge de l'application."
+      ]
+    },
     "release0900": {
       "headline": "Progression dès la première seconde, comparaison des contrats longs environ 10 fois plus rapide et vocabulaire de Taïwan en chinois traditionnel",
       "items": [

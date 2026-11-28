@@ -1636,6 +1636,16 @@
         "Alleen Apple Silicon; macOS 13 of nieuwer vereist"
       ]
     },
+    "release0910": {
+      "headline": "Foutmeldingen in gewone taal, stabielere teamsamenwerking en een betrouwbare internationale editie",
+      "items": [
+        "Als een chat mislukt, zegt het antwoord wat er gebeurde en wat je kunt doen, met 'Opnieuw' en 'Details', in plaats van ruwe tekst zoals \"HTTP 502\". Een lang antwoord dat wordt afgebroken, kan verdergaan waar het stopte.",
+        "Samenwerken aan dossiers in een team is stabieler: een inzending die offline wordt gedaan, komt in een wachtrij en wordt verstuurd zodra je weer online bent; grote bestanden tonen de voortgang, en grote bestanden of audio/video binnen het gratis deelbudget blokkeren een inzending niet meer.",
+        "Internationale editie: de app onthoudt de gekozen site en houdt je na een herstart ingelogd; registreren en inloggen in de app werkt ook als de Cloudflare-controle niet laadt.",
+        "Editie voor het Chinese vasteland: met de platform-AI toont elke chatbeurt wat die kostte.",
+        "Privacy: de app maakt bij het starten geen contact meer met websites van derden, en een nieuw browsertabblad opent de eigen lege pagina van de app."
+      ]
+    },
     "release0900": {
       "headline": "Voortgang vanaf de eerste seconde, lange contracten ongeveer 10 keer sneller vergelijken en Taiwanese terminologie in traditioneel Chinees",
       "items": [
